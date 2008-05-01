@@ -24,11 +24,14 @@
 
 package com.sun.labs.minion.retrieval;
 
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
-public class ArrayGroupTest extends TestCase {
+public class ArrayGroupTest {
 
     //
     // Some arrays to use for testing.
@@ -76,21 +79,22 @@ public class ArrayGroupTest extends TestCase {
      *
      * @param name test name
      */
-    public ArrayGroupTest(String name) {
-        super(name);
+    public ArrayGroupTest() {
     }
 
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+    }
+
+    @Before
     public void setUp() {
-        strict = new ArrayGroup[docs.length];
-        scored = new ScoredGroup[docs.length];
-        negative = new NegativeGroup[docs.length];
-        for(int i = 0; i < docs.length; i++) {
-            strict[i] = new ArrayGroup(docs[i], lens[i]);
-            scored[i] = new ScoredGroup(docs[i], scores[i], lens[i]);
-            negative[i] = new NegativeGroup(docs[i], lens[i]);
-        }
     }
 
+    @After
     public void tearDown() {
     }
 
@@ -107,6 +111,7 @@ public class ArrayGroupTest extends TestCase {
     /**
      * Tests whether groups are equal to themselves.
      */
+    @Test
     public void testSelfEquality() {
         for(int i = 0; i < strict.length; i++) {
             assertEquals(strict[i], strict[i]);
@@ -119,6 +124,7 @@ public class ArrayGroupTest extends TestCase {
      * Tests equality of strict groups that are the same size, even if
      * their array lengths are different.
      */
+    @Test
     public void testSameSizeEquality() {
         assertEquals(strict[2], strict[4]);
         assertEquals(strict[3], strict[5]);
@@ -132,6 +138,7 @@ public class ArrayGroupTest extends TestCase {
      * Tests self-intersection for strict groups.  The intersection of a
      * strict group and itself should always be the same group.
      */
+    @Test
     public void testStrictSelfIntersect() {
         for(int i = 0; i < strict.length; i++) {
             assertEquals(strict[i].intersect(strict[i]),
@@ -142,6 +149,7 @@ public class ArrayGroupTest extends TestCase {
     /**
      * Tests intersection of strict groups with other strict groups.
      */
+    @Test
     public void testStrictIntersect() {
 
         //
@@ -166,6 +174,7 @@ public class ArrayGroupTest extends TestCase {
      * scored group and itself should always be the same group, but with
      * the scores doubled.
      */
+    @Test
     public void testScoredSelfIntersect() {
         for(int i = 0; i < scored.length; i++) {
             assertEquals(scored[i].intersect(scored[i]),
@@ -176,6 +185,7 @@ public class ArrayGroupTest extends TestCase {
     /**
      * Tests intersection of scored groups with other scored groups.
      */
+    @Test
     public void testScoredIntersect() {
 
         //
@@ -195,18 +205,4 @@ public class ArrayGroupTest extends TestCase {
         checkIntersect(scored[10], scored[12], scored[10].mult(2));
     }
     
-    /**
-     * @return a <code>TestSuite</code>
-     */
-    public static TestSuite suite() {
-        return new TestSuite(ArrayGroupTest.class);
-    }
-
-    /** 
-     * Entry point 
-     */ 
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(suite());
-    }
-
 }// ArrayGroupTest

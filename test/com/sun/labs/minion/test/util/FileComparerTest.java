@@ -28,24 +28,37 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import junit.framework.TestCase;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
-public class FileComparerTest extends TestCase {
-    private File testFile1;
-    private File testFile2;
+public class FileComparerTest {
+    private static File testFile1;
+    private static File testFile2;
 
-    protected void setUp() throws Exception {
-        super.setUp();
-        setupFiles();
-    }
-
-    private void setupFiles() throws IOException {
+    
+    @BeforeClass
+    public static void setUpClass() throws Exception {
         setUpTestFile1();
         setUpTestFile2();
-        
     }
 
-    private void setUpTestFile2() throws IOException {
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+    }
+
+    @Before
+    public void setUp() {
+    }
+
+    @After
+    public void tearDown() {
+    }
+
+    private static void setUpTestFile2() throws IOException {
         testFile2 = File.createTempFile("compareTestFile2", null);
         testFile2.deleteOnExit();
         FileWriter fileWriter = new FileWriter(testFile2);
@@ -56,7 +69,7 @@ public class FileComparerTest extends TestCase {
     /**
      * @throws IOException
      */
-    private void setUpTestFile1() throws IOException {
+    private static void setUpTestFile1() throws IOException {
         testFile1 = File.createTempFile("compareTestFile1", null);
         testFile1.deleteOnExit();
         FileWriter fileWriter = new FileWriter(testFile1);
@@ -68,11 +81,7 @@ public class FileComparerTest extends TestCase {
         fileWriter.close();
     }
 
-    protected void tearDown() throws Exception {
-        super.tearDown();
-        
-    }
-
+    @Test
     public void testAreLinesEqual() throws IOException {
         FileComparer comparer;
         comparer = new FileComparer(testFile1.getAbsolutePath(), testFile2.getAbsolutePath());
