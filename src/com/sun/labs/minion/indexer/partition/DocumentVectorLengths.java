@@ -292,7 +292,7 @@ public class DocumentVectorLengths {
 
         while(mdi.hasNext()) {
             if(mde == null) {
-                mde = (QueryEntry) mdi.next();
+                mde = mdi.next();
             }
             TermStatsEntry tse =
                     new TermStatsEntry(mde.getName().toString());
