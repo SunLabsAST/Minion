@@ -387,7 +387,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable, Result
         if(sortSpec.fetchers[i] != null) {
             fields[i] = sortSpec.fetchers[i].fetchOne(doc);
         } else {
-            fields[i] = "";
+            fields[i] = null;
         }
         
         //

@@ -34,6 +34,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.EnumSet;
 import com.sun.labs.minion.util.MinionLog;
+import java.util.Date;
 
 /**
  * A class that can be used to tell the indexer what to do with the data
@@ -404,6 +405,37 @@ public class FieldInfo implements Cloneable,
      */
     public Type getType() {
         return type;
+    }
+
+    /**
+     * Gets the default saved value for a field of this type.
+     * @return a default value for the saved type of this field.  For numeric fields
+     * (including DATE fields), 0 is returned.  For string fields, the empty string
+     * is returned.  If this field
+     * is not a saved field, <code>null</code> will be returned.
+     */
+    public Object getDefaultSavedValue() {
+        if(!isSaved()) {
+            return null;
+        }
+        switch(type) {
+            case INTEGER:
+                return new Long(0);
+            case FLOAT:
+                return new Double(0);
+            case DATE:
+                return new Date(0);
+            case STRING:
+                return "";
+            case FEATURE_VECTOR:
+                return new double[0];
+            default:
+                log.warn(logTag, 2, "Field: " + name + " " +
+                        "has unknown SAVED type: " + type +
+                        ", using STRING.");
+                return "";
+        }
+
     }
 
     /**

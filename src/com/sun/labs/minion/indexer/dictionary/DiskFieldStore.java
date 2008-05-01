@@ -231,8 +231,7 @@ public class DiskFieldStore extends FieldStore {
         if(fi == null) {
             return null;
         }
-        SavedField f = getSavedField(fi);
-        return f != null ? f.getDefault() : null;
+        return fi.getDefaultSavedValue();
     }
     
     /**

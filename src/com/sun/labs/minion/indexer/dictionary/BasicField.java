@@ -363,32 +363,6 @@ public class BasicField implements SavedField {
     }
 
     /**
-     * Gets the default value for a given field type.
-     *
-     * @return The default value.  For numeric types (including dates),
-     * this is 0.  For strings it is the empty string.
-     */
-    public Object getDefault() {
-        switch(field.getType()) {
-            case INTEGER:
-                return new Long(0);
-            case FLOAT:
-                return new Double(0);
-            case DATE:
-                return new Date(0);
-            case STRING:
-                return "";
-            case FEATURE_VECTOR:
-                return new double[0];
-            default:
-                log.warn(logTag, 2, "Field: " + field.getName() + " " +
-                        "has unknown SAVED type: " + field.getType() +
-                        ", using STRING.");
-                return "";
-        }
-    }
-
-    /**
      * Writes the data to the provided stream.
      *
      * @param path The path of the index directory.
@@ -1010,7 +984,7 @@ public class BasicField implements SavedField {
                     header.offsetBytes));
             int n = ldtv.byteDecode();
             if(n == 0) {
-                return getDefault();
+                return field.getDefaultSavedValue();
             }
             return iter.get(ldtv.byteDecode()).getName();
         }

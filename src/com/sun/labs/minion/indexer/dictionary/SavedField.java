@@ -131,14 +131,6 @@ public interface SavedField extends Comparable {
     int size();
     
     /**
-     * Gets the default value for the field
-     *
-     *
-     * @return The default value.
-     */
-    Object getDefault();
-    
-    /**
      * Clears a saved field, if it's open for indexing.
      */
     void clear();
