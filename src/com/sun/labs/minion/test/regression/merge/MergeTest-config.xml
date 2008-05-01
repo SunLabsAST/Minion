@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ 
+ This code is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2
+ only, as published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ General Public License version 2 for more details (a copy is
+ included in the LICENSE file that accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License
+ version 2 along with this work; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301 USA
+ 
+ Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
+ Park, CA 94025 or visit www.sun.com if you need additional
+ information or have any questions.
+-->
+<!--
+Configuration file for use with MergeTest.
+Provides synchronous dumping and avoids multithreading nastiness when 
+replaying the log.
+NOTE: if you rename or move this file, update the static field CONFIG_FILE in 
+class MergeTest in this package.
+-->
+
+<config>
+    <component name="search_engine" type="com.sun.labs.minion.engine.SearchEngineImpl">
+        <property name="index_config" value="index_config"/>
+        <property name="query_config" value="query_config"/>
+        <property name="inv_file_partition_manager" value="inv_file_partition_manager"/>
+        <property name="num_pipelines" value="${num_pipelines}"/>
+        <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
+        <property name="pipeline_factory" value="pipeline_factory"/>
+        <property name="dumper" value="sync_dumper"/>
+    </component>
+
+    <component name="pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>memory_partition</item>
+        </propertylist>
+
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct</item>
+            <item>highlight_stage</item>
+        </propertylist>
+
+        <property name="dumper" value="sync_dumper"/>
+    </component>
+</config>

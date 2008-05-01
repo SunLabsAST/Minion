@@ -1,0 +1,321 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>Indexing with Minion</title>
+    <link rel="stylesheet" type="text/css" href="doc.css">
+  </head>
+
+  <body>
+    <div class="pageHeader">Indexing with Minion</div>
+
+    <p>
+      Minion views a document as pairs of field names and field
+      values.  For example, we can think of an email message as
+      consisting of pairs of message header names (like
+      <code>subject</code> or <code>sent-date</code>) and the values
+      for those message headers.  We can treat the body of the message
+      as an explicit <code>body</code> field.
+    </p>
+
+    <p>
+      There are four related approaches to indexing with Minion.  In
+      the first, an application passes individual field values
+      one-by-one to the indexer until all the data for a document has
+      been provided.  In the second, the application can construct a
+      document by building a map from field names to the values for
+      those fields for that document.  This map can then be passed to
+      the search engine for indexing.  In the third approach, the
+      search engine provides an interface that objects that you would
+      like to index can implement.  Finally, the engine provides a
+      document abstraction that can be used to index documents.
+    </p>
+
+    <p>
+      Before you begin indexing data into fields, the application can
+      define the fields that it wants to use.  The application can
+      define fields at any time during indexing, but it's a good
+      practice to define them before you start indexing.
+    </p>
+
+    <p>
+      Fields can be defined before-hand in the configuration file for
+      your search engine or they can be defined in the indexing code
+      itself.  Defining fields in your configuration file is covered
+      in the <a href="configuration.html">configuration
+        documentation.</a> You can define fields in your indexing code
+      by using the <a
+        href="javadoc/com/sun/labs/minion/SearchEngine.html#defineField">SearchEngine.defineField</a>
+      method.
+    </p>
+
+    <p>
+      Finally, if the engine encounters an unknown field name during
+      indexing, a new field will be generated on-the-fly using a
+      default set of attributes and types specified in the engine
+      configuration.
+    </p>
+
+    <p>
+      There is a separate document <a href="fields.html">describing
+        the properties of fields</a> and what they mean.
+    </p>
+
+    <div class="mainHeader">Indexing with a Simple Indexer</div>
+
+    <p>
+      The <a
+        href="javadoc/com/sun/labs/minion/SimpleIndexer.html"><code>com.sun.labs.minion.SimpleIndexer</code></a>
+      interface describes a method for indexing where each part of the
+      document is provided separately.  An implementation of this
+      interface can be gotten from the <a
+        href="javadoc/com/sun/labs/minion/SearchEngine.html#getSimpleIndexer"><code>SearchEngine.getSimpleIndexer</code></a>
+      method.  The <code>SimpleIndexer</code> is sufficient for most
+      indexing needs.
+    </p>
+
+    <div class="subHeader">Starting a Document</div>
+
+    <p>
+      Given a simple indexer, for each document an application wants
+      to index, indexing begins with the <a
+        href="javadoc/com/sun/labs/minion/SimpleIndexer.html#startDocument"><code>SimpleIndexer.startDocument</code></a>
+      method.  The application provides the key for the document to
+      this method.  If the key matches the key of a document already
+      in the index, then the data for the old document will be
+      superseded by the new information, once the indexing is
+      completed and the new data has been flushed to the disk.
+    </p>
+
+    <p>
+      This method will throw an <code>IllegalStateException</code> if
+      you attempt to start a document while you are in the middle of
+      indexing another document.  It will throw a
+      <code>SearchEngineException</code> if you try to use a
+      <code>null</code> document key.
+    </p>
+
+    <div class="subHeader">Adding Field Values</div>
+
+    <p>
+The <a
+      href="javadoc/com/sun/labs/minion/SimpleIndexer.html"><code>SimpleIndexer</code></a>
+      interface specifies a number of <code>addField</code> methods
+      that can be used to add field value pairs to a document.  These
+      methods take a field name and one of a variety of types for the
+      field value.  The way that the field values are treated depends
+      on the attributes and type of the fields into which they are
+      being indexed.  The <a
+      href="javadoc/com/sun/labs/minion/SimpleIndexer.html">documentation
+      for the <code>SimpleIndexer</code></a> contains information
+      about how each <code>addField</code> method will be interpreted
+      during indexing.
+    </p>
+
+    <p>
+      An <code>IllegalStateException</code> will be thrown if an
+      application attempts to use any of the <code>addField</code>
+      methods before a document has been started using the  <a
+        href="javadoc/com/sun/labs/minion/SimpleIndexer.html#startDocument"><code>startDocument</code></a>
+        method.
+    </p>
+
+    <p>
+      The <code>addField</code> methods can be called reapeatedly to
+      add multiple values to a particular field.  For example, if a
+      document has multiple authors, the <code>addField</code> method
+      could be called once for each author, specifying the
+      <code>author</code> field and the name of one of the authors.
+      Of course, the <code>addField</code> methods that take a
+      <code>java.util.Collection</code> or array of objects could be
+      used for this purpose as well.
+    </p>
+
+    <p>
+      For any of the <code>addField</code> methods, if a field name of
+      <code>null</code> is passed into any of the
+      <code>addField</code> methods, then the value will be added to
+      the implicit body field for the document.
+    </p>
+
+    <p>
+      If the name of an unknown field is passed into the engine, then
+      a new field with that name will be defined on the fly.  The
+      attributes that the field will have are dependent on the engine
+      configuration, but the default is to make any unknown fields
+      indexed, tokenized, and vectored, but not saved.
+    </p>
+
+    <div class="subHeader">Adding Terms</div>
+
+    <p>
+      In addition to the <code>addField</code> methods, the
+      <code>SimpleIndexer</code> interface also specifies a number of
+      <code>addTerm</code> methods that allow an application to add
+      terms to the index one-by-one.  Terms can be added to the
+      implicit body field or to an indexed field using one of the
+      <code>addTerm</code> methods.  Additionally, counts for the
+      terms can be specified so that <code>addTerm</code> does not
+      need to be called repeatedly.
+    </p>
+
+    <p>
+      An <code>IllegalStateException</code> will be thrown if an
+      application attempts to use any of the <code>addTerm</code>
+      methods before a document has been started using the <a
+        href="javadoc/com/sun/labs/minion/SimpleIndexer.html#startDocument"><code>startDocument</code></a>
+        method.
+    </p>
+
+    <div class="subHeader">Ending a Document</div>
+
+    <p>
+      Once all of the data has been added to the document, the
+      application should call <a
+        href="javadoc/com/sun/labs/minion/SimpleIndexer.html#endDocument"><code>endDocument</code></a>
+        to indicate that the document is done.  This method will throw
+        an <code>IllegalStateException</code> if it is called when the
+        <a
+        href="javadoc/com/sun/labs/minion/SimpleIndexer.html#startDocument"><code>startDocument</code></a>
+        method has not been called.
+    </p>
+
+    <div class="subHeader">Finishing Off</div>
+
+    <p>
+      Once an application has finished indexing documents with a
+      <code>SimpleIndexer</code>, it <em>must</em> call the <a
+        href="javadoc/com/sun/labs/minion/SimpleIndexer.html#finish"><code>SimpleIndexer.finish</code></a>
+        method.  Calling this method causes the in-memory data to be
+        flushed out to the disk.  If an application does indexing with
+      a <code>SimpleIndexer</code> but does not call the
+      <code>finish</code> method, then some data may be lost when the
+      search engine is shut down.
+    </p>
+
+    <p>
+      Once an application has called
+      <code>SimpleIndexer.finish</code>, the
+      <code>SimpleIndexer</code> cannot be used for any further
+      indexing activity.  Any attempt to do so will result in an
+      <code>IllegalStateException</code> being thrown.
+    </p>
+
+    <div class="mainHeader">Indexing Maps</div>
+
+    <p>
+      The <a
+        href="javadoc/com/sun/labs/minion/SearchEngine.html#index(String,Map)">SearchEngine.index(String,Map)</a>
+      method provides a way to index a map from field names to field
+      values.
+    </p>
+
+    <p>
+      When the search engine is passed a map for indexing, it will
+      iterate through the entries in the map, processing each in turn.
+      The keys in the entries are the names of the field into which we
+      should index the values.  The valid values for the map being
+      indexed are the same as those described above for the
+      <code>SimpleIndexer.addField</code> methods.
+    </p>
+
+
+    <p>
+      Note that if an application will need to do hit highlighting
+      later on with the indexed documents, then the application should
+      be using an implementation of <code>java.util.Map</code> whose
+      iterators return the elements of the map in the order in which
+      they were inserted.  We suggest using a
+      <code>java.util.LinkedHashMap</code> for this purpose.
+    </p>
+
+    <div class="mainHeader">Indexing <code>Indexable</code>s</div>
+
+    <p>
+      The <a
+      href="javadoc/com/sun/labs/minion/Indexable.html"><code>Indexable</code></a>
+      interface is provided for the use of applications that would
+      like to be able to pass their own objects into the search engine
+      for indexing.  There are only two methods specified by the
+      interface.  The first should return the unique key for the
+      document represented by the <code>Indexable</code>.  The second
+      method should return a map that is suitable for passing to the
+      <a
+        href="javadoc/com/sun/labs/minion/SearchEngine.html#index(String,Map)">SearchEngine.index(String,Map)</a>
+        method described above.
+    </p>
+
+    <div class="mainHeader">Indexing Using a Document Abstraction</div>
+
+    <p>
+      The <a
+      href="javadoc/com/sun/labs/minion/Document.html"><code>Document</code></a>
+      interface defines a document abstraction that you can use to
+      retrieve documents from the search engine and index documents.
+      The abstraction gives access to the saved and vectored fields in
+      the documents and allows the application to modify these fields.
+    </p>
+
+    <p>
+      You can get an implementation of a <code>Document</code> using
+      the <a
+        href="javadoc/com/sun/labs/minion/SearchEngine.html#getDocument"><code>SearchEngine.getDocument</code></a>
+        or <a
+        href="javadoc/com/sun/labs/minion/SearchEngine.html#createDocument"><code>SearchEngine.createDocument</code></a>
+        methods.  The first gets an existing document from the index,
+        and the second creates a new document that is not currently indexed.
+    </p>
+
+    <p>
+      Note that the data in the document abstraction only represents
+      the contents of fields that were vectored or saved.  Any data
+      that was placed into the implicit body field in the document
+      <strong>will not</strong> be part of the document abstraction
+      returned by the search engine.
+    </p>
+
+    <p>
+      Using the methods of the document interface, an application can
+      add saved and vectored data to a document.  The  <a
+        href="javadoc/com/sun/labs/minion/SearchEngine.html#index(Document)"><code>SearchEngine.indexDocument(Document)</code></a>
+        method can then be used to index the document.  As with other
+        indexing methods, if the document passed in is already in the
+        index, the new data will replace the old data.  This method
+        will not only index the data, but ensure that the data is
+        flushed to the disk before it returns.
+    </p>
+
+    <p>
+      The <a
+      href="javadoc/com/sun/labs/minion/SimpleIndexer.html#index(Document)"><code>SimpleIndexer.index(Document)</code></a>
+      method can be used when an application wants to index a number
+      of documents without flushing the data to disk after each
+      document.
+    </p>
+
+    <p>
+      The document abstraction is most useful in situations where all
+      of the data in the documents will be stored in saved or vectored
+      fields and where documents will be updated frequently.  For
+      example, an application that builds up a document through the
+      course of reading several different information sources might
+      want to use the document abstraction to index each portion of
+      the data as it becomes available.
+    </p>
+
+    <h1>What Happens During Indexing?</h1>
+
+    <p>
+      During indexing, all of the data indexed is stored in memory.
+      When memory for the JVM begins to run low, indexing will stop
+      and the data in memory will be dumped to the disk.
+    </p>
+
+
+    <hr>
+    <address><a href="mailto:stephen.green@sun.com">Stephen Green - Staff Engineer</a></address>
+    <!-- Created: Thu Aug 16 11:19:25 EDT 2007 -->
+    <!-- hhmts start -->
+Last modified: Fri Aug 24 14:05:40 EDT 2007
+<!-- hhmts end -->
+  </body>
+</html>

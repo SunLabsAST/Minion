@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ 
+ This code is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2
+ only, as published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ General Public License version 2 for more details (a copy is
+ included in the LICENSE file that accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License
+ version 2 along with this work; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301 USA
+ 
+ Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
+ Park, CA 94025 or visit www.sun.com if you need additional
+ information or have any questions.
+-->
+<!--
+    Document   : classifierConfig.xml.xml
+    Created on : December 15, 2006, 9:55 AM
+    Author     : stgreen
+    Description:
+        Standard configuration file for the partition managers, factories, and
+        memory partitions associated with classification.
+-->
+
+<config>
+    <!-- A manager for classifier partitions -->
+    <component name="class_manager" type="com.sun.labs.minion.classification.ClassifierManager">
+        <property name="lock_dir" value="${lock_directory}"/>
+        <property name="classes_field" value="class"/>
+        <property name="index_config" value="index_config"/>
+        <property name="partition_factory" value="classifier_partition_factory"/>
+        <property name="calculate_dvl" value="false"/>
+    </component>
+    
+    <!-- The factory for classifier partitions. -->
+    <component name="classifier_partition_factory" type="com.sun.labs.minion.classification.ClassifierPartitionFactory">
+        <property name="main_dict_factory" value="id_dict_factory"/>
+        <property name="document_dict_factory" value="feature_dict_factory"/>
+    </component>
+    
+    <!-- A memory partition for classifiers. -->
+    <component name="class_memory_partition" type="com.sun.labs.minion.classification.ClassifierMemoryPartition">
+        <property name="partition_manager" value="class_manager"/>
+        <property name="part_manager" value="uncased_partition_manager"/>
+        <property name="cluster_memory_partition" value="cluster_memory_partition"/>
+        <property name="main_dict_factory" value="id_dict_factory"/>
+        <property name="doc_dict_factory" value="feature_dict_factory"/>
+        <property name="index_config" value="index_config"/>
+    </component>
+    
+    <!-- A manager for feature cluster partitions. -->
+    <component name="cluster_manager" type="com.sun.labs.minion.classification.ClusterManager">
+        <property name="lock_dir" value="${lock_directory}"/>
+        <property name="class_manager" value="class_manager"/>
+        <property name="index_config" value="index_config"/>
+        <property name="partition_factory" value="cluster_partition_factory"/>
+        <property name="calculate_dvl" value="false"/>
+    </component>
+    
+    <!-- The factory for feature cluster partitions. -->
+    <component name="cluster_partition_factory" type="com.sun.labs.minion.classification.ClusterPartitionFactory">
+        <property name="main_dict_factory" value="id_dict_factory"/>
+        <property name="document_dict_factory" value="cluster_dict_factory"/>
+    </component>
+
+    <!-- A memory partition for feature clusters -->
+    <component name="cluster_memory_partition" type="com.sun.labs.minion.classification.ClusterMemoryPartition">
+        <property name="partition_manager" value="cluster_manager"/>
+        <property name="part_manager" value="uncased_partition_manager"/>
+        <property name="main_dict_factory" value="id_dict_factory"/>
+        <property name="doc_dict_factory" value="cluster_dict_factory"/>
+        <property name="index_config" value="index_config"/>
+    </component>
+   
+</config>

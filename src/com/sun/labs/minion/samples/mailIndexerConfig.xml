@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+    Document   : mailIndexerConfig.xml
+    Created on : February 19, 2008, 2:56 PM
+    Author     : stgreen
+    Description:
+        A stub configuration for our mailindexer that makes dumping synchronous,
+        which makes testing easier.
+-->
+
+<config>
+    <!-- We're going to use a synchronous dumper so that when an entry is
+    indexed, when control is returned to the caller the data is available for
+    searching. -->
+    <property name="dumper" value="sync_dumper"/>
+    
+</config>

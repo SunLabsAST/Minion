@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ 
+ This code is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2
+ only, as published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ General Public License version 2 for more details (a copy is
+ included in the LICENSE file that accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License
+ version 2 along with this work; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301 USA
+ 
+ Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
+ Park, CA 94025 or visit www.sun.com if you need additional
+ information or have any questions.
+-->
+<!--
+    Document   : dictionaryConfig.xml.xml
+    Created on : September 22, 2006, 10:56 AM
+    Author     : stgreen
+    Description: Configuration for the various dictionary factories that we'll 
+    use for indexing and other things.
+        
+-->
+
+<config>
+    
+    <!-- A factory for our standard main dictionaries, which are case sensitive -->
+    <component name="cased_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.indexer.entry.CasedDFOEntry"/>
+    </component>
+    
+    <!-- A factory main dictionaries that have position data but no case. -->
+    <component name="uncased_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.indexer.entry.DFOEntry"/>
+    </component>
+    
+    <!-- A factory for fielded document dictionaries. -->
+    <component name="dockey_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry"/>
+    </component>
+    
+    <!-- A factory for unfielded document dictionaries. -->
+    <component name="unfielded_dockey_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.indexer.entry.DocKeyEntry"/>
+    </component>
+    
+    <!-- A factory for ID only dicitionaries, which are used for bigram dictionaries
+    and for the dictionaries in the field store. -->
+    <component name="id_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.indexer.entry.IDEntry"/>
+    </component>
+    
+    <!-- A factory for ID and frequency dictionaries, which can be used in place of
+    the standard main dictionary. -->
+    <component name="idfreq_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.indexer.entry.IDFreqEntry"/>
+    </component>
+    
+    <!-- A factory for feature entries, used in the document dictionaries for the 
+         classifier partitions -->
+    <component name="feature_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.classification.FeatureEntry"/>
+    </component>
+    
+    <!-- A factory for cluster entries, used in the document dictionaries for the cluster
+         partitions used during classification. -->
+    <component name="cluster_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.classification.ClusterEntry"/>
+    </component>
+    
+    <!-- Cached and uncached term statistics dictionary factories -->
+    <component name="uncached_termstats_dictionary_factory" type="com.sun.labs.minion.indexer.dictionary.TermStatsFactory"/>
+    <component name="cached_termstats_dictionary_factory" type="com.sun.labs.minion.indexer.dictionary.TermStatsFactory">
+        <property name="termstats_type" value="CACHED"/>
+    </component>
+    
+</config>

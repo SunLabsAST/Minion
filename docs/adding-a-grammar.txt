@@ -1,0 +1,66 @@
+This doc outlines the steps that should be followed to add a new grammar
+to the Advanced Search Technologies Search Engine.
+
+1) Grammar file
+
+  Create a new JJTree file in c/s/l/m/retrieval/parser with the ending .jjt.
+  Write your grammar.  Pick a name for the parser that isn't already
+  used.  Likewise for the NODE_PREFIX.  The parser name should end in
+  "Parser".  The following options should be set:
+
+  options {
+      MULTI=true;
+      NODE_PACKAGE="com.sun.labs.minion.retrieval.parser";
+      NODE_PREFIX="YourAST";
+      STATIC=false;
+      NODE_USES_PARSER=true;
+  }
+
+2) build.xml
+
+  Modify the "parser" target of build.xml to build the new grammar.
+  There's a flag in there to turn on debug output if you want it.
+  Next, modify the "clean" target.  Copy the fileset for an existing
+  grammar inside the <delete> and make it match your new grammar.
+
+3) SimpleNode.java
+
+  Modify SimpleNode's toString to generate a string for the nodes that
+  your parser creates.
+
+4) java com.sun.labs.minion.retrieval.parser.YourParser
+
+  At this point, you should be able to run the main defined in your
+  parser and get a dump of the parser tree.  If you turned debug output
+  you'll see the whole parser run.
+
+5) YourElementFactory.java, YourTransformer.java
+
+  Now you'll need to create the classes that will transform the tree
+  provided by JJTree into a tree of Query elements.  Look at
+  FullElementFactory and FullTransformer for the structure of a somewhat
+  complicated transformer.
+
+6) java com.sun.labs.minion.retrieval.parser.YourTransformer.java
+
+  Assuming that you create a main in YourTransformer based on the one in
+  FullTransformer, you should be able to run your transformer's main and
+  get a dump of the query elements that are created from your parse
+  tree.
+
+7) Searcher.java
+
+  Add a static variable that names your grammar to Searcher.java (in
+  minion).  Also be sure to add a string name in the GRAMMARS array.
+
+8) SearchEngineImpl.java
+
+  Find the search method that takes grammar as a parameter.  In the
+  switch statement for grammar, add your grammar, creating a parser
+  and transformer.
+
+9) QueryTest.java
+
+  Add your grammar to QueryTest in the :gram command.  Eventually, maybe
+  this should just loop through the GRAMMARS constant in Searcher.
+

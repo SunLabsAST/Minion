@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>The <code>com.sun.labs.minion.test.regression</code> package</title>
+  </head>
+
+  <body>
+      Provides the classes that generates the entries and queries for
+      the regression test.
+
+      <p>
+      	The <code>TestEntrySelector</code> selects entries from the
+	index to be used in queries.
+	The <code>TestFieldEntrySelector</code> selects field entries
+	from the index to be used in queries related to fields.
+      </p>
+
+      <p>
+        The <code>QueryFactory</code> takes the entries selected from by
+	the <code>TestEntrySelector</code> and 
+	<code>TestFieldEntrySelector</code> to create queries for the
+	regression test.
+      </p>
+
+      <p>
+      Currently, the regression test targets are in the build.xml
+      file. This test is based on the javadocs for JDK 1.4.2. To run
+      the test, you must first build the index from the javadocs by
+      typing:
+      </p>
+      <p>
+      <code>ant index_javadocs</code>
+      </p>
+      in this directory. Then to create the queries, type:
+      <p>
+      <code>ant create_queries</code>
+      </p>
+      <p>
+      in this directory. The created queries will be saved in a text
+      file called queries.txt in this directory. Please refer to the
+      documentation in the QueryFactory class for the types of queries
+      that are being generated.
+      </p>
+      <p>
+      To run the generated queries against the search engine, type:
+      </p>
+      <p>
+      <code>ant run_queries</code>
+      </p>
+
+      <p>
+      All the classes relating to Tuples are not being used at this point.
+      They were intended to figure out how many documents a certain
+      query will return. If we know that, we can tailor our query choices for
+      the regression test to include queries that will return a small,
+      medium, and large number of documents. However, since it will take a 
+      long time to compute the number of documents returned for 
+      all possible queries, the Tuples stuff is not used at this moment.
+      </p>
+  </body>
+</html>

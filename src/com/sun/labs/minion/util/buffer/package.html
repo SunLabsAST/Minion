@@ -1,0 +1,53 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>The <code>com.sun.labs.minion.util.buffer</code> package</title>
+  </head>
+
+  <body>
+      Provides interfaces and classes for dealing with readable and
+      writeable buffers of data.  While these buffers are similar in
+      some respects to the buffers found in the <code>java.nio</code>
+      package, they differ in a few significant ways:
+
+      <ul>
+        <li>
+          There are separate interfaces for writeable buffers and
+          readable buffers.  This separation expresses the distinction
+          between indexing time requirements (writeable buffers) and
+          query time requirements (readable buffers).
+        </li>
+
+        <li>
+          These buffers provide methods for encoding integers and
+          longs that use either a specific number of bytes or the
+          minimal number of bytes using a 7 bit encoding scheme.
+        </li>
+
+        <li>
+          There is no way to provide integer or other "views" onto
+          these buffers.
+        </li>
+      </ul>
+
+      <p>
+        The package provides several implementations of the basic
+        buffer interfaces.  Each implementation is useful in a
+        particular situation.  The documentation for each
+        implementation describes the situation in which it should be
+        used.
+      </p>
+
+      <p>
+        The buffers allow the encoding and decoding of integers using
+        a 7-bit encoding.  In this encoding, the 7 lower-order bits of
+        a byte are used to encode the integer.  If the 8th bit is 0,
+        then there are no further bytes in this number.  If the 8th
+        bit is one, then the next byte continues the number.  Note
+        that this means that a number that would completly fill a 32
+        bit integer will take 5 bytes to encode.  The expectation is
+        that we will use a variety of techniques to ensure that this
+        doesn't occur.
+      </p>
+  </body>
+</html>

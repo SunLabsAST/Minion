@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ 
+ This code is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2
+ only, as published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ General Public License version 2 for more details (a copy is
+ included in the LICENSE file that accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License
+ version 2 along with this work; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301 USA
+ 
+ Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
+ Park, CA 94025 or visit www.sun.com if you need additional
+ information or have any questions.
+-->
+<!--
+    Document   : pipelineConfig.xml
+    Created on : September 22, 2006, 11:03 AM
+    Author     : stgreen
+    Description:
+        Configuration for the variout indexing pipeline factories and for the
+        stages in those pipelines.  Note that we don't include the memory partition
+        stages of the indexing pipelines here.  For those, see partitionConfig.xml.
+-->
+
+<config>
+    
+    <!-- Universal tokenizer, with and without punctuation. -->
+    <component name="universal_tokenizer" type="com.sun.labs.minion.document.tokenizer.UniversalTokenizer"/>
+    <component name="universal_tokenizer_with_punct" type="com.sun.labs.minion.document.tokenizer.UniversalTokenizer">
+        <property name="send_punct" value="true"/>
+    </component>
+
+    <component name="universal_tokenizer_with_punct_and_white" type="com.sun.labs.minion.document.tokenizer.UniversalTokenizer">
+        <property name="send_punct" value="true"/>
+        <property name="send_white" value="true"/>
+    </component>
+
+    <!-- The JavaCC-based tokenizer, with and without punctuation. -->
+    <component name="jcc_tokenizer" type="com.sun.labs.minion.document.tokenizer.JCCTokenizer"/>
+    <component name="jcc_tokenizer_with_punct" type="com.sun.labs.minion.document.tokenizer.JCCTokenizer">
+        <property name="send_punct" value="true"/>
+    </component>
+
+    <!-- A stage used when highlighting documents. -->
+    <component name="highlight_stage" type="com.sun.labs.minion.retrieval.HighlightStage"/>
+    
+    <!-- A stage to lowercase terms as they come in. -->
+    <component name="lower_case" type="com.sun.labs.minion.pipeline.LowerCaseStage"/>
+    
+    <!-- A stage to drop things on the floor. -->
+    <component name="dropper" type="com.sun.labs.minion.pipeline.Dropper"/>
+    
+    <!-- A stage to stem terms as they come in. -->
+    <component name="stemmer" type="com.sun.labs.minion.pipeline.StemStage"/>
+    
+    <!-- Stages to be used during debugging to print what's coming down the 
+    pipeline.  One that won't print tokens, and one that will. -->
+    <component name="printer" type="com.sun.labs.minion.pipeline.PrintStage"/>
+    <component name="printer_with_tokens" type="com.sun.labs.minion.pipeline.PrintStage">
+        <property name="print_tokens" value="true"/>
+    </component>
+    
+    <!-- A stage that will dump partitions asynchronously -->
+    <component name="async_dumper" type="com.sun.labs.minion.indexer.partition.AsyncDumper">
+        <property name="queue_length" value="${num_pipelines}"/>
+    </component>
+    
+    <!-- A dumpber for dumping partitions synchronously -->
+    <component name="sync_dumper" type="com.sun.labs.minion.indexer.partition.SyncDumper"/>
+    
+    
+    <!-- A pipeline factory for our "default" indexer. -->
+    <component name="pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>memory_partition</item>
+        </propertylist>
+        
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct</item>
+            <item>highlight_stage</item>
+        </propertylist>
+        
+        <property name="dumper" value="${dumper}"/>
+    </component>
+    
+    <!-- A pipeline factory that lowercases things.  This requires a memory
+    partition that doesn't use cased entries! -->
+    <component name="uncased_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>lower_case</item>
+            <item>uncased_memory_partition</item>
+        </propertylist>
+        
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct</item>
+            <item>highlight_stage</item>
+        </propertylist>
+        
+        <property name="dumper" value="${dumper}"/>
+    </component>
+
+    <!-- A pipeline factory that lowercases things and removes stopwords.  This requires a memory
+    partition that doesn't use cased entries! -->
+    <component name="uncased_stop_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>lower_case</item>
+            <item>stopper</item>
+            <item>uncased_memory_partition</item>
+        </propertylist>
+        
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct</item>
+            <item>highlight_stage</item>
+        </propertylist>
+        
+        <property name="dumper" value="${dumper}"/>
+    </component>
+
+    <!-- A pipeline factory that lowercases things.  This indexes into a partition
+    that uses simple ID and frequency dictionary entries. You should use this when 
+     you want a very small index and you don't care about proximity queries. -->
+    <component name="lc_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>lower_case</item>
+            <item>simple_memory_partition</item>
+        </propertylist>
+        
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct</item>
+            <item>highlight_stage</item>
+        </propertylist>
+        
+        <property name="dumper" value="${dumper}"/>
+    </component>
+
+    <!-- A pipeline factory that lowercases things and stems them.  This indexes into a partition
+    that uses simple ID and frequency dictionary entries. You should use this when 
+     you want a very small index and you don't care about proximity queries. -->
+    <component name="lc_stem_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>lower_case</item>
+            <item>stemmer</item>
+            <item>simple_memory_partition</item>
+        </propertylist>
+        
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct</item>
+            <item>highlight_stage</item>
+        </propertylist>
+        <property name="dumper" value="${dumper}"/>
+    </component>
+    
+    <component name="dropper_pipeline" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>dropper</item>
+        </propertylist>
+        
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct</item>
+            <item>highlight_stage</item>
+        </propertylist>
+        <property name="dumper" value="${dumper}"/>
+    </component>
+
+    <!-- A pipeline factory that lowercases things, removes stop words and stems 
+        the remaining words.  This requires a memory partition that doesn't use 
+        cased entries! -->
+    <component name="lc_stop_stem_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>lower_case</item>
+            <item>stopper</item>
+            <item>stemmer</item>
+            <item>simple_memory_partition</item>
+        </propertylist>
+        
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct</item>
+            <item>highlight_stage</item>
+        </propertylist>
+        <property name="dumper" value="${dumper}"/>
+    </component>
+</config>

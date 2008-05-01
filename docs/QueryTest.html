@@ -1,0 +1,310 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+  <title>The QueryTest program</title>
+</head>
+
+  <body>
+
+    
+<p>
+      The <code>QueryTest</code> program is used to run queries on an
+      index of documents.  It offers a variety of commands that can be
+      used to inspect the contents of an index.
+    </p>
+
+
+    
+<h1>Options</h1>
+
+
+    
+<p>
+      The <code>QueryTest</code> program takes the following options:
+    </p>
+
+
+    
+<table border="1">
+
+      <tbody>
+	<tr>
+	  <th width="15%">Argument</th>
+	  <th width="85%">Description</th>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>-d <em>&lt;dir&gt;</em></td>
+	  <td>
+	    This option is required.  The value of this option
+	    specifies the directory where the index will be placed.
+	    If the directory does not exist, it will be created.  If
+	    the directory contains an existing index, that index
+	    will be added to.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>-f <em>&lt;file&gt;</em></td>
+	  <td>
+	    This option specifies a file containing commands that
+	    should be run by the query test program.  Any of the
+	    commands <a href="#commands">listed below</a> can be
+	    placed in this file, one per line.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>-o <em>&lt;file&gt;</em></td>
+	  <td>
+	    This option specifies a file where the output of the
+	    program will be written.  This file will be written in a
+	    UTF-8 encoding so that international characters are
+	    displayed correctly.
+	  </td>
+	</tr><tr>
+      <td style="vertical-align: top;">-x <em>&lt;XML configuration file&gt;</em></td>
+      <td style="vertical-align: top;">
+            Specifies an XML&nbsp; file to be used as the basis
+            for the properties given to the indexer.  This may be an
+            easier way to specify options. Details of the contents of this file are given in the <a href="http://cmusphinx.sourceforge.net/sphinx4/javadoc/edu/cmu/sphinx/util/props/doc-files/ConfigurationManagement.html">Configuration Management for Sphinx-4</a> web page.</td>
+    </tr>
+
+      </tbody>
+    
+</table>
+
+
+    <a name="commands"></a>
+    
+<h1>Commands</h1>
+
+
+    
+<p>
+      The <code>QueryTest</code> program accepts a number of commands.
+      Generally speaking, anything that is not a command is taken to
+      be a query.  The query syntax is <a href="query-syntax.html">documented separately</a>.
+    </p>
+
+
+    
+<table border="1">
+
+      <tbody>
+	<tr>
+	  <th width="34%">Command</th>
+	  <th>Description</th>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:n <em>number</em></td>
+	  <td>
+	    Sets the number of hits to be displayed in response to a
+	    query to <em>number</em>.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:del <em>partnum</em> <em>docid</em></td>
+	  <td>
+	    Deletes the document with the document ID <em>docid</em>
+	    from partition number <em>partnum</em>.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:merge [<em>partnum</em> <em>partnum</em> ...]</td>
+	  <td>
+	    When given a list of partition numbers, merges those
+	    partitions into a new partition.  When given no partition
+	    numbers, merges all active partitions.
+	  </td>
+	</tr><tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:s</td>
+	  <td>
+	    Displays statistics about the collection.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:pr</td>
+	  <td>
+	    Toggles printing of parsed queries.  When parsed queries
+	    will be printed <code>p</code> appears in the prompt.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:dp</td>
+	  <td>
+	    Toggles passage display.  When passages will be displayed,
+	    <code>d</code> appears in the prompt.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:norm <em>type</em></td>
+	  <td>
+	    Sets the type of normalization used for document scores.
+	    Valid values are:
+	    <table>
+	      <tbody>
+		<tr>
+		  <!-- one of (TD TH) -->
+		  <th>Type</th>
+		  <th>Description</th>
+		</tr>
+		<tr>
+		  <!-- one of (TD TH) -->
+		  <td>1</td>
+		  <td>Sigmoid normalization</td>
+		</tr>
+		<tr>
+		  <!-- one of (TD TH) -->
+		  <td>2</td>
+		  <td>Simple normalization</td>
+		</tr>
+		<tr>
+		  <!-- one of (TD TH) -->
+		  <td>3</td>
+		  <td>Gamma normalization</td>
+		</tr>
+		<tr>
+		  <!-- one of (TD TH) -->
+		  <td>4</td>
+		  <td>Exponential normalization</td>
+		</tr>
+		<tr>
+		  <!-- one of (TD TH) -->
+		  <td>5</td>
+		  <td>Old normalization</td>
+		</tr>
+		<tr>
+		  <!-- one of (TD TH) -->
+		  <td>6</td>
+		  <td>No normalization</td>
+		</tr>
+	      </tbody>
+	    </table>
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:term <em>word</em></td>
+	  <td>
+	    Displays the dictionary entry for <em>word</em>.  This is
+	    a case sensitive operation.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:termi <em>word</em></td>
+	  <td>
+	    Displays the dictionary entry for any case variation of
+	    <em>word</em>.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:wild <em>pattern</em></td>
+	  <td>
+	    Displays any dictionary entries that match the given
+	    wildcard pattern.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:morph <em>term</em></td>
+	  <td>
+	    Shows the morphological variants for <em>term</em> that
+	    appear in the index.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:stem <em>term</em></td>
+	  <td>
+	    Shows the stemmed variations for <em>term</em> that
+	    appear in the index.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:child <em>term</em></td>
+	  <td>
+	    Shows the taxonomic children of <em>term</em> in the taxonomy.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:par <em>term</em></td>
+	  <td>
+	    Shows the taxonomic parents of <em>term</em> in the taxonomy.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:hg <em>up</em> <em>down</em> <em>term</em></td>
+	  <td>
+	    Shows an hourglass view from the taxonomy that is centered
+	    on <em>term</em>, showing <em>up</em> levels up and
+	    <em>down</em> levels down in the taxonomy.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:get <em>partnum</em> <em>docid</em> <em>name</em></td>
+	  <td>
+	    Gets the value of the field named <em>name</em> from the
+	    document with document ID <em>docid</em> from partition
+	    number <em>partnum</em>.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:mult <em>name</em>
+	  <em>multiplier</em> <em>name</em>
+	  <em>multiplier</em>...</td>
+	  <td>
+	    Sets the field multipliers for the named fields to the
+	    corresponding multipliers.  These values will affect
+	    subsequent queries.  If no names or multipliers are
+	    specified, any previously declared multipliers are
+	    removed.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:post [<code>doc</code>|<code>word</code>] <em>term</em></td>
+	  <td>
+	    Gets the postings for <em>term</em>.  If <code>doc</code>
+	    is given as the first argument, only document level
+	    postings information is given.  If <code>word</code> is
+	    given as the first argument, word position information
+	    will also be displayed.
+	  </td>
+	</tr>
+	<tr valign="top">
+	  <!-- one of (TD TH) -->
+	  <td>:parse <em>query</em></td>
+	  <td>
+	    Parse <em>query</em> using the query parser and display
+	    the results.  Does not evaluate the query.
+	  </td>
+	</tr>
+      </tbody>
+    
+</table>
+
+
+    
+<hr>
+    
+<address><a href="mailto:Stephen.Green@sun.com">Stephen Green - Staff Engineer</a></address>
+
+<!-- Created: Tue Jul 30 14:58:21 EDT 2002 --><!-- hhmts start -->
+
+Last modified: $Date: 2006/01/30 17:24:52 $, Bernard Horan
+<!-- hhmts end -->
+  </body></html>

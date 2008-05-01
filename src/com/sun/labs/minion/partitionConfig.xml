@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ 
+ This code is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2
+ only, as published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ General Public License version 2 for more details (a copy is
+ included in the LICENSE file that accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License
+ version 2 along with this work; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301 USA
+ 
+ Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
+ Park, CA 94025 or visit www.sun.com if you need additional
+ information or have any questions.
+-->
+<!--
+    Document   : partitionConfig.xml
+    Created on : September 22, 2006, 11:03 AM
+    Author     : stgreen
+    Description:
+        Configuration information for the partitions used by the indexer and
+        classifier.
+-->
+
+<config>
+    
+    <!-- A partition manager for the default inverted file partitions -->
+    <component name="partition_manager" type="com.sun.labs.minion.indexer.partition.PartitionManager">
+        <property name="index_config" value="index_config"/>
+        <property name="lock_dir" value="${lock_directory}"/>
+        <property name="partition_factory" value="partition_factory"/>
+        <property name="termstats_dict_factory" value="uncached_termstats_dictionary_factory"/>
+    </component>
+    
+    <!-- The factory for the default inverted file partitions. -->
+    <component name="partition_factory" type="com.sun.labs.minion.indexer.partition.InvFilePartitionFactory">
+        <property name="main_dict_factory" value="cased_dict_factory"/>
+        <property name="document_dict_factory" value="dockey_dict_factory"/>
+        <property name="field_store_dict_factory" value="id_dict_factory"/>
+        <property name="bigram_dict_factory" value="id_dict_factory"/>
+    </component>
+
+     <!-- A memory partition for our default indexing pipeline. -->
+    <component name="memory_partition" type="com.sun.labs.minion.indexer.partition.InvFileMemoryPartition">
+        <property name="main_dict_factory" value="cased_dict_factory"/>
+        <property name="doc_dict_factory" value="dockey_dict_factory"/>
+        <property name="partition_manager" value="partition_manager"/>
+        <property name="index_config" value="index_config"/>
+    </component>
+    
+   <!-- A partition manager for inverted file partitions that don't use cased
+    entries -->
+    <component name="uncased_partition_manager" inherit="partition_manager">
+        <property name="partition_factory" value="uncased_partition_factory"/>
+    </component>
+
+    <!-- A factory for inverted file partitions where the main dictionary doesn't use cased
+    entries -->
+    <component name="uncased_partition_factory" inherit="partition_factory">
+        <property name="main_dict_factory" value="uncased_dict_factory"/>
+    </component>
+    
+    <!-- A memory partition that doesn't use cased entries. -->
+    <component name="uncased_memory_partition" inherit="memory_partition">
+        <property name="main_dict_factory" value="uncased_dict_factory"/>
+        <property name="partition_manager" value="uncased_partition_manager"/>
+    </component>
+
+    <!-- A partition manager for inverted file partitions that use simple id and 
+    frequency entries -->
+    <component name="simple_partition_manager" inherit="partition_manager">
+        <property name="partition_factory" value="simple_partition_factory"/>
+    </component>
+    
+    <!-- A factory for inverted file partitions where the main dictionary uses simple
+    id and frequency entries -->
+    <component name="simple_partition_factory" inherit="partition_factory">
+        <property name="main_dict_factory" value="idfreq_dict_factory"/>
+        <property name="document_dict_factory" value="unfielded_dockey_dict_factory"/>
+    </component>
+
+    <!-- A memory partition whose main dictionary uses simple id and frequency entries. -->
+    <component name="simple_memory_partition" inherit="memory_partition">
+        <property name="main_dict_factory" value="idfreq_dict_factory"/>
+        <property name="partition_manager" value="simple_partition_manager"/>
+        <property name="doc_dict_factory" value="unfielded_dockey_dict_factory"/>
+    </component>
+
+</config>

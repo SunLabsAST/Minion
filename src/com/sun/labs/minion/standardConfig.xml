@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ 
+ This code is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2
+ only, as published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ General Public License version 2 for more details (a copy is
+ included in the LICENSE file that accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License
+ version 2 along with this work; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301 USA
+ 
+ Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
+ Park, CA 94025 or visit www.sun.com if you need additional
+ information or have any questions.
+-->
+<!--
+    Document   : standardConfig.xml
+    Created on : August 25, 2006, 10:36 AM
+    Description:
+        Standard configuration for the engine.
+-->
+
+<config>
+    
+    <!-- Note that the standard configuration cannot be used to generate a working
+    engine, as it lacks an index directory.  The name of the index directory 
+    will be passed into the search engine factory, which will then set the 
+    global property index_directory -->
+    
+    <property name="index_directory" value=""/>
+    
+    <!-- The lock directory to use.  By default, this is the index directory -->
+    <property name="lock_directory" value="${index_directory}"/>
+    
+    <!-- The number of indexing pipelines to use.  This is a global property
+    so that it may be set easily. -->
+    <property name="num_pipelines" value="1"/>
+    
+    <!-- Which dumping mechanism to use for new partitions.  This is a global
+    property because it's needed in a few places. -->
+    <property name="dumper" value="async_dumper"/>
+    
+    <!-- A search engine, which is what the factory method for search engines 
+    will return -->
+    <component name="search_engine" type="com.sun.labs.minion.engine.SearchEngineImpl">
+        <property name="index_config" value="index_config"/>
+        <property name="query_config" value="query_config"/>
+        <property name="inv_file_partition_manager" value="partition_manager"/>
+        <property name="num_pipelines" value="${num_pipelines}"/>
+        <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
+        <property name="pipeline_factory" value="pipeline_factory"/>
+        <property name="dumper" value="${dumper}"/>
+    </component>
+    
+    <!-- The index configuration -->
+    <component name="index_config" type="com.sun.labs.minion.IndexConfig">
+        <property name="index_directory" value="${index_directory}"/>
+        <property name="default_field_info" value="unknown_field"/>
+    </component>
+
+    <!-- The information for the default field to use when an unknown field is
+        encountered during indexing -->
+    <component name="unknown_field" type="com.sun.labs.minion.FieldInfo">
+        <property name="indexed" value="true"/>
+        <property name="tokenized" value="true"/>
+        <property name="vectored" value="true"/>
+        <property name="saved" value="false"/>
+    </component>
+    
+    <!-- The query configuration -->
+    <component name="query_config" type="com.sun.labs.minion.QueryConfig">
+        <property name="vector_zero_words" value="zero_words"/>
+    </component>
+    
+    <component name="results_clusterer" type="com.sun.labs.minion.clustering.KMeans"/>
+    
+    <component name="zero_words" type="com.sun.labs.minion.pipeline.StopWords"/>
+    
+    <!-- A search engine that will store uncased main dictionary entries. -->
+    <component name="uncased_search_engine" inherit="search_engine">
+        <property name="inv_file_partition_manager" value="uncased_partition_manager"/>
+        <property name="num_pipelines" value="${num_pipelines}"/>
+        <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
+        <property name="pipeline_factory" value="uncased_pipeline_factory"/>
+    </component>
+    
+    <!-- A search engine that can be used to do classification -->
+    <component name="classifying_search_engine" inherit="search_engine">
+        <property name="inv_file_partition_manager" value="uncased_partition_manager"/>
+        <property name="pipeline_factory" value="uncased_stop_pipeline_factory"/>
+        <property name="build_classifiers" value="true"/>
+        <property name="class_manager" value="class_manager"/>
+        <property name="class_memory_partition" value="class_memory_partition"/>
+        <property name="cluster_manager" value="cluster_manager"/>
+        <property name="cluster_memory_partition" value="cluster_memory_partition"/>
+    </component>
+    
+    <!-- A simple search engine that will store uncased id and frequency main dictionary entries. -->
+    <component name="simple_search_engine" inherit="search_engine">
+        <property name="inv_file_partition_manager" value="simple_partition_manager"/>
+        <property name="num_pipelines" value="${num_pipelines}"/>
+        <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
+        <property name="pipeline_factory" value="lc_pipeline_factory"/>
+    </component>
+    
+    <!-- A simple search engine that will store uncased id and frequency main dictionary entries. -->
+    <component name="dropping_search_engine" inherit="search_engine">
+        <property name="inv_file_partition_manager" value="simple_partition_manager"/>
+        <property name="num_pipelines" value="${num_pipelines}"/>
+        <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
+        <property name="pipeline_factory" value="dropper_pipeline"/>
+    </component>
+    
+    <component name="results_clusterer_factory" type="com.sun.labs.minion.clustering.ClustererFactory">
+        <property name="stop_words" value="stopwords"/>
+    </component>
+    
+    <component name="stopwords" type="com.sun.labs.minion.pipeline.StopWords"/>
+</config>

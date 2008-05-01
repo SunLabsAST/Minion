@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ 
+ This code is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2
+ only, as published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ General Public License version 2 for more details (a copy is
+ included in the LICENSE file that accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License
+ version 2 along with this work; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301 USA
+ 
+ Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
+ Park, CA 94025 or visit www.sun.com if you need additional
+ information or have any questions.
+-->
+<!--
+   IndexTest Configuration file
+-->
+<config>
+    
+    
+    <!--IndexConfig
+	component declaration and properties-->
+    <component name="index_config" type="com.sun.labs.minion.IndexConfig">
+        <property name="index_directory" value="${index_directory}"/>
+        <propertylist name="field_info">
+            <item>subject</item>
+            <item>from</item>
+            <item>to</item>
+            <item>msg-date</item>
+            <item>question</item>
+        </propertylist>
+    </component>
+    
+    <component name="subject" type="com.sun.labs.minion.FieldInfo">
+        <property name="type" value="string"/>
+        <property name="indexed" value="true"/>
+        <property name="tokenized" value="true"/>
+        <property name="vectored" value="true"/>
+        <property name="saved" value="true"/>
+    </component>
+    
+    <component name="question" type="com.sun.labs.minion.FieldInfo">
+        <property name="type" value="string"/>
+        <property name="indexed" value="true"/>
+        <property name="tokenized" value="true"/>
+        <property name="vectored" value="true"/>
+        <property name="saved" value="true"/>
+    </component>
+    
+    <component name="from" type="com.sun.labs.minion.FieldInfo">
+        <property name="type" value="string"/>
+        <property name="indexed" value="false"/>
+        <property name="tokenized" value="false"/>
+        <property name="vectored" value="false"/>
+        <property name="saved" value="true"/>
+    </component>
+    
+    <component name="to" type="com.sun.labs.minion.FieldInfo">
+        <property name="type" value="string"/>
+        <property name="indexed" value="false"/>
+        <property name="tokenized" value="false"/>
+        <property name="vectored" value="false"/>
+        <property name="saved" value="true"/>
+    </component>
+    
+    <component name="msg-date" type="com.sun.labs.minion.FieldInfo">
+        <property name="type" value="date"/>
+        <property name="indexed" value="false"/>
+        <property name="tokenized" value="false"/>
+        <property name="vectored" value="false"/>
+        <property name="saved" value="true"/>
+    </component>
+    
+    <!-- A pipeline factory for indexing questions -->
+    <component name="pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer_with_punct_and_white</item>
+            <item>questioning_stage</item>
+            <item>memory_partition</item>
+        </propertylist>
+        
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct_and_white</item>
+            <item>highlight_stage</item>
+        </propertylist>
+        
+        <property name="dumper" value="async_dumper"/>
+    </component>
+    
+    <component name="questioning_stage" type="com.sun.labs.minion.pipeline.QuestioningStage">
+        <propertylist name="question_containing_fields">
+            <item>subject</item>
+        </propertylist>
+        <property name="question_field" value="question"/>
+    </component>
+    
+    
+    
+    
+</config>

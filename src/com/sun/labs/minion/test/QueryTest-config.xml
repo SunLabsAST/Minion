@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ 
+ This code is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2
+ only, as published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ General Public License version 2 for more details (a copy is
+ included in the LICENSE file that accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License
+ version 2 along with this work; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301 USA
+ 
+ Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
+ Park, CA 94025 or visit www.sun.com if you need additional
+ information or have any questions.
+-->
+<!--
+   QueryTest Configuration file
+-->
+<config>
+    
+    <!--QueryConfig
+	component declaration and properties-->
+    <component name="query_config" type="com.sun.labs.minion.QueryConfig">
+    	<property name="vector_zero_words" value="zero_words"/>
+        
+        
+        
+        
+        <!--	Can also use any of the following properties
+		<property name="all_upper_is_CI" value="boolean"/>
+		<property name="boost_perfect_proximity" value="boolean"/>
+		<property name="dvln" value="boolean"/>
+		<property name="field_cross" value="boolean"/>
+		<property name="max_query_time" value="int"/>
+		<property name="max_query_time" value="int"/>
+		<property name="max_terms" value="int"/>
+		<property name="max_wc_time" value="int"/>
+		<property name="proximity_limit" value="int"/>
+		<property name="weighting_function" value="class name"/>
+		<propertylist name="field_multipliers">
+			<item>example_multiplier</item>
+		</propertylist>
+-->
+    </component>
+    
+ 
+    
+    
+    
+    <!--Example field multiplier
+	-->
+    <component name="example_multiplier" type="com.sun.ket.search.QueryConfig.FieldMultiplier">
+        <property name="multiplier_name" value="example"/>
+        <property name="multiplier_value" value="3.2"/>
+    </component>
+    
+    <!--IndexConfig
+	component declaration and properties.
+	See IndexTest-config.xml for additional properties-->
+    <component name="index_config" type="com.sun.labs.minion.IndexConfig">
+        <property name="index_directory" value="${index_directory}"/>
+        <property name="taxonomy_enabled" value="true"/> 
+    </component>
+</config>

@@ -1,0 +1,21 @@
+<html>
+<body>
+
+Provides two implementations of tokenization for character streams.
+
+<p>
+
+The tokenization package contains two distinct tokenizer.  These are invoked
+as part of the indexing pipeline to break strings of text into distinct
+tokens.  They are also used to parse the terms entered into queries into the
+same tokens that they would have been broken into at indexing time.  The
+{@link com.sun.labs.minion.document.tokenizer.UniversalTokenizer} is a hand-written
+tokenizer that can seamlessly switch between tokenizing whitespace
+separated languages (e.g. English) and CJK-style bigram text within a single
+document.  The {@link com.sun.labs.minion.document.tokenizer.JCCTokenizer} is a
+reimplementation of the UniversalTokenizer that uses JavaCC to generate the
+tokenizer.  There are still some cases that the UniversalTokenizer handles
+more accurately than the JCCTokenizer.
+
+</body>
+</html>

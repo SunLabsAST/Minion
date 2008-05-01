@@ -1,0 +1,39 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <title>The <code>indexer</code> package</title>
+  </head>
+
+  <body>
+      Provides classes that do the main work of indexing: building the
+      term and document dictionaries and the postings file.
+
+      <p>
+	The main driver in this package is the
+	<code>FieldIndexStage</code> which is the <code>Stage</code>
+	in the indexing pipeline that is responsible for processing
+	the tokens that come down the pipeline.  The
+	<code>FieldIndexStage</code> adds tokens to the term
+	dictionary, document names to the document dictionary and term
+	occurrences to the postings file.  The
+	<code>FieldIndexStage</code> is also responsible for building
+	the static summaries of the documents, and putting document
+	titles into the document dictionary.
+      </p>
+
+      <p>
+	The <code>FieldIndexStage</code> is given a number of
+	megabytes that it can use to store postings data.  When this
+	limit is reached or passed, the currently stored data is
+	dumped to a partition.  This dump always occurs at the end of
+	a file, so that a file is not spread across more than one
+	partition.
+      </p>
+
+      <p>
+	A partition is made up of four different files, each with it's
+	own structure and it's own class for reading/operating on the
+	files.
+      </p>
+  </body>
+</html>

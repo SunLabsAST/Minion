@@ -1,0 +1,55 @@
+<html>
+<body>
+
+Provides the automatic document classification functionality in Minion.
+
+<p>
+
+This package contains the code that implements the classification
+infrastructure in Minion.  The package contains implementations of classifiers
+as well as the implementation of the classifier infrastructure.  Two
+classifiers are currently provided: {@link com.sun.labs.minion.classification.Rocchio} and
+{@link com.sun.labs.minion.classification.BalancedWinnow}.  Training classifiers is broken
+down into several steps.
+
+<ol>
+<li>Feature Clustering<br>
+Feature Clustering determines which features (aka terms, or usually words)
+should be combined together as if they were a single feature.  This package
+contains a few different {@link com.sun.labs.minion.classification.FeatureClusterer}s, each
+implementing a different strategy for performing clustering.  Only one should
+be used at a time for a particular index.</li>
+<li>Feature Selection<br>
+Feature Selection is the process of determining the top N features that can
+be used to best differentiate documents that will be in the class from
+documents that don't fit into the class.  Feature Selection is actually 
+performed on Feature Clusters, although single-feature based selection may
+be chosen by using the supertype
+{@link com.sun.labs.minion.classification.ContingencyFeatureClusterer}, which provides
+single-feature clusters.</li>
+<li>Training<br>
+Training is the process of building the actual classifier.  Using the selected
+feature clusters from the above step, one of the classification algorithms (as
+defined in the configuration file) is invoked on the training set to build
+the classifier.</li>
+</ol>
+
+The above process may actually be repeated many times if cross-fold validation
+and "feature backoff" are defined for use in the configuration file.
+<p>
+Once classifiers are trained, they are automatically evaluated across sets
+of documents as future documents are indexed to disk.  Classifiers cannot be
+run against documents that have already be indexed.  If classifiers are added
+or changed, the documents to be classified should be re-indexed.
+<p>
+Following the "Everything Is Dictionaries And
+Postings" mantra, the classification package defines two new partition types
+that are used for storing classifiers and feature clusters.  The infrastructure
+for these classes is included in this package.  The {@link
+com.sun.labs.minion.classification.ClassifierManager} handles the partitions used for
+storing trained classifiers, and the {@link
+com.sun.labs.minion.classification.ClusterManager} handles the partitions used for storing
+generated feature clusters.
+
+</body>
+</html>

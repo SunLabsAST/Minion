@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+ 
+ This code is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License version 2
+ only, as published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but
+ WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ General Public License version 2 for more details (a copy is
+ included in the LICENSE file that accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License
+ version 2 along with this work; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+ 02110-1301 USA
+ 
+ Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
+ Park, CA 94025 or visit www.sun.com if you need additional
+ information or have any questions.
+-->
+<config>
+    
+    
+    <property name="num_pipelines" value="2"/>
+    
+    <!-- A stage that will dump partitions asynchronously -->
+    <component name="async_dumper" type="com.sun.labs.minion.indexer.partition.AsyncDumper">
+        <property name="queue_length" value="2"/>
+    </component>
+    
+    <!--IndexConfig
+	component declaration and properties-->
+    <component name="index_config" type="com.sun.labs.minion.IndexConfig">
+        <property name="index_directory" value="${index_directory}"/>
+        <propertylist name="field_info">
+            <item>enc</item>
+            <item>last-mod</item>
+        </propertylist>
+        <property name="default_field_info" value="unknown_field"/>
+    </component>
+    
+    <!-- A partition manager for the default inverted file partitions -->
+    <component name="partition_manager" type="com.sun.labs.minion.indexer.partition.PartitionManager">
+        <property name="index_config" value="index_config"/>
+        <property name="lock_dir" value="${lock_directory}"/>
+        <property name="partition_factory" value="partition_factory"/>
+        <property name="termstats_dict_factory" value="uncached_termstats_dictionary_factory"/>
+        <property name="reap_does_nothing" value="true"/>
+    </component>
+    
+    <component name="enc" type="com.sun.labs.minion.FieldInfo">
+        <property name="type" value="string"/>
+        <property name="saved" value="true"/>
+    </component>
+    
+    <component name="last-mod" type="com.sun.labs.minion.FieldInfo">
+        <property name="type" value="date"/>
+        <property name="saved" value="true"/>
+    </component>
+    
+    
+</config>

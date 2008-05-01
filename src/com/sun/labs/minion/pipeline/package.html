@@ -1,0 +1,34 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+</head>
+<body bgcolor="white">
+
+    <p>
+      Provides the classes for building a pipeline.  A pipeline
+      consists of <code>Stage</code>s that are connected together in
+      order to provide processing of data.
+    </p>
+    
+    <p>
+      The pipelines that are built using stages are <em>push</em>
+      pipelines.  By that we mean that data is pushed from "upstream"
+      stages to "downstream" stages.
+    </p>
+
+    <p>
+      Generally speaking, pipelines must be built in reverse order,
+      since upstream stages are passed their downstream stages as
+      arguments to their constructors.
+    </p>
+
+    <p>
+      The data that are passed down a pipeline are defined by the
+      <code>DocumentEvent</code> class.  Note, however that we don't
+      actually create and pass down instances of this object.  Rather,
+      we pass along the components of these objects, in order to avoid
+      the object creation overhead.
+    </p>
+
+</body>
+</html>
