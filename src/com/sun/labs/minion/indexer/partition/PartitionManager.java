@@ -3086,7 +3086,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public TermStatsDictionary getTermStatsDict() {
         return termStatsDict;
     }
-
+    
     /**
      * Gets the term statistics for a term
      * @param name the name of the term for which we want term statistics
@@ -3101,6 +3101,21 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             TermStatsEntry tse = termStatsDict.getTermStats(name);
             return tse == null ? new TermStats(name) : tse.getTermStats();
         }
+    }
+    
+    /**
+     * Regenerates the term stats for the currently active partitions.  This can
+     * be used after modifications have been made to an index manually.
+     * @throws java.io.IOException if there is any error writing the new term
+     * stats.
+     * @throws com.sun.labs.minion.util.FileLockException if there is an error
+     * locking the meta file to get the number for the next term stats dictionary.
+     */
+    public void recalculateTermStats() throws java.io.IOException, FileLockException {
+        int tsn = metaFile.getNextTermStatsNumber();
+        File newTSF = makeTermStatsFile(tsn);
+        (new UncachedTermStatsDictionary()).recalculateTermStats(newTSF, getActivePartitions());
+        metaFile.setTermStatsNumber(tsn);
     }
 
     private void updateTermStats() throws java.io.IOException,

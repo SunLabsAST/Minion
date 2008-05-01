@@ -28,6 +28,7 @@ import com.sun.labs.minion.Document;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 
+import com.sun.labs.minion.util.FileLockException;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -120,6 +121,10 @@ import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.lexmorph.disambiguation.Unsupervised;
 import com.sun.labs.minion.retrieval.FieldEvaluator;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
+import com.sun.labs.util.SimpleLabsLogFormatter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class QueryTest extends SEMain {
 
@@ -242,6 +247,7 @@ public class QueryTest extends SEMain {
                 ":ob                     Prints number of small docs and total docs\n" +
                 ":ts                     Prints term stats dictionary\n" +
                 ":cts [<part> ...]       Calculate and dump term stats\n" +
+                ":rts                    Re-generates term stats using all active partitions\n" +
                 "\nWild Card, etc:\n" +
                 ":sw                     Toggles case-sensitivity for wild cards\n" +
                 ":wild <pattern>         Prints matching terms from each partition\n" +
@@ -1859,6 +1865,14 @@ public class QueryTest extends SEMain {
                     e.printStackTrace(output);
                 }
             }
+        } else if(q.startsWith(":rts")) {
+            try {
+                manager.recalculateTermStats();
+            } catch(IOException ex) {
+                output.println("Error generating term stats: " + ex);
+            } catch(FileLockException ex) {
+                output.println("Error generating term stats: " + ex);
+            }
         } else if(q.startsWith(":findsim")) {
             String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
             String key = vals[0];
@@ -2220,6 +2234,10 @@ public class QueryTest extends SEMain {
         }
 
         Thread.currentThread().setName("QueryTest");
+        
+        for(Handler h : Logger.getLogger("").getHandlers()) {
+            h.setFormatter(new SimpleLabsLogFormatter());
+        }
 
         //
         // Handle the options.

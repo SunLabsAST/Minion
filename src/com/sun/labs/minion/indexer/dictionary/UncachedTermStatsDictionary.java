@@ -21,15 +21,19 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import com.sun.labs.minion.indexer.Closeable;
 import com.sun.labs.minion.indexer.entry.TermStatsEntry;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.retrieval.TermStats;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.logging.Logger;
 
 /**
  *
@@ -46,6 +50,10 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements TermS
     public static int BUFFER_SIZE = 8 * 1024;
 
     public static final String logTag = "UTSD";
+
+    public UncachedTermStatsDictionary() {
+
+    }
 
     /**
      * Creates a term statistics dictinary
@@ -82,6 +90,54 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements TermS
             log.error(logTag, 1,
                     "Error creating term stats remove file:" + closeFile);
         }
+    }
+
+    /**
+     * Creates a term stats dictionary from a number of partitions.  This can
+     * be used to re-create a term statistics dictionary when things have gone
+     * wonky.
+     * @param df the file where the term stats dictionary will be written
+     * @param parts the partitions whose dictionaries will be included
+     */
+    public void recalculateTermStats(File df, List<DiskPartition> parts) throws java.io.IOException {
+        PriorityQueue<HE> h = new PriorityQueue<HE>();
+        for(DiskPartition p : parts) {
+            HE el = new HE(p.getMainDictionaryIterator());
+            if(el.next()) {
+                h.offer(el);
+            }
+        }
+
+        //
+        // A writer for our output dictionary.
+        DictionaryWriter tsw = new DictionaryWriter(df.getParent(),
+                new StringNameHandler(), null, 0,
+                MemoryDictionary.Renumber.RENUMBER);
+        int nMerged = 0;
+        while(h.size() > 0) {
+            HE top = h.peek();
+            TermStatsEntry tse = new TermStatsEntry((String) top.curr.getName());
+            TermStats ts = tse.getTermStats();
+            while(top != null && top.curr.getName().equals(tse.getName())) {
+                top = h.poll();
+                ts.add(top.curr);
+                if(top.next()) {
+                    h.offer(top);
+                }
+                top = h.peek();
+            }
+            tsw.write(tse);
+            nMerged++;
+            if(nMerged % 100000 == 0) {
+                Logger.getLogger("").info("Generated " + nMerged);
+            }
+        }
+        if(nMerged % 100000 != 0) {
+            Logger.getLogger("").info("Generated " + nMerged);
+        }
+        RandomAccessFile raf = new RandomAccessFile(df, "rw");
+        tsw.finish(raf);
+        raf.close();
     }
 
     public boolean close(long currTime) {
@@ -148,6 +204,33 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements TermS
     public void iterationDone() {
         if(refCount > 0) {
             refCount--;
+        }
+    }
+
+    /**
+     * An inner class to use when building a new term stats dictionary out of a 
+     * number of partitions.
+     */
+    private class HE implements Comparable<HE> {
+
+        DictionaryIterator di;
+
+        QueryEntry curr;
+
+        public HE(DictionaryIterator di) {
+            this.di = di;
+        }
+
+        public boolean next() {
+            if(di.hasNext()) {
+                curr = di.next();
+                return true;
+            }
+            return false;
+        }
+
+        public int compareTo(HE o) {
+            return ((Comparable) curr.getName()).compareTo(o.curr.getName());
         }
     }
 }
