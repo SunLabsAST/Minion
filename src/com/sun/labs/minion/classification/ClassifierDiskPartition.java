@@ -272,7 +272,7 @@ public class ClassifierDiskPartition extends DiskPartition {
         initMainDict();
         initDocDict();
         
-        if(modelInstance instanceof BulkClassifier) {
+        if(ec == null && modelInstance instanceof BulkClassifier) {
             StopWatch sw = new StopWatch();
             sw.start();
             invert();
@@ -308,7 +308,7 @@ public class ClassifierDiskPartition extends DiskPartition {
             log.log(logTag, 3, String.format("Evaluated %d classifiers in %dms", neval, sw.getTime()));
             return;
         }
-
+        
         //
         // For each class in this partition, use the classifier model
         // to determine which of the docs in the dict are in which
