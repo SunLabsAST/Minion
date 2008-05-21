@@ -344,7 +344,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable, Result
         // We'll modify the penalties in order to get hits on all terms.
         pass.setGap(0.001f);
         pass.setOOO(0.0025f);
-        pass.setWindow(Integer.MAX_VALUE);
+        pass.setWindow(750);
         
         //
         // Go ahead and eval it.
