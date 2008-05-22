@@ -214,11 +214,18 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             //
             // If there's data that we need to copy, then do it now.
             if(startingDataDir != null) {
-                try {
-                DirCopier dc = new DirCopier(startingDataDir, iDFile);
-                dc.copy();
-                } catch (java.io.IOException ioe) {
-                    log.error(logTag, 1, "Error copying starting directory", ioe);
+                if(startingDataDir.exists()) {
+                    try {
+                        DirCopier dc = new DirCopier(startingDataDir, iDFile);
+                        dc.copy();
+                    } catch(java.io.IOException ioe) {
+                        log.error(logTag, 1, "Error copying starting directory",
+                                ioe);
+                    }
+                } else {
+                    log.warn(logTag, 3, "Starting data directory " +
+                            startingDataDir +
+                            " does not exist.");
                 }
             }
         }
