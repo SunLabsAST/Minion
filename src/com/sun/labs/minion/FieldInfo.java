@@ -330,7 +330,7 @@ public class FieldInfo implements Cloneable,
 
         if(!isSaved() && this.type != Type.NONE) {
             throw new IllegalArgumentException("Unsaved field " + name +
-                                               " should not specify a type");
+                                               " should not specify " + this.type + " type");
         }
     }
 
