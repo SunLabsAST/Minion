@@ -110,7 +110,7 @@ public class BigQuery {
      *
      * @param tc a cache of postings for terms
      * @param tg the array group containing training data for this partition
-     * @param nFeatures the number of features that the classifier is using
+     * @param fromField the name of the field terms are coming from
      * @param wf a weighting function to use for weighting terms
      * @param wc a set of weighting components
      */

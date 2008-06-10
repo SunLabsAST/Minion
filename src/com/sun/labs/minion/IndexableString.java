@@ -74,9 +74,9 @@ public class IndexableString  {
     /**
      * Create a new IndexableString from an existing string with a specified
      * markup type
-     * @param value a string that forms the basis for a new indexablestring
-     * @param markupType The markup type for the new indexablestring. Should be one of {@link #Type.PLAIN} 
-     * or {@link #Type.HTML}
+     * @param value a string that forms the basis for a new IndexableString
+     * @param markupType The markup type for the new IndexableString. Should be
+     * one of Type.PLAIN or Type.HTML
      */
     public IndexableString(String value, Type markupType) {
         this.value = value;

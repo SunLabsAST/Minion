@@ -53,9 +53,9 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
      * Creates a document vector for a set of documents.  The resulting document
      * vector is the centroid of the vectors fro the individual documnts.
      *
-     * @param e The search engine with which the docuemnt is associated.
-     * @param key The entry from the document dictionary for the given
-     * document.
+     * @param e The search engine with which the documents are associated.
+     * @param keys The entries from the document dictionary for the documents
+     * to be combined
      * @param field The name of the field for which we want the document vector.
      * If this value is <code>null</code> a vector for the whole document will
      * be returned.  If this value is the empty string, then a vector for the text
@@ -69,6 +69,22 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
              e.getQueryConfig().getWeightingComponents());
     }
 
+    /**
+     * Creates a document vector for a set of documents.  The resulting document
+     * vector is the centroid of the vectors fro the individual documnts.
+     *
+     * @param e The search engine with which the documents are associated.
+     * @param keys The entries from the document dictionary for the documents
+     * to be combined
+     * @param field The name of the field for which we want the document vector.
+     * If this value is <code>null</code> a vector for the whole document will
+     * be returned.  If this value is the empty string, then a vector for the text
+     * not in any defined field will be returned.  If the named field is not a
+     * field that was indexed with the
+     * vectored attribute set, the resulting document vector will be empty!
+     * @param wf the weighting function to use instead of the default
+     * @param wc weight components to use instead of the default
+     */
     public MultiDocumentVectorImpl(SearchEngine e,
                                List<DocKeyEntry> keys, String field,
                                WeightingFunction wf,

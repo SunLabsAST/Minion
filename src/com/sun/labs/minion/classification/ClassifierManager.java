@@ -272,7 +272,6 @@ public class ClassifierManager extends PartitionManager {
      * classified.
      *
      * @param sdp the disk partition to classify
-     * @param maxDocID the maximum document ID in the partition we're classifying
      * @return a 2-d array of string representing the classification of each doc
      */
     public Map<String, ClassificationResult> classify(DiskPartition sdp) {

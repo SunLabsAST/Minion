@@ -177,7 +177,7 @@ public class DiskPartition extends Partition implements Closeable {
      * any of the files making up a partition.
      *
      * @see Partition
-     * @see Dictionary
+     * @see com.sun.labs.minion.indexer.dictionary.Dictionary
      *
      */
     public DiskPartition(int partNumber,
@@ -875,7 +875,7 @@ public class DiskPartition extends Partition implements Closeable {
      * @param partitions the partitions to merge
      * @param delMaps the state of the deletion maps for the partitions to 
      * merge before the merge started.  We need these to be the same as the
-     * ones at the place where the merge was called for (see {@link PartitionManager#Merger}), 
+     * ones at the place where the merge was called for (see {@link PartitionManager.Merger}), 
      * otherwise we might get some skew in the maps between when they are recorded
      * there and recorded here!
      * @param calculateDVL if <code>true</code>, then calculate the document
@@ -898,7 +898,7 @@ public class DiskPartition extends Partition implements Closeable {
      * @param partitions the partitions to merge
      * @param delMaps the state of the deletion maps for the partitions to 
      * merge before the merge started.  We need these to be the same as the
-     * ones at the place where the merge was called for (see {@link PartitionManager#Merger}), 
+     * ones at the place where the merge was called for (see {@link PartitionManager.Merger}), 
      * otherwise we might get some skew in the maps between when they are recorded
      * there and recorded here!
      * @param calculateDVL if <code>true</code>, then calculate the document

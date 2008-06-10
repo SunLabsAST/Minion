@@ -909,7 +909,6 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
      *
      * @param sdp a disk partition representing the recently dumped
      * documents.
-     * @param maxID the maximum document ID that we will encounter
      * @return An array of float.  For a given document ID in the documents
      * that were classified, if that element of the array is greater than
      * 0, then the document should be classified into that class.  The

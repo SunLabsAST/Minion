@@ -129,7 +129,6 @@ public class ResultSetImpl implements ResultSet {
      * Creates a result set for the given query by evaluating the query.
      *
      * @param query The query typed by the user.
-     * @param filters Filters to be applied to the results of the main
      * query.
      * @param e The engine against which we will run the query.
      * @param qc The query configuration for this query.

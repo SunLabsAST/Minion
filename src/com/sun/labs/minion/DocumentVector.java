@@ -83,7 +83,6 @@ public interface DocumentVector extends Cloneable {
      * Finds documents that are similar to this one.
      *
      * @param sortOrder a string describing the order in which to sort the results
-     * @param skimPercent a number between 0 and 1 representing what percent of the features should be used to perform findSimilar
      * @return documents similar to the one this vector represents
      */
     public ResultSet findSimilar(String sortOrder);
