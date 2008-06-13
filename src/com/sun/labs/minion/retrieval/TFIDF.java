@@ -48,6 +48,13 @@ public class TFIDF implements WeightingFunction {
         } else {
             wc.wt = (float) Math.log((float) wc.N / wc.ft);
         }
+        
+        //
+        // If we got zero, then we're going to have trouble with weighting
+        // things, so let's give a little weight.
+        if(wc.wt == 0) {
+            wc.wt = 1e-7f;
+        }
         return wc.wt;
     }
     
