@@ -56,18 +56,6 @@ public class IndexTest {
     public IndexTest() {
     }
 
-    private static void deleteDirectory(File indexDir) {
-        File[] fs = indexDir.listFiles();
-        for(File f : fs) {
-            if(f.isDirectory()) {
-                deleteDirectory(f);
-            } else {
-                assertTrue(f.delete());
-            }
-        }
-        assertTrue(indexDir.delete());
-    }
-
     @BeforeClass
     public static void setUpClass() throws Exception {
         Logger l = Logger.getLogger("");
@@ -95,7 +83,7 @@ public class IndexTest {
     public void tearDown() {
         try {
             mi.close();
-            deleteDirectory(indexDir);
+            TestUtil.deleteDirectory(indexDir);
         } catch(SearchEngineException ex) {
             log.log(Level.SEVERE, "Error closing engine", ex);
         }
