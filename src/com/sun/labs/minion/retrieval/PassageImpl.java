@@ -28,7 +28,6 @@ import java.util.Arrays;
 
 import com.sun.labs.minion.Passage;
 import com.sun.labs.minion.PassageHighlighter;
-import com.sun.labs.minion.SimpleHighlighter;
 
 import com.sun.labs.minion.pipeline.Token;
 
@@ -266,40 +265,7 @@ public class PassageImpl implements Passage, Comparable {
         return null;
     }
     
-    /**
-     * Marks up the passage using the tags provided.
-     *
-     * @param pst The tag used at the start of the passage.
-     * @param pet The tag used at the end of the passage.
-     * @param mst The tag used at the start of each hit term in the
-     * passage.
-     * @param met The tag used at the end of each hit term in the passage.
-     * @param htmlEncode If <code>true</code> the text of the passage will
-     * be encoded so that it may be safely displayed in a page of HTML.
-     *
-     */
-    public void highlight(String pst, String pet,
-                          String mst, String met,
-                          boolean htmlEncode) {
-        highlight(new SimpleHighlighter(pst, pet,
-                                        mst, met),
-                  htmlEncode);
-    }
-
-    /**
-     * Marks up the passage using the highlighter.
-     *
-     * @param highlighter The highlighter that will be used to mark up the
-     * passage.  If this is <code>null</code> no highlighting will be
-     * done.
-     * @param htmlEncode If <code>true</code> the highlighted passage will
-     * have it's text HTML encoded so that it may be safely given to a Web
-     * browser.
-     *
-     * @see #getHLValue
-     * @see #getUnHLValue
-     */
-    public void highlight(PassageHighlighter highlighter,
+    public String highlight(PassageHighlighter highlighter,
                           boolean htmlEncode) {
         StringBuffer b = new StringBuffer();
 
@@ -324,7 +290,7 @@ public class PassageImpl implements Passage, Comparable {
                 elidedHLValue = fullHLValue;
                 elidedUnHLValue = fullUnHLValue;
             }
-            return;
+            return elidedHLValue;
         }
 
         //
@@ -401,41 +367,21 @@ public class PassageImpl implements Passage, Comparable {
             elidedHLValue = fullHLValue;
             elidedUnHLValue = fullUnHLValue;
         }
-            
+        return elidedHLValue;
     }
 
-    /**
-     * Marks up the passage using the highlighter.
-     *
-     * @param highlighter The highlighter that will be used to mark up the
-     * passage.  If this is <code>null</code> no highlighting will be
-     * done.
-     *
-     * @see #getHLValue
-     * @see #getUnHLValue
-     */
-    public void highlight(PassageHighlighter highlighter) {
-        highlight(highlighter, false);
+    public String highlight(PassageHighlighter highlighter) {
+        return highlight(highlighter, false);
+    }
+    
+    public String getHLValue() {
+        return getHLValue(true);
     }
 
-    /**
-     * Gets the highlighted value for this passage.
-     *
-     * @param elided If <code>true</code> returns the passage cut down to
-     * the size specified when the passages were made.  If
-     * <code>false</code> the unelided, highlighted passage is returned.
-     */
     public String getHLValue(boolean elided) {
         return elided ? elidedHLValue : fullHLValue;
     }
 	    
-    /**
-     * Gets the unhighlighted value for this passage.
-     *
-     * @param elided If <code>true</code> returns the passage cut down to
-     * the size specified when the passages were made.  If
-     * <code>false</code> the unelided, unhighlighted passage is returned.
-     */
     public String getUnHLValue(boolean elided) {
         return elided ? elidedUnHLValue : fullUnHLValue;
     }
@@ -450,6 +396,9 @@ public class PassageImpl implements Passage, Comparable {
      * hit terms.  Begin with chunks that are just the hit terms and then
      * at each step, add tokens before and after the hit terms until the
      * string length limit is reached.
+     * @param ph the highlighter to use on the passage
+     * @param htmlEncode whether the string should be HTML encoded while highlighting
+     * @return a highlighted, elided string of the passage
      */
     public String elide(PassageHighlighter ph, boolean htmlEncode) {
 

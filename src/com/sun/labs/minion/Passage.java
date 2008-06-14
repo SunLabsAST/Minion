@@ -56,34 +56,21 @@ public interface Passage {
     public float getScore();
 
     /**
-     * Marks up the passage using the tags provided.
-     *
-     * @param pst The tag used at the start of the passage.
-     * @param pet The tag used at the end of the passage.
-     * @param mst The tag used at the start of each hit term in the
-     * passage.
-     * @param met The tag used at the end of each hit term in the passage.
-     * @param htmlEncode If <code>true</code> the text of the passage will
-     * be encoded so that it may be safely displayed in a page of HTML.
-     *
-     */
-    public void highlight(String pst, String pet, String mst,
-                          String met, boolean htmlEncode);
-
-    /**
      * Marks up the passage using the highlighter.
      *
      * @param highlighter The highlighter that will be used to mark up the
      * passage.  If this is <code>null</code> no highlighting will be
      * done.
      * @param htmlEncode If <code>true</code> the highlighted passage will
-     * have it's text HTML encoded so that it may be safely given to a Web
+     * have its text HTML encoded so that it may be safely given to a Web
      * browser.
      *
+     * @return the highlighted passage, cut down to the size specified when 
+     * the passage was defined.
      * @see #getHLValue
      * @see #getUnHLValue
      */
-    public void highlight(PassageHighlighter highlighter, boolean htmlEncode);
+    public String highlight(PassageHighlighter highlighter, boolean htmlEncode);
 
     /**
      * Marks up the passage using the highlighter.
@@ -91,10 +78,12 @@ public interface Passage {
      * @param highlighter The highlighter that will be used to mark up the
      * passage.  If this is <code>null</code> no highlighting will be
      * done.
+     * @return the highlighted passage, cut down to the size specified when 
+     * the passage was defined.
      * @see #getHLValue
      * @see #getUnHLValue
      */
-    public void highlight(PassageHighlighter highlighter);
+    public String highlight(PassageHighlighter highlighter);
 
     /**
      * Gets the highlighted value for this passage.
@@ -104,6 +93,13 @@ public interface Passage {
      * @return the highlighted value for this passage
      */
     public String getHLValue(boolean elided);
+    
+    /**
+     * Gets the highlighted value for this passage.  The passage will be cut
+     * down to the size specified when the passages were made.
+     * @return a highlighted string containing the passage.
+     */
+    public String getHLValue();
 
     /**
      * Gets the unhighlighted value for this passage.
@@ -115,7 +111,7 @@ public interface Passage {
     public String getUnHLValue(boolean elided);
 
     /**
-     * Gets the character positions of the passage words in the higlighted
+     * Gets the character positions of the passage words in the highlighted
      * passage string that was returned earlier.  This really only makes
      * sense if you didn't ask for highlighting!
      * @return the character positions of the words in the highlighted passage string

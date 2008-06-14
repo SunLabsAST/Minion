@@ -34,6 +34,27 @@ import java.util.Map;
  * @see Result#getPassageBuilder
  */
 public interface PassageBuilder {
+    
+    /**
+     * Registers a field for which we would like to get passages.  Any passages
+     * from this field will be joined together into a single spanning passage, 
+     * the entire field will be retained as context, and there will be no maximum
+     * size imposed on the passages.
+     * 
+     * <p>
+     * 
+     * This is mostly a convenience for highlighting all of the passages in a 
+     * field that is expected to be small (say, like the subject of an email 
+     * message.)
+     *
+     * @param fieldName The name of the field that we want to collect
+     * passages for.  If this name is <code>null</code>, the other
+     * parameters specify the data for anything that is not in one of the
+     * fields added using <code>addPassageField</code>.  If the name is
+     * <code>NonField</code>, then the other parameters specify the data
+     * for passages that do not occur in any field.
+     */
+    public void addPassageField(String fieldName);
 
     /**
      * Registers the parameters for a field for which we would like to get
@@ -75,7 +96,7 @@ public interface PassageBuilder {
      * @see com.sun.labs.minion.SearchEngine#index
      * @see #addPassageField
      */
-    public Map getPassages(Map document);
+    public Map<String,List<Passage>> getPassages(Map document);
 
    /**
      * Gets the highlighted passages that were specified using
@@ -99,7 +120,7 @@ public interface PassageBuilder {
      * @see com.sun.labs.minion.SearchEngine#index
      * @see #addPassageField
      */
-    public Map getPassages(Map document,
+    public Map<String,List<Passage>>  getPassages(Map document,
                            int context, int maxSize, boolean doSort);
 
     /**
@@ -114,7 +135,7 @@ public interface PassageBuilder {
      *
      * @return a list of <code>Passage</code>s.
      */
-    public List getPassages(Map document,
+    public List<Passage> getPassages(Map document,
                             int context, int maxSize);
     
 }// PassageBuilder

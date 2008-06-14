@@ -101,6 +101,7 @@ import com.sun.labs.minion.ResultsCluster;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.Searcher;
+import com.sun.labs.minion.SimpleHighlighter;
 import com.sun.labs.minion.TextHighlighter;
 import com.sun.labs.minion.WeightedField;
 import java.io.BufferedWriter;
@@ -178,6 +179,8 @@ public class QueryTest extends SEMain {
     private static QueryConfig queryConfig = new QueryConfig();
 
     private static IndexConfig indexConfig = new IndexConfig();
+    
+    private SimpleHighlighter shigh;
 
     static {
         opMap.put("equal", new Integer(FieldTerm.EQUAL));
@@ -213,6 +216,8 @@ public class QueryTest extends SEMain {
         scoreForm = new DecimalFormat("###0.000");
         displayPassage = false;
         this.output = output;
+        shigh = new SimpleHighlighter("<font color=\"#FF0000\">", "</font>",
+                            "<b>", "</b>");
     }
 
     public void help() {
@@ -2585,8 +2590,7 @@ public class QueryTest extends SEMain {
                 int n = 0;
                 for(Iterator i = p.iterator(); i.hasNext() && n < 4;) {
                     Passage pass = (Passage) i.next();
-                    pass.highlight("<font color=\"#FF0000\">", "</font>",
-                            "<b>", "</b>", true);
+                    pass.highlight(shigh, true);
                     String[] mTerms = pass.getMatchingTerms();
                     output.print("  " + scoreForm.format(pass.getScore()));
                     for(int l = 0; l < mTerms.length; l++) {

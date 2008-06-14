@@ -57,28 +57,11 @@ public class HLPipelineImpl extends SyncPipelineImpl implements HLPipeline {
         hlStage.reset(ag, doc, qt);
     }
     
-    /**
-     * Registers the parameters for a field for which we would like to get
-     * passages.
-     *
-     * @param fieldName The name of the field that we want to collect
-     * passages for.  If this name is <code>null</code>, the other
-     * parameters specify the data for anything that is not in one of the
-     * fields added using <code>addPassageField</code>.  If the name is
-     * <code>NonField</code>, then the other parameters specify the data
-     * for passages that do not occur in any field.
-     * @param type The type of passage to build. If this is
-     * <code>JOIN</code>, then all hits within the named field will
-     * be joined into a single passage.  If this is
-     * <code>UNIQUE</code>, then each hit will be a separate
-     * passage.
-     * @param context The size of the surrounding context to put in the
-     * passage, in words.  -1 means take the entire containing field.
-     * @param maxSize The maximum size of passage to return, in characters.
-     * -1 means any size is OK.
-     * @param doSort If <code>true</code>, then the passages for this field
-     * will be sorted by score before being returned.
-     */
+    public void addPassageField(String fieldName) {
+        addPassageField(fieldName, com.sun.labs.minion.Passage.Type.JOIN, 
+                -1, -1, false);
+    }
+    
     public void addPassageField(String fieldName, 
             com.sun.labs.minion.Passage.Type type,
             int context, int maxSize,
