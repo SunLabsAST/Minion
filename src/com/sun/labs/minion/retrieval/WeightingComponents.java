@@ -106,7 +106,7 @@ public class WeightingComponents {
      * The total number of occurrences of term <em>t</em> in the whole
      * collection.  Document-level statistic.
      */
-    public int Ft;
+    public long Ft;
 
     /**
      * The total number of documents containing term <em>t</em>.

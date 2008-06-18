@@ -55,7 +55,7 @@ public class TermStats {
     /**
      * The total number of occurrences for the term.
      */
-    protected int Ft;
+    protected long Ft;
     
     /**
      * Creates an empty set of term stats to which we can add terms.
@@ -153,7 +153,7 @@ public class TermStats {
      * in the collection.
      */
     public int getTotalOccurrences() {
-        return Ft;
+        return (int) Math.min(Ft, Integer.MAX_VALUE);
     }
     
     public void setTotalOccurrences(int Ft) {

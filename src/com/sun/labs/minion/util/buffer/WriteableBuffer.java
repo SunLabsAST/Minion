@@ -78,15 +78,15 @@ public interface WriteableBuffer extends Buffer {
     public WriteableBuffer put(int p, byte b);
 
     /**
-     * Encodes a positive long directly, using a given number of
-     * bytes.
+     * Encodes a long directly, using a given number of
+     * bytes.  Note that if <code>n</code> is negative, and <code>nBytes</code> is less than 
+     * 8, it's likely that you will not be able to recover the actual number.
      *
      * @param n The number to encode.
      * @param nBytes The number of bytes to use in the encoding.
      * @return The buffer, to allow chained invocations.
-     * @throws ArithmeticException if the integer to encode is less than 0.
      */
-    public WriteableBuffer byteEncode(long n, int nBytes) throws ArithmeticException;
+    public WriteableBuffer byteEncode(long n, int nBytes);
     
     /**
      * Encodes a positive long directly, using a given number of
@@ -99,7 +99,7 @@ public interface WriteableBuffer extends Buffer {
      * @return The buffer, to allow chained invocations.
      * @throws ArithmeticException if the integer to encode is less than 0.
      */
-    public WriteableBuffer byteEncode(int pos, long n, int nBytes) throws ArithmeticException;
+    public WriteableBuffer byteEncode(int pos, long n, int nBytes);
 
     /**
      * Encodes an integer in a byte-aligned fashion, using the minimal

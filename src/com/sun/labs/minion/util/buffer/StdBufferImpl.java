@@ -127,9 +127,6 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param nBytes The number of bytes to use in the encoding.
      */
     public WriteableBuffer byteEncode(long n, int nBytes) {
-        if(n < 0) {
-            throw new ArithmeticException(String.format("Negative value %d cannot by byte encoded", n));
-        }
         for(int i = 0; i < nBytes; i++) {
             put((byte) (n & 0xFF));
             n >>= 8;
@@ -149,9 +146,6 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
     public WriteableBuffer byteEncode(int pos,
                                       long n,
                                       int nBytes) {
-        if(n < 0) {
-            throw new ArithmeticException(String.format("Negative value %d cannot by byte encoded", n));
-        }
         for(int i = 0; i < nBytes; i++) {
             put(pos++, (byte) (n & 0xFF));
             n >>= 8;
