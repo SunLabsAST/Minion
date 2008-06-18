@@ -1674,6 +1674,14 @@ public class QueryTest extends SEMain {
                     }
                 }
             }
+        } else if(q.startsWith(":docTerm ")) {
+            String key = q.substring(q.indexOf(' ') + 1);
+            DocKeyEntry dke = manager.getDocumentTerm(key);
+            if(dke != null) {
+                output.format("%d: %s\n", dke.getID(), dke.getName());
+            } else {
+                output.println("No document for key: " + key);
+            }
         } else if(q.startsWith(":ob")) {
             Iterator l = manager.getActivePartitions().iterator();
             int ones = 0;

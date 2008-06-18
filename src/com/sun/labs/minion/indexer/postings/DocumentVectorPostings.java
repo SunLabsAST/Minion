@@ -165,6 +165,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
         // Encode the stuff in our list of entries and frequencies.
         prevID = 0;
         WriteableBuffer temp = new ArrayBuffer(se.length * 2);
+        to = 0;
         for(int i = 0; i < se.length; i++) {
             int id = se[i].e.getID();
             int freq = se[i].freq;

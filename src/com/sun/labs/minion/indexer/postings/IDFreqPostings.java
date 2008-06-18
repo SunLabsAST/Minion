@@ -61,9 +61,12 @@ public class IDFreqPostings extends IDPostings {
     protected int freq;
 
     /**
-     * The total number of occurrences in the postings list.
+     * The total number of occurrences in the postings list.  Note that this is
+     * a long, even though the return value from getTotalOccurrences is an int.
+     * This is because, while it doesn't make any sense to return a long's worth 
+     * of counts, we may collect more than an int's worth.
      */
-    protected int to;
+    protected long to;
 
     /**
      * The maximum frequency.
@@ -255,7 +258,7 @@ public class IDFreqPostings extends IDPostings {
      * Gets the total number of occurrences in this postings list.
      */
     public int getTotalOccurrences() {
-        return to;
+        return (int) Math.min(to, Integer.MAX_VALUE);
     }
 
     /**

@@ -32,6 +32,7 @@ import java.nio.channels.WritableByteChannel;
 
 import com.sun.labs.minion.util.ChannelUtil;
 import com.sun.labs.minion.util.MinionLog;
+import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.Util;
 
 /**
@@ -231,8 +232,14 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param n The number to encode.
      */
     public int byteEncode(long n) {
+        if(n < 0) {
+            throw new ArithmeticException(String.format("Negative value %d cannot by byte encoded", n));
+        }
         int nBytes = 0;
 
+        //
+        // Make a good guess for how many bytes its going to take to do the
+        // encoding, saving bounds checks for each byte.
         if(n < Integer.MAX_VALUE) {
             if(n < 16384) {
                 checkBounds(pos+2);
@@ -481,7 +488,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
 
         while((curr & 0x80) != 0) {
             curr = units[pos++];
-            res |= ((int) (curr  & 0x7F)) << shift;
+            res |= (curr & 0x7F) << shift;
             shift += 7;
         }
         return res;
@@ -516,7 +523,8 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         int[] limits = {255, 65535, 16777215, Integer.MAX_VALUE};
         for(int limit = 1; limit <= 4; limit++) {
 	    
-            long start = System.currentTimeMillis();
+            NanoWatch nw = new NanoWatch();
+            nw.start();
             b.clear();
             int max = limits[limit-1];
             System.out.println("Max: " + max);
@@ -534,20 +542,21 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
                     System.out.println("Encoded: " + nums[i] + " decoded: " + x);
                 }
             }
-            System.out.println("nbytes Took: " + (System.currentTimeMillis() - start) +
-                               "ms");
+            nw.stop();
+            System.out.format("nbytes Took: %.3fms\n", nw.getTimeMillis());
         }
 
         b.clear();
-        long start = System.currentTimeMillis();
+        NanoWatch nw = new NanoWatch();
+        nw.start();
         for(int i = 0; i < n; i++) {
             nums[i] = rand.nextInt(Integer.MAX_VALUE);
             b.byteEncode(nums[i]);
         }
-        System.out.println("minimal encode took: " +
-                           (System.currentTimeMillis() - start) +
-                           "ms");
-        start = System.currentTimeMillis();
+        nw.stop();
+        System.out.format("minimal encode took %.3fms\n", nw.getTimeMillis());
+        nw.reset();
+        nw.start();
         b.position(0);
         for(int i = 0; i < n; i++) {
             int x = b.byteDecode();
@@ -555,8 +564,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
                 System.out.println("Encoded: " + nums[i] + " decoded: " + x);
             }
         }
-        System.out.println("minimal decode took: " +
-                           (System.currentTimeMillis() - start) +
-                           "ms");
-    } // end of main()
+        nw.stop();
+        System.out.format("minimal decode took %.3fms\n", nw.getTimeMillis());
+    }
 } // ArrayBuffer

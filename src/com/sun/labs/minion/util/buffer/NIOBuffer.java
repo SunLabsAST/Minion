@@ -24,13 +24,13 @@
 
 package com.sun.labs.minion.util.buffer;
 
+import com.sun.labs.minion.util.ChannelUtil;
 import java.io.DataOutput;
 import java.io.OutputStream;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
-import com.sun.labs.minion.util.*;
 
 /**
  * A buffer that uses java.nio buffers as the backing store.
@@ -398,7 +398,7 @@ public class NIOBuffer extends StdBufferImpl {
 
         while((curr & 0x80) != 0) {
             curr = units.get();
-            res |= ((int) (curr  & 0x7F)) << shift;
+            res |= ((curr & 0x7F)) << shift;
             shift += 7;
         }
         return res;

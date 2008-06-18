@@ -84,8 +84,9 @@ public interface WriteableBuffer extends Buffer {
      * @param n The number to encode.
      * @param nBytes The number of bytes to use in the encoding.
      * @return The buffer, to allow chained invocations.
+     * @throws ArithmeticException if the integer to encode is less than 0.
      */
-    public WriteableBuffer byteEncode(long n, int nBytes);
+    public WriteableBuffer byteEncode(long n, int nBytes) throws ArithmeticException;
     
     /**
      * Encodes a positive long directly, using a given number of
@@ -96,8 +97,9 @@ public interface WriteableBuffer extends Buffer {
      * @param n The number to encode.
      * @param nBytes The number of bytes to use in the encoding.
      * @return The buffer, to allow chained invocations.
+     * @throws ArithmeticException if the integer to encode is less than 0.
      */
-    public WriteableBuffer byteEncode(int pos, long n, int nBytes);
+    public WriteableBuffer byteEncode(int pos, long n, int nBytes) throws ArithmeticException;
 
     /**
      * Encodes an integer in a byte-aligned fashion, using the minimal
@@ -109,8 +111,9 @@ public interface WriteableBuffer extends Buffer {
      *
      * @param n The number to encode.
      * @return the number of bytes used to encode the number.
+     * @throws ArithmeticException if the integer to encode is less than 0.
      */
-    public int byteEncode(long n);
+    public int byteEncode(long n) throws ArithmeticException;
 
     /**
      * Encodes a floating point value in 4 bytes.

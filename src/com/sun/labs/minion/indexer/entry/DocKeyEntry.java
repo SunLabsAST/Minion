@@ -27,8 +27,6 @@ package com.sun.labs.minion.indexer.entry;
 import java.io.IOException;
 import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.util.buffer.WriteableBuffer;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
 
 import com.sun.labs.minion.indexer.postings.DocumentVectorPostings;
 import com.sun.labs.minion.indexer.postings.MergeablePostings;
