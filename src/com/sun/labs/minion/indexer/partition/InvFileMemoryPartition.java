@@ -200,6 +200,12 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
             }
 
             //
+            // Pathalogical case:  the count could be zero, but we need at least 1.
+            if(token.getCount() <= 0) {
+                token.setCount(1);
+            }
+            
+            //
             // Set up the token as an occurrence.
             token.setID(dockey.getID());
             if(token.getFields() == null) {
