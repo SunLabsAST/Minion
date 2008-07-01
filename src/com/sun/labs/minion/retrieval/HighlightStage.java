@@ -66,13 +66,13 @@ public class HighlightStage extends StageAdapter {
     /**
      * The fields that we're currently working on.
      */
-    protected Set fields;
+    protected Set<String> fields;
 
     /**
      * The set of fields that we're considering as body fields for the
      * purposes of highlighting.
      */
-    protected Set bodyFields;
+    protected Set<String> bodyFields;
 
     /**
      * Whether the body fields are to be sorted by score.
@@ -139,8 +139,12 @@ public class HighlightStage extends StageAdapter {
     public void addField(String fieldName, com.sun.labs.minion.Passage.Type type,
                          int context, int maxSize, boolean doSort) {
 
+        if(fieldName != null) {
+            fieldName = fieldName.toLowerCase();
+        }
+        
         PassageStore ps = (PassageStore) pass.get(fieldName);
-
+        
         //
         // If there are no passages defined for the given field, we'll only
         // handle it if there was a request for the whole field.
@@ -256,6 +260,7 @@ public class HighlightStage extends StageAdapter {
 
         //
         // Add this to the set of fields we're currently processing.
+        log.debug(logTag, 0, "start: " + fi);
         fields.add(fi.getName());
     }
 
@@ -272,8 +277,11 @@ public class HighlightStage extends StageAdapter {
 
         //
         // Add this token to all the fields we're watching out for.
-        for(Iterator i = fields.iterator(); i.hasNext(); ) {
-            addToAll(i.next(), t);
+        for(String field : fields) {
+            if(field.equals("to")) {
+                log.debug(logTag, 0, "token: " + t);
+            }
+            addToAll(field, t);
         }
     }
 

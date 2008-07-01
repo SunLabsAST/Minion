@@ -2522,7 +2522,7 @@ public class QueryTest extends SEMain {
             //
             // Get the document key, which is the filename in our case.
             String filename = r.getKey();
-            String enc = (String) r.getField("enc").get(0);
+            String enc = (String) r.getSingleFieldValue("enc");
 
             //
             // If we got null or the empty string for the filename, then
@@ -2556,12 +2556,12 @@ public class QueryTest extends SEMain {
                 // fields that we can parse out of HTML files.
                 pb.addPassageField(null, Passage.Type.UNIQUE, 10,
                         256, true);
-                pb.addPassageField("title", Passage.Type.JOIN, -1, 256,
+                pb.addPassageField("TItle", Passage.Type.JOIN, -1, 256,
                         true);
                 pb.addPassageField("to", Passage.Type.JOIN, -1, 256, true);
                 pb.addPassageField("from", Passage.Type.JOIN, -1,
                         256, true);
-                pb.addPassageField("subject", Passage.Type.JOIN, -1, 256,
+                pb.addPassageField("SUBJECT", Passage.Type.JOIN, -1, 256,
                         true);
                 pb.addPassageField("h1", Passage.Type.JOIN, -1, 256, true);
                 pb.addPassageField("h2", Passage.Type.JOIN, -1, 256, true);
@@ -2577,8 +2577,6 @@ public class QueryTest extends SEMain {
                         for(Iterator p = passages.iterator(); p.hasNext() && k <
                                 4; k++) {
                             Passage pass = (Passage) p.next();
-                            // pass.highlight("<font color=\"#FF0000\">",
-                            // "</font>","<b>","</b>",true);
                             pass.highlight(ph, true);
                             String[] mTerms = pass.getMatchingTerms();
                             output.print("  " +
