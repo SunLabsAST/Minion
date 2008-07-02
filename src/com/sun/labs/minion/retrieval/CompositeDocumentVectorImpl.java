@@ -200,6 +200,20 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
         initFeatures();
     }
     
+    public CompositeDocumentVectorImpl(SearchEngine e,
+            WeightedFeature[] wf, WeightedField[] fields) {
+        this.e = e;
+        this.key = null;
+        keyName = null;
+        setFields(fields);
+        for(int i = 0; i < fieldFeatures.length; i++) {
+            if(this.fields[i] != null) {
+                fieldFeatures[i] = wf.clone();
+            }
+        }
+        initialized = true;
+    }
+    
     public DocumentVector copy() {
         CompositeDocumentVectorImpl ret = new CompositeDocumentVectorImpl();
         ret.e = e;
