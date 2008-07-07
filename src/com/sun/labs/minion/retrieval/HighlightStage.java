@@ -260,7 +260,6 @@ public class HighlightStage extends StageAdapter {
 
         //
         // Add this to the set of fields we're currently processing.
-        log.debug(logTag, 0, "start: " + fi);
         fields.add(fi.getName());
     }
 
@@ -278,9 +277,6 @@ public class HighlightStage extends StageAdapter {
         //
         // Add this token to all the fields we're watching out for.
         for(String field : fields) {
-            if(field.equals("to")) {
-                log.debug(logTag, 0, "token: " + t);
-            }
             addToAll(field, t);
         }
     }
