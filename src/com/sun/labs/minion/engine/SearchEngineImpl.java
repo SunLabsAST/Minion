@@ -93,20 +93,24 @@ import java.util.concurrent.ArrayBlockingQueue;
 import com.sun.labs.minion.classification.ClassifierModel;
 import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
 import com.sun.labs.minion.indexer.partition.Dumper;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.pipeline.AbstractPipelineImpl;
 import com.sun.labs.minion.pipeline.AsyncPipelineImpl;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
+import com.sun.labs.minion.retrieval.QuickOr;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.parser.LuceneParser;
 import com.sun.labs.minion.retrieval.parser.StrictParser;
 import com.sun.labs.minion.retrieval.parser.WebParser;
+import java.util.Set;
 
 /**
  * This is the main class for handling a search engine, both for indexing
@@ -684,7 +688,7 @@ public class SearchEngineImpl implements SearchEngine,
                 // If there's an entry for this key, and it hasn't been
                 // deleted, then add it to the group we're building.
                 DocKeyEntry dke =
-                        (DocKeyEntry) p.getDocumentTerm(e.getKey());
+                        p.getDocumentTerm(e.getKey());
                 if(dke != null) {
                     if(!p.isDeleted(dke.getID())) {
                         ag.addDoc(dke.getID(), e.getValue());
@@ -700,6 +704,35 @@ public class SearchEngineImpl implements SearchEngine,
         //
         // Return the result set.
         return new ResultSetImpl(this, "-score", sets);
+    }
+    
+    /**
+     * Builds a result set of the documents containing any of the given terms
+     * in any of the given fields.
+     * @param terms the terms to look for
+     * @param fields the fields to look for the terms in
+     * @return the set of documents that contain any of the given terms in any
+     * of the given fields.
+     */
+    public ResultSet anyTerms(Set<String> terms, Set<String> fields) {
+        List<ArrayGroup> ags = new ArrayList<ArrayGroup>();
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
+        if(fields != null && fields.size() > 0) {
+            feat.setFields(invFilePartitionManager.getMetaFile().getFieldArray(
+                fields.toArray(new String[0])));
+        }
+        for(DiskPartition dp : invFilePartitionManager.getActivePartitions()) {
+            QuickOr qor = new QuickOr(dp, 2048);
+            for(String term : terms) {
+                QueryEntry qe = dp.getTerm(term);
+                if(qe == null) {
+                    continue;
+                }
+                qor.add(qe.iterator(feat));
+            }
+            ags.add(qor.getGroup());
+        }
+        return new ResultSetImpl(this, invFilePartitionManager.getQueryConfig(), ags);
     }
 
     /**

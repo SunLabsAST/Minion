@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
@@ -92,7 +91,7 @@ public class ResultSetImpl implements ResultSet {
      * A results filter to use when getting results.
      */
     protected ResultsFilter rf;
-    
+
     /**
      * A score modifier to use when getting results.
      */
@@ -166,7 +165,8 @@ public class ResultSetImpl implements ResultSet {
         // In order that the document counts are accurate, we need to
         // remove deleted documents at this point.
         for(int i = 0; i < results.size(); i++) {
-            ((ArrayGroup) results.get(i)).removeDeleted(((DiskPartition) partitions.get(i)).getDeletedDocumentsMap());
+            ((ArrayGroup) results.get(i)).removeDeleted(((DiskPartition) partitions.
+                    get(i)).getDeletedDocumentsMap());
         }
 
         queryTime = System.currentTimeMillis() - queryTime;
@@ -212,6 +212,8 @@ public class ResultSetImpl implements ResultSet {
      */
     public ResultSetImpl(SearchEngine e, String spec, List results) {
         this.e = e;
+        qc = e.getQueryConfig();
+        qc.setSortSpec(spec);
         this.sortSpec = new SortSpec(e.getManager(), spec);
         this.results = results;
     }
@@ -230,7 +232,7 @@ public class ResultSetImpl implements ResultSet {
     public void setResultsFilter(ResultsFilter rf) {
         this.rf = rf;
     }
-    
+
     public void setScoreModifier(ScoreModifier sm) {
         this.sm = sm;
     }
@@ -280,9 +282,11 @@ public class ResultSetImpl implements ResultSet {
                 ArrayGroup ag = (ArrayGroup) i.next();
                 //
                 // Fetchers for our two fields. Huzzah!      
-                BasicField.Fetcher vf = ((InvFileDiskPartition) ag.part).getFieldStore().
+                BasicField.Fetcher vf = ((InvFileDiskPartition) ag.part).
+                        getFieldStore().
                         getFetcher(vfi);
-                BasicField.Fetcher sf = ((InvFileDiskPartition) ag.part).getFieldStore().
+                BasicField.Fetcher sf = ((InvFileDiskPartition) ag.part).
+                        getFieldStore().
                         getFetcher(sfi);
                 ArrayGroup.DocIterator iter = ag.iterator();
 
@@ -295,7 +299,8 @@ public class ResultSetImpl implements ResultSet {
                     vf.fetch(iter.getDoc(), values);
                     sf.fetch(iter.getDoc(), scores);
                     float score = 0;
-                    for(Iterator j = values.iterator(),  k = scores.iterator(); j.hasNext() &&
+                    for(Iterator j = values.iterator(), k = scores.iterator(); j.
+                            hasNext() &&
                             k.hasNext();) {
                         try {
                             Object v = j.next();
@@ -649,7 +654,8 @@ public class ResultSetImpl implements ResultSet {
         AbstractClusterer clust;
         Set<ResultsCluster> ret = null;
         try {
-            ClustererFactory fact = (ClustererFactory) ((SearchEngineImpl) e).getConfigurationManager().
+            ClustererFactory fact = (ClustererFactory) ((SearchEngineImpl) e).
+                    getConfigurationManager().
                     lookup(ClustererFactory.CLUSTERER_FACTORY_CONFIG_NAME);
             clust = fact.getResultsClusterer();
             clust.setK(k);

@@ -40,7 +40,7 @@ public class DFOEntry extends SinglePostingsEntry {
      * The total number of occurrences in the postings list associated with
      * this entry.
      */
-    protected int to;
+    protected long to;
 
     /**
      * The maximum frequency of the term across the documents in the
@@ -190,7 +190,7 @@ public class DFOEntry extends SinglePostingsEntry {
      */
     public void decodePostingsInfo(ReadableBuffer b, int pos) {
         super.decodePostingsInfo(b, pos);
-        to = b.byteDecode();
+        to = b.byteDecodeLong();
         maxfdt = b.byteDecode();
         fnpSize = b.byteDecode();
         tsize += fnpSize;
@@ -220,7 +220,7 @@ public class DFOEntry extends SinglePostingsEntry {
      * @return The total number of occurrences associated with this entry.
      */
     public int getTotalOccurrences() {
-        return to;
+        return (int) Math.min(Integer.MAX_VALUE, to);
     }
 
     /**

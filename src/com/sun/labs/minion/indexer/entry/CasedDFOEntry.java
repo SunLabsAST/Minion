@@ -53,7 +53,7 @@ public class CasedDFOEntry extends CasedEntry {
     /**
      * The total number of occurrences.
      */
-    protected int[] to;
+    protected long[] to;
 
     /**
      * The sizes of the data including fields and positions data.
@@ -97,7 +97,7 @@ public class CasedDFOEntry extends CasedEntry {
         p       = new DFOPostings[2];
         n       = new int[2];
         maxfdt  = new int[2];
-        to      = new int[2];
+        to      = new long[2];
         size    = new int[2];
         fnpSize = new int[2];
         offset  = new long[2];
@@ -222,7 +222,7 @@ public class CasedDFOEntry extends CasedEntry {
      * the value from the case insensitive postings, if we have them.
      */
     public int getTotalOccurrences() {
-        return n[CI] == 0 ? to[CS] : to[CI];
+        return Math.min(Integer.MAX_VALUE, (int) (n[CI] == 0 ? to[CS] : to[CI]));
     }
 
     /**
@@ -279,7 +279,7 @@ public class CasedDFOEntry extends CasedEntry {
             p      = new DFOPostings[2];
             n      = new int[2];
             maxfdt = new int[2];
-            to     = new int[2];
+            to     = new long[2];
             size   = new int[2];
             offset = new long[2];
         }
@@ -287,7 +287,7 @@ public class CasedDFOEntry extends CasedEntry {
         for(int i = 0; i < n.length; i++) {
             n[i]        = b.byteDecode();
             maxfdt[i]   = b.byteDecode();
-            to[i]       = b.byteDecode();
+            to[i]       = b.byteDecodeLong();
             size[i]     = b.byteDecode();
             fnpSize[i]  = b.byteDecode();
             totalSize  += fnpSize[i];

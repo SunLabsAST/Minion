@@ -123,8 +123,8 @@ import com.sun.labs.minion.lexmorph.disambiguation.Unsupervised;
 import com.sun.labs.minion.retrieval.FieldEvaluator;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
 import com.sun.labs.util.SimpleLabsLogFormatter;
+import java.util.Collections;
 import java.util.logging.Handler;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class QueryTest extends SEMain {
@@ -785,6 +785,14 @@ public class QueryTest extends SEMain {
             } catch(Exception e) {
                 log.error(logTag, 1, "Error getting features", e);
             }
+        } else if(q.startsWith(":diff ")) {
+            String[] args = parseMessage(q.substring(q.indexOf(' ') + 1).trim());
+            DocumentVector dv = engine.getDocumentVector(args[0], "content");
+            ResultSet r1 = dv.findSimilar();
+            ResultSet r2 = engine.anyTerms(Collections.singleton(args[1]),
+                    Collections.singleton("content"));
+            ResultSet diff = r1.difference(r2);
+            displayResults(diff);
         } else if(q.startsWith(":bq ")) {
             q = q.substring(q.indexOf(' ') + 1).trim();
             try {
