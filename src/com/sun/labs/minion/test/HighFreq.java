@@ -140,18 +140,18 @@ public class HighFreq {
         
         public String name;
         
-        public int count;
+        public long count;
         
         public Count(String name) {
             this.name = name;
         }
         
-        public void add(int c) {
+        public void add(long c) {
             count += c;
         }
         
         public int compareTo(Object o) {
-            return count - ((Count) o).count;
+            return (int) (count - ((Count) o).count);
         }
         
         public String toString() {

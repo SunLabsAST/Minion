@@ -126,7 +126,7 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
         return full.getLastID();
     }
     
-    public int getTotalOccurrences() {
+    public long getTotalOccurrences() {
         return full.getTotalOccurrences();
     }
     

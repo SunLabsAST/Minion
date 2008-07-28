@@ -90,7 +90,7 @@ public class TermStatsEntry extends BaseEntry {
         return ts.getDocFreq();
     }
 
-    public int getTotalOccurrences() {
+    public long getTotalOccurrences() {
         return ts.getTotalOccurrences();
     }
 

@@ -202,7 +202,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
 
             //
             // Get the document length from the postings.
-            docLen = p.getTotalOccurrences();
+            docLen = (int) Math.min(Integer.MAX_VALUE, p.getTotalOccurrences());
             return true;
         }
         return true;
@@ -241,7 +241,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
      * Returns the total number of occurrences, which is the same as the
      * document length.
      */
-    public int getTotalOccurrences() {
+    public long getTotalOccurrences() {
         return getDocumentLength();
     }
 

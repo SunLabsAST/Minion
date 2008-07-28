@@ -145,7 +145,7 @@ public class ConceptEntry implements IndexEntry, QueryEntry {
         return 0;
     }
     
-    public int getTotalOccurrences() {
+    public long getTotalOccurrences() {
         return 0;
     }
     

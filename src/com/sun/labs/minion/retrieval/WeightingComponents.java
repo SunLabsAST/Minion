@@ -143,7 +143,7 @@ public class WeightingComponents {
      * The total number of words in document <em>d</em>.  Document-level
      * statistic.
      */
-    public int ld;
+    public long ld;
 
     /**
      * The length of the document vector for the current document.

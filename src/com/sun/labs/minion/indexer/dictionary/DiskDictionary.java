@@ -1543,7 +1543,12 @@ public class DiskDictionary implements Dictionary {
 
                 //
                 // Add the new entry to the dictionary that we're building.
+                try {
                 dw.write(me);
+                } catch (java.lang.ArithmeticException ame) {
+                    log.error(logTag, 1, "Arithmetic exception encoding postings for entry: " + me.getName());
+                    throw(ame);
+                }
             } else {
                 //
                 // Remember what we said about not writing the entry to the 

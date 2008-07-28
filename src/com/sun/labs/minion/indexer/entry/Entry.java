@@ -92,7 +92,7 @@ public interface Entry extends Comparable {
      *
      * @return The total number of occurrences associated with this entry.
      */
-    public int getTotalOccurrences();
+    public long getTotalOccurrences();
 
     /**
      * Gets the maximum document term frequency from this entry.  For all

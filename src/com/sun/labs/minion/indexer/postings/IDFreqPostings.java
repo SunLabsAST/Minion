@@ -257,8 +257,8 @@ public class IDFreqPostings extends IDPostings {
     /**
      * Gets the total number of occurrences in this postings list.
      */
-    public int getTotalOccurrences() {
-        return (int) Math.min(to, Integer.MAX_VALUE);
+    public long getTotalOccurrences() {
+        return to;
     }
 
     /**

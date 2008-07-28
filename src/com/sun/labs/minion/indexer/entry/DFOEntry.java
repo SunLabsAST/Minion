@@ -219,8 +219,8 @@ public class DFOEntry extends SinglePostingsEntry {
      *
      * @return The total number of occurrences associated with this entry.
      */
-    public int getTotalOccurrences() {
-        return (int) Math.min(Integer.MAX_VALUE, to);
+    public long getTotalOccurrences() {
+        return to;
     }
 
     /**

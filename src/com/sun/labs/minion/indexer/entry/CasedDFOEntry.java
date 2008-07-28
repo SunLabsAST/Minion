@@ -221,8 +221,8 @@ public class CasedDFOEntry extends CasedEntry {
      * Gets the total number of occurrences in these postings.  We'll take
      * the value from the case insensitive postings, if we have them.
      */
-    public int getTotalOccurrences() {
-        return Math.min(Integer.MAX_VALUE, (int) (n[CI] == 0 ? to[CS] : to[CI]));
+    public long getTotalOccurrences() {
+        return n[CI] == 0 ? to[CS] : to[CI];
     }
 
     /**
@@ -256,10 +256,18 @@ public class CasedDFOEntry extends CasedEntry {
             // Keep track of our postings stats as we go.
             if(idMap == null) {
                 to[i] += cie.to[i];
+                if(to[i] < 0) {
+                    log.warn(logTag, 3, "Exceeded long on " + name + " clamping to max");
+                    to[i] = Long.MAX_VALUE;
+                }
                 maxfdt[i] = Math.max(maxfdt[i], cie.maxfdt[i]);
             } else {
                 maxfdt[i] = p[i].getMaxFDT();
                 to[i] = p[i].getTotalOccurrences();
+                if(to[i] < 0) {
+                    log.warn(logTag, 3, "Exceeded long on " + name + " clamping to max");
+                    to[i] = Long.MAX_VALUE;
+                }
             }
         }
     }

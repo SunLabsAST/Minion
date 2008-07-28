@@ -287,7 +287,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
      *
      * @return The total number of occurrences associated with this entry.
      */
-    public int getTotalOccurrences() {
+    public long getTotalOccurrences() {
         return n;
     }
     

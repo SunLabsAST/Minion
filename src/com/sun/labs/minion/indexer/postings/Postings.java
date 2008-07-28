@@ -63,7 +63,7 @@ public interface Postings {
      * @return The total number of occurrences associated with these
      * postings.
      */
-    public int getTotalOccurrences();
+    public long getTotalOccurrences();
 
     /**
      * Gets the maximum frequency in the postings associated with this

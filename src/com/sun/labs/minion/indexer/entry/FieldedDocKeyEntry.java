@@ -131,7 +131,7 @@ public class FieldedDocKeyEntry extends DocKeyEntry {
 
             //
             // Get the document length from the postings.
-            docLen = p.getTotalOccurrences();
+            docLen = (int) Math.min(Integer.MAX_VALUE, p.getTotalOccurrences());
             return true;
         }
         return true;

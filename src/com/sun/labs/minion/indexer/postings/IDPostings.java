@@ -283,7 +283,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * Gets the total number of occurrences in this postings list, which is
      * always the number of postings, since we don't encode any frequencies.
      */
-    public int getTotalOccurrences() {
+    public long getTotalOccurrences() {
         return nIDs;
     }
     

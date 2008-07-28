@@ -108,7 +108,7 @@ public class CasedIDEntry extends CasedEntry {
      * Returns the total number of occurrences for these postings, which is
      * just the number of postings for ID only postings.
      */
-    public int getTotalOccurrences() {
+    public long getTotalOccurrences() {
         return p[CI] == null ? n[CS] : n[CI];
     }
 

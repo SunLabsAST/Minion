@@ -115,7 +115,7 @@ public class FeaturePostings implements Postings {
      * Gets the total number of occurrences for these postings, which is
      * just the number of features encoded.
      */
-    public int getTotalOccurrences() {
+    public long getTotalOccurrences() {
         return nIDs;
     }
 

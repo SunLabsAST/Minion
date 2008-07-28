@@ -148,7 +148,7 @@ public class DFOPostings implements Postings {
     /**
      * The total number of occurrences in the postings.
      */
-    protected int to;
+    protected long to;
     
     /**
      * The maximum frequency encountered in the postings.
@@ -530,7 +530,7 @@ public class DFOPostings implements Postings {
     /**
      * Gets the total number of occurrences in the postings list.
      */
-    public int getTotalOccurrences() {
+    public long getTotalOccurrences() {
         return to;
     }
     
