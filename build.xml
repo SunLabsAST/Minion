@@ -114,4 +114,19 @@
         </delete>
     </target>
 
+  <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
+
+  <property name="findbugs.home" value="/usr/local/findbugs/" />
+
+  <target name="findbugs" depends="jar">
+    <findbugs home="${findbugs.home}"
+              output="xml"
+              outputFile="build/findbugs_output.xml" >
+      <!-- <auxClasspath path="$(src.dir}/lib/Regex.jar" /> -->
+      <sourcePath path="${src.dir}" />
+      <class location="build/classes/" />
+    </findbugs>
+  </target>
+
+
 </project>
