@@ -43,6 +43,7 @@ import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.MinionLog;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A class to read and write the indexer's metafile.
@@ -90,7 +91,7 @@ public class MetaFile {
      */
     public MetaFile(File lockDir, File f) {
         metaFile = f;
-        metaLock = new FileLock(lockDir, f, 600, 100);
+        metaLock = new FileLock(lockDir, f, 60, TimeUnit.SECONDS);
         nameToInfo =
                 new HashMap<String, FieldInfo>();
         idToInfo =

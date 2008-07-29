@@ -47,6 +47,7 @@ import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A class that holds the document vector lengths for a partition.  It can
@@ -139,7 +140,7 @@ public class DocumentVectorLengths {
         // recompute things.  We'll time out the lock after 40 seconds.
         FileLock lock =
                 new FileLock(new File(part.getManager().getLockDir()), vlFile,
-                20, 2000);
+                40, TimeUnit.SECONDS);
         try {
             lock.acquireLock();
 

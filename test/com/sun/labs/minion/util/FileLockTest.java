@@ -29,6 +29,7 @@ import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.util.LabsLogFormatter;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,6 +46,8 @@ import static org.junit.Assert.*;
 public class FileLockTest {
 
     File tmpDir;
+    
+    File lockFile;
 
     Logger log;
 
@@ -54,6 +57,7 @@ public class FileLockTest {
             td = "/tmp";
         }
         tmpDir = new File(td);
+        lockFile = new File(tmpDir, "foo");
 
         for(Handler h : Logger.getLogger("").getHandlers()) {
             h.setFormatter(new LabsLogFormatter());
@@ -77,6 +81,8 @@ public class FileLockTest {
 
     @After
     public void tearDown() {
+        lockFile.delete();
+        (new File(lockFile.toString() + ".lock")).delete();
     }
 
     /**
@@ -84,7 +90,7 @@ public class FileLockTest {
      */
     @Test
     public void simple() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile);
         instance.acquireLock();
         instance.releaseLock();
     }
@@ -94,7 +100,7 @@ public class FileLockTest {
      */
     @Test
     public void hasLockAfterAcquire() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile);
         instance.acquireLock();
         assertTrue(instance.hasLock());
         instance.releaseLock();
@@ -105,7 +111,7 @@ public class FileLockTest {
      */
     @Test
     public void notHasLockBeforeAcquire() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile);
         assertFalse(instance.hasLock());
         instance.acquireLock();
         instance.releaseLock();
@@ -119,7 +125,7 @@ public class FileLockTest {
      */
     @Test
     public void notHasLockAfterRelease() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile);
         instance.acquireLock();
         instance.releaseLock();
         assertFalse(instance.hasLock());
@@ -130,7 +136,7 @@ public class FileLockTest {
      */
     @Test
     public void multipleAcquire() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile);
         instance.acquireLock();
         instance.acquireLock();
         instance.releaseLock();
@@ -141,7 +147,7 @@ public class FileLockTest {
      */
     @Test
     public void multipleRelease() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile);
         instance.acquireLock();
         instance.releaseLock();
         instance.releaseLock();
@@ -153,7 +159,7 @@ public class FileLockTest {
      */
     @Test(expected = FileLockException.class)
     public void failMultipleAcquire() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"), 1, 0);
+        FileLock instance = new FileLock(lockFile, 0, TimeUnit.SECONDS);
         instance.acquireLock();
 
         TestThread tt = new TestThread(instance, 1);
@@ -165,10 +171,10 @@ public class FileLockTest {
         } catch(InterruptedException ie) {
 
         }
+        instance.releaseLock();
         if(tt.e != null && tt.e instanceof FileLockException) {
             throw ((FileLockException) tt.e);
         }
-        instance.releaseLock();
     }
 
     /**
@@ -176,7 +182,7 @@ public class FileLockTest {
      */
     @Test
      public void twoThreadAcquireAndRelease() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile);
         multiThreading(instance, 2, 1);
     }
 
@@ -185,7 +191,7 @@ public class FileLockTest {
      */
     @Test
      public void twoThreadMultiAcquireAndRelease() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile, 30, TimeUnit.SECONDS);
         multiThreading(instance, 2, 5);
     }
 
@@ -194,7 +200,7 @@ public class FileLockTest {
      */
     @Test
      public void fiveThreadAcquireAndRelease() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile);
         multiThreading(instance, 5, 1);
     }
 
@@ -203,16 +209,16 @@ public class FileLockTest {
      */
     @Test
      public void fiveThreadMultiAcquireAndRelease() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile);
         multiThreading(instance, 5, 10);
     }
 
     /**
-     * Tests five-threaded acquire and release of the lock multiple times
+     * Tests ten-threaded acquire and release of the lock multiple times
      */
     @Test
      public void tenThreadMultiAcquireAndRelease() throws IOException, FileLockException {
-        FileLock instance = new FileLock(tmpDir, new File("foo"));
+        FileLock instance = new FileLock(lockFile, 2500, TimeUnit.MILLISECONDS);
         multiThreading(instance, 10, 20);
     }
 
@@ -232,6 +238,7 @@ public class FileLockTest {
         for(int i = 0; i < lt.length; i++) {
             tt[i] = new TestThread(lock, nIter);
             lt[i] = new Thread(tt[i]);
+            lt[i].setName("TestThread-" + (i+1));
             lt[i].start();
         }
 
@@ -276,14 +283,17 @@ public class FileLockTest {
                 } catch(FileLockException ex) {
                     log.log(Level.SEVERE, "FLE on acquire", ex);
                     this.e = ex;
-                }
-                try {
-                    log.info("release " + tn);
-                    lock.releaseLock();
-                    log.info("released " + tn);
-                } catch(FileLockException ex) {
-                    log.log(Level.SEVERE, tn + " FLE on release 1", ex);
-                    this.e = ex;
+                } finally {
+                    if(lock.hasLock()) {
+                        try {
+                            log.info("release " + tn);
+                            lock.releaseLock();
+                            log.info("released " + tn);
+                        } catch(FileLockException ex) {
+                            log.log(Level.SEVERE, tn + " FLE on release", ex);
+                            this.e = ex;
+                        }
+                    }
                 }
             }
         }

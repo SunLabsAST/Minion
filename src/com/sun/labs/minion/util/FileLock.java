@@ -30,6 +30,8 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * Provides a class that locks a file so that only a single thread or
@@ -57,6 +59,8 @@ import java.util.Map;
 public class FileLock implements Cloneable {
 
     MinionLog log = MinionLog.getLog();
+    
+    Logger logger = Logger.getLogger("com.sun.labs.minion.util.FileLock");
 
     public static final String logTag = "FL";
 
@@ -71,7 +75,7 @@ public class FileLock implements Cloneable {
      * @see #acquireLock
      */
     public FileLock(File dir, File f) {
-        this(dir, f, 30, 150);
+        this(dir, f, 5, TimeUnit.SECONDS);
     }
 
     /**
@@ -84,58 +88,49 @@ public class FileLock implements Cloneable {
      * @see #acquireLock
      */
     public FileLock(File f) {
-        this(null, f, 30, 150);
+        this(null, f, 5, TimeUnit.SECONDS);
     }
 
     /**
-     * Makes a lock that will sleep for the given amount of time between
-     * the given number of attempts at locking.  This <em><b>does not</b></em> lock
-     * the file.  Use the <code>acquireLock</code> method for that.
-     *
-     * @param f The <code>File</code> that we want to lock.
-     * @param nR The number of times to try acquiring the lock when the
-     * file is already locked.
-     * @param millis The number of milliseconds to sleep between retries of
-     * the lock.
+     * Creates a lock for a file in the current directory.
+     * @param f the name of the file to lock
+     * @param timeout the timeout to use when trying to acquire the lock
+     * @param units the units for the timeout.  This will be converted to milliseconds, 
+     * so beware of truncation!
      */
-    public FileLock(File f, int nR, int millis) {
-        this(null, f, nR, millis);
+    public FileLock(File f, long timeout, TimeUnit units) {
+        this(null, f, timeout, units);
     }
-
+    
     /**
-     * Makes an instance of the class.  This <em><b>does not</b></em> lock
-     * the file.  Use the <code>acquireLock</code> method for that.
-     *
-     * @param dir The directory where the lock file should be put. If this
-     * is non-null, we will use the given directory for the lock file.  If
-     * this is null, the abstract pathname given in f will be used.
-     * @param f The <code>File</code> that we want to lock.
-     * @param nR The number of times to try acquiring the lock when the
-     * file is already locked.
-     * @param millis The number of milliseconds to sleep between retries of
-     * the lock.
+     * Creates a lock for a file in a given directory.  
+     * @param dir the directory where the lock file should be created.  If this
+     * is <code>null</code>, the current working directory will be used
+     * @param f the name of the file to lock
+     * @param timeout the timeout to use when trying to acquire the lock
+     * @param units the units for the timeout.  This will be converted to milliseconds, 
+     * so beware of truncation!
      */
-    public FileLock(File dir, File f, int nR, int millis) {
+    public FileLock(File dir, File f, long timeout, TimeUnit units) {
         lockFile = new File(dir, f.getName() + ".lock");
-        nRetries = nR;
-        sleepMillis = millis;
+        this.timeout = units.toMillis(timeout);
         lockState = new HashMap<Thread, LockState>();
     }
 
     /**
-     * Creates a lock that's a copy of the given lock, except the number of
-     * retries and the sleep time may differ.  The two locks will share the 
+     * Creates a lock that's a copy of the given lock, except the timeout
+     * may differ.  The two locks will share the 
      * lock state so that multiple threads will not be able to hold concurrent
      * locks, but single threads will.
      * @param l the lock that we want to copy
-     * @param nRetries the number of times to try to acquire the lock
-     * @param sleepMillis the amount of time (in milliseconds) to sleep between
      * attempts to get the lock.
+     * @param timeout the timeout to use when trying to acquire the lock
+     * @param units the units for the timeout.  This will be converted to milliseconds, 
+     * so beware of truncation!
      */
-    public FileLock(FileLock l, int nRetries, int sleepMillis) {
+    public FileLock(FileLock l, long timeout, TimeUnit units) {
         this.lockFile = l.lockFile;
-        this.nRetries = nRetries;
-        this.sleepMillis = sleepMillis;
+        this.timeout = units.toMillis(timeout);
         this.lockState = l.lockState;
     }
 
@@ -165,12 +160,30 @@ public class FileLock implements Cloneable {
                 // We already have the lock.
                 return;
             }
+            
+            state = new LockState(new RandomAccessFile(lockFile, "rw"));
+
+            //
+            // A timeout of zero means we try once and punt if we don't get it.
+            if(timeout == 0) {
+                if(lockState.size() == 0 && state.tryLock()) {
+                    state.mark();
+                    lockState.put(ct, state);
+                    return;
+                } else {
+                    throw new FileLockException("Unable to acquire lock: " +
+                            lockFile);
+                }
+            }
+
+            //
+            // When's the latest time that we'll try?
+            long startTime = System.currentTimeMillis();
+            long lastTime = startTime + timeout;
 
             //
             // Initialize the lock state.
-            state = new LockState(new RandomAccessFile(lockFile, "rw"));
-            int n = 0;
-            while(n < nRetries) {
+            while(System.currentTimeMillis() <= lastTime) {
 
                 //
                 // Try for the lock.  We check for the size of the lock state to 
@@ -179,25 +192,16 @@ public class FileLock implements Cloneable {
                     break;
                 }
 
-                n++;
-
-                //
-                // No luck locking the file, wait for our specified time (if
-                // that time is greater than 0!) and try again.
-                if(nRetries > 1 && sleepMillis > 0) {
-                    try {
-                        lockState.wait(sleepMillis);
-                    } catch(InterruptedException ie) {
-                    //
-                        // If we get interrupted, we'll just try again.
-                    }
+                try {
+                    lockState.wait(250);
+                } catch(InterruptedException ie) {
                 }
             }
 
             //
             // If we have the lock, then write the thread name
             // into the lock file so that we can debug locking problems.
-            if(state.hasLock() && n < nRetries) {
+            if(state.hasLock()) {
                 state.mark();
                 lockState.put(ct, state);
             } else {
@@ -364,15 +368,10 @@ public class FileLock implements Cloneable {
     private File lockFile;
 
     /**
-     * The number of retries before giving up on locking.
+     * The timeout for the lock.
      */
-    protected int nRetries;
-
-    /**
-     * The number of milliseconds to sleep between locking retries.
-     */
-    protected int sleepMillis;
-
+    private long timeout;
+    
     /**
      * The thread local data for the state of the locks.
      */
