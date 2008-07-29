@@ -121,6 +121,10 @@
             <sourcepath path="${src.dir}" />
             <class location="${build.classes.dir}" />
         </findbugs>
+	<replaceregexp file="${build.dir}/findbugs_output.xml"
+                       match="sourcepath=&quot;([^&quot;]*)&quot;"
+                       replace="sourcepath=&quot;minion/minion/${src.dir}/\1&quot;"
+                       byline="true"/>
     </target>
 
 
