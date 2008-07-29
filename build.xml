@@ -120,7 +120,7 @@
     <property environment="env" />
     <findbugs home="${findbugs.home}"
               output="xml"
-              outputFile="${env.WORKSPACE}/${build.dir}/findbugs_output.xml" >
+              outputFile="${env.WORKSPACE}/minion/minion/${build.dir}/findbugs_output.xml" >
       <!-- <auxClasspath path="$(src.dir}/lib/Regex.jar" /> -->
       <sourcePath path="${src.dir}" />
       <class location="${build.classes.dir}" />
