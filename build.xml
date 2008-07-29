@@ -122,7 +122,7 @@
               output="xml"
               outputFile="${build.dir}/findbugs_output.xml" >
       <!-- <auxClasspath path="$(src.dir}/lib/Regex.jar" /> -->
-      <sourcePath path="${src.dir}" />
+      <sourcePath path="minion/minion/${src.dir}" />
       <class location="${build.classes.dir}" />
     </findbugs>
   </target>
