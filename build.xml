@@ -114,18 +114,14 @@
         </delete>
     </target>
 
-  <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" onerror="report"/>
+    <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" onerror="report"/>
 
-  <target name="findbugs" depends="jar">
-    <property environment="env" />
-    <findbugs home="${findbugs.home}"
-              output="xml"
-              outputFile="${build.dir}/findbugs_output.xml" >
-      <!-- <auxClasspath path="$(src.dir}/lib/Regex.jar" /> -->
-      <sourcePath path="minion/minion/${src.dir}" />
-      <class location="${build.classes.dir}" />
-    </findbugs>
-  </target>
+    <target name="findbugs" depends="jar">
+        <findbugs home="${findbugs.home}" output="xml" outputFile="${build.dir}/findbugs_output.xml">
+            <sourcepath path="minion/${src.dir}" />
+            <class location="${build.classes.dir}" />
+        </findbugs>
+    </target>
 
 
 </project>
