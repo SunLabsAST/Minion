@@ -79,6 +79,8 @@ import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.util.DirCopier;
+import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -237,13 +239,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // The lock for our active file, which we'll try a few more times
         // than a normal lock.
-        activeLock = new FileLock(lockDirFile, activeFile, 3000, 100);
+        activeLock = new FileLock(lockDirFile, activeFile, 300, TimeUnit.SECONDS);
 
         //
         // Set up the lock for the merge.  We make this a single try, no
         // pause lock because we don't want to wait until the lock is
         // ready, we simply want to see whether we can get it.
-        mergeLock = new FileLock(lockDirFile, new File("merge." + logTag), 1, 0);
+        mergeLock = new FileLock(lockDirFile, new File("merge." + logTag), 0, TimeUnit.SECONDS);
 
         //
         // Read the active file.
@@ -1222,7 +1224,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // We're going to use a long timeout, because if we're in here, the indexer
         // is in trouble, and this needs to get taken care of!
         FileLock ourMergeLock =
-                new FileLock(mergeLock, 300, 200);
+                new FileLock(mergeLock, 60, TimeUnit.SECONDS);
         try {
             ourMergeLock.acquireLock();
         } catch(IOException ex) {
@@ -2639,7 +2641,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * partitions that are no longer in use, and reaping partitions that
      * have been removed from use.
      */
-    protected class HouseKeeper implements Runnable {
+    protected class HouseKeeper extends TimerTask {
 
         /**
          * Creates a housekeeper.

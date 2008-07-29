@@ -27,6 +27,7 @@ package com.sun.labs.minion.classification;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.util.props.ConfigComponentList;
 import com.sun.labs.util.props.ConfigString;
+import com.sun.labs.util.props.ConfigStringList;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
@@ -67,8 +68,17 @@ public class ExtraClassification implements Configurable {
     {})
     public static final String PROP_CLASSIFIER_RESULT_FIELDS =
             "classifier_result_fields";
-
+    
     private List<String> classifierResultFields;
+
+    /**
+     * A configurable list of classifier names to exclude when doing this extra
+     * classification.
+     */
+    @ConfigStringList(defaultList={})
+    public static final String PROP_EXCLUDED_CLASSIFIERS = "excluded_classifiers";
+
+    private List<String> excludedClassifiers;
 
     public String getClassifierFromField() {
         return classifierFromField;
@@ -81,6 +91,10 @@ public class ExtraClassification implements Configurable {
     public List<String> getClassifierResultFields() {
         return classifierResultFields;
     }
+    
+    public boolean isExcluded(String name) {
+        return excludedClassifiers.contains(name);
+    }
 
     public void newProperties(PropertySheet ps) throws PropertyException {
         classifierFromField = ps.getString(PROP_CLASSIFIER_FROM_FIELD);
@@ -91,6 +105,7 @@ public class ExtraClassification implements Configurable {
                 classifierResultFields.add(f + "-assigned-label");
             }
         }
+        excludedClassifiers = ps.getStringList(PROP_EXCLUDED_CLASSIFIERS);
     }
 
     private List<String> fitos(PropertySheet ps, String prop) throws PropertyException {

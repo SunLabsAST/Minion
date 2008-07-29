@@ -320,10 +320,10 @@ public class ClassifierDiskPartition extends DiskPartition {
             ClassifierModel model = getClassifier(entry);
 
             //
-            // If we have a restriction to a particular classifier field, then
-            // apply it now.
+            // If we have a restriction to a particular classifier field, or
+            // we're supposed to exclude this classifier, then check that now.
             if(ec != null &&
-                    !model.getFromField().equals(ec.getClassifierFromField())) {
+                    (!model.getFromField().equals(ec.getClassifierFromField()) || ec.isExcluded(model.getModelName()))) {
                 continue;
             }
 

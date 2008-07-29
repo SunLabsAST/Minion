@@ -1254,10 +1254,11 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
         StringBuilder desc = new StringBuilder();
         desc.append(String.format("Threshold: %.5f\n\n%d feature clusters (by importance):\n\n",
                 threshold, features.contents.size()));
-        desc.append("| *Feature Name* | *Weight* | *Contents* |\n");
+        desc.append("%%sortable\n");
+        desc.append("||Feature Name||Weight||Contents\n");
         for(Iterator i = fw.iterator(); i.hasNext();) {
             FeatureCluster fc = (FeatureCluster) i.next();
-            desc.append(String.format("|%-30s |%5.3f| ", fc.getName(),
+            desc.append(String.format("|%-30s |%5.3f |", fc.getName(),
                     fc.getWeight()));
             for(Iterator j = fc.getContents().iterator(); j.hasNext();) {
                 WeightedFeature f = (WeightedFeature) j.next();
@@ -1266,7 +1267,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
                     desc.append(", ");
                 }
             }
-            desc.append("|\n");
+            desc.append("\n");
         }
         return desc.toString();
     }
