@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.indexer.entry;
 
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.postings.DFOPostings;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -247,16 +248,26 @@ public class DFOEntry extends SinglePostingsEntry {
      * @return An iterator for the postings.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
+        QueryStats qs = features.getQueryStats();
         try {
 
+            if(qs != null) {
+                qs.postReadW.start();
+            }
             //
             // If we need field or position data, then load that.
             if(features != null && (features.getPositions() ||
                                     features.getFields() != null ||
                                     features.getMult() != null)) {
+                if(qs != null) {
+                    qs.postingsSize += fnpSize;
+                }
                 readPostings();
             } else {
 
+                if (qs != null) {
+                    qs.postingsSize += size;
+                }
                 //
                 // We only need the DFO data.
                 if(p == null && size > 0) {
@@ -273,6 +284,10 @@ public class DFOEntry extends SinglePostingsEntry {
             log.error(logTag, 1, "Error reading postings for " + name,
                       ioe);
             return null;
+        } finally {
+            if(qs != null) {
+                qs.postReadW.stop();
+            }
         }
     }
 } // DFOEntry

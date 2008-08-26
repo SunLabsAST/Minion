@@ -24,22 +24,22 @@
 
 package com.sun.labs.minion.indexer.postings;
 
+import com.sun.labs.minion.QueryStats;
 import java.util.Map;
 
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
-import com.sun.labs.minion.util.NanoWatch;
 
 /**
  * A set of features that can be used to configure various aspects of a
  * postings iterator.
  */
 public class PostingsIteratorFeatures implements Cloneable {
-    
-    public NanoWatch nw;
 
+    protected QueryStats qs;
+    
     /**
      * The weighting function that the iterator will use to calculate
      * weights.
@@ -87,7 +87,6 @@ public class PostingsIteratorFeatures implements Cloneable {
      * Creates a default set of features.
      */
     public PostingsIteratorFeatures() {
-        nw = new NanoWatch();
     } // PostingsIteratorFeatures constructor
 
     /**
@@ -143,7 +142,6 @@ public class PostingsIteratorFeatures implements Cloneable {
         this.mult          = mult;
         this.positions     = positions;
         this.caseSensitive = caseSensitive;
-        nw = new NanoWatch();
     }
 
     /**
@@ -172,6 +170,14 @@ public class PostingsIteratorFeatures implements Cloneable {
      */
     public WeightingComponents getWeightingComponents() {
         return wc;
+    }
+
+    public void setQueryStats(QueryStats qs) {
+        this.qs = qs;
+    }
+
+    public QueryStats getQueryStats() {
+        return qs;
     }
 
     /**

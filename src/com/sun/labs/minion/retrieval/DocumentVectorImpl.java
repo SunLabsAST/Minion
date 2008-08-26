@@ -32,6 +32,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import java.io.Serializable;
@@ -50,9 +51,7 @@ import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 import com.sun.labs.minion.pipeline.StopWords;
-import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.MinionLog;
-import com.sun.labs.minion.util.StopWatch;
 import com.sun.labs.minion.util.Util;
 
 /**
@@ -112,6 +111,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      */
     protected boolean normalized = false;
 
+    protected QueryStats qs = new QueryStats();
+
     protected static MinionLog log = MinionLog.getLog();
 
     protected static String logTag = "DVI";
@@ -155,7 +156,6 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         QueryConfig qc = e.getQueryConfig();
         wf = qc.getWeightingFunction();
         wc = qc.getWeightingComponents();
-
         v = basisFeatures;
 
         //
@@ -519,8 +519,6 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      * @return documents similar to the one this vector represents
      */
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
-        NanoWatch sw = new NanoWatch();
-        sw.start();
 
         //
         // If the number of terms that we'll consider is a substantial portion of
@@ -535,6 +533,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         //
         // Get the features if we need them
         getFeatures();
+
+        qs.queryW.start();
         
         //
         // OK, we can do things the usual way:  process the document vector
@@ -585,11 +585,12 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         PostingsIteratorFeatures feat =
                 new PostingsIteratorFeatures(wf, wc);
         feat.setFields(fields);
-        NanoWatch pw = new NanoWatch();
+        feat.setQueryStats(qs);
         for(DiskPartition curr : e.getManager().getActivePartitions()) {
 
             DictionaryIterator di = curr.getMainDictionaryIterator();
             ScoredQuickOr qor = new ScoredQuickOr(curr, v.length);
+            qor.setQueryStats(qs);
             qor.setField(fieldID);
 
             for(WeightedFeature f : sf) {
@@ -604,12 +605,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
                     //
                     // If we got an entry in this partition, add its postings
                     // to the quick or.
-                    feat.nw.start();
                     PostingsIterator pi = entry.iterator(feat);
-                    feat.nw.stop();
-                    pw.start();
                     qor.add(pi, f.getWeight());
-                    pw.stop();
                 } else {
                     qor.addWeightOnly(f.getWeight());
                 }
@@ -632,11 +629,12 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             sg.removeDeleted();
             groups.add(sg);
         }
+        qs.queryW.stop();
+        ((SearchEngineImpl) e).addQueryStats(qs);
         
         ResultSetImpl ret =
                 new ResultSetImpl(e, sortOrder, groups);
-        sw.stop();
-        ret.queryTime = (long) sw.getTimeMillis();
+        ret.setQueryStats(qs);
         return ret;
     }
 
@@ -657,13 +655,13 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      */
     private ResultSet bigFindSimilar(String sortOrder, double skimPercent) {
 
-        StopWatch sw = new StopWatch();
-
         //
         // Get an iterator for the terms in the document.
         PostingsIteratorFeatures feat =
                 new PostingsIteratorFeatures(wf, wc);
         feat.setFields(fields);
+        feat.setQueryStats(qs);
+        qs.queryW.start();
         PostingsIterator pi = key.iterator(feat);
         DiskPartition part =
                 (DiskPartition) key.getPartition();
@@ -808,12 +806,12 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             }
             sg.removeDeleted();
         }
+        qs.queryW.stop();
+        ((SearchEngineImpl) e).addQueryStats(qs);
 
         ResultSetImpl ret =
                 new ResultSetImpl(e, sortOrder, groups);
-        sw.stop();
-
-        ret.queryTime = sw.getTime();
+                ret.setQueryStats(qs);
 
         return ret;
     }

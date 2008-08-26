@@ -51,4 +51,7 @@ public class NanoWatch extends StopWatch {
         return getTime() / 1000000.0;
     }
 
+    public double getAvgTimeMillis() {
+        return getTimeMillis() / (double) clicks;
+    }
 }

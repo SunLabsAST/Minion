@@ -119,6 +119,12 @@ public interface ResultSet {
      * @throws com.sun.labs.minion.SearchEngineException if there is any error processing the result set
      */
     public List<Result> getAllResults(boolean sorted, ResultsFilter rf) throws SearchEngineException;
+
+    /**
+     * Gets the statistics for the query that generated this set.
+     * @return the query statistics for the query that generated this set.
+     */
+    public QueryStats getQueryStats();
     
     /**
      * Weights the results in this set.

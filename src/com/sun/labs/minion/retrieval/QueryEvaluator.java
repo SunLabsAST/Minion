@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.util.MinionLog;
 
@@ -36,7 +37,7 @@ public class QueryEvaluator {
     protected static MinionLog log = MinionLog.getLog();
     
     protected static String logTag = "EVAL";
-    
+
     /**
      * Evaluates a field term.
      *
@@ -97,5 +98,5 @@ public class QueryEvaluator {
         }
         return ret;
     }
-    
+
 } // QueryEvaluator

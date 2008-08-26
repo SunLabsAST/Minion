@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.indexer.entry;
 
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.IDPostings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -266,10 +267,17 @@ public class CasedIDEntry extends CasedEntry {
      * @return An iterator for the postings.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
+        QueryStats qs = features.getQueryStats();
         try {
+            if(qs != null) {
+                qs.postReadW.start();
+            }
             if(features == null) {
                 if(size[CI] == 0) {
                     return null;
+                }
+                if(qs != null) {
+                    qs.postingsSize += size[CI];
                 }
                 readPostings(CI);
                 return p[CI].iterator(features);
@@ -279,11 +287,17 @@ public class CasedIDEntry extends CasedEntry {
                 if(size[CS] == 0) {
                     return null;
                 }
+                if (qs != null) {
+                    qs.postingsSize += size[CS];
+                }
                 readPostings(CS);
                 return p[CS].iterator(features);
             } else {
                 if(size[CI] == 0) {
                     return null;
+                }
+                if (qs != null) {
+                    qs.postingsSize += size[CI];
                 }
                 readPostings(CI);
                 return p[CI].iterator(features);
@@ -292,6 +306,10 @@ public class CasedIDEntry extends CasedEntry {
             log.error(logTag, 1, "Error reading postings for " + name,
                       ioe);
             return null;
+        } finally {
+            if(qs != null) {
+                qs.postReadW.stop();
+            }
         }
     }
 

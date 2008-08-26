@@ -41,6 +41,7 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary.LookupState;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.DuplicateKeyException;
@@ -614,13 +615,28 @@ public class DiskPartition extends Partition implements Closeable {
      * name.
      */
     public QueryEntry getTerm(String name, boolean caseSensitive) {
+
+        return getTerm(name, caseSensitive, null);
+    }
+
+    /**
+     * Gets the term associated with a given name.
+     *
+     * @param name The name of the term.
+     * @param caseSensitive If <code>true</code> then the term should be
+     * looked up in the case that it is given.
+     * @param lus a lookup state to use for the dictionary lookup
+     * @return the entry from the main dicitionary associated with the given
+     * name.
+     */
+    public QueryEntry getTerm(String name, boolean caseSensitive, LookupState lus) {
         initMainDict();
 
         if(caseSensitive) {
-            return (QueryEntry) mainDict.get(name);
+            return mainDict.get(name, lus);
         }
 
-        return (QueryEntry) mainDict.get(CharUtils.toLowerCase(name));
+        return mainDict.get(CharUtils.toLowerCase(name), lus);
     }
 
     /**

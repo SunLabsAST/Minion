@@ -476,9 +476,10 @@ public class FieldTerm extends QueryTerm {
                 (op == MATCHES || op == SUBSTRING || op == STARTS || op == ENDS)) {
             PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
             feat.setCaseSensitive(true);
+            feat.setQueryStats(qs);
             float[] scores = new float[part.getMaxDocumentID() + 1];
             while(iter.hasNext()) {
-                QueryEntry qe = (QueryEntry) iter.next();
+                QueryEntry qe = iter.next();
                 PostingsIterator pi = qe.iterator(feat);
                 if(pi == null) {
                     continue;
@@ -509,8 +510,9 @@ public class FieldTerm extends QueryTerm {
         QuickOr or = new QuickOr(null, 2048);
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
         feat.setCaseSensitive(true);
+        feat.setQueryStats(qs);
         while(iter.hasNext()) {
-            QueryEntry qe = (QueryEntry) iter.next();
+            QueryEntry qe = iter.next();
             or.add(qe.iterator(feat));
         }
         ArrayGroup og = or.getGroup();

@@ -25,6 +25,7 @@
 package com.sun.labs.minion.indexer.entry;
 
 
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.postings.DFOPostings;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -387,6 +388,7 @@ public class CasedDFOEntry extends CasedEntry {
      * @return An iterator for the postings.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
+        QueryStats qs = features.getQueryStats();
         try {
 
             int which = CI;
@@ -398,17 +400,26 @@ public class CasedDFOEntry extends CasedEntry {
                 }
             }
 
+            if (qs != null) {
+                qs.postReadW.start();
+            }
             //
             // If we need field or position data, then load that.
             if(features != null && (features.getPositions() ||
                                     features.getFields() != null ||
                                     features.getMult() != null)) {
+                if(qs != null) {
+                    qs.postingsSize += fnpSize[which];
+                }
                 readPostings(which);
             } else {
 
                 //
                 // We only need the DFO data.
                 if(p[which] == null && size[which] > 0) {
+                    if(qs != null) {
+                        qs.postingsSize += size[which];
+                    }
                     p[which] =
                         new DFOPostings(postIn[0].read(offset[which],
                                                       size[which]));
@@ -424,6 +435,10 @@ public class CasedDFOEntry extends CasedEntry {
             log.error(logTag, 1, "Error reading postings for " + name,
                       ioe);
             return null;
+        } finally {
+            if(qs != null) {
+                qs.postReadW.stop();
+            }
         }
     }
 

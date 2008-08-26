@@ -25,6 +25,7 @@
 package com.sun.labs.minion.retrieval;
 
 
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.FieldedPostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -55,7 +56,7 @@ public class ScoredQuickOr extends QuickOr {
      * A particular field in which we're interested.
      */
     int fieldID = -1;
-    
+
     protected static MinionLog log = MinionLog.getLog();
     protected static String logTag = "SQO";
     
@@ -75,7 +76,7 @@ public class ScoredQuickOr extends QuickOr {
     public void setField(int fieldID) {
         this.fieldID = fieldID;
     }
-    
+
     /**
      * Adds the contents of a postings iterator to this quick or.
      *
@@ -92,6 +93,8 @@ public class ScoredQuickOr extends QuickOr {
         
         sqw += (qw*qw);
         
+        qs.piW.start();
+        qs.unionW.start();
         if(storeAll) {
             while(pi.next()) {
                 int d = pi.getID();
@@ -131,6 +134,8 @@ public class ScoredQuickOr extends QuickOr {
                 weights[p++] = w;
             }
         }
+        qs.piW.stop();
+        qs.unionW.stop();
     }
     
     public void add(PostingsIterator pi, float dw, float qw) {
@@ -140,6 +145,8 @@ public class ScoredQuickOr extends QuickOr {
         
         sqw += (qw*qw);
         
+        qs.piW.start();
+        qs.unionW.start();
         if(storeAll) {
             while(pi.next()) {
                 int d = pi.getID();
@@ -157,6 +164,8 @@ public class ScoredQuickOr extends QuickOr {
                 weights[p++] = dw * qw;
             }
         }
+        qs.piW.stop();
+        qs.unionW.stop();
     }
     
     /**
@@ -217,8 +226,10 @@ public class ScoredQuickOr extends QuickOr {
                 }
             }
         } else {
-            
+
+            qs.postSortW.start();
             Util.sort(docs, weights, 0, p);
+            qs.postSortW.stop();
             int   s    = -1;
             int   prev = -1;
             

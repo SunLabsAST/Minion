@@ -31,8 +31,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
-import com.sun.labs.minion.ResultAccessor;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
@@ -45,8 +45,6 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.SearchEngineException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.PriorityQueue;
 import com.sun.labs.minion.clustering.AbstractClusterer;
 
@@ -98,6 +96,11 @@ public class ResultSetImpl implements ResultSet {
     private ScoreModifier sm;
 
     /**
+     * A set of query statistics for the query that produced this set.
+     */
+    private QueryStats qs;
+
+    /**
      * The results of the search:  a list of ArrayGroups.
      */
     protected List<ArrayGroup> results;
@@ -130,19 +133,22 @@ public class ResultSetImpl implements ResultSet {
      * @param query The query typed by the user.
      * query.
      * @param e The engine against which we will run the query.
+     * @param qs The statistics to accumulate for this query.
      * @param qc The query configuration for this query.
      * @param partitions The partitions against which we will run the
      * query.
      */
     public ResultSetImpl(QueryElement query,
             QueryConfig qc,
+            QueryStats qs,
             List partitions,
             SearchEngine e) {
-        queryTime = System.currentTimeMillis();
         this.query = query;
         this.e = e;
         this.qc = qc;
+        this.qs = qs;
         this.sortSpec = new SortSpec(e.getManager(), qc.getSortSpec());
+        this.qs.queryW.start();
 
         //
         // Set up the collection-level statistics for the weighting
@@ -153,7 +159,6 @@ public class ResultSetImpl implements ResultSet {
 
         //
         // Go ahead and evaluate.
-        QueryEvaluator eval = new QueryEvaluator();
         try {
             results = (new QueryEvaluator()).eval(partitions, query);
         } catch(Exception qe) {
@@ -165,11 +170,10 @@ public class ResultSetImpl implements ResultSet {
         // In order that the document counts are accurate, we need to
         // remove deleted documents at this point.
         for(int i = 0; i < results.size(); i++) {
-            ((ArrayGroup) results.get(i)).removeDeleted(((DiskPartition) partitions.
+            results.get(i).removeDeleted(((DiskPartition) partitions.
                     get(i)).getDeletedDocumentsMap());
         }
-
-        queryTime = System.currentTimeMillis() - queryTime;
+        this.qs.queryW.stop();
     } // ResultSetImpl constructor
 
     /**
@@ -432,6 +436,7 @@ public class ResultSetImpl implements ResultSet {
             PriorityQueue<ResultImpl> sorter =
                     new PriorityQueue<ResultImpl>(start + n);
             ResultImpl curr = new ResultImpl();
+            curr.setQueryStats(qs);
 
             for(Iterator i = results.iterator(); i.hasNext();) {
                 ArrayGroup ag = (ArrayGroup) i.next();
@@ -583,6 +588,14 @@ public class ResultSetImpl implements ResultSet {
         return fres;
     }
 
+    public void setQueryStats(QueryStats qs) {
+        this.qs = qs;
+    }
+
+    public QueryStats getQueryStats() {
+        return qs;
+    }
+
     /**
      * Indicates whether the query contained a syntax error.
      *
@@ -631,7 +644,7 @@ public class ResultSetImpl implements ResultSet {
      * milliseconds.
      */
     public long getQueryTime() {
-        return queryTime;
+        return (long) qs.queryW.getTimeMillis();
     }
 
     /**

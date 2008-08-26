@@ -531,6 +531,19 @@ public interface SearchEngine extends Searcher, Classifier {
     public ResultSet getSimilar(String key, String name);
 
     /**
+     * Gets the combined query stats for any queries run by the engine.
+     * @return the combined query statistics
+     * @see resetQueryStats
+     */
+    public QueryStats getQueryStats();
+
+    /**
+     * Resets the query stats for the engine.
+     * @see getQueryStats
+     */
+    public void resetQueryStats();
+
+    /**
      * Purges all of the data in the index.  This operation is not reversible!
      */
     public void purge();

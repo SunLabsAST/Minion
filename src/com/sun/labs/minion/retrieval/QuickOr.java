@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
@@ -35,6 +36,8 @@ public class QuickOr {
      * The partition for which we're holding documents.
      */
     protected DiskPartition part;
+
+    QueryStats qs;
     
     /**
      * The documents that we're storing.
@@ -83,6 +86,10 @@ public class QuickOr {
 
         int N = part.getNDocs();
         return N < 50000 || estSize >= 0.9 * N;
+    }
+
+    public void setQueryStats(QueryStats qs) {
+        this.qs = qs;
     }
 
     public void add(PostingsIterator pi) {

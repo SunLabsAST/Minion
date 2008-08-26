@@ -95,6 +95,7 @@ import com.sun.labs.minion.PassageHighlighter;
 import com.sun.labs.minion.Posting;
 import com.sun.labs.minion.Progress;
 import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.ResultsCluster;
@@ -164,6 +165,8 @@ public class QueryTest extends SEMain {
     protected long totalTime,  nQueries;
 
     protected int grammar = Searcher.GRAMMAR_STRICT;
+    
+    protected int queryOp = Searcher.OP_AND;
 
     protected boolean ttyInput = true;
 
@@ -176,10 +179,6 @@ public class QueryTest extends SEMain {
     protected static Map<String, Integer> opMap =
             new HashMap<String, Integer>();
 
-    private static QueryConfig queryConfig = new QueryConfig();
-
-    private static IndexConfig indexConfig = new IndexConfig();
-    
     private SimpleHighlighter shigh;
 
     static {
@@ -393,6 +392,11 @@ public class QueryTest extends SEMain {
         }
     }
 
+    protected void queryStats() {
+        QueryStats eqs = engine.getQueryStats();
+        output.println(eqs.dump());
+    }
+
     /**
      * Parses the given message into an array of strings.
      *
@@ -438,11 +442,22 @@ public class QueryTest extends SEMain {
             q = q.substring(q.indexOf(' ') + 1).trim();
             try {
                 ResultSet r = searcher.search(q, sortSpec,
-                        Searcher.OP_PAND, grammar);
+                        queryOp, grammar);
                 displayResults(r);
             } catch(SearchEngineException se) {
                 log.error(logTag, 1, "Error running search", se);
             }
+        } else if(q.startsWith(":qop")) {
+            String op = q.substring(q.indexOf(' ') + 1).trim();
+            if(op.equalsIgnoreCase("and")) {
+                queryOp = Searcher.OP_AND;
+            } else if(op.equalsIgnoreCase("or")) {
+                queryOp = Searcher.OP_OR;
+            } else if(op.equalsIgnoreCase("pand")) {
+                queryOp = Searcher.OP_PAND;
+            }
+        } else if(q.startsWith(":qstats")) {
+            queryStats();
         } else if(q.startsWith(":nd")) {
             output.println("ndocs: " + engine.getNDocs());
         } else if(q.startsWith(":clust ")) {
@@ -2422,6 +2437,8 @@ public class QueryTest extends SEMain {
         }
 
         qt.engine.close();
+
+        qt.queryStats();
     }
 
     /**

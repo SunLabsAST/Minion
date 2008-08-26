@@ -43,7 +43,7 @@ public abstract class Operator extends QueryElement {
      * The query elements (<code>QueryTerm</code>s and <code>Operator</code>s)
      * that are the operands of this operator.
      */
-    protected List operands;
+    protected List<QueryElement> operands;
 
     protected static MinionLog log = MinionLog.getLog();
 
@@ -63,8 +63,8 @@ public abstract class Operator extends QueryElement {
 
         //
         // Set the partition for each of our operands.
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
-            QueryElement qe = (QueryElement) i.next();
+        for(QueryElement qe : operands) {
+            qe.setQueryStats(qs);
             qe.setPartition(part);
         }
         

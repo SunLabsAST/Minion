@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary.LookupState;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -159,10 +160,16 @@ public class DictTerm extends QueryTerm implements Comparator {
         Set variants = new HashSet();
 
         //
+        // We'll fetch the main dictionary for this partition and get a lookup
+        // state that we can use for multiple lookups.
+        LookupState lus = part.getMainDictionary().getLookupState();
+        lus.setQueryStats(qs);
+
+        //
         // We'll start with the term itself, unless we're doing a wildcard.
         if(!doWild) {
             if (val != null) {
-                QueryEntry e = part.getTerm(val, matchCase);
+                QueryEntry e = part.getTerm(val, matchCase, lus);
                 if(e != null) {
                     variants.add(e);
                 }
@@ -173,7 +180,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         // Knowledge Variants are up next.
         if(doMorph) {
             for(int i = 0; i < knowledgeVariants.length; i++) {
-                QueryEntry me = part.getTerm(knowledgeVariants[i], matchCase);
+                QueryEntry me = part.getTerm(knowledgeVariants[i], matchCase, lus);
                 if(me != null) {
                     variants.add(me);
                 }
@@ -212,7 +219,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         // Do semantic expansion.
         if(doExpand) {
             for(int i = 0; i < semanticVariants.length; i++) {
-                QueryEntry me = part.getTerm(semanticVariants[i], matchCase);
+                QueryEntry me = part.getTerm(semanticVariants[i], matchCase, lus);
                 if(me != null) {
                     variants.add(me);
                 }
@@ -271,6 +278,7 @@ public class DictTerm extends QueryTerm implements Comparator {
             feat.setFields(searchFields);
             feat.setCaseSensitive(matchCase);
             feat.setPositions(loadPositions);
+            feat.setQueryStats(qs);
 
             if(!strictEval) {
                 feat.setWeightingFunction(wf);
@@ -282,6 +290,7 @@ public class DictTerm extends QueryTerm implements Comparator {
             QuickOr or = strictEval ?
                 new QuickOr(part, estSize) :
                 new ScoredQuickOr(part, estSize);
+            or.setQueryStats(qs);
             for(int i = 0; i < dictEntries.length; i++) {
                 wc.setTerm((String) dictEntries[i].getName());
                 float qw = wf.initTerm(wc);
@@ -335,10 +344,12 @@ public class DictTerm extends QueryTerm implements Comparator {
                                          fieldMultipliers,
                                          loadPositions,
                                          matchCase);
+        feat.setQueryStats(qs);
 
         //
         // Loop through our terms.
         float sqw = 0;
+        qs.intersectW.start();
         for(int i = 0; i < dictEntries.length; i++) {
 
             //
@@ -362,6 +373,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                 //
                 // Loop through the documents in the set, trying to find
                 // them in the ierator.
+                qs.piW.start();
                 for(int j = 0; j < ag.size; j++) {
 
                     //
@@ -375,6 +387,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                         scores[j] += pi.getWeight() * qw;
                     }
                 }
+                qs.piW.stop();
             } else {
 
                 //
@@ -390,6 +403,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                 }
             }
         }
+        qs.intersectW.stop();
 	
         //
         // Make a new set with only the docs that got used.  This may be a
@@ -444,10 +458,12 @@ public class DictTerm extends QueryTerm implements Comparator {
                                          fieldMultipliers,
                                          loadPositions,
                                          matchCase);
+        feat.setQueryStats(qs);
 
         //
         // Loop through our terms.
         float sqw = 0;
+        qs.intersectW.start();
         for(int i = 0; i < dictEntries.length; i++) {
             wc.setTerm((String) dictEntries[i].getName());
             float qw = wf.initTerm(wc);
@@ -466,6 +482,7 @@ public class DictTerm extends QueryTerm implements Comparator {
             // findID too many times.
             if(dictEntries[i].getN() < 10 * ag.size) {
 
+                qs.piW.start();
                 //
                 // Loop through the documents in the set, trying to find
                 // them in the ierator.
@@ -476,6 +493,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                         scores[j] += pi.getWeight() * qw;
                     }
                 }
+                qs.piW.stop();
             } else {
 
                 //
@@ -488,6 +506,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                 }
             }
         }
+        qs.intersectW.stop();
 	
         //
         // Make a new set with only the docs that got used.
@@ -555,6 +574,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                                              fieldMultipliers,
                                              loadPositions,
                                              matchCase);
+            feat.setQueryStats(qs);
 
             pis = new PosPostingsIterator[dictEntries.length];
             for(int i = 0; i < dictEntries.length; i++) {

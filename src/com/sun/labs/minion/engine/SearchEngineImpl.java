@@ -51,6 +51,7 @@ import com.sun.labs.minion.MetaDataStore;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.Progress;
 import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
@@ -109,6 +110,7 @@ import com.sun.labs.minion.retrieval.QuickOr;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.parser.LuceneParser;
 import com.sun.labs.minion.retrieval.parser.StrictParser;
+import com.sun.labs.minion.retrieval.parser.TokenMgrError;
 import com.sun.labs.minion.retrieval.parser.WebParser;
 import java.util.Set;
 
@@ -242,6 +244,7 @@ public class SearchEngineImpl implements SearchEngine,
      */
     public SearchEngineImpl() {
         memBean = ManagementFactory.getMemoryMXBean();
+        qs = new QueryStats();
     }
 
     public FieldInfo defineField(FieldInfo field)
@@ -558,6 +561,9 @@ public class SearchEngineImpl implements SearchEngine,
             log.debug(logTag, 4, "Parse error", ex);
             String msg = ex.getMessage().substring(0, ex.getMessage().indexOf('\n'));
             throw new SearchEngineException("Error parsing query: " + msg);
+        } catch(TokenMgrError tme) {
+            log.debug(logTag, 4, "Parse error", tme);
+            throw new SearchEngineException("Error parsing query: " + tme);
         }
 
         try {
@@ -588,7 +594,11 @@ public class SearchEngineImpl implements SearchEngine,
             qe.setQueryConfig(cqc);
             cqc.setCollectionStats(cs);
             cqc.setSortSpec(sortOrder);
-            return new ResultSetImpl(qe, cqc, parts, this);
+            QueryStats lqs = new QueryStats();
+            qe.setQueryStats(lqs);
+            ResultSetImpl rsi = new ResultSetImpl(qe, cqc, lqs, parts, this);
+            qs.accumulate(lqs);
+            return rsi;
         } catch(Exception e) {
             log.error(logTag, 1, "Error evaluating query", e);
             throw new SearchEngineException("Error evaluating query", e);
@@ -597,6 +607,18 @@ public class SearchEngineImpl implements SearchEngine,
             throw new SearchEngineException("Throwable error evaluating query",
                     null);
         }
+    }
+
+    public QueryStats getQueryStats() {
+        return qs;
+    }
+
+    public void resetQueryStats() {
+        qs = new QueryStats();
+    }
+
+    public void addQueryStats(QueryStats qs) {
+        this.qs.accumulate(qs);
     }
 
     /**
@@ -1666,6 +1688,8 @@ public class SearchEngineImpl implements SearchEngine,
     public static final String PROP_LONG_INDEXING_RUN = "long_indexing_run";
 
     private boolean longIndexingRun;
+
+    private QueryStats qs;
 
     public List getProfilers() {
         return profilers;

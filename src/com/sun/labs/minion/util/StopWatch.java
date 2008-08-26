@@ -66,6 +66,10 @@ public class StopWatch  {
 	return time;
     }
 
+    public double getAvgTime() {
+        return getTime() / (double) clicks;
+    }
+
     /**
      * Gets the number of times that the watch was started and stopped since the last
      * reset.
@@ -74,6 +78,14 @@ public class StopWatch  {
      */
     public int getClicks() {
 	return clicks;
+    }
+
+    public void accumulate(StopWatch sw) {
+        if(sw == null) {
+            return;
+        }
+        time += sw.time;
+        clicks += sw.clicks;
     }
 
     /**

@@ -25,8 +25,8 @@
 package com.sun.labs.minion.indexer.entry;
 
 
-import com.sun.labs.minion.indexer.*;
 
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.Postings;
@@ -317,12 +317,21 @@ public abstract class SinglePostingsEntry extends BaseEntry {
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
         if(p == null) {
+            QueryStats qs = features.getQueryStats();
             try {
+                if(qs != null) {
+                    qs.postReadW.start();
+                    qs.postingsSize += size;
+                }
                 readPostings();
             } catch (java.io.IOException ioe) {
                 log.error(logTag, 1, "Error reading postings for " +
                         name);
                 return null;
+            } finally {
+                if (qs != null) {
+                    qs.postReadW.stop();
+                }
             }
         }
         

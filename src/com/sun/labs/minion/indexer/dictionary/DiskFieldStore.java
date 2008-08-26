@@ -435,9 +435,7 @@ public class DiskFieldStore extends FieldStore {
         
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
         feat.setCaseSensitive(caseSensitive);
-        feat.nw.start();
         PostingsIterator pi = e.iterator(feat);
-        feat.nw.stop();
         return pi;
     }
     

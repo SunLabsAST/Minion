@@ -29,6 +29,7 @@ import java.util.List;
 
 import com.sun.labs.minion.QueryConfig;
 
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
@@ -45,6 +46,11 @@ public abstract class QueryElement implements Comparable {
      * A partition upon which retrieval will be performed.
      */
     protected DiskPartition part;
+
+    /**
+     * A set of query statistics for this query.
+     */
+    protected QueryStats qs;
 
     /**
      * The query configuration for this particular query.
@@ -139,6 +145,20 @@ public abstract class QueryElement implements Comparable {
     }
 
     /**
+     * Sets the query statistics.
+     */
+    public void setQueryStats(QueryStats qs) {
+        this.qs = qs;
+    }
+
+    /**
+     * Gets the set of query stats for this element.
+     */
+    public QueryStats getQueryStats() {
+        return qs;
+    }
+
+    /**
      * Sets the current weighting function.  This should be propagated to
      * any components of the query element.
      */
@@ -221,7 +241,7 @@ public abstract class QueryElement implements Comparable {
         if (searchFieldNames == null) {
             return new String[0];
         }
-        return (String[])searchFieldNames.clone();
+        return searchFieldNames.clone();
     }
 
 

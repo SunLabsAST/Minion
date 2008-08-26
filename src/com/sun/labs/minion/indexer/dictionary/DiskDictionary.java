@@ -24,13 +24,7 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
-import com.sun.labs.minion.indexer.entry.Entry;
-import com.sun.labs.minion.indexer.entry.IndexEntry;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.partition.Partition;
-import com.sun.labs.minion.indexer.postings.io.ChannelPostingsInput;
-import com.sun.labs.minion.util.Util;
+import com.sun.labs.minion.QueryStats;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -386,16 +380,8 @@ public class DiskDictionary implements Dictionary {
         return null;
     }
 
-    /**
-     * Gets a entry from the dictionary, given the name for the entry.
-     *
-     * @param name The name of the entry to get.
-     * @return The entry associated with the name, or <code>null</code> if
-     * the name doesn't appear in the dictionary.
-     */
-    public QueryEntry get(Object name) {
-        return get(name, names.duplicate(), nameOffsets.duplicate(),
-                entryInfo.duplicate(), entryInfoOffsets.duplicate());
+    public LookupState getLookupState() {
+        return new LookupState();
     }
 
     /**
@@ -405,22 +391,40 @@ public class DiskDictionary implements Dictionary {
      * @return The entry associated with the name, or <code>null</code> if
      * the name doesn't appear in the dictionary.
      */
-    protected QueryEntry get(Object name,
-            ReadableBuffer localNames,
-            ReadableBuffer localNameOffsets,
-            ReadableBuffer localInfo,
-            ReadableBuffer localInfoOffsets) {
+    public QueryEntry get(Object name) {
+        return get(name, new LookupState());
+    }
+
+    /**
+     * Gets a entry from the dictionary, given the name for the entry.
+     *
+     * @param name The name of the entry to get.
+     * @return The entry associated with the name, or <code>null</code> if
+     * the name doesn't appear in the dictionary.
+     */
+    public QueryEntry get(Object name, LookupState lus) {
+
+        if(lus == null) {
+            lus = new LookupState();
+        }
+        
+        lus.qs.dictLookups++;
+        lus.qs.dictLookupW.start();
 
         //
         // Check our cache first.
-        QueryEntry e;
+        QueryEntry ret = null;;
         synchronized(nameCache) {
-            e = nameCache.get(name);
+            ret = nameCache.get(name);
         }
-        if(e != null) {
-            return (QueryEntry) e.getEntry();
+        if(ret != null) {
+            lus.qs.dictCacheHits++;
+            lus.qs.dictLookupW.stop();
+            return (QueryEntry) ret.getEntry();
         }
 
+        lus.qs.dictCacheMisses++;
+        
         //
         // Finding a entry by name is a two-step process.  First, the
         // position of the entry is determined by performing a binary
@@ -430,31 +434,24 @@ public class DiskDictionary implements Dictionary {
         // entry id.
         //
         // Find the position (if any) of this entry:
-        int pos = findPos(name, localNameOffsets, localNames);
+        int pos = findPos(name, lus);
+        if ((pos >= 0) || (pos < dh.size)) {
+            //
+            // The entry exists in the dictionary.  Look it up by position.
+            ret = find(pos, lus);
 
-        if((pos < 0) || (pos >= dh.size)) {
-            // The entry was not found; don't bother invoking
-            // the rest of the find code.
-            return null;
-        }
-
-        //
-        // If the above check passed, then the entry exists in
-        // the dictionary.  Look it up by position.
-        e = find(pos, localNames, localNameOffsets, localInfo,
-                localInfoOffsets);
-
-        //
-        // Put the name in our name cache and our position cache.
-        if(e != null) {
-            synchronized(posnCache) {
-                posnCache.put(new Integer(pos), e);
-                nameCache.put(name, e);
+            //
+            // Cache the entry.
+            if (ret != null) {
+                synchronized (posnCache) {
+                    posnCache.put(new Integer(pos), ret);
+                    nameCache.put(name, ret);
+                }
             }
-            return (QueryEntry) e.getEntry();
         }
 
-        return null;
+        lus.qs.dictLookupW.stop();
+        return ret;
     }
 
     /**
@@ -465,22 +462,18 @@ public class DiskDictionary implements Dictionary {
      * our dictionary.
      */
     public QueryEntry get(int id) {
-        return get(id, names.duplicate(), nameOffsets.duplicate(),
-                entryInfo.duplicate(), entryInfoOffsets.duplicate());
+        return get(id, getLookupState());
     }
 
     /**
      * Gets a entry from the dictionary, given the ID for the entry.
      *
      * @param id the ID to find.
+     * @param lus the current lookup state
      * @return The block, or <code>null</code> if the ID doesn't occur in
      * our dictionary.
      */
-    protected QueryEntry get(int id,
-            ReadableBuffer localNames,
-            ReadableBuffer localNameOffsets,
-            ReadableBuffer localInfo,
-            ReadableBuffer localInfoOffsets) {
+    protected QueryEntry get(int id, LookupState lus) {
 
         //
         // We need to map from the given ID to a position in the
@@ -506,8 +499,7 @@ public class DiskDictionary implements Dictionary {
         }
 
         QueryEntry e =
-                find(posn, localNames, localNameOffsets, localInfo,
-                localInfoOffsets);
+                find(posn, lus);
 
         //
         // We'll cache the name for later if we got one.
@@ -538,10 +530,8 @@ public class DiskDictionary implements Dictionary {
      * that the return value will be >= 0 if and only if the given entry
      * is found in the block.
      */
-    protected int findPos(Object key,
-            ReadableBuffer localOffsets,
-            ReadableBuffer localNames) {
-        return findPos(key, localOffsets, localNames, false);
+    protected int findPos(Object key, LookupState lus) {
+        return findPos(key, lus, false);
     }
 
     /**
@@ -563,9 +553,7 @@ public class DiskDictionary implements Dictionary {
      * @param partial if true, treat key as a stem and return as soon
      * as a partial match (one that begins with the stem) is found
      */
-    protected int findPos(Object key,
-            ReadableBuffer localOffsets,
-            ReadableBuffer localNames, boolean partial) {
+    protected int findPos(Object key, LookupState lus, boolean partial) {
 
         //
         // Perform a binary search of the entries that are found at
@@ -595,13 +583,13 @@ public class DiskDictionary implements Dictionary {
                 //
                 // Get the offset of the uncompressed entry.
                 int offset =
-                        localOffsets.byteDecode(dh.nameOffsetsBytes * mid,
+                        lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes * mid,
                         dh.nameOffsetsBytes);
 
                 //
                 // Get the name of the entry at that position.
-                localNames.position(offset);
-                compare = decoder.decodeName(null, localNames);
+                lus.localNames.position(offset);
+                compare = decoder.decodeName(null, lus.localNames);
 
                 //
                 // Cache this one.
@@ -666,17 +654,17 @@ public class DiskDictionary implements Dictionary {
         // Walk this block of entries.  Note we're possibly re-decoding one
         // entry, but we won't worry about this until absolutely necessary.
         int offset =
-                localOffsets.byteDecode(dh.nameOffsetsBytes * mid,
+                lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes * mid,
                 dh.nameOffsetsBytes);
 
-        localNames.position(offset);
+        lus.localNames.position(offset);
 
         //
         // The name of the previous entry.
         Object prev = null;
         for(int i = 0,  index = mid * 4 + i; i < 4 && index < dh.size; i++, index++) {
 
-            Object compare = decoder.decodeName(prev, localNames);
+            Object compare = decoder.decodeName(prev, lus.localNames);
 
             //
             // If we're looking for partial matches, check
@@ -717,17 +705,9 @@ public class DiskDictionary implements Dictionary {
      * Finds the entry at the given position in this dictionary.
      * @return The entry at the given position, or <code>null</code> if
      * there is no entry at that position in this block.
-     * @param localInfo a local copy of the entry information buffer
-     * @param localInfoOffsets a local copy of the entry information offsets buffer
-     * @param posn The position of the entry to find.
-     * @param localOffsets A copy of the name offsets buffer.
-     * @param localNames a copy of the names buffer.
+     * @param lus the current state of the lookup
      */
-    protected QueryEntry find(int posn,
-            ReadableBuffer localNames,
-            ReadableBuffer localOffsets,
-            ReadableBuffer localInfo,
-            ReadableBuffer localInfoOffsets) {
+    protected QueryEntry find(int posn, LookupState lus) {
 
         //
         // Bounds check.
@@ -744,23 +724,23 @@ public class DiskDictionary implements Dictionary {
         //
         // Get the offset of the uncompressed entry.
         int offset =
-                localOffsets.byteDecode(dh.nameOffsetsBytes * ui,
+                lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes * ui,
                 dh.nameOffsetsBytes);
 
         //
         // Get the name of the entry at that position.
-        localNames.position(offset);
-        Object name = decoder.decodeName(null, localNames);
+        lus.localNames.position(offset);
+        Object name = decoder.decodeName(null, lus.localNames);
 
         //
         // Walk ahead and get the name of the entry we want.
         for(int i = 0; i < n; i++) {
-            name = decoder.decodeName(name, localNames);
+            name = decoder.decodeName(name, lus.localNames);
         }
 
         //
         // Get an entry and return it.
-        return newEntry(name, posn, localInfoOffsets, localInfo, postIn);
+        return newEntry(name, posn, lus, postIn);
     }
 
     /**
@@ -774,8 +754,7 @@ public class DiskDictionary implements Dictionary {
      * @return The filled entry.
      */
     protected QueryEntry newEntry(Object name, int posn,
-            ReadableBuffer localInfoOffsets,
-            ReadableBuffer localInfo,
+            LookupState lus,
             PostingsInput[] postIn) {
 
         //
@@ -790,9 +769,9 @@ public class DiskDictionary implements Dictionary {
         //
         // Get the offset in the entry information buffer where we can
         // find the information for this entry.
-        int offset = localInfoOffsets.byteDecode(posn * dh.entryInfoOffsetsBytes,
+        int offset = lus.localInfoOffsets.byteDecode(posn * dh.entryInfoOffsetsBytes,
                 dh.entryInfoOffsetsBytes);
-        ret.decodePostingsInfo(localInfo, offset);
+        ret.decodePostingsInfo(lus.localInfo, offset);
         return ret;
     }
 
@@ -1803,6 +1782,30 @@ public class DiskDictionary implements Dictionary {
     }
 
     /**
+     * A class that can be used to encapsulate the dictionary state when doing
+     * multiple lookups during querying.
+     */
+    public class LookupState {
+        ReadableBuffer localNames;
+        ReadableBuffer localNameOffsets;
+        ReadableBuffer localInfo;
+        ReadableBuffer localInfoOffsets;
+        QueryStats qs;
+
+        public LookupState() {
+            localNames = names.duplicate();
+            localNameOffsets = nameOffsets.duplicate();
+            localInfo = entryInfo.duplicate();
+            localInfoOffsets = entryInfoOffsets.duplicate();
+            qs = new QueryStats();
+        }
+
+        public void setQueryStats(QueryStats qs) {
+            this.qs = qs;
+        }
+    }
+
+    /**
      * A class that can be used as an iterator for this block.
      */
     public class DiskDictionaryIterator implements DictionaryIterator,
@@ -1819,24 +1822,9 @@ public class DiskDictionary implements Dictionary {
         protected int pos;
 
         /**
-         * A copy of the names.
+         * Our lookup state.
          */
-        protected ReadableBuffer localNames;
-
-        /**
-         * A copy of the name offsets.
-         */
-        protected ReadableBuffer localOffsets;
-
-        /**
-         * A copy of the term info.
-         */
-        protected ReadableBuffer localInfo;
-
-        /**
-         * A copy of the term info offsets.
-         */
-        protected ReadableBuffer localInfoOffsets;
+        protected LookupState lus;
 
         /**
          * The name of the previous entry.
@@ -1900,16 +1888,13 @@ public class DiskDictionary implements Dictionary {
         public DiskDictionaryIterator(Object startEntry, boolean includeStart,
                 Object stopEntry, boolean includeStop) {
 
-            localOffsets = nameOffsets.duplicate();
-            localNames = names.duplicate();
-            localInfo = entryInfo.duplicate();
-            localInfoOffsets = entryInfoOffsets.duplicate();
+            lus = new LookupState();
             pos = 0;
             startPos = 0;
             stopPos = dh.size;
 
             if(startEntry != null) {
-                startPos = findPos(startEntry, localOffsets, localNames);
+                startPos = findPos(startEntry, lus);
 
                 //
                 // If startPos evaluated to a entry that is not
@@ -1925,7 +1910,7 @@ public class DiskDictionary implements Dictionary {
             }
 
             if(stopEntry != null) {
-                stopPos = findPos(stopEntry, localOffsets, localNames);
+                stopPos = findPos(stopEntry, lus);
 
                 //
                 // If stopPos evaluated to a entry that is not
@@ -1949,12 +1934,10 @@ public class DiskDictionary implements Dictionary {
             // Now position the buffer and seed the next() call:
             if(startPos != 0) {
                 // Reposition to the start
-                QueryEntry temp =
-                        find(startPos - 1, localNames, localOffsets, localInfo,
-                        localInfoOffsets);
+                QueryEntry temp = find(startPos - 1, lus);
                 prevName = temp.getName();
             } else {
-                localNames.position(0);
+                lus.localNames.position(0);
             }
 
             pos = startPos;
@@ -1979,15 +1962,12 @@ public class DiskDictionary implements Dictionary {
          * it will be limited to that number.
          */
         public DiskDictionaryIterator(int begin, int end) {
-            localOffsets = nameOffsets.duplicate();
-            localNames = names.duplicate();
-            localInfo = entryInfo.duplicate();
-            localInfoOffsets = entryInfoOffsets.duplicate();
+            lus = new LookupState();
             pos = 0;
             startPos = Math.max(0, begin);
             stopPos = Math.min(end, dh.size);
 
-            localNames.position(0);
+            lus.localNames.position(0);
             pos = startPos;
 
             buffChans = getBufferedInputs();
@@ -2026,9 +2006,8 @@ public class DiskDictionary implements Dictionary {
             // We'll need to loop until we find an appropriate entry.
             while(pos < stopPos) {
                 try {
-                    Object name = decoder.decodeName(prevName, localNames);
-                    curr = newEntry(name, pos, localInfoOffsets, localInfo,
-                            buffChans);
+                    Object name = decoder.decodeName(prevName, lus.localNames);
+                    curr = newEntry(name, pos, lus, buffChans);
                     prevName = name;
                     pos++;
                 } catch(StringIndexOutOfBoundsException sib) {
@@ -2090,10 +2069,10 @@ public class DiskDictionary implements Dictionary {
                 return estSize;
             }
             estSize = 0;
-            localInfoOffsets.position(startPos * dh.entryInfoOffsetsBytes);
+            lus.localInfoOffsets.position(startPos * dh.entryInfoOffsetsBytes);
             for(int i = startPos; i < stopPos; i++) {
-                localInfo.position(localInfoOffsets.byteDecode(dh.entryInfoOffsetsBytes));
-                estSize += localInfo.byteDecode();
+                lus.localInfo.position(lus.localInfoOffsets.byteDecode(dh.entryInfoOffsetsBytes));
+                estSize += lus.localInfo.byteDecode();
             }
             return estSize;
         }
@@ -2103,13 +2082,11 @@ public class DiskDictionary implements Dictionary {
         }
 
         public QueryEntry get(int id) {
-            return DiskDictionary.this.get(id, localNames, localOffsets,
-                    localInfo, localInfoOffsets);
+            return DiskDictionary.this.get(id, lus);
         }
 
         public QueryEntry get(Object name) {
-            return DiskDictionary.this.get(name, localNames, localOffsets,
-                    localInfo, localInfoOffsets);
+            return DiskDictionary.this.get(name, lus);
         }
     }
 
@@ -2123,25 +2100,7 @@ public class DiskDictionary implements Dictionary {
          */
         protected int posn;
 
-        /**
-         * A copy of the names.
-         */
-        protected ReadableBuffer localNames;
-
-        /**
-         * A copy of the name offsets.
-         */
-        protected ReadableBuffer localOffsets;
-
-        /**
-         * A copy of the term info.
-         */
-        protected ReadableBuffer localInfo;
-
-        /**
-         * A copy of the term info offsets.
-         */
-        protected ReadableBuffer localInfoOffsets;
+        protected LookupState lus;
 
         /**
          * The name of the previous entry.
@@ -2149,12 +2108,9 @@ public class DiskDictionary implements Dictionary {
         protected Object prevName;
 
         public LightDiskDictionaryIterator() {
-            localOffsets = nameOffsets.duplicate();
-            localNames = names.duplicate();
-            localInfo = entryInfo.duplicate();
-            localInfoOffsets = entryInfoOffsets.duplicate();
+            lus = new LookupState();
             posn = -1;
-            localNames.position(0);
+            lus.localNames.position(0);
         }
 
         public boolean next() {
@@ -2162,7 +2118,7 @@ public class DiskDictionary implements Dictionary {
             if(posn >= dh.size) {
                 return false;
             }
-            prevName = decoder.decodeName(prevName, localNames);
+            prevName = decoder.decodeName(prevName, lus.localNames);
             return true;
         }
 
@@ -2171,13 +2127,13 @@ public class DiskDictionary implements Dictionary {
         }
 
         public int getN() {
-            localInfoOffsets.position(posn * dh.entryInfoOffsetsBytes);
-            localInfo.position(localInfoOffsets.byteDecode(dh.entryInfoOffsetsBytes));
-            return localInfo.byteDecode();
+            lus.localInfoOffsets.position(posn * dh.entryInfoOffsetsBytes);
+            lus.localInfo.position(lus.localInfoOffsets.byteDecode(dh.entryInfoOffsetsBytes));
+            return lus.localInfo.byteDecode();
         }
 
         public QueryEntry getEntry() {
-            return newEntry(prevName, posn, localInfoOffsets, localInfo, postIn);
+            return newEntry(prevName, posn, lus, postIn);
         }
 
         public int getID() {

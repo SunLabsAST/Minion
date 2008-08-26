@@ -36,6 +36,7 @@ import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.PassageBuilder;
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultAccessor;
 import com.sun.labs.minion.ResultSet;
@@ -88,6 +89,11 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable, Result
      * The field values used to sort this document.
      */
     protected Object[] fields;
+
+    /**
+     * A set of query statistics.
+     */
+    protected QueryStats qs;
     
     protected static MinionLog log = MinionLog.getLog();
     protected static String logTag = "RI";
@@ -241,6 +247,10 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable, Result
     
     public void setScore(float score) {
         this.score = score;
+    }
+
+    public void setQueryStats(QueryStats qs) {
+        this.qs = qs;
     }
     
     /**
