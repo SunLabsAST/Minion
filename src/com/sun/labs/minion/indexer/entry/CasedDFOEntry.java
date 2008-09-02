@@ -388,7 +388,12 @@ public class CasedDFOEntry extends CasedEntry {
      * @return An iterator for the postings.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
-        QueryStats qs = features.getQueryStats();
+        QueryStats qs = null;
+        
+        if(features != null) {
+            qs = features.getQueryStats();
+        }
+        
         try {
 
             int which = CI;
