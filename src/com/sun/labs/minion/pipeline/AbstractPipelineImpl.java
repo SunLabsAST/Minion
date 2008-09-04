@@ -192,6 +192,9 @@ public abstract class AbstractPipelineImpl implements Pipeline {
             //
             // Get an input stream for the file, and then make a
             // markup analyzer for it.
+            if(fi != null) {
+                head.startField(fi);
+            }
             File file = (File) val;
             if(file.isFile()) {
                 FileInputStream fis = new FileInputStream(file);
@@ -211,6 +214,9 @@ public abstract class AbstractPipelineImpl implements Pipeline {
                     isr.close();
                 }
                 docSize += file.length();
+                if(fi != null) {
+                    head.endField(fi);
+                }
             } else {
                 log.warn(logTag, 3, file + " is not a file");
             }
