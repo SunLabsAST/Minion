@@ -269,7 +269,7 @@ public class QueryTest extends SEMain {
                 ":ffs <field> <dockey> [<skim>]   Find documents similar to a doc based on a particular field\n" +
                 ":cfs <dockey> <field> <weight> ... [<skim>]   Find documents similar to a doc based on a particular field combination\n" +
                 ":dv <dockey>            Show the document vector for a doc\n" +
-                ":fdv <field> <dockey>   Show the document vector for a field in a doc\n" +
+                ":fdv <dockey> <field>   Show the document vector for a field in a doc\n" +
                 ":ft <field> <op> <val>  Evaluate a field query\n" +
                 ":del <dockey>           Deletes the document\n" +
                 ":deld <partNum> <docid> [<docid...] Deletes the documents from the given partition\n" +
