@@ -394,11 +394,16 @@ public class DiskPartition extends Partition implements Closeable {
      * document key
      * @param key the document key
      * @return the entry in the document dictionary for this key or <code>null</code>
-     * if this key does not occur in the document dictionary.
+     * if this key does not occur in the document dictionary or if the document
+     * existed in this partition, but it was deleted.
      */
     public DocKeyEntry getDocumentTerm(String key) {
         initDocDict();
-        return (DocKeyEntry) docDict.get(key);
+        DocKeyEntry dke = (DocKeyEntry) docDict.get(key);
+        if(dke != null && isDeleted(dke.getID())) {
+            return null;
+        }
+        return dke;
     }
 
     /**
@@ -406,7 +411,8 @@ public class DiskPartition extends Partition implements Closeable {
      * document ID
      * @param docID the document ID
      * @return the entry in the document dictionary for this key or <code>null</code>
-     * if this key does not occur in the document dictionary.
+     * if this id does not occur in the document dictionary.  Note that this may
+     * return the entry for a document that has been deleted!
      */
     public DocKeyEntry getDocumentTerm(int docID) {
         initDocDict();

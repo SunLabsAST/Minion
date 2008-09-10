@@ -931,10 +931,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     public DocKeyEntry getDocumentTerm(String key) {
         synchronized(activeParts) {
-            for(Iterator i = activeParts.iterator(); i.hasNext();) {
-                DiskPartition p = (DiskPartition) i.next();
+            for(DiskPartition p : activeParts) {
                 DocKeyEntry dt = p.getDocumentTerm(key);
-                if(dt != null && !p.isDeleted(dt.getID())) {
+                if(dt != null) {
                     return dt;
                 }
             }
@@ -967,14 +966,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * associated document has been deleted.
      */
     public DocumentVector getDocumentVector(String key, String field) {
-        synchronized(activeParts) {
-            for(Iterator i = activeParts.iterator(); i.hasNext();) {
-                DiskPartition p = (DiskPartition) i.next();
-                DocKeyEntry dt = p.getDocumentTerm(key);
-                if(dt != null) {
-                    return new DocumentVectorImpl(engine, dt, field);
-                }
-            }
+        DocKeyEntry dt = getDocumentTerm(key);
+        if(dt != null) {
+            return new DocumentVectorImpl(engine, dt, field);
         }
         return null;
     }
@@ -983,16 +977,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * Gets a composite document vector for the given document key.
      * @param key the key of the document for which we want a vector
      * @param fields the fields for which we want a document vector.
+     * @return the document vector for the document with the given key, or
+     * <code>null</code> if this key does not appear in the index or if the
+     * associated document has been deleted.
      */
     public DocumentVector getDocumentVector(String key, WeightedField[] fields) {
-        synchronized(activeParts) {
-            for(Iterator i = activeParts.iterator(); i.hasNext();) {
-                DiskPartition p = (DiskPartition) i.next();
-                DocKeyEntry dt = p.getDocumentTerm(key);
-                if(dt != null) {
-                    return new CompositeDocumentVectorImpl(engine, dt, fields);
-                }
-            }
+        DocKeyEntry dt = getDocumentTerm(key);
+        if(dt != null) {
+            return new CompositeDocumentVectorImpl(engine, dt, fields);
         }
         return null;
     }
