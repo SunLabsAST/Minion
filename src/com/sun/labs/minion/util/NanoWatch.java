@@ -24,10 +24,12 @@
 
 package com.sun.labs.minion.util;
 
+import java.io.Serializable;
+
 /**
  * A nanosecond stop watch.
  */
-public class NanoWatch extends StopWatch {
+public class NanoWatch extends StopWatch implements Serializable {
 
     /**
      * Starts the timer.

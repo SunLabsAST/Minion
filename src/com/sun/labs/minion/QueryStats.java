@@ -24,11 +24,12 @@
 package com.sun.labs.minion;
 
 import com.sun.labs.minion.util.NanoWatch;
+import java.io.Serializable;
 
 /**
  *  A class to hold statistics generated during a single or many queries.
  */
-public class QueryStats {
+public class QueryStats implements Serializable {
 
     /**
      * The number of main dictionary lookups done during the query.

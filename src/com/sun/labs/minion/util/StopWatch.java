@@ -24,10 +24,12 @@
 
 package com.sun.labs.minion.util;
 
+import java.io.Serializable;
+
 /**
  * A class implementing a simple stop watch that can be used for timing.
  */
-public class StopWatch  {
+public class StopWatch implements Serializable {
     
     /**
      * Creates a new stop watch.
