@@ -139,25 +139,10 @@ public abstract class Tokenizer extends StageAdapter implements com.sun.labs.uti
      */
     public void startField(FieldInfo fi) {
         flush();
-
-        if(!fi.isIndexed()) {
-
-            //
-            // This field should not be tokenized.
-            makeTokens = false;
-                        indexed = false;
-        }
-
-        if(fi.isSaved()) {
-	    
-            //
-            // The data in this field must be saved exactly as is.
-            saveData = true;
-
-            if(fi.isTrimmed()) {
-                trimSpaces = true;
-            }
-        }
+        makeTokens = fi.isTokenized();
+        indexed = fi.isIndexed();
+        saveData = fi.isSaved();
+        trimSpaces = fi.isTrimmed();
         downstream.startField(fi);
     }
 
