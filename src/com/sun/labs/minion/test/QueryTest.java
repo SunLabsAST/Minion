@@ -243,6 +243,7 @@ public class QueryTest extends SEMain {
                 ":bq <query>             Batch query, prints results 100 at a time\n" +
                 ":term <term>            Look up a term entry in each partition\n" +
                 ":termi <term>           Case-insensitive version of ':term'\n" +
+                ":termstats <term>       Gets collection statistics for a term\n" +
                 ":dis <term>             Build a disambiguator for a term\n" +
                 ":merge [<part> ...]     Merge all or some index partitions\n" +
                 ":classmerge             Merge all classifier partitions\n" +
@@ -255,6 +256,7 @@ public class QueryTest extends SEMain {
                 ":sw                     Toggles case-sensitivity for wild cards\n" +
                 ":wild <pattern>         Prints matching terms from each partition\n" +
                 ":morph <term>           Prints matching variants from each partition\n" +
+                ":morphy <term>          Prints variants that will be generated for a term\n" +
                 ":variants <term>        Prints the LiteMorph variants of a term\n" +
                 ":stem <term>            Prints stem-matched terms from each partition\n" +
                 ":spell <term>           Prints the top 10 spelling variants of the term\n" +
