@@ -26,7 +26,7 @@ package com.sun.labs.minion.classification;
 
 import com.sun.labs.minion.SearchEngine;
 import java.util.Set;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 
 /**
@@ -55,9 +55,9 @@ public class FastContingencyFeatureSelector extends ContingencyFeatureSelector {
             WeightingComponents wc,
             int tsize, int N) {
         
-        TermStats ts = new TermStats(curr.getName());
+        TermStatsImpl ts = new TermStatsImpl(curr.getName());
         for(Feature f : (Set<Feature>) curr.getContents()) {
-            TermStats fs = wc.getTermStats(f.getName());
+            TermStatsImpl fs = wc.getTermStats(f.getName());
             if(fs != null) {
                 ts.add(fs);
             }

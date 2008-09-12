@@ -49,7 +49,7 @@ import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.retrieval.cache.DocCache;
@@ -174,16 +174,16 @@ public abstract class AbstractClusterer implements Configurable {
         log.debug(logTag, 0, "feature selection took: " + sw.getTime());
         sw.reset();
         
-        TermStats[] featStats = new TermStats[selectedClusters.size()];
+        TermStatsImpl[] featStats = new TermStatsImpl[selectedClusters.size()];
         
         WeightingComponents wc = dc.getWeightingComponents();
         for(Iterator i = selectedClusters.getContents().iterator(); i.hasNext(); ) {
             List<String> fnames = new ArrayList();
             FeatureCluster clust = (FeatureCluster) i.next();
-            featStats[N] = new TermStats(clust.getName());
+            featStats[N] = new TermStatsImpl(clust.getName());
             for(Iterator j = clust.getContents().iterator(); j.hasNext(); ) {
                 Feature f = (Feature) j.next();
-                TermStats ts = wc.getTermStats(f.getName());
+                TermStatsImpl ts = wc.getTermStats(f.getName());
                 if(ts != null) {
                     featStats[N].add(ts);
                     features.put(f.getName(), N);

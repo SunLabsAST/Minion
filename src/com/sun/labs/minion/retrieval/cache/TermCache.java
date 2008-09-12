@@ -48,7 +48,7 @@ public class TermCache extends LRACache<String,TermCacheElement> {
     
     protected WeightingComponents wc;
     
-    protected Map<String,TermStats> tsm;
+    protected Map<String,TermStatsImpl> tsm;
     
     public TermCache(SearchEngine engine) {
         this(200, engine, null, null);
@@ -71,7 +71,7 @@ public class TermCache extends LRACache<String,TermCacheElement> {
             this.wf = wf;
             this.wc = wc;
         }
-        tsm = new HashMap<String,TermStats>();
+        tsm = new HashMap<String,TermStatsImpl>();
     } // TermCache constructor
     
     public TermCacheElement get(String t, DiskPartition p) {
@@ -94,18 +94,18 @@ public class TermCache extends LRACache<String,TermCacheElement> {
     /**
      * @deprecated
      */
-    public TermStats getTermStats(String t) {
+    public TermStatsImpl getTermStats(String t) {
         return tsm.get(t);
     }
     
-    public TermStats getTermStats(FeatureCluster fc) {
-        TermStats ts = tsm.get(fc.getName());
+    public TermStatsImpl getTermStats(FeatureCluster fc) {
+        TermStatsImpl ts = tsm.get(fc.getName());
         if(ts != null) {
             return ts;
         }
 
         // Prime the cache with the components of this cluster.
-        ts = new TermStats(fc.getName());
+        ts = new TermStatsImpl(fc.getName());
         for(Iterator i = engine.getManager().getActivePartitions().iterator();
              i.hasNext(); ) {
             TermCacheElement tce = get(fc.getName(), (DiskPartition) i.next());
@@ -118,7 +118,7 @@ public class TermCache extends LRACache<String,TermCacheElement> {
         return ts;
     }
     
-    public void setTermStats(TermStats s) {
+    public void setTermStats(TermStatsImpl s) {
         tsm.put(s.getName(), s);
     }
     

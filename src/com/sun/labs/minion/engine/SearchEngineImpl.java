@@ -57,6 +57,7 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.Searcher;
 import com.sun.labs.minion.SimpleIndexer;
+import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.WeightedField;
 import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
@@ -269,6 +270,10 @@ public class SearchEngineImpl implements SearchEngine,
             fi = fi.clone();
         }
         return fi;
+    }
+
+    public TermStats getTermStats(String term) {
+        return invFilePartitionManager.getTermStats(term);
     }
 
     public Document getDocument(String key) {

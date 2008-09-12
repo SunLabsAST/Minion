@@ -37,7 +37,7 @@ import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 import com.sun.labs.minion.indexer.postings.FieldedPostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.FileLock;
@@ -341,7 +341,7 @@ public class DocumentVectorLengths {
             if(cmp == 0) {
                 //
                 // Both iterators have the term.  Combine stats!
-                TermStats ts = gte.getTermStats();
+                TermStatsImpl ts = gte.getTermStats();
                 if(adjustStats) {
                     ts.add(mde);
                 }
@@ -353,7 +353,7 @@ public class DocumentVectorLengths {
                 //
                 // Only the new partition has the term.  Create the stats.
                 we = new TermStatsEntry(mde.getName().toString());
-                TermStats ts = we.getTermStats();
+                TermStatsImpl ts = we.getTermStats();
                 ts.add(mde);
                 wf.initTerm(wc.setTerm(ts));
                 addPostings(p, mde.iterator(feat), ts, vectored, fvl, vl);
@@ -421,7 +421,7 @@ public class DocumentVectorLengths {
     }
 
     private void addPostings(DiskPartition p,
-            PostingsIterator pi, TermStats ts, int[] vectored,
+            PostingsIterator pi, TermStatsImpl ts, int[] vectored,
             float[][] fvl, float[] vl) {
         if(pi != null) {
             if(pi instanceof FieldedPostingsIterator) {

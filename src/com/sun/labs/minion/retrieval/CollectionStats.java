@@ -51,7 +51,7 @@ public class CollectionStats {
     /**
      * A local cache of term stats.
      */
-    protected Map<String,TermStats> termStats;
+    protected Map<String,TermStatsImpl> termStats;
     
     /**
      * The total number of documents in the collection.
@@ -96,7 +96,7 @@ public class CollectionStats {
     
     public CollectionStats(PartitionManager pm) {
         this.pm = pm;
-        termStats = new HashMap<String,TermStats>();
+        termStats = new HashMap<String,TermStatsImpl>();
         for(Iterator i = pm.getActivePartitions().iterator(); i.hasNext();) {
             Partition p = (Partition) i.next();
             nDocs            += p.getNDocs();
@@ -113,7 +113,7 @@ public class CollectionStats {
     /**
      * Gets the collection-wide statistics for a given term name.
      */
-    public synchronized TermStats getTermStats(String s) {
+    public synchronized TermStatsImpl getTermStats(String s) {
         TermStatsEntry tse = (TermStatsEntry) di.get(s);
         if(tse == null) {
             return null;
@@ -137,7 +137,7 @@ public class CollectionStats {
         return nd;
     }
     
-    void setTermStats(String term, TermStats ts) {
+    void setTermStats(String term, TermStatsImpl ts) {
         termStats.put(term, ts);
     }
     

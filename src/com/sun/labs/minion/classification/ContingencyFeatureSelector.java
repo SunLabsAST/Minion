@@ -37,7 +37,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.pipeline.StopWords;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 
 import com.sun.labs.minion.util.MinionLog;
@@ -241,7 +241,7 @@ public class ContingencyFeatureSelector implements FeatureSelector {
                                        int tsize, int N) {
 
         if(curr.getContents().size() == 1) {
-            TermStats ts =
+            TermStatsImpl ts =
                     wc.getTermStats((curr.getContents().first()).getName());
             if(ts != null) {
                 curr.counter.b = ts.getDocFreq() - curr.counter.a;

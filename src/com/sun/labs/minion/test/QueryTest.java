@@ -85,7 +85,6 @@ import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldFrequency;
 import com.sun.labs.minion.FieldValue;
-import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.Log;
@@ -94,7 +93,6 @@ import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.PassageHighlighter;
 import com.sun.labs.minion.Posting;
 import com.sun.labs.minion.Progress;
-import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
@@ -103,6 +101,7 @@ import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.Searcher;
 import com.sun.labs.minion.SimpleHighlighter;
+import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.TextHighlighter;
 import com.sun.labs.minion.WeightedField;
 import java.io.BufferedWriter;
@@ -885,15 +884,25 @@ public class QueryTest extends SEMain {
             // Case sensitive term lookup.
             String term = CharUtils.decodeUnicode(q.substring(
                     q.indexOf(' ') + 1).trim());
-            Iterator l = manager.getActivePartitions().iterator();
-            while(l.hasNext()) {
-                DiskPartition p = (DiskPartition) l.next();
+            for(DiskPartition p : manager.getActivePartitions()) {
                 Entry e = p.getTerm(term, true);
                 output.println("Partition " + p.getPartitionNumber() +
                         ":\n " + e + (e == null ? ""
                         : (" (" + Util.toHexDigits(e.getName().toString()) +
                         ") ") + e.getN()));
             }
+        } else if(q.startsWith(":termstats " )) {
+            //
+            // Case sensitive term lookup.
+            String term = CharUtils.decodeUnicode(q.substring(
+                    q.indexOf(' ') + 1).trim());
+            TermStats ts = engine.getTermStats(term);
+            if(ts == null) {
+                output.println("Term not found");
+            } else {
+                output.println("Term stats: " + ts);
+            }
+            
         } else if(q.startsWith(":termi ")) {
 
             //

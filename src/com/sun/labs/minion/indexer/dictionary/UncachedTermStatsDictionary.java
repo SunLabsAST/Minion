@@ -30,7 +30,7 @@ import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.logging.Logger;
@@ -117,7 +117,7 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements TermS
         while(h.size() > 0) {
             HE top = h.peek();
             TermStatsEntry tse = new TermStatsEntry((String) top.curr.getName());
-            TermStats ts = tse.getTermStats();
+            TermStatsImpl ts = tse.getTermStats();
             while(top != null && top.curr.getName().equals(tse.getName())) {
                 top = h.poll();
                 ts.add(top.curr);

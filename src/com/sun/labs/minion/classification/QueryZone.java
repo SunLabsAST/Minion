@@ -35,7 +35,7 @@ import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.cache.TermCache;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 
@@ -120,7 +120,7 @@ public class QueryZone {
             //
             // Get the feature cluster.
             FeatureCluster c = (FeatureCluster) i.next();
-            TermStats ts = tc.getTermStats(c);
+            TermStatsImpl ts = tc.getTermStats(c);
 
             //
             // Copy the current cluster and set its weight to the weight we

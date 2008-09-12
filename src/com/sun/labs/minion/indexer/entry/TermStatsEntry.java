@@ -29,7 +29,7 @@ import com.sun.labs.minion.indexer.postings.Occurrence;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
@@ -39,23 +39,23 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  */
 public class TermStatsEntry extends BaseEntry {
     
-    private TermStats ts;
+    private TermStatsImpl ts;
     
     public TermStatsEntry() {
         super();
-        ts = new TermStats(null);
+        ts = new TermStatsImpl(null);
     }
     
     public TermStatsEntry(String name) {
         super(name);
-        ts = new TermStats(name);
+        ts = new TermStatsImpl(name);
     }
     
-    public void setTermStats(TermStats ts) {
+    public void setTermStats(TermStatsImpl ts) {
         this.ts = ts;
     }
     
-    public TermStats getTermStats() {
+    public TermStatsImpl getTermStats() {
         return ts;
     }
 
@@ -103,7 +103,7 @@ public class TermStatsEntry extends BaseEntry {
     }
 
     public void decodePostingsInfo(ReadableBuffer b, int pos) {
-        ts = new TermStats((String) name);
+        ts = new TermStatsImpl((String) name);
         b.position(pos);
         ts.setDocFreq(b.byteDecode());
         ts.setTotalOccurrences(b.byteDecode());

@@ -62,7 +62,7 @@ import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.retrieval.cache.TermCacheElement;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 
@@ -168,14 +168,14 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
      * Gets combined stats for a term cluster, priming the term cache, if
      * necessary.
      */
-    protected TermStats getTermStats(FeatureCluster fc) {
-        TermStats ts = tc.getTermStats(fc.getName());
+    protected TermStatsImpl getTermStats(FeatureCluster fc) {
+        TermStatsImpl ts = tc.getTermStats(fc.getName());
         if(ts == null) {
 
             //
             // If we didn't have term stats, then our cache hasn't been filled with
             // the components of this cluster.  Do that now.
-            ts = new TermStats(fc.getName());
+            ts = new TermStatsImpl(fc.getName());
             for(Iterator i = manager.getActivePartitions().iterator(); i.hasNext();) {
                 TermCacheElement tce = tc.get(fc.getName(),
                         (DiskPartition) i.next());
@@ -268,7 +268,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
 
             //
             // Get the term stats associated with the term cluster.
-            TermStats ts = getTermStats(c);
+            TermStatsImpl ts = getTermStats(c);
 
             //
             // Copy the current cluster and set its weight using the term stats
@@ -547,7 +547,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
         float sum = 0;
         for(Iterator i = features.getContents().iterator(); i.hasNext();) {
             FeatureCluster fc = (FeatureCluster) i.next();
-            TermStats clusterStats = new TermStats(fc.getName());
+            TermStatsImpl clusterStats = new TermStatsImpl(fc.getName());
             int fdt = 0;
             for(Iterator j = fc.getContents().iterator(); j.hasNext();) {
                 Feature f = (Feature) j.next();
@@ -636,7 +636,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
                 "*Document Weight*", "*Feature Weight*", "*Product*"));
         for(Iterator i = features.getContents().iterator(); i.hasNext();) {
             FeatureCluster fc = (FeatureCluster) i.next();
-            TermStats clusterStats = new TermStats(fc.getName());
+            TermStatsImpl clusterStats = new TermStatsImpl(fc.getName());
             int fdt = 0;
             for(Iterator j = fc.getContents().iterator(); j.hasNext();) {
                 Feature f = (Feature) j.next();
@@ -712,7 +712,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
         int nTerms = 0;
         for(Iterator i = features.getContents().iterator(); i.hasNext();) {
             FeatureCluster fc = (FeatureCluster) i.next();
-            TermStats clusterStats = new TermStats(fc.getName());
+            TermStatsImpl clusterStats = new TermStatsImpl(fc.getName());
             int fdt = 0;
             
             //
@@ -957,7 +957,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
 
             //
             // We'll collect stats across all the terms in this cluster.
-            TermStats clusterStats = new TermStats(cluster.getName());
+            TermStatsImpl clusterStats = new TermStatsImpl(cluster.getName());
             clen += (cluster.getWeight() * cluster.getWeight());
 
             int[] counts = getCounts(cluster, feat, clusterStats, sdp);
@@ -1027,7 +1027,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
             
             //
             // We'll collect stats across all the terms in this cluster.
-            TermStats clusterStats = new TermStats(cluster.getName());
+            TermStatsImpl clusterStats = new TermStatsImpl(cluster.getName());
 
             //
             // Get the counts from the partition we're classifying.  These'll 
@@ -1087,7 +1087,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier, ExplainableClas
 
     private int[] getCounts(FeatureCluster fc, 
             PostingsIteratorFeatures feat, 
-            TermStats clusterStats,
+            TermStatsImpl clusterStats,
             DiskPartition sdp) {
         int[] counts = new int[sdp.getMaxDocumentID() + 1];
         int[] fields = feat.getFields();

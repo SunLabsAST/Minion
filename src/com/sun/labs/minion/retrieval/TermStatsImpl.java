@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.TermStats;
 import java.util.Iterator;
 import java.util.List;
 
@@ -35,7 +36,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 /**
  * A class that holds collection-wide statistics for a term.
  */
-public class TermStats {
+public class TermStatsImpl implements TermStats {
     
     /**
      * The name of the term for which we're collecting stats.
@@ -60,7 +61,7 @@ public class TermStats {
     /**
      * Creates an empty set of term stats to which we can add terms.
      */
-    public TermStats(String name) {
+    public TermStatsImpl(String name) {
         this.name = name;
     }
     
@@ -71,7 +72,7 @@ public class TermStats {
      * @param name the name of the term we're building stats for
      * @param m a partition manager for the collection
      */
-    public TermStats(String name, PartitionManager m) {
+    public TermStatsImpl(String name, PartitionManager m) {
         this.name = name;
         init(m.getActivePartitions().iterator());
     } // TermStats constructor
@@ -83,7 +84,7 @@ public class TermStats {
      * @param name the name of the term we're building stats for
      * @param l a list of partitions for which we want to build the stats
      */
-    public TermStats(String name, List l) {
+    public TermStatsImpl(String name, List l) {
         this.name = name;
         init(l.iterator());
     } // TermStats constructor
@@ -115,7 +116,7 @@ public class TermStats {
     /**
      * Combines another set of term statistics with this one.
      */
-    public void add(TermStats ts) {
+    public void add(TermStatsImpl ts) {
         ft += ts.ft;
         Ft += ts.Ft;
         maxfdt = Math.max(maxfdt, ts.maxfdt);
@@ -169,6 +170,6 @@ public class TermStats {
     }
     
     public String toString() {
-        return name + " " + ft + " " + Ft + " " + maxfdt;
+        return String.format("name: %s doc freq: %d total freq: %d max term freq: %d", name, ft, Ft, maxfdt);
     }
 } // TermStats

@@ -61,7 +61,7 @@ import com.sun.labs.minion.indexer.dictionary.UncachedTermStatsDictionary;
 import com.sun.labs.minion.retrieval.CollectionStats;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ScoredGroup;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.MinionLog;
@@ -3094,13 +3094,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return the statistics associated with the given name, or an empty set
      * of term statistics if there are none for the given name
      */
-    public TermStats getTermStats(String name) {
+    public TermStatsImpl getTermStats(String name) {
         synchronized(tslock) {
             if(termStatsDict == null) {
-                return new TermStats(name);
+                return new TermStatsImpl(name);
             }
             TermStatsEntry tse = termStatsDict.getTermStats(name);
-            return tse == null ? new TermStats(name) : tse.getTermStats();
+            return tse == null ? new TermStatsImpl(name) : tse.getTermStats();
         }
     }
     

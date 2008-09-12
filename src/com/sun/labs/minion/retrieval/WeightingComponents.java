@@ -75,7 +75,7 @@ public class WeightingComponents {
      * The statistics that we were given or that we retrieved for the last
      * call to <code>setTerm</code>.
      */
-    public TermStats ts;
+    public TermStatsImpl ts;
 
     /**
      * The total number of documents in the collection.  Collection-level
@@ -217,7 +217,7 @@ public class WeightingComponents {
         } else {
             ts = cs.getTermStats(name);
             if(ts == null) {
-                ts = new TermStats(name);
+                ts = new TermStatsImpl(name);
             }
             setTerm(ts);
         }
@@ -231,22 +231,22 @@ public class WeightingComponents {
      * @param s a set of statistics for a term.
      * @return this set of weighting components.
      */
-    public WeightingComponents setTerm(TermStats s) {
+    public WeightingComponents setTerm(TermStatsImpl s) {
         ts = s;
         Ft = s.Ft;
         ft = s.ft;
         return this;
     }
     
-    public TermStats getTermStats() {
+    public TermStatsImpl getTermStats() {
         return ts;
     }
     
-    public TermStats getTermStats(String term) {
+    public TermStatsImpl getTermStats(String term) {
         return cs.getTermStats(term);
     }
     
-    public void setTermStats(String term, TermStats ts) {
+    public void setTermStats(String term, TermStatsImpl ts) {
         cs.setTermStats(term, ts);
     }
 

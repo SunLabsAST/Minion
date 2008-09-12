@@ -156,6 +156,14 @@ public interface SearchEngine extends Searcher, Classifier {
     public FieldInfo getFieldInfo(String name);
 
     /**
+     * Gets the collection level term statistics for the given term.
+     * @param term the term for which we want the statisitics
+     * @return the statistics associated with the given term, or <code>null</code>
+     * if the term does not occur in the collection.
+     */
+    public TermStats getTermStats(String term);
+
+    /**
      * Gets a document with a given key.
      *
      * @param key the key for the document to retrieve.

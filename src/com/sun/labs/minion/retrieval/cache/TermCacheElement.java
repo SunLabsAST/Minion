@@ -31,7 +31,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
-import com.sun.labs.minion.retrieval.TermStats;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.MinionLog;
@@ -49,7 +49,7 @@ public class TermCacheElement {
     protected int[] counts;
     protected float[] weights;
     int n;
-    protected TermStats ts;
+    protected TermStatsImpl ts;
     protected static MinionLog log = MinionLog.getLog();
     protected static String logTag = "TCE";
     
@@ -150,9 +150,9 @@ public class TermCacheElement {
      *
      * @return the computed term statistics
      */
-    public TermStats getTermStats() {
+    public TermStatsImpl getTermStats() {
         if(ts == null) {
-            ts = new TermStats(name);
+            ts = new TermStatsImpl(name);
             if(counts == null) {
                 return ts;
             }
