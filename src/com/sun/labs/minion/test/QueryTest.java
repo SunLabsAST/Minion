@@ -902,6 +902,15 @@ public class QueryTest extends SEMain {
             } else {
                 output.println("Term stats: " + ts);
             }
+        } else if(q.startsWith(":morphy ")) {
+            String term = CharUtils.decodeUnicode(q.substring(
+                    q.indexOf(' ') + 1).trim());
+            List<String> variants = new ArrayList<String>(engine.getTermVariations(term));
+            Collections.sort(variants);
+            output.println("Variants for " + term);
+            for (String v : variants) {
+                output.println(" " + v);
+            }
             
         } else if(q.startsWith(":termi ")) {
 

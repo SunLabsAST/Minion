@@ -101,6 +101,7 @@ import com.sun.labs.minion.indexer.partition.DocumentIterator;
 import com.sun.labs.minion.indexer.partition.Dumper;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.AbstractPipelineImpl;
 import com.sun.labs.minion.pipeline.AsyncPipelineImpl;
 import com.sun.labs.minion.pipeline.PipelineFactory;
@@ -113,6 +114,7 @@ import com.sun.labs.minion.retrieval.parser.LuceneParser;
 import com.sun.labs.minion.retrieval.parser.StrictParser;
 import com.sun.labs.minion.retrieval.parser.TokenMgrError;
 import com.sun.labs.minion.retrieval.parser.WebParser;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -272,10 +274,23 @@ public class SearchEngineImpl implements SearchEngine,
         return fi;
     }
 
+    public Set<String> getTermVariations(String term) {
+        Set<String> ret = null;
+        KnowledgeSource ks = queryConfig.getKnowledgeSource();
+        if(ks != null) {
+            ret = queryConfig.getKnowledgeSource().variantsOf(term);
+        } else {
+            ret = new HashSet<String>();
+        }
+        ret.add(term);
+        return ret;
+    }
+
+
     public TermStats getTermStats(String term) {
         return invFilePartitionManager.getTermStats(term);
     }
-
+    
     public Document getDocument(String key) {
         DocKeyEntry dke =
                 (DocKeyEntry) invFilePartitionManager.getDocumentTerm(key);

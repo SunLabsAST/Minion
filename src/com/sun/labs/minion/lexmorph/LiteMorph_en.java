@@ -26,8 +26,6 @@ package com.sun.labs.minion.lexmorph;
 
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.Hashtable;
 
 /**
@@ -457,6 +455,7 @@ public class LiteMorph_en extends LiteMorph{
 	    "integument integumentary",
 	    "into",
 	    "it its itself",
+            "java",
 	    "july julys",
 	    "keep keeps kept keeping keepings keeper keepers",
 	    "knife knifes knifed knifing knifings knifer knifers",

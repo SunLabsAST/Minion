@@ -34,6 +34,7 @@ import java.util.Hashtable;
 import java.util.Enumeration;
 
 import com.sun.labs.minion.knowledge.KnowledgeSource;
+import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.MinionLog;
 
 /**
@@ -255,37 +256,58 @@ public abstract class LiteMorph implements KnowledgeSource {
     public Set<String> variantsOf(String word) {
 
         // Go get the morphological variants of the word.
-        Set<String> findVariants = new HashSet<String>();
-        // if a word is found among exceptions, don't try rules
+        Set<String> variants = new HashSet<String>();
 
-        String exceptionList = (String) exceptions.get(word.toLowerCase());
+        //
+        // We'll do morph in lower case, because the tests all assume lowercase.
+        String lcWord = CharUtils.toLowerCase(word);
+
+        // if a word is found among exceptions, don't try rules
+        String exceptionList = (String) exceptions.get(lcWord);
         if (exceptionList == null) {
             exceptionList = "";
         }
         if (exceptionList.length() > 0) {
             StringTokenizer tokens = new StringTokenizer(exceptionList, " ");
-            while (tokens.hasMoreTokens())
-                findVariants.add(tokens.nextToken());
+            while (tokens.hasMoreTokens()) {
+                variants.add(tokens.nextToken());
+            }
             if (authorFlag) {
                 debug("   " + word + ": found match in exceptions -- "
                         + exceptionList);
             }
-        } else
-            morphWord(word, 0, null, findVariants);
-        Set<String> cleanVariants = new HashSet<String>();
-        // Eliminate duplicates and the word itself:
-        Hashtable<String, String> blockedVariants = new Hashtable<String, String>();
-        blockedVariants.put(word, word); // blocks adding the input word
-                                            // itself
-        for (Iterator iter = findVariants.iterator(); iter.hasNext();) {
-            String variant = (String) iter.next();
-            if (blockedVariants.get(variant) == null) {
-                blockedVariants.put(variant, variant);
-                cleanVariants.add(variant);
-            }
+        } else {
+            morphWord(lcWord, 0, null, variants);
         }
 
-        return cleanVariants;
+        //
+        // Rematch the case of the query term, if it was cased.
+        if(!lcWord.equals(word)) {
+            Set<String> casedVariants = new HashSet<String>();
+            StringBuilder sb = new StringBuilder(word.length() * 2);
+            for (String variant : variants) {
+                sb.delete(0, sb.length());
+                int i = 0;
+                int j = 0;
+                for(; i < word.length() && j < variant.length(); i++, j++) {
+                    char c1 = word.charAt(i);
+                    char c2 = lcWord.charAt(j);
+                    if(c1 != c2 && CharUtils.toLowerCase(c1) == CharUtils.toLowerCase(c2)) {
+                        sb.append(c1);
+                    } else {
+                        sb.append(c2);
+                    }
+                }
+                if(j < variant.length()) {
+                    sb.append(variant.substring(j));
+                }
+                casedVariants.add(sb.toString());
+            }
+            variants = casedVariants;
+        }
+        variants.remove(word);
+
+        return variants;
     }
 
     /**
