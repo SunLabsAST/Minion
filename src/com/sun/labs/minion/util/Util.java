@@ -398,6 +398,9 @@ public class Util {
     }
     
     public static String arrayToString(String[] a) {
+        if(a == null) {
+            return null;
+        }
         return arrayToString(a, 0, a.length);
     }
     

@@ -45,6 +45,8 @@ import com.sun.labs.minion.retrieval.TFIDF;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.CharUtils;
+import com.sun.labs.util.props.ConfigStringList;
+import java.util.ArrayList;
 
 /**
  * A class that holds configuration data for querying.
@@ -559,6 +561,7 @@ public class QueryConfig implements Cloneable,
         QueryConfig result = null;
         try {
             result = (QueryConfig) super.clone();
+            result.defaultFields = new ArrayList<FieldInfo>(defaultFields);
         } catch(CloneNotSupportedException ex) {
             throw new InternalError();
         }
@@ -588,6 +591,7 @@ public class QueryConfig implements Cloneable,
             setKnowledgeSource((KnowledgeSource) ps.getComponent(PROP_KNOWLEDGE_SOURCE));
         } catch(PropertyException pe) {
         }
+        defaultFields = (List<FieldInfo>) ps.getComponentList(PROP_DEFAULT_FIELDS);
     }
 
     private void setAllUpperIsCI(boolean allUpperIsCI) {
@@ -651,5 +655,35 @@ public class QueryConfig implements Cloneable,
     
     @ConfigComponent(type=com.sun.labs.minion.pipeline.StopWords.class)
     public static final String PROP_VECTOR_ZERO_WORDS = "vector_zero_words";
+
+    /**
+     * A property for a list of fields to search by default.
+     */
+    @ConfigComponentList(type=com.sun.labs.minion.FieldInfo.class,defaultList={})
+    public static final String PROP_DEFAULT_FIELDS = "default_fields";
+    List<FieldInfo> defaultFields;
+
+    public void addDefaultField(String field) {
+        FieldInfo fi = e.getFieldInfo(field);
+        if(fi == null) {
+            log.warn(logTag, 3, "Field: " + field + " does not exist");
+        } else {
+            defaultFields.add(fi);
+        }
+    }
+    
+    public void removeDefaultField(String field) {
+        FieldInfo fi = e.getFieldInfo(field);
+        if (fi == null) {
+            log.warn(logTag, 3, "Field: " + field + " does not exist");
+        } else {
+            defaultFields.remove(fi);
+        }
+    }
+
+    public List<FieldInfo> getDefaultFields() {
+        return defaultFields;
+    }
+
 
 } // QueryConfig

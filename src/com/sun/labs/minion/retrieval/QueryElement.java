@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.FieldInfo;
 import java.util.Comparator;
 import java.util.List;
 
@@ -34,6 +35,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
 import com.sun.labs.minion.util.MinionLog;
+import com.sun.labs.minion.util.Util;
 
 /**
  * An abstract base class for all of the term and operator classes that
@@ -125,14 +127,30 @@ public abstract class QueryElement implements Comparable {
         this.part = part;
         estSize = calculateEstimatedSize();
 
-        if (part instanceof InvFileDiskPartition) {
-            InvFileDiskPartition ifpart = (InvFileDiskPartition)part;
-            searchFields = ifpart.getFieldStore().getFieldArray(searchFieldNames);
-            fieldMultipliers = ifpart.getFieldStore().getMultArray(qc.getMultFields(),
-                                             qc.getMultValues());
-        } else {
-            searchFields = new int[0];
-            fieldMultipliers = new float[0];
+        //
+        // We only need to set up the search fields and multipliers once.
+        if(searchFields == null) {
+            if (part instanceof InvFileDiskPartition) {
+                InvFileDiskPartition ifpart = (InvFileDiskPartition) part;
+                if (searchFieldNames == null) {
+                    //
+                    // Set up any default fields if there are none specified in
+                    // the query.
+                    List<FieldInfo> df = qc.getDefaultFields();
+                    if (df.size() > 0) {
+                        searchFieldNames = new String[df.size()];
+                        for (int i = 0; i < df.size(); i++) {
+                            searchFieldNames[i] = df.get(i).getName();
+                        }
+                    }
+                }
+                searchFields = ifpart.getFieldStore().getFieldArray(searchFieldNames);
+                fieldMultipliers = ifpart.getFieldStore().getMultArray(qc.getMultFields(),
+                        qc.getMultValues());
+            } else {
+                searchFields = new int[0];
+                fieldMultipliers = new float[0];
+            }
         }
     }
 
