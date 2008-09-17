@@ -242,6 +242,8 @@ public class SearchEngineImpl implements SearchEngine,
 
     private MemoryMXBean memBean;
 
+    long hwMark;
+
     /**
      * Gets a search engine implementation.
      */
@@ -1457,17 +1459,17 @@ public class SearchEngineImpl implements SearchEngine,
         // memory is low.
         double freePercent = (mu.getMax() - mu.getUsed()) / (double) mu.getMax();
         if(freePercent < minMemoryPercent) {
-//            log.debug(logTag, 3,
-//                      String.format("Memory is low %sMB used %sMB max %.1f%% free",
-//                                    toMB(mu.getUsed()), toMB(mu.getMax()),
-//                                    freePercent * 100));
+            log.debug(logTag, 4,
+                      String.format("Memory is low %.1fMB used %.1fMB max %.1f%% free",
+                                    toMB(mu.getUsed()), toMB(mu.getMax()),
+                                    freePercent * 100));
             return true;
         }
         return false;
     }
 
-    protected String toMB(long x) {
-        return form.format((float) x / (float) (1024 * 1024));
+    protected double toMB(long x) {
+        return x / 1024.0 / 1024.0;
     }
 
     public ConfigurationManager getConfigurationManager() {
@@ -1562,8 +1564,9 @@ public class SearchEngineImpl implements SearchEngine,
         minMemoryPercent =
                 ps.getDouble(PROP_MIN_MEMORY_PERCENT);
         dumper = (Dumper) ps.getComponent(PROP_DUMPER);
-        profilers =
-                ps.getComponentList(PROP_PROFILERS);
+        dumper.setSearchEngine(this);
+
+        profilers = ps.getComponentList(PROP_PROFILERS);
         longIndexingRun = ps.getBoolean(PROP_LONG_INDEXING_RUN);
 
 //        //
@@ -1662,11 +1665,11 @@ public class SearchEngineImpl implements SearchEngine,
     public static final String PROP_CLUSTER_MEMORY_PARTITION =
             "cluster_memory_partition";
 
-    @ConfigDouble(defaultValue = 0.25)
+    @ConfigDouble(defaultValue = 0.30)
     public static final String PROP_MIN_MEMORY_PERCENT = "min_memory_percent";
 
     private double minMemoryPercent;
-
+    
     @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Dumper.class)
     public static final String PROP_DUMPER = "dumper";
 

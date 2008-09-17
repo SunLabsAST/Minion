@@ -49,7 +49,8 @@ public class StopWatch implements Serializable {
      */
     public void stop() {
 	clicks++;
-	time += System.currentTimeMillis() - lastStart;
+        lastTime = System.currentTimeMillis() - lastStart;
+	time += lastTime;
     }
 
     /**
@@ -66,6 +67,10 @@ public class StopWatch implements Serializable {
      */
     public long getTime() {
 	return time;
+    }
+
+    public long getLastTime() {
+        return lastTime;
     }
 
     public double getAvgTime() {
@@ -94,6 +99,12 @@ public class StopWatch implements Serializable {
      * The amount of time accumulated on the timer.
      */
     protected long time;
+
+    /**
+     * The amount of time for the last start/stop pair.
+     */
+     protected long lastTime;
+     
     /**
      * The number of starts and stops since the last reset.
      */

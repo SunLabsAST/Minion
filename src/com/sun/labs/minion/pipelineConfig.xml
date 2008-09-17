@@ -72,9 +72,7 @@
     </component>
     
     <!-- A stage that will dump partitions asynchronously -->
-    <component name="async_dumper" type="com.sun.labs.minion.indexer.partition.AsyncDumper">
-        <property name="queue_length" value="${num_pipelines}"/>
-    </component>
+    <component name="async_dumper" type="com.sun.labs.minion.indexer.partition.AsyncDumper"/>
     
     <!-- A dumpber for dumping partitions synchronously -->
     <component name="sync_dumper" type="com.sun.labs.minion.indexer.partition.SyncDumper"/>

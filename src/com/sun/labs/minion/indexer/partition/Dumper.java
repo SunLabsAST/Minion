@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.indexer.partition;
 
+import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.minion.pipeline.Stage;
 
@@ -32,6 +33,12 @@ import com.sun.labs.minion.pipeline.Stage;
  *
  */
 public interface Dumper extends Configurable {
+
+    /**
+     * Sets the search engine that this dumper will be dumping partitions for.
+     * @param e the engine that this dumper will be used by
+     */
+    void setSearchEngine(SearchEngine e);
     
     /**
      * Dumps the pipeline stage, which is assumed to be something that 
@@ -41,6 +48,13 @@ public interface Dumper extends Configurable {
      */
     void dump(Stage s);
     
+    /**
+     * Gets the length of the queue that this dumper is using to store partitions
+     * before dumping them.
+     * @return the queue length.
+     */
+    int getQueueLength();
+
     /**
      * Indicates that we are finished indexing.  Pending work should be completed.
      */

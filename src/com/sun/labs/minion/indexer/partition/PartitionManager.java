@@ -734,16 +734,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
 
         //
-        // If we're supposed to do asynchronous merges, try one now.
-        if(asyncMerges && !noMoreMerges) {
-            Merger m = getMerger(mergeGeometric());
-            if(m != null) {
-                mergeThread = new Thread(m, "Merger-" + randID);
-                mergeThread.start();
-            }
-        }
-
-        //
         // Write the active file.
         try {
             synchronized(activeParts) {
@@ -2307,6 +2297,18 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     /**
+     * Gets an instance of the merger class that can be used to merge any 
+     * partitions that require it.  If no merge is currently required, then 
+     * <code>null</code> is returned. 
+     *
+     * @return An instance of <code>Merger</code> that can be used to merge
+     * these partitions, or <code>null</code> if no merge is currently
+     * possible.
+     */
+    public Merger getMerger() {
+        return getMerger(mergeGeometric(), mergeLock);
+    }
+    /**
      * Gets an instance of the merger class in order to merge a list of
      * partitions.
      *
@@ -2599,6 +2601,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
             mergeThread = null;
         }
+
+        public String toString() {
+            return toMerge.toString();
+        }
+        
         /**
          * The list of partitions that we wish to merge.
          */

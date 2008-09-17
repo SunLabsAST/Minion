@@ -91,7 +91,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
      * The tag for this module.
      */
     protected static String logTag = "IFMP";
-
+    
     public InvFileMemoryPartition() {
     }
 
@@ -521,7 +521,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
     public MemoryFieldStore getFieldStore() {
         return fields;
     }
-
+    
     public void newProperties(PropertySheet ps)
             throws PropertyException {
         super.newProperties(ps);

@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.indexer.partition;
 
+import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.PropertyException;
@@ -36,6 +37,9 @@ import com.sun.labs.minion.pipeline.Stage;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class SyncDumper implements Dumper {
+
+    private PartitionManager pm;
+    
     /**
      * Whether we should do gc after (some) dumps.
      */
@@ -57,6 +61,14 @@ public class SyncDumper implements Dumper {
     public SyncDumper() {
     }
 
+    public void setSearchEngine(SearchEngine e) {
+        pm = e.getManager();
+    }
+
+    public int getQueueLength() {
+        return 1;
+    }
+
     /**
      * Dumps the given stage synchronously.
      */
@@ -72,6 +84,13 @@ public class SyncDumper implements Dumper {
                 nDumps = 0;
             }
         }
+        
+        //
+        // Do a merge if one is needed.
+        PartitionManager.Merger m = pm.getMerger();
+        if(m != null) {
+            m.run();
+        }
     }
 
     public void finish() {
@@ -82,7 +101,7 @@ public class SyncDumper implements Dumper {
         gcInterval = ps.getInt(PROP_GC_INTERVAL);
     }
     
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue=true)
     public static final String PROP_DO_GC = "do_gc";
     
     @ConfigInteger(defaultValue=5)

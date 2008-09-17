@@ -24,6 +24,8 @@
 
 package com.sun.labs.minion.indexer.partition;
 
+import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.indexer.partition.PartitionManager.Merger;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.PropertyException;
@@ -35,6 +37,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.util.MinionLog;
+import com.sun.labs.minion.util.NanoWatch;
 
 /**
  * A class that will be used to dump partitions in an orderly fashion.  This
@@ -52,6 +55,8 @@ import com.sun.labs.minion.util.MinionLog;
  */
 public class AsyncDumper implements Runnable, Dumper {
 
+    private PartitionManager pm;
+    
     /**
      * Our configuration name.
      */
@@ -82,21 +87,21 @@ public class AsyncDumper implements Runnable, Dumper {
     /**
      * The queue length property for configuration.
      */
-    @ConfigInteger(defaultValue = 10)
-    public static String PROP_QUEUE_LENGTH =
-            "queue_length";
+    @ConfigInteger(defaultValue = 1)
+    public static String PROP_QUEUE_LENGTH = "queue_length";
     private int queueLength;
 
     /**
      * The poll interval for the queue, in seconds.
-     */
+     */ 
     @ConfigInteger(defaultValue = 3)
-    public static String PROP_POLL_INTERVAL =
-            "poll_interval";
+    public static String PROP_POLL_INTERVAL = "poll_interval";
     
     @ConfigBoolean(defaultValue=true)
     public static final String PROP_DO_GC = "do_gc";
     private boolean doGC;
+
+    private NanoWatch nw;
 
     protected static MinionLog log = MinionLog.getLog();
 
@@ -108,9 +113,19 @@ public class AsyncDumper implements Runnable, Dumper {
     public AsyncDumper() {
     }
 
+    public void setSearchEngine(SearchEngine e) {
+        pm = e.getManager();
+    }
+
+    public int getQueueLength() {
+        return queueLength;
+    }
+
     public void dump(Stage s) {
         try {
+            nw.start();
             toDump.put(s);
+            nw.stop();
         } catch (InterruptedException ex) {
             log.warn(logTag, 4, "Dumper interrupted during put");
         }
@@ -122,14 +137,25 @@ public class AsyncDumper implements Runnable, Dumper {
                 //
                 // We'll poll for a defined interval so that we can catch when
                 // we're finished.
-                Stage s =
-                        toDump.poll(pollInterval,
-                        TimeUnit.SECONDS);
+                Stage s = toDump.poll(pollInterval, TimeUnit.SECONDS);
                 if (s != null) {
                     try {
                         s.dump(null);
+
+                        //
+                        // Merges will happen synchronously in the thread
+                        // running the dumper, which will help regulate
+                        // partition dumping when merging is going on.
+                        Merger m = pm.getMerger();
+                        if(m != null) {
+                            m.run();
+                        }
                         nDumps++;
-                        if(doGC && nDumps % queueLength == 0) {
+                        
+                        //
+                        // Why 2 extra?  Those are for the one that we just 
+                        // dumped and the one held by the indexing thread.
+                        if(doGC && nDumps % (queueLength+2) == 0) {
                             System.gc();
                             nDumps = 0;
                         }
@@ -139,7 +165,8 @@ public class AsyncDumper implements Runnable, Dumper {
                     }
                 }
             } catch (InterruptedException ex) {
-                log.warn(logTag, 4, "Dumper interrupted during poll");
+                log.warn(logTag, 4, "Dumper interrupted during poll, exiting with " + toDump.size() + " partitions waiting");
+                return;
             }
             if (done) {
                 break;
@@ -175,7 +202,8 @@ public class AsyncDumper implements Runnable, Dumper {
         toDump = new ArrayBlockingQueue<Stage>(queueLength);
         pollInterval = ps.getInt(PROP_POLL_INTERVAL);
         doGC = ps.getBoolean(PROP_DO_GC);
-
+        nw = new NanoWatch();
+        
         //
         // Create our thread and start ourselves running.
         t = new Thread(this);

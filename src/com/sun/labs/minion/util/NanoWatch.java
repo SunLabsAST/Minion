@@ -43,14 +43,20 @@ public class NanoWatch extends StopWatch implements Serializable {
      */
     public void stop() {
 	clicks++;
-	time += System.nanoTime() - lastStart;
+        lastTime = System.nanoTime() - lastStart;
+	time += lastTime;
     }
     
     /**
      * Gets the time for this nano stop watch in milliseconds.
+     * @return the accumulated time for this stop watch in milliseconds.
      */
     public double getTimeMillis() {
         return getTime() / 1000000.0;
+    }
+    
+    public double getLastTimeMillis() {
+        return lastTime / 1000000.0;
     }
 
     public double getAvgTimeMillis() {
