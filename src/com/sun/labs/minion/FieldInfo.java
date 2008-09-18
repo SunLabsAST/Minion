@@ -34,6 +34,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.EnumSet;
 import com.sun.labs.minion.util.MinionLog;
+import com.sun.labs.util.props.ConfigEnum;
 import java.util.Date;
 
 /**
@@ -176,7 +177,7 @@ public class FieldInfo implements Cloneable,
     /**
      * The property name for the type.
      */
-    @ConfigString(defaultValue="NONE")
+    @ConfigEnum(type=FieldInfo.Type.class,defaultValue="NONE")
     public static final String PROP_TYPE = "type";
 
     /**
@@ -545,7 +546,7 @@ public class FieldInfo implements Cloneable,
         if(ps.getBoolean(PROP_INDEXED)) {
             attributes.add(Attribute.INDEXED);
         }
-        setType(ps.getString(PROP_TYPE));
+        type = (Type) ps.getEnum(PROP_TYPE);
     }
 
     /**

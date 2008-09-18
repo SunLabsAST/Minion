@@ -36,7 +36,6 @@
     engine, as it lacks an index directory.  The name of the index directory 
     will be passed into the search engine factory, which will then set the 
     global property index_directory -->
-    
     <property name="index_directory" value=""/>
     
     <!-- The lock directory to use.  By default, this is the index directory -->
@@ -82,7 +81,7 @@
         <property name="vector_zero_words" value="zero_words"/>
     </component>
     
-    <component name="results_clusterer" type="com.sun.labs.minion.clustering.KMeans"/>
+    <Component name="results_clusterer" type="com.sun.labs.minion.clustering.KMeans"/>
     
     <component name="zero_words" type="com.sun.labs.minion.pipeline.StopWords"/>
     
