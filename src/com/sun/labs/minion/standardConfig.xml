@@ -81,7 +81,7 @@
         <property name="vector_zero_words" value="zero_words"/>
     </component>
     
-    <Component name="results_clusterer" type="com.sun.labs.minion.clustering.KMeans"/>
+    <component name="results_clusterer" type="com.sun.labs.minion.clustering.KMeans"/>
     
     <component name="zero_words" type="com.sun.labs.minion.pipeline.StopWords"/>
     
