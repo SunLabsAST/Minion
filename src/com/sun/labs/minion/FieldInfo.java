@@ -21,14 +21,12 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion;
 
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.util.props.ConfigString;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -152,7 +150,7 @@ import java.util.Date;
  *
  */
 public class FieldInfo implements Cloneable,
-                                  Configurable {
+        Configurable {
 
     /**
      * The various attributes that a field can have.  Any field may specify
@@ -162,9 +160,10 @@ public class FieldInfo implements Cloneable,
     public enum Attribute {
 
         TOKENIZED, INDEXED, VECTORED, SAVED, TRIMMED, CASE_SENSITIVE
+
     }
 
-/**
+    /**
      * The types that a saved field can have.  Note the special type
      * <code>NONE</code>, which means that the field is not saved and therefore
      * has no type.
@@ -172,42 +171,42 @@ public class FieldInfo implements Cloneable,
     public enum Type {
 
         NONE, STRING, INTEGER, FLOAT, DATE, FEATURE_VECTOR
-    }
 
+    }
     /**
      * The property name for the type.
      */
-    @ConfigEnum(type=FieldInfo.Type.class,defaultValue="NONE")
+    @ConfigEnum(type = FieldInfo.Type.class, defaultValue = "NONE")
     public static final String PROP_TYPE = "type";
 
     /**
      * The property name for the vectored attribute.
      */
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_VECTORED = "vectored";
 
     /**
      * The property name for the tokenized attribute.
      */
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_TOKENIZED = "tokenized";
 
     /**
      * The property name for the indexed attribute.
      */
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_INDEXED = "indexed";
 
     /**
      * The property name for the saved attribute.
      */
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_SAVED = "saved";
 
     /**
      * The property name for the trimmed attribute.
      */
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_TRIMMED = "trimmed";
 
     private static final MinionLog log = MinionLog.getLog();
@@ -269,7 +268,7 @@ public class FieldInfo implements Cloneable,
      *
      */
     public FieldInfo(String name,
-                     EnumSet<Attribute> attributes) {
+            EnumSet<Attribute> attributes) {
         this(0, name, attributes, Type.NONE);
     }
 
@@ -284,8 +283,8 @@ public class FieldInfo implements Cloneable,
      * field is saved.
      */
     public FieldInfo(String name,
-                     EnumSet<Attribute> attributes,
-                     Type type) {
+            EnumSet<Attribute> attributes,
+            Type type) {
         this(0, name, attributes, type);
     }
 
@@ -305,8 +304,8 @@ public class FieldInfo implements Cloneable,
      * attributes do not contain the SAVED attribute.
      */
     public FieldInfo(int id, String name,
-                     EnumSet<Attribute> attributes,
-                     Type type) {
+            EnumSet<Attribute> attributes,
+            Type type) {
         this.id = id;
         this.name = name == null ? null : name.toLowerCase();
         if(attributes != null) {
@@ -326,12 +325,12 @@ public class FieldInfo implements Cloneable,
         // make sense.
         if(isSaved() && this.type == Type.NONE) {
             throw new IllegalArgumentException("Saved field " + name +
-                                               " must have a type specified");
+                    " must have a type specified");
         }
 
         if(!isSaved() && this.type != Type.NONE) {
             throw new IllegalArgumentException("Unsaved field " + name +
-                                               " should not specify " + this.type + " type");
+                    " should not specify " + this.type + " type");
         }
     }
 
@@ -512,7 +511,7 @@ public class FieldInfo implements Cloneable,
     @Override
     public String toString() {
         return this.name + ": " + id + " type: " + type + " attributes: " +
-               attributes;
+                attributes;
     }
 
     /**
@@ -527,7 +526,7 @@ public class FieldInfo implements Cloneable,
      */
     public void newProperties(PropertySheet ps)
             throws PropertyException {
-        
+
         //
         // The name of the field will be the name of the configured component.
         name = ps.getInstanceName();
@@ -560,9 +559,9 @@ public class FieldInfo implements Cloneable,
             type = Enum.valueOf(Type.class, typeString.toUpperCase());
         } catch(IllegalArgumentException iae) {
             com.sun.labs.minion.util.MinionLog.error("FI", 1,
-                                      "Unknown type for field " + this.name +
-                                      ": " + typeString +
-                                      ", defaulting to String");
+                    "Unknown type for field " + this.name +
+                    ": " + typeString +
+                    ", defaulting to String");
             type = Type.STRING;
         }
     }
@@ -609,7 +608,7 @@ public class FieldInfo implements Cloneable,
      */
     public static EnumSet<Attribute> getIndexedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                          Attribute.TOKENIZED,
-                          Attribute.VECTORED);
+                Attribute.TOKENIZED,
+                Attribute.VECTORED);
     }
 } // FieldInfo
