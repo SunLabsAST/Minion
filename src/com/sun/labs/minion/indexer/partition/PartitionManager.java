@@ -3124,6 +3124,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         File newTSF = makeTermStatsFile(tsn);
         (new UncachedTermStatsDictionary()).recalculateTermStats(newTSF, getActivePartitions());
         metaFile.setTermStatsNumber(tsn);
+        updateTermStats();
     }
 
     private void updateTermStats() throws java.io.IOException,
