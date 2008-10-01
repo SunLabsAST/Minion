@@ -90,7 +90,8 @@ public class ScoredQuickOr extends QuickOr {
         if(pi == null) {
             return;
         }
-        
+
+        added++;
         sqw += (qw*qw);
         
         qs.piW.start();
@@ -142,7 +143,8 @@ public class ScoredQuickOr extends QuickOr {
         if(pi == null) {
             return;
         }
-        
+
+        added++;
         sqw += (qw*qw);
         
         qs.piW.start();
@@ -177,7 +179,8 @@ public class ScoredQuickOr extends QuickOr {
      * multiplied against the weights in the array.
      */
     public void add(int[] d, float[] w, float qw) {
-        
+
+        added++;
         if(storeAll) {
             for(int i = 0; i < d.length; i++) {
                 weights[d[i]] += w[i] * qw;
@@ -216,7 +219,7 @@ public class ScoredQuickOr extends QuickOr {
     }
     
     public ArrayGroup getGroup() {
-        
+
         if(storeAll) {
             p = 0;
             for(int i = 0; i < weights.length; i++) {
@@ -227,23 +230,25 @@ public class ScoredQuickOr extends QuickOr {
             }
         } else {
 
-            qs.postSortW.start();
-            Util.sort(docs, weights, 0, p);
-            qs.postSortW.stop();
-            int   s    = -1;
-            int   prev = -1;
-            
-            for(int i = 0; i < p; i++) {
-                if(docs[i] != prev) {
-                    docs[++s] = docs[i];
-                    weights[s] = weights[i];
-                } else {
-                    weights[s] += weights[i];
+            if (added > 1) {
+                qs.postSortW.start();
+                Util.sort(docs, weights, 0, p);
+                qs.postSortW.stop();
+                int s = -1;
+                int prev = -1;
+
+                for (int i = 0; i < p; i++) {
+                    if (docs[i] != prev) {
+                        docs[++s] = docs[i];
+                        weights[s] = weights[i];
+                    } else {
+                        weights[s] += weights[i];
+                    }
+                    prev = docs[i];
                 }
-                prev = docs[i];
+                s++;
+                p = s;
             }
-            s++;
-            p = s;
         }
         return new ScoredGroup(part, docs, weights, p, sqw);
     }

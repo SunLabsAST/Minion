@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import com.sun.labs.minion.QueryConfig;
-import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.util.MinionLog;
 
@@ -93,7 +92,9 @@ public class QueryEvaluator {
             ArrayGroup ag = qe.eval(null);
             ag.part = p;
             ag.queryTerms = qe.getQueryTerms();
+            qe.qs.normW.start();
             ag.normalize();
+            qe.qs.normW.stop();
             ret.add(ag);
         }
         return ret;

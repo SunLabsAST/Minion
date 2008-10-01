@@ -30,6 +30,7 @@ import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
+import com.sun.labs.util.props.ConfigBoolean;
 
 /**
  *
@@ -38,11 +39,6 @@ import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
  *
  */
 public class DiskPartitionFactory implements Configurable {
-    
-    /**
-     * The configuration name of this component
-     */
-    protected String name;
     
     /**
      * A property for the factory that we'll use to create the main dictionary.
@@ -78,6 +74,11 @@ public class DiskPartitionFactory implements Configurable {
      * The size of the merge buffer.
      */
     protected int mergeBuffSize;
+
+    @ConfigBoolean(defaultValue=false)
+    public static final String PROP_CACHE_VECTOR_LENGTHS = "cache_vector_lengths";
+
+    protected boolean cacheVectorLengths;
     
     /**
      * Creates a new instance of DiskPartitionFactory
@@ -89,6 +90,7 @@ public class DiskPartitionFactory implements Configurable {
         mainDictFactory = (DictionaryFactory) ps.getComponent(PROP_MAIN_DICT_FACTORY);
         documentDictFactory = (DictionaryFactory) ps.getComponent(PROP_DOCUMENT_DICT_FACTORY);
         mergeBuffSize = ps.getInt(PROP_MERGE_BUFF_SIZE);
+        cacheVectorLengths = ps.getBoolean(PROP_CACHE_VECTOR_LENGTHS);
     }
     
     /**
@@ -101,11 +103,7 @@ public class DiskPartitionFactory implements Configurable {
      */
     public DiskPartition getDiskPartition(int number, PartitionManager m)
     throws java.io.IOException {
-        return new DiskPartition(number, m, mainDictFactory, documentDictFactory);
+        return new DiskPartition(number, m, mainDictFactory, documentDictFactory, cacheVectorLengths);
     }
     
-    public String getName() {
-        return name;
-    }
-
 }

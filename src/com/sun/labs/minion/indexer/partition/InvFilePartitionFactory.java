@@ -70,7 +70,8 @@ public class InvFilePartitionFactory extends DiskPartitionFactory {
                 mainDictFactory, 
                 documentDictFactory,
                 fieldStoreDictFactory,
-                bigramDictFactory);
+                bigramDictFactory,
+                cacheVectorLengths);
    }
     
     public void newProperties(PropertySheet ps) throws PropertyException {

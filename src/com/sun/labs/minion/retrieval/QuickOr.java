@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.QueryStats;
@@ -36,19 +35,19 @@ public class QuickOr {
      * The partition for which we're holding documents.
      */
     protected DiskPartition part;
-
     QueryStats qs;
-    
     /**
      * The documents that we're storing.
      */
     protected int[] docs;
-
     /**
      * The number of unique documents that we're storing.
      */
     protected int p;
-    
+    /**
+     * The number of sets of postings that have been added.
+     */
+    protected int added;
     /**
      * A flag indicating that the weights array is as long as the number of
      * documents in our partition, so we don't need to store the document
@@ -59,17 +58,17 @@ public class QuickOr {
     public QuickOr(DiskPartition part, int estSize) {
         this.part = part;
         storeAll = shouldStoreAll(part, estSize);
-        if(storeAll) {
+        if (storeAll) {
             if (estSize > part.getMaxDocumentID()) {
                 docs = new int[estSize + 1];
             } else {
-                docs = new int[part.getMaxDocumentID()+1];
+                docs = new int[part.getMaxDocumentID() + 1];
             }
         } else {
             docs = new int[estSize];
         }
     }
-        
+
     /**
      * Decide whether we should store weights for all documents in a
      * partition.  We will do so if the number of documents in the
@@ -78,14 +77,14 @@ public class QuickOr {
      * partition.
      */
     protected boolean shouldStoreAll(DiskPartition part,
-                                     int estSize) {
+            int estSize) {
 
-        if(part == null) {
+        if (part == null) {
             return false;
         }
 
         int N = part.getNDocs();
-        return N < 50000 || estSize >= 0.9 * N;
+        return N < 5000 || estSize >= 0.9 * N;
     }
 
     public void setQueryStats(QueryStats qs) {
@@ -94,25 +93,26 @@ public class QuickOr {
 
     public void add(PostingsIterator pi) {
 
-        if(pi == null) {
+        if (pi == null) {
             return;
         }
 
-        if(storeAll) {
-            while(pi.next()) {
+        added++;
+        if (storeAll) {
+            while (pi.next()) {
                 docs[pi.getID()] = 1;
             }
         } else {
             int s = pi.getN() + p;
-            if(s >= docs.length) {
-                docs = Util.expandInt(docs, s*2);
+            if (s >= docs.length) {
+                docs = Util.expandInt(docs, s * 2);
             }
 
-            while(pi.next()) {
+            while (pi.next()) {
                 docs[p++] = pi.getID();
             }
         }
-    }        
+    }
 
     public void add(PostingsIterator pi, float fw) {
         add(pi);
@@ -127,16 +127,17 @@ public class QuickOr {
      * multiplied against the weights in the array.
      */
     public void add(int[] d, float[] w, float qw) {
-        
-        if(storeAll) {
-            for(int i = 0; i < d.length; i++) {
+
+        added++;
+        if (storeAll) {
+            for (int i = 0; i < d.length; i++) {
                 docs[d[i]] = 1;
             }
         } else {
-                
+
             int s = p + d.length;
-            if(s >= docs.length) {
-                docs = Util.expandInt(docs, s*2);
+            if (s >= docs.length) {
+                docs = Util.expandInt(docs, s * 2);
             }
             System.arraycopy(d, 0, docs, p, d.length);
         }
@@ -155,30 +156,30 @@ public class QuickOr {
         // Do nothing.  We don't care about scores in the base class.
     }
 
-
     public ArrayGroup getGroup() {
-        if(storeAll) {
+        if (storeAll) {
             p = 0;
-            for(int i = 0; i < docs.length; i++) {
-                if(docs[i] == 1) {
+            for (int i = 0; i < docs.length; i++) {
+                if (docs[i] == 1) {
                     docs[p++] = i;
                 }
             }
         } else {
-        
-            java.util.Arrays.sort(docs, 0, p);
-            int   s    = 0;
-            int   prev = -1;
-        
-            for(int i = 0; i < p; i++) {
-                if(docs[i] != prev) {
-                    docs[s++] = docs[i];
+
+            if (added > 1) {
+                java.util.Arrays.sort(docs, 0, p);
+                int s = 0;
+                int prev = -1;
+
+                for (int i = 0; i < p; i++) {
+                    if (docs[i] != prev) {
+                        docs[s++] = docs[i];
+                    }
+                    prev = docs[i];
                 }
-                prev = docs[i];
+                p = s;
             }
-            p = s;
         }
         return new ArrayGroup(part, docs, p);
     }
-            
 } // QuickOr

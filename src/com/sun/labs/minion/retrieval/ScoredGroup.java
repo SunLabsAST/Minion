@@ -296,14 +296,7 @@ public class ScoredGroup extends ArrayGroup {
     public ArrayGroup normalize(int field) {
         if(!normalized) {
             sqw = (float) Math.sqrt(sqw);
-            for(int i = 0; i < size; i++) {
-                float dvl = part.getDocumentVectorLength(docs[i], field);
-                if (dvl == 0 || sqw == 0) {
-                    scores[i] = 0;
-                } else {
-                    scores[i] /= (sqw*dvl);
-                }
-            }
+            part.normalize(docs, scores, size, sqw);
             normalized = true;
         }
         return this;

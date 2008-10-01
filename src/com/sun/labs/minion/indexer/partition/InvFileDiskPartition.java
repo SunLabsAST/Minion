@@ -127,8 +127,13 @@ public class InvFileDiskPartition extends DiskPartition {
      * @see com.sun.labs.minion.indexer.dictionary.Dictionary
      *
      */
-    public InvFileDiskPartition(int partNumber, PartitionManager manager, DictionaryFactory mainDictFactory, DictionaryFactory documentDictFactory, DictionaryFactory fieldStoreDictFactory, DictionaryFactory bigramDictFactory) throws java.io.IOException {
-        super(partNumber, manager, mainDictFactory, documentDictFactory);
+    public InvFileDiskPartition(int partNumber, PartitionManager manager,
+            DictionaryFactory mainDictFactory,
+            DictionaryFactory documentDictFactory,
+            DictionaryFactory fieldStoreDictFactory,
+            DictionaryFactory bigramDictFactory,
+            boolean cacheVectorLengths) throws java.io.IOException {
+        super(partNumber, manager, mainDictFactory, documentDictFactory, cacheVectorLengths);
         this.fieldStoreDictFactory = fieldStoreDictFactory;
         this.bigramDictFactory = bigramDictFactory;
     }
