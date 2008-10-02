@@ -47,7 +47,9 @@ import com.sun.labs.minion.document.MarkUpAnalyzer_html;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Posting;
 import com.sun.labs.minion.indexer.partition.Dumper;
-import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 
 /**
  * An abstract implementation of pipeline.
@@ -219,6 +221,41 @@ public abstract class AbstractPipelineImpl implements Pipeline {
                 }
             } else {
                 log.warn(logTag, 3, file + " is not a file");
+            }
+        } else if (val instanceof URL) {
+            //
+            // Get an input stream for the URL and read the data into an
+            // analyzer
+            if (fi != null) {
+                head.startField(fi);
+            }
+            URL url = (URL)val;
+            URLConnection conn = url.openConnection();
+            try {
+                conn.connect();
+                String contentType = conn.getContentType();
+                if (!contentType.startsWith("text")) {
+                    log.warn(logTag, 3, "URL does not contain text: " + url);
+                    conn.getInputStream().close();
+                    return;
+                }
+                InputStream is = conn.getInputStream();
+                InputStreamReader isr = new InputStreamReader(is);
+                try {
+                    MarkUpAnalyzer mua =
+                            MarkUpAnalyzer.getMarkUpAnalyzer(contentType,
+                                                             isr, currKey);
+                    mua.analyze(head);
+                } finally {
+                    isr.close();
+                }
+            } catch (IOException e) {
+                log.warn(logTag, 3, "Unable to read " + url);
+            } finally {
+                if (fi != null) {
+                    head.endField(fi);
+                }
+                
             }
         } else if(val instanceof Collection) {
 

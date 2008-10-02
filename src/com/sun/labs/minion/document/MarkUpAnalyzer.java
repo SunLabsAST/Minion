@@ -109,6 +109,37 @@ public abstract class MarkUpAnalyzer {
     }
 
     /**
+     * Gets a markup analyzer that is appropriate for the given MIME type.
+     * As there are many variations in how types are specified, this currently
+     * looks only at the subtype for certain key words (xml and html).  If
+     * a specific analyzer can't be chosen, a default text analyzer that just
+     * reads the file as text is used.
+     * 
+     * @param mimeType the RFC 2046 mime type
+     * @param r a reader with the contents of the data
+     * @param key the document key
+     * @return an appropriate markup analyzer
+     */
+    public static MarkUpAnalyzer getMarkUpAnalyzer(String mimeType,
+                                                   Reader r,
+                                                   String key) {
+        //
+        // If we can't get a subtype, use a text analyzer
+        if (mimeType.indexOf('/') < 0) {
+            return new MarkUpAnalyzer_txt(r, 0, key);
+        }
+        
+        String subType = mimeType.substring(mimeType.indexOf('/') + 1);
+        if (subType.contains("xml")) {
+            return new MarkUpAnalyzer_xml(r, 0, key);
+        } else if (subType.contains("html")) {
+            return new MarkUpAnalyzer_html(r, 0, key);
+        } else {
+            return new MarkUpAnalyzer_txt(r, 0, key);
+        }
+    }
+    
+    /**
      * Analyzes the current document.  This will pass the markup and text
      * events through to the tokenizer.
      *
