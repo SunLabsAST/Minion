@@ -50,6 +50,7 @@ import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
+import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -123,6 +124,12 @@ public class DiskPartition extends Partition implements Closeable {
      */
     protected DocumentVectorLengths dvl;
     private boolean cacheVectorLengths;
+
+    /**
+     * A cache of uncompressed postings data.
+     */
+    protected TermCache termCache;
+    
     /**
      * Whether this partition was ignored during a merge, due to it being
      * empty.
@@ -170,7 +177,7 @@ public class DiskPartition extends Partition implements Closeable {
             DictionaryFactory mainDictFactory,
             DictionaryFactory documentDictFactory)
             throws java.io.IOException {
-        this(partNumber, manager, mainDictFactory, documentDictFactory, false);
+        this(partNumber, manager, mainDictFactory, documentDictFactory, false, 0);
     }
 
     /**
@@ -195,7 +202,8 @@ public class DiskPartition extends Partition implements Closeable {
             PartitionManager manager,
             DictionaryFactory mainDictFactory,
             DictionaryFactory documentDictFactory,
-            boolean cacheVectorLengths)
+            boolean cacheVectorLengths,
+            int termCacheSize)
             throws java.io.IOException {
         this.partNumber = partNumber;
         this.manager = manager;
@@ -216,6 +224,10 @@ public class DiskPartition extends Partition implements Closeable {
         // Read the deletion bitmap.
         deletions = new DelMap(delFile, delFileLock);
         deletions.setPartition(this);
+
+        if(termCacheSize > 0) {
+            termCache = new TermCache(termCacheSize, this);
+        }
 
     //
     // We're done for now.  See the various init methods for the code

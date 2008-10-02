@@ -517,24 +517,31 @@ public class QueryTest extends SEMain {
         } else if(q.startsWith(":class ")) {
 
             //
-            // Run a query.
-            q = q.substring(q.indexOf(' ') + 1).trim();
+            // Run a query, then train a classifier.
+            String[] vals = parseMessage(q.substring(q.indexOf(' ') + 1).trim());
+            String query = null;
+            String className = "QT-class";
+            String classField = "QT-classification";
+            switch(vals.length) {
+                case 0:
+                    return -1;
+                case 1:
+                    query = vals[0];
+                    break;
+                case 2:
+                    query = vals[0];
+                    className = vals[1];
+                    break;
+                case 3:
+                default:
+                    query = vals[0];
+                    className = vals[1];
+                    classField = vals[2];
+                    break;
+            }
             try {
-                ResultSetImpl r = (ResultSetImpl) searcher.search(q, "");
-                ClassifierModel roc = new Rocchio();
-                FeatureSelector fs = new MIFeatureSelector();
-                //FeatureClusterer fc = new MorphClusterer();
-                FeatureClusterer fc = new KnowledgeSourceClusterer();
-                FeatureClusterSet feats = fc.cluster(r);
-                TermCache tc = new TermCache(-1, manager.getEngine());
-                feats = fs.select(feats, tc.getWeightingComponents(),
-                        r.size(), 200, (SearchEngineImpl) manager.getEngine());
-                roc.train("test", "test", manager, r, feats, tc, null);
-                FeatureClusterSet feat = roc.getFeatures();
-                log.debug(logTag, 0, "features: " + feat.size());
-            // for(Iterator i = feat.iterator(); i.hasNext(); ) {
-            // output.println("feature: " + i.next());
-            // }
+                ResultSetImpl r = (ResultSetImpl) searcher.search(query, "");
+                engine.trainClass(r, className, classField);
             } catch(SearchEngineException se) {
                 log.error(logTag, 1, "Error running search", se);
             } catch(Exception e) {
@@ -543,7 +550,7 @@ public class QueryTest extends SEMain {
         } else if(q.startsWith(":describe ")) {
             q = q.substring(q.indexOf(' ') + 1).trim();
             ClassifierModel cm =
-                    ((SearchEngineImpl) engine).getClassifierManager().
+                    engine.getClassifierManager().
                     getClassifier(q);
 
             ExplainableClassifierModel ecm = (ExplainableClassifierModel) cm;

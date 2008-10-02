@@ -317,7 +317,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
         if(p == null) {
-            QueryStats qs = features.getQueryStats();
+            QueryStats qs = features == null ? null : features.getQueryStats();
             try {
                 if(qs != null) {
                     qs.postReadW.start();

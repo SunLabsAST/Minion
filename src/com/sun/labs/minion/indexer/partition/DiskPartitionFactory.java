@@ -79,6 +79,12 @@ public class DiskPartitionFactory implements Configurable {
     public static final String PROP_CACHE_VECTOR_LENGTHS = "cache_vector_lengths";
 
     protected boolean cacheVectorLengths;
+
+
+    @ConfigInteger(defaultValue=0)
+    public static final String PROP_TERM_CACHE_SIZE = "term_cache_size";
+
+    protected int termCacheSize;
     
     /**
      * Creates a new instance of DiskPartitionFactory
@@ -91,6 +97,7 @@ public class DiskPartitionFactory implements Configurable {
         documentDictFactory = (DictionaryFactory) ps.getComponent(PROP_DOCUMENT_DICT_FACTORY);
         mergeBuffSize = ps.getInt(PROP_MERGE_BUFF_SIZE);
         cacheVectorLengths = ps.getBoolean(PROP_CACHE_VECTOR_LENGTHS);
+        termCacheSize = ps.getInt(PROP_TERM_CACHE_SIZE);
     }
     
     /**
@@ -103,7 +110,7 @@ public class DiskPartitionFactory implements Configurable {
      */
     public DiskPartition getDiskPartition(int number, PartitionManager m)
     throws java.io.IOException {
-        return new DiskPartition(number, m, mainDictFactory, documentDictFactory, cacheVectorLengths);
+        return new DiskPartition(number, m, mainDictFactory, documentDictFactory, cacheVectorLengths, termCacheSize);
     }
     
 }

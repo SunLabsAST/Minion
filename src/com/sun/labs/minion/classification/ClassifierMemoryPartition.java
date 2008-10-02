@@ -47,13 +47,18 @@ import com.sun.labs.minion.util.MinionLog;
 
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
-import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.Progress;
 import com.sun.labs.minion.Result;
+import com.sun.labs.minion.TermStats;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.minion.pipeline.StopWords;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.cache.DocCache;
+import com.sun.labs.minion.retrieval.cache.TermCacheElement;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A memory partition that will hold classifier data.
@@ -230,7 +235,8 @@ public class ClassifierMemoryPartition extends MemoryPartition {
         QueryConfig qc = manager.getEngine().getQueryConfig();
         WeightingFunction wf = qc.getWeightingFunction();
         WeightingComponents wc = qc.getWeightingComponents();
-        TermCache tc = new TermCache(-1, manager.getEngine(), wf, wc);
+        Map<DiskPartition,TermCache> termCaches = new HashMap<DiskPartition,TermCache>();
+        Map<String,TermStatsImpl> termStats = new HashMap<String,TermStatsImpl>();
         DocCache dc = new DocCache(-1, manager.getEngine(), wf, wc);
 
         //
@@ -268,7 +274,7 @@ public class ClassifierMemoryPartition extends MemoryPartition {
             // We could conceivably get a split where the labeled training
             // documents all have no data, in which case we just try the next split.
             if(clusters.size() == 0) {
-                log.log(logTag, 4, "Split had no training data");
+                log.log(logTag, 3, "Split had no training data");
                 continue;
             }
 
@@ -284,7 +290,10 @@ public class ClassifierMemoryPartition extends MemoryPartition {
                     selectorInstance.select(clusters,
                     wc,
                     (training == null ? results.size() : training.size()),
-                    nFeat, partManager.getEngine());
+                    nFeat,
+                    partManager.getEngine());
+
+            primeCaches(selectedClusters, termCaches, termStats);
 
             //
             // Now we'll do a loop, working to determine how many features
@@ -320,7 +329,8 @@ public class ClassifierMemoryPartition extends MemoryPartition {
                             partManager,
                             training,
                             selectedSubset,
-                            tc,
+                            termStats,
+                            termCaches,
                             progress);
 
                     //
@@ -373,6 +383,8 @@ public class ClassifierMemoryPartition extends MemoryPartition {
             clusterer.setField(fromField);
             FeatureClusterSet clusters = clusterer.cluster(results);
             
+            primeCaches(clusters, termCaches, termStats);
+            
             if(clusters.size() == 0) {
                 return null;
             }
@@ -390,7 +402,7 @@ public class ClassifierMemoryPartition extends MemoryPartition {
                     wc,
                     results.size(),
                     nFeat,
-                    (SearchEngine) partManager.getEngine());
+                    partManager.getEngine());
             //
             // There wasn't a model, meaning we didn't get
             // to do a training/validation split
@@ -403,12 +415,45 @@ public class ClassifierMemoryPartition extends MemoryPartition {
                     partManager,
                     results,
                     selectedClusters,
-                    tc,
+                    termStats,
+                    termCaches,
                     progress);
 
         }
         bestModel.setFromField(fromField);
         return bestModel;
+    }
+
+    private void primeCaches(FeatureClusterSet selectedClusters,
+            Map<DiskPartition, TermCache> termCaches,
+            Map<String, TermStatsImpl> termStats) {
+        //
+        // Go ahead and prime the term cache and the term stats map, since we'll
+        // be doing *a lot* of processing on these terms.
+        for (DiskPartition p : partManager.getActivePartitions()) {
+            TermCache tc = termCaches.get(p);
+            if (tc == null) {
+                // We'll have the caches that we create hold all of the terms that
+                // we uncompress, since we'll likely need them all.
+                tc = new TermCache(-1, p);
+                termCaches.put(p, tc);
+            }
+            for (FeatureCluster fc : selectedClusters) {
+                TermStats ts = termStats.get(fc.getName());
+                if (ts != null) {
+                    //
+                    // We've already primed this term.
+                    continue;
+                }
+                TermCacheElement tce = tc.create(fc.getName());
+                for (Feature f : fc) {
+                    tce.add(f.getName());
+                }
+                termStats.put(fc.getName(), tce.getTermStats());
+                tc.put(tce);
+            }
+        }
+
     }
 
     protected void endTrainingClass(int featureSize) {

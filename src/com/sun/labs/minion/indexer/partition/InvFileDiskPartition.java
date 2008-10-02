@@ -132,8 +132,9 @@ public class InvFileDiskPartition extends DiskPartition {
             DictionaryFactory documentDictFactory,
             DictionaryFactory fieldStoreDictFactory,
             DictionaryFactory bigramDictFactory,
-            boolean cacheVectorLengths) throws java.io.IOException {
-        super(partNumber, manager, mainDictFactory, documentDictFactory, cacheVectorLengths);
+            boolean cacheVectorLengths,
+            int termCacheSize) throws java.io.IOException {
+        super(partNumber, manager, mainDictFactory, documentDictFactory, cacheVectorLengths, termCacheSize);
         this.fieldStoreDictFactory = fieldStoreDictFactory;
         this.bigramDictFactory = bigramDictFactory;
     }

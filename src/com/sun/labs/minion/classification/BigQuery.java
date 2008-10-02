@@ -184,7 +184,7 @@ public class BigQuery {
 
         //
         // Get the term cache element for this cluster and then fetch the weights.
-        TermCacheElement e = tc.get(cluster.getName(), part);
+        TermCacheElement e = tc.get(cluster.getName());
         PostingsIterator pi = e.iterator(wc, wf);
         while(pi.next()) {
            scores[pi.getID()] += pi.getWeight() * cluster.getWeight();

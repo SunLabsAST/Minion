@@ -50,9 +50,11 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 
 import com.sun.labs.minion.util.MinionLog;
+import java.util.Map;
 
 /**
  * An implementation of the Balanced Winnow classification
@@ -154,7 +156,8 @@ public class BalancedWinnow implements ClassifierModel {
             PartitionManager manager,
             ResultSetImpl training,
             FeatureClusterSet selectedFeatures,
-            TermCache tc,
+            Map<String, TermStatsImpl> termStats,
+            Map<DiskPartition, TermCache> termCaches,
             Progress progress) throws SearchEngineException {
         //log.debug(logTag, 0, "training based on " + training.size() + " docs");
         this.fieldName = fieldName;
@@ -177,7 +180,8 @@ public class BalancedWinnow implements ClassifierModel {
         QueryZone qz = new QueryZone(training,
                 fromField,
                 selectedFeatures,
-                tc,
+                termStats,
+                termCaches,
                 manager);
 
         //
@@ -239,11 +243,11 @@ public class BalancedWinnow implements ClassifierModel {
         // Now convert those into lists of strength arrays
         List posDocArrays = getStrengthArrays(partToDocListPos,
                 selectedFeatures,
-                tc);
+                termCaches);
         float temp = avgActiveFeatures;
         List negDocArrays = getStrengthArrays(partToDocListNeg,
                 selectedFeatures,
-                tc);
+                termCaches);
         avgActiveFeatures = temp;
         nextStep(progress, "Getting default weight vectors");
 
@@ -313,9 +317,9 @@ public class BalancedWinnow implements ClassifierModel {
 
     }
 
-    protected List getStrengthArrays(HashMap<DiskPartition, List> partToDocList,
+    protected List getStrengthArrays(Map<DiskPartition, List> partToDocList,
             FeatureClusterSet clusterSet,
-            TermCache tc) {
+            Map<DiskPartition,TermCache> termCaches) {
         List results = new ArrayList();
 
         //

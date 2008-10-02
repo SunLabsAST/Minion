@@ -24,102 +24,60 @@
 
 package com.sun.labs.minion.retrieval.cache;
 
-import com.sun.labs.minion.QueryConfig;
-import com.sun.labs.minion.SearchEngine;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.Map;
 
-import com.sun.labs.minion.classification.FeatureCluster;
-import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.retrieval.*;
-
 import com.sun.labs.minion.util.LRACache;
 
 /**
- * An LRA cache of terms and their associated postings.
+ * An LRA cache of terms and their associated postings.  This is partition specific.
  */
 public class TermCache extends LRACache<String,TermCacheElement> {
     
-    protected SearchEngine engine;
+    protected DiskPartition part;
     
-    protected WeightingFunction wf;
-    
-    protected WeightingComponents wc;
-    
-    protected Map<String,TermStatsImpl> tsm;
-    
-    public TermCache(SearchEngine engine) {
-        this(200, engine, null, null);
+    public TermCache(DiskPartition part) {
+        this(200, part);
     }
     
-    public TermCache(int size, SearchEngine engine) {
-        this(size, engine, null, null);
-    }
-    
-    public TermCache(int size, SearchEngine engine,
-            WeightingFunction wf,
-            WeightingComponents wc) {
+    public TermCache(int size, DiskPartition part) {
         super(size);
-        this.engine = engine;
-        if(wf == null) {
-            QueryConfig qc = engine.getQueryConfig();
-            this.wf = qc.getWeightingFunction();
-            this.wc = qc.getWeightingComponents();
-        } else {
-            this.wf = wf;
-            this.wc = wc;
-        }
-        tsm = new HashMap<String,TermStatsImpl>();
-    } // TermCache constructor
-    
-    public TermCacheElement get(String t, DiskPartition p) {
-        TermCacheElement e = get(p + t);
-        if(e == null) {
-            e = new TermCacheElement(t, p);
-            put(p + t, e);
-        }
-        return e;
-    }
-    
-    public WeightingComponents getWeightingComponents() {
-        return wc;
-    }
-    
-    public WeightingFunction getWeightingFunction() {
-        return wf;
+        this.part = part;
     }
 
     /**
-     * @deprecated
+     * Creates a new element for this cache.  Note that the new element is not
+     * added to the cache, since no terms have been added to the element yet.
+     * @param name the name of the cache element.
+     * @return a new cache element
      */
-    public TermStatsImpl getTermStats(String t) {
-        return tsm.get(t);
+    public TermCacheElement create(String name) {
+        return new TermCacheElement(name, part);
     }
-    
-    public TermStatsImpl getTermStats(FeatureCluster fc) {
-        TermStatsImpl ts = tsm.get(fc.getName());
-        if(ts != null) {
-            return ts;
-        }
 
-        // Prime the cache with the components of this cluster.
-        ts = new TermStatsImpl(fc.getName());
-        for(Iterator i = engine.getManager().getActivePartitions().iterator();
-             i.hasNext(); ) {
-            TermCacheElement tce = get(fc.getName(), (DiskPartition) i.next());
-            for(Iterator j = fc.getContents().iterator(); j.hasNext(); ) {
-                tce.add((WeightedFeature) j.next());
-            }
-            ts.add(tce.getTermStats());
+    /**
+     * Gets an element from the cache.  Overridden to add synchronization, since
+     * this cache will be used by multiple threads.
+     * @param name the name of the element to get.
+     * @return the element corresponding to that name.
+     */
+    public synchronized TermCacheElement get(String name) {
+        return super.get(name);
+    }
+
+    /**
+     * Puts an element into the cache.  This can be used by someone who has
+     * added postings to an element and now wants to make sure that the 
+     * results are available in the cache.
+     * @param el the element to put into the cache
+     * @throws IllegalArgumentException if you attempt to add an element that is
+     * drawn from a partition different than the one for this cache.
+     */
+    public synchronized void put(TermCacheElement el) {
+        if(el.part != part) {
+            throw new IllegalArgumentException(
+                    "Attempt to add element for partition " +
+                    el.part + " to cache for partition " + part);
         }
-        setTermStats(ts);
-        return ts;
+        put(el.name, el);
     }
-    
-    public void setTermStats(TermStatsImpl s) {
-        tsm.put(s.getName(), s);
-    }
-    
 } // TermCache

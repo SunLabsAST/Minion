@@ -38,6 +38,7 @@ import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
+import java.util.Map;
 
 /**
  * A query zone is a set of documents that are centered around a set
@@ -56,7 +57,7 @@ public class QueryZone {
     /**
      * A term cache to use when building classifiers.
      */
-    protected TermCache tc;
+    protected Map<DiskPartition,TermCache> termCaches;
 
     /**
      * The features that we will use for our model.
@@ -96,9 +97,10 @@ public class QueryZone {
     public QueryZone(ResultSetImpl training,
             String fromField,
             FeatureClusterSet featureClusters,
-            TermCache tc,
+            Map<String,TermStatsImpl> termStats,
+            Map<DiskPartition,TermCache> termCaches,
             PartitionManager manager) {
-        this.tc = tc;
+        this.termCaches = termCaches;
         this.training = training;
         this.fromField = fromField;
         
@@ -120,7 +122,7 @@ public class QueryZone {
             //
             // Get the feature cluster.
             FeatureCluster c = (FeatureCluster) i.next();
-            TermStatsImpl ts = tc.getTermStats(c);
+            TermStatsImpl ts = termStats.get(c.getName());
 
             //
             // Copy the current cluster and set its weight to the weight we
@@ -156,7 +158,7 @@ public class QueryZone {
         heapElements = new ArrayList<HE>();
         for(Iterator i = training.resultsIterator(); i.hasNext();) {
             ArrayGroup tg = (ArrayGroup) i.next();
-            BigQuery bq = new BigQuery(tc, tg, fromField, wf, wc);
+            BigQuery bq = new BigQuery(termCaches.get(tg.getPartition()), tg, fromField, wf, wc);
 
             //
             // Add all of our selected features to the query.  Note that

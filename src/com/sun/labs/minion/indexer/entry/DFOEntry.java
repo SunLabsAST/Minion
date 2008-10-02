@@ -248,7 +248,7 @@ public class DFOEntry extends SinglePostingsEntry {
      * @return An iterator for the postings.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
-        QueryStats qs = features.getQueryStats();
+        QueryStats qs = features == null ? null : features.getQueryStats();
         try {
 
             if(qs != null) {

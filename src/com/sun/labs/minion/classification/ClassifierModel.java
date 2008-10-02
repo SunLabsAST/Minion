@@ -38,7 +38,9 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 
 import com.sun.labs.minion.retrieval.ResultSetImpl;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.cache.TermCache;
+import java.util.Map;
 
 /**
  * An interface for training and using classifiers.
@@ -56,16 +58,24 @@ public interface ClassifierModel {
      * @param docs a set of results containing the training documents for
      * the class.
      * @param fcs the set of features to use when training this classifier
+     * @param termStats A map from names to term statistics for the feature
+     * clusters.  This map will be populated with all of the elements of
+     * <code>fcs</code> when this method is called.
+     * @param termCaches A map from partitions to term caches containing the
+     * uncompressed postings for the feature clusters in <code>fcs</code>.  The
+     * caches will be fully populated with the clusters from <code>fcs</code> when
+     * this method is called.
      * @throws SearchEngineException if there is any problem training the
      * classifier.
      */
     public void train(String name,
             String fieldName,
-                      PartitionManager manager,
-                      ResultSetImpl docs,
-                      FeatureClusterSet fcs,
-                      TermCache tc,
-                      Progress progress) throws SearchEngineException;
+            PartitionManager manager,
+            ResultSetImpl docs,
+            FeatureClusterSet fcs,
+            Map<String, TermStatsImpl> termStats,
+            Map<DiskPartition, TermCache> termCaches,
+            Progress progress) throws SearchEngineException;
     
     /**
      * Sets the name of the model.

@@ -54,7 +54,11 @@ public class TermCacheElement {
     protected static String logTag = "TCE";
     
     /**
-     * Creates a term counter with a given name for a given partition.
+     * Creates a cache element with a given name.
+     * @param name the name of this element.  Typically this will be the term that
+     * is cached, but it may be the name of a feature cluster or a set of morphological
+     * variations for a number of terms.
+     * @param part the partition from which the term has been selected.
      */
     public TermCacheElement(String name, DiskPartition part) {
         this.name = name;
@@ -125,9 +129,11 @@ public class TermCacheElement {
             System.arraycopy(counts, p, tc, np, n - p);
             np += (n - p);
         } else if(iterLeft) {
-            ti[np] = pi.getID();
-            tc[np++] = pi.getFreq();
-            pi.next();
+            while (iterLeft) {
+                ti[np] = pi.getID();
+                tc[np++] = pi.getFreq();
+                iterLeft = pi.next();
+            }
         }
         
         ids = ti;
@@ -174,8 +180,7 @@ public class TermCacheElement {
      * (most likely from a number of <code>TermCounter</code>s) and used
      * to initialize the term level weights in the weighting components.
      */
-    public float[] computeWeights(
-            WeightingComponents wc,
+    public float[] computeWeights(WeightingComponents wc,
             WeightingFunction wf) {
         if(weights == null) {
             weights = new float[n];
