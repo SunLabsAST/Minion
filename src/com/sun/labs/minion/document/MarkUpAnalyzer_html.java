@@ -263,8 +263,57 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
         // If we're at the start of the address tag, then note that fact.
         atAddrTag = tagString.equals(addrTag) && !end;
 
-        FieldInfo fi = (FieldInfo) fieldMap.get(tagString);
+        //
+        // Check to see if we're indexing attributes of a meta tag
+        if (!end && tagString.equals("meta")) {
+            String name = null;
+            String content = null;
+            String attrStr = new String(attr, 0, attrLen);
+            while (attrStr.contains("=")) {
+                //
+                // Read the first attribute name
+                int eq = attrStr.indexOf("=");
+                String param = attrStr.substring(0, eq);
+                
+                //
+                // Get the next quoted string out
+                int quote1 = attrStr.indexOf("\"");
+                if (quote1 < 0) {
+                    break;
+                }
+                int quote2 = attrStr.indexOf("\"", quote1 + 1);
+                if (quote2 < 0) {
+                    break;
+                }
+                String val = attrStr.substring(quote1 + 1, quote2);
+                
+                //
+                // Strip out the part of attrStr we've parsed
+                if (attrStr.length() > quote2) {
+                    attrStr = attrStr.substring(quote2 + 1, attrStr.length());
+                } else {
+                    attrStr = "";
+                }
 
+                if (param.trim().toLowerCase().equals("name")) {
+                    name = val;
+                } else if (param.trim().toLowerCase().equals("content")) {
+                    content = val;
+                }
+            }
+            if (name != null && content != null) {
+                FieldInfo fi = fieldMap.get(name);
+                if (fi != null) {
+                    stage.startField(fi);
+                    stage.text(content.toCharArray(), 0, content.length());
+                    stage.endField(fi);
+                }
+            }
+        }
+        
+        //
+        // See if we're supposed to index the content of this tag
+        FieldInfo fi = fieldMap.get(tagString);
         if(fi != null) {
             if(end) {
                 stage.endField(fi);
@@ -735,7 +784,7 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
     /**
      * A hashtable from markup event sub types to field names.
      */
-    protected static HashMap fieldMap = null;
+    protected static HashMap<String,FieldInfo> fieldMap = null;
     
     protected static Set<String> spaceSet = null;
 
@@ -799,9 +848,21 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
                 new FieldInfo("handled", st,
                               FieldInfo.Type.STRING);
 
-        fieldMap = new HashMap();
+        fieldMap = new HashMap<String,FieldInfo>();
         fieldMap.put("title",
                      new FieldInfo("title", all,
+                                   FieldInfo.Type.STRING));
+        fieldMap.put("keywords",
+                     new FieldInfo("keywords", all,
+                                   FieldInfo.Type.STRING));
+        fieldMap.put("description",
+                     new FieldInfo("description", all,
+                                   FieldInfo.Type.STRING));
+        fieldMap.put("date",
+                     new FieldInfo("date", st,
+                                   FieldInfo.Type.DATE));
+        fieldMap.put("a",
+                     new FieldInfo("anchor", all,
                                    FieldInfo.Type.STRING));
         
         spaceSet = new HashSet<String>();
