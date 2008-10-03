@@ -51,6 +51,7 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.retrieval.cache.TermCache;
+import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -641,7 +642,15 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public QueryEntry getTerm(int id) {
         initMainDict();
-        return (QueryEntry) mainDict.get(id);
+        return mainDict.get(id);
+    }
+
+    /**
+     * Gets the term cache for this partition, if there is one.
+     * @return the term cache, or <code>null</code> if there is none.
+     */
+    public TermCache getTermCache() {
+        return termCache;
     }
 
     /**

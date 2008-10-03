@@ -31,6 +31,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
@@ -72,12 +73,19 @@ public class TermCacheElement {
      * @param term the term whose counts we wish to collect.
      */
     public void add(String term) {
-        QueryEntry e = part.getTerm(term);
+        add(term, null);
+    }
+
+    public void add(String term, PostingsIteratorFeatures feat) {
+        add(part.getTerm(term), feat);
+    }
+
+    public void add(QueryEntry e, PostingsIteratorFeatures feat) {
         if(e == null) {
             return;
         }
         
-        PostingsIterator pi = e.iterator(null);
+        PostingsIterator pi = e.iterator(feat);
         if(pi == null) {
             return;
         }
@@ -172,6 +180,10 @@ public class TermCacheElement {
         }
         return ts;
     }
+
+    public String getName() {
+        return name;
+    }
     
     /**
      * Computes the weights for the documents in this group, given a
@@ -193,7 +205,12 @@ public class TermCacheElement {
 
         return weights;
     }
-    
+
+    public ScoredGroup getGroup(WeightingComponents wc, WeightingFunction wf) {
+        computeWeights(wc, wf);
+        return new ScoredGroup(part, ids, weights, n);
+    }
+
     public PostingsIterator iterator(
             WeightingComponents wc,
             WeightingFunction wf) {

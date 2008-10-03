@@ -39,6 +39,8 @@ import com.sun.labs.minion.indexer.postings.PosPostingsIterator;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.lextax.ConceptEntry;
+import com.sun.labs.minion.retrieval.cache.TermCache;
+import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
 
@@ -285,22 +287,27 @@ public class DictTerm extends QueryTerm implements Comparator {
                 feat.setWeightingComponents(wc);
                 feat.setMult(fieldMultipliers);
             }
-                
-            
-            QuickOr or = strictEval ?
-                new QuickOr(part, estSize) :
-                new ScoredQuickOr(part, estSize);
-            or.setQueryStats(qs);
-            for(int i = 0; i < dictEntries.length; i++) {
-                wc.setTerm((String) dictEntries[i].getName());
-                float qw = wf.initTerm(wc);
-                or.add(dictEntries[i].iterator(feat), qw);
+
+            TermCacheElement tce = getTermCacheElement(feat);
+            if(tce != null) {
+                return tce.getGroup(feat.getWeightingComponents(),
+                        feat.getWeightingFunction());
+            } else {
+                QuickOr or =
+                        strictEval ? new QuickOr(part, estSize) : new ScoredQuickOr(
+                        part, estSize);
+                or.setQueryStats(qs);
+                for (int i = 0; i < dictEntries.length; i++) {
+                    wc.setTerm((String) dictEntries[i].getName());
+                    float qw = wf.initTerm(wc);
+                    or.add(dictEntries[i].iterator(feat), qw);
+                }
+                return or.getGroup();
             }
-            return or.getGroup();
         }
         
         //
-        // We're going to "intersect" the documents in the term with the
+        // We're going to intersect the documents in the term with the
         // documents in the set we were given, returning a new set.  We
         // need to do things differently depending on the type of the
         // group.
@@ -311,6 +318,32 @@ public class DictTerm extends QueryTerm implements Comparator {
         } else {
             return intersect(ag);
         }
+    }
+
+    private String getCacheKey() {
+        StringBuilder sb = new StringBuilder();
+        for(QueryEntry qe : dictEntries) {
+            sb.append(qe.getName() + "/");
+        }
+        sb.append(Util.arrayToString(searchFields));
+        return sb.toString();
+    }
+
+    private TermCacheElement getTermCacheElement(PostingsIteratorFeatures feat) {
+            TermCache tc = part.getTermCache();
+            if(tc == null) {
+                return null;
+            }
+        String cacheName = getCacheKey();
+        TermCacheElement tce = tc.get(cacheName);
+        if (tce == null) {
+            tce = tc.create(cacheName);
+            for (QueryEntry qe : dictEntries) {
+                tce.add(qe, feat);
+            }
+            tc.put(tce);
+        }
+        return tce;
     }
 
     /**
@@ -327,6 +360,13 @@ public class DictTerm extends QueryTerm implements Comparator {
             return ag;
         }
 
+        PostingsIteratorFeatures feat =
+                new PostingsIteratorFeatures(wf, wc, searchFields,
+                fieldMultipliers,
+                loadPositions,
+                matchCase);
+        feat.setQueryStats(qs);
+
         //
         // Who got touched?
         boolean[] used = new boolean[ag.size];
@@ -339,13 +379,6 @@ public class DictTerm extends QueryTerm implements Comparator {
             scores = new float[ag.size];
         }
             
-        PostingsIteratorFeatures feat =
-            new PostingsIteratorFeatures(wf, wc, searchFields,
-                                         fieldMultipliers,
-                                         loadPositions,
-                                         matchCase);
-        feat.setQueryStats(qs);
-
         //
         // Loop through our terms.
         float sqw = 0;
