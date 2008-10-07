@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.retrieval.cache;
 
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 
@@ -85,8 +86,16 @@ public class TermCacheElement {
             return;
         }
         
+        QueryStats qs = feat == null ? null : feat.getQueryStats();
+
+        if(qs != null) {
+            qs.termCacheW.start();
+        }
         PostingsIterator pi = e.iterator(feat);
         if(pi == null) {
+            if (qs != null) {
+                qs.termCacheW.stop();
+            }
             return;
         }
         
@@ -99,6 +108,10 @@ public class TermCacheElement {
             }
         } else {
             merge(pi);
+        }
+        
+        if (qs != null) {
+            qs.termCacheW.stop();
         }
     }
     

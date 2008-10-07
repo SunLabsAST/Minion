@@ -45,6 +45,16 @@ public class QueryStats implements Serializable {
      * The number of main dictionary cache misses during the query.
      */
     public int dictCacheMisses;
+
+    /**
+     * The number of term cache hits.
+     */
+    public int termCacheHits;
+
+    /**
+     * The number of term cache misses.
+     */
+    public int termCacheMisses;
     
     /**
      * The total size (in bytes) of postings read during the query.
@@ -61,6 +71,13 @@ public class QueryStats implements Serializable {
      * during the query.
      */
     public NanoWatch dictLookupW = new NanoWatch();
+
+    /**
+     * A stopwatch that accumulates the time spent getting entries for the
+     * term cache.
+     */
+    public NanoWatch termCacheW = new NanoWatch();
+    
     /**
      * A stopwatch that accumulates the time required for reading postings
      * during the query.
@@ -104,8 +121,11 @@ public class QueryStats implements Serializable {
        dictCacheHits += qs.dictCacheHits;
        dictCacheMisses += qs.dictCacheMisses;
        postingsSize += qs.postingsSize;
+       termCacheHits += qs.termCacheHits;
+       termCacheMisses += qs.termCacheMisses;
        queryW.accumulate(qs.queryW);
        dictLookupW.accumulate(qs.dictLookupW);
+       termCacheW.accumulate(qs.termCacheW);
        postReadW.accumulate(qs.postReadW);
        unionW.accumulate(qs.unionW);
        intersectW.accumulate(qs.intersectW);
@@ -137,6 +157,11 @@ public class QueryStats implements Serializable {
                 postReadW.getAvgTimeMillis()));
         sb.append(String.format(" %-30s %10.1fKB\n", "Average Postings size:",
                 postingsSize / (double) postReadW.getClicks() / 1024));
+        sb.append(String.format(" %-30s %10d\n", "Term Cache Hits:", termCacheHits));
+        sb.append(String.format(" %-30s %10d\n", "Term Cache Misses:", termCacheMisses));
+        sb.append(String.format(" %-30s %10.1fms (%.2f%% of total)\n", "Generating term cache entries:",
+                termCacheW.getTimeMillis(),
+                termCacheW.getTimeMillis() * 100 / tqt));
         sb.append(String.format(" %-30s %10.1fms (%.2f%% of total)\n", "Postings iteration:",
                 piW.getTimeMillis(),
                 piW.getTimeMillis() * 100 / tqt));

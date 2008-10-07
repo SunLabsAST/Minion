@@ -345,18 +345,21 @@ public class DictTerm extends QueryTerm implements Comparator {
     }
 
     private TermCacheElement getTermCacheElement(PostingsIteratorFeatures feat) {
-            TermCache tc = part.getTermCache();
-            if(tc == null) {
-                return null;
-            }
+        TermCache tc = part.getTermCache();
+        if (tc == null) {
+            return null;
+        }
         String cacheName = getCacheKey();
         TermCacheElement tce = tc.get(cacheName);
         if (tce == null) {
+            qs.termCacheMisses++;
             tce = tc.create(cacheName);
             for (QueryEntry qe : dictEntries) {
                 tce.add(qe, feat);
             }
             tc.put(tce);
+        } else {
+            qs.termCacheHits++;
         }
         return tce;
     }
