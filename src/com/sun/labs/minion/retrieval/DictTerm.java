@@ -76,6 +76,8 @@ public class DictTerm extends QueryTerm implements Comparator {
      */
     protected QueryEntry[] dictEntries;
 
+    protected PostingsIteratorFeatures feat;
+
     /**
      * A set of postings iterators for the terms that can be used to get
      * position info for proximity queries or for highlighting.
@@ -116,6 +118,23 @@ public class DictTerm extends QueryTerm implements Comparator {
         // here
         if (!(part instanceof InvFileDiskPartition)) {
             return;
+        }
+
+        //
+        // Set up the features for our postings iterators once.
+        if(feat == null) {
+            feat = new PostingsIteratorFeatures();
+            feat.setFields(searchFields);
+            feat.setCaseSensitive(matchCase);
+            feat.setPositions(loadPositions);
+            feat.setQueryStats(qs);
+
+            if (!strictEval) {
+                feat.setWeightingFunction(wf);
+                feat.setWeightingComponents(wc);
+                feat.setMult(fieldMultipliers);
+            }
+            feat.setQueryStats(qs);
         }
         
         //
@@ -271,39 +290,35 @@ public class DictTerm extends QueryTerm implements Comparator {
     public ArrayGroup eval(ArrayGroup ag) {
 
         //
-        // If there's no array group given, then we're returning all of the
-        // docments in the term.  We'll use one set of features for
-        // everything.
+        // We'll see if there's a cached term (or generate one) here.
+        TermCacheElement tce = getTermCacheElement(feat);
+
+        if (tce != null) {
+
+            //
+            // We'll handle things from the cache.
+            ArrayGroup tg = tce.getGroup(feat.getWeightingComponents(),
+                    feat.getWeightingFunction());
+            if (ag != null) {
+                tg = tg.intersect(ag);
+            }
+            return tg;
+        }
+
+        //
+        // No cache, so do things the old-fashioned way.
         if(ag == null) {
-            
-            PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
-            feat.setFields(searchFields);
-            feat.setCaseSensitive(matchCase);
-            feat.setPositions(loadPositions);
-            feat.setQueryStats(qs);
 
-            if(!strictEval) {
-                feat.setWeightingFunction(wf);
-                feat.setWeightingComponents(wc);
-                feat.setMult(fieldMultipliers);
+            QuickOr or =
+                    strictEval ? new QuickOr(part, estSize) : new ScoredQuickOr(
+                    part, estSize);
+            or.setQueryStats(qs);
+            for(QueryEntry qe : dictEntries) {
+                wc.setTerm((String) qe.getName());
+                float qw = wf.initTerm(wc);
+                or.add(qe.iterator(feat), qw);
             }
-
-            TermCacheElement tce = getTermCacheElement(feat);
-            if(tce != null) {
-                return tce.getGroup(feat.getWeightingComponents(),
-                        feat.getWeightingFunction());
-            } else {
-                QuickOr or =
-                        strictEval ? new QuickOr(part, estSize) : new ScoredQuickOr(
-                        part, estSize);
-                or.setQueryStats(qs);
-                for (int i = 0; i < dictEntries.length; i++) {
-                    wc.setTerm((String) dictEntries[i].getName());
-                    float qw = wf.initTerm(wc);
-                    or.add(dictEntries[i].iterator(feat), qw);
-                }
-                return or.getGroup();
-            }
+            return or.getGroup();
         }
         
         //
@@ -351,6 +366,8 @@ public class DictTerm extends QueryTerm implements Comparator {
      * do the optimal thing.
      *
      * @param ag The group to intersect with.
+     * @return a group representing the intersection of this term with the given
+     * group
      */
     protected ArrayGroup intersect(ArrayGroup ag) {
 
@@ -359,13 +376,6 @@ public class DictTerm extends QueryTerm implements Comparator {
         if(ag.size == 0) {
             return ag;
         }
-
-        PostingsIteratorFeatures feat =
-                new PostingsIteratorFeatures(wf, wc, searchFields,
-                fieldMultipliers,
-                loadPositions,
-                matchCase);
-        feat.setQueryStats(qs);
 
         //
         // Who got touched?
