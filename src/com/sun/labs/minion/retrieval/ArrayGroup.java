@@ -669,6 +669,7 @@ public class ArrayGroup implements Cloneable {
                 i1++;
             }
         }
+        ret.normalized = ag.normalized;
         return ret;
     }
 

@@ -342,8 +342,7 @@ public class ScoredGroup extends ArrayGroup {
         size = rp;
         return this;
     }
-    
-    
+
     /**
      * Discards any entries in this scored group that are a score less
      * than the value supplied

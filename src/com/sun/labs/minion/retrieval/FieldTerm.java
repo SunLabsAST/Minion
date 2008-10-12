@@ -492,7 +492,7 @@ public class FieldTerm extends QueryTerm {
             }
             ScoredGroup sg = new ScoredGroup(part, scores);
             if(ag != null) {
-                sg.destructiveIntersect(ag);
+                sg = (ScoredGroup) ag.intersect(sg);
             }
             return sg;
         }
