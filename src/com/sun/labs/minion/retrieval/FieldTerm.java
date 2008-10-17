@@ -478,18 +478,29 @@ public class FieldTerm extends QueryTerm {
             feat.setCaseSensitive(true);
             feat.setQueryStats(qs);
             float[] scores = new float[part.getMaxDocumentID() + 1];
+            float valLen = nonWildCardLength(val);
             while(iter.hasNext()) {
                 QueryEntry qe = iter.next();
-                PostingsIterator pi = qe.iterator(feat);
-                if(pi == null) {
+                PostingsIterator vpi = qe.iterator(feat);
+                if(vpi == null) {
                     continue;
                 }
-                while(pi.next()) {
-                    scores[pi.getID()] =
-                            Math.max(scores[pi.getID()], (float) val.length() /
-                                     ((String) qe.getName()).length());
-                }
+
+                String match = (String) qe.getName();
+                while(vpi.next()) {
+                    scores[vpi.getID()] =
+                            Math.max(scores[vpi.getID()], valLen / match.length());
+               }
             }
+
+            //
+            // Because of wildcard characters, the pattern may have been longer
+            // than the values in the field, so we need to clamp the scores to 1.0
+            // in order to have normalized values.
+            for(int i = 0; i < scores.length; i++) {
+                scores[i] = Math.min(scores[i], 1);
+            }
+            
             ScoredGroup sg = new ScoredGroup(part, scores);
             if(ag != null) {
                 sg = (ScoredGroup) ag.intersect(sg);
@@ -529,6 +540,20 @@ public class FieldTerm extends QueryTerm {
 
     public List getQueryTerms(Comparator c) {
         return new ArrayList();
+    }
+
+    private int nonWildCardLength(String s) {
+        int l = 0;
+        for (int i = 0; i < s.length(); i++) {
+            switch (s.charAt(i)) {
+                case '*':
+                case '?':
+                    continue;
+                default:
+                    l++;
+            }
+        }
+        return l;
     }
 
     public String toString(String prefix) {
