@@ -97,27 +97,27 @@ public class QueryOptimizer
                     //
                     // Is term one a < or <= and term two a
                     // > or >=?
-                    if (((ft1.getOp() == FieldTerm.LESS)
-                         || (ft1.getOp() == FieldTerm.LEQ))
-                        && ((ft2.getOp() == FieldTerm.GREATER)
-                            || (ft2.getOp() == FieldTerm.GEQ))) {
+                    if (((ft1.getOp() == FieldTerm.Operator.LESS)
+                         || (ft1.getOp() == FieldTerm.Operator.LEQ))
+                        && ((ft2.getOp() == FieldTerm.Operator.GREATER)
+                            || (ft2.getOp() == FieldTerm.Operator.GEQ))) {
                         
                         objUpper = ft1.getValue();
-                        incUpper = ft1.getOp() == FieldTerm.LEQ;
+                        incUpper = ft1.getOp() == FieldTerm.Operator.LEQ;
                         objLower = ft2.getValue();
-                        incLower = ft2.getOp() == FieldTerm.GEQ;
+                        incLower = ft2.getOp() == FieldTerm.Operator.GEQ;
                     }
                     //
                     // Is term one a > or >= and term two a
                     // < or <=?
-                    if (((ft1.getOp() == FieldTerm.GREATER)
-                         || (ft1.getOp() == FieldTerm.GEQ))
-                        && ((ft2.getOp() == FieldTerm.LESS)
-                            || (ft2.getOp() == FieldTerm.LEQ))) {
+                    if (((ft1.getOp() == FieldTerm.Operator.GREATER)
+                         || (ft1.getOp() == FieldTerm.Operator.GEQ))
+                        && ((ft2.getOp() == FieldTerm.Operator.LESS)
+                            || (ft2.getOp() == FieldTerm.Operator.LEQ))) {
                         objUpper = ft2.getValue();
-                        incUpper = ft2.getOp() == FieldTerm.LEQ;
+                        incUpper = ft2.getOp() == FieldTerm.Operator.LEQ;
                         objLower = ft1.getValue();
-                        incLower = ft1.getOp() == FieldTerm.GEQ;
+                        incLower = ft1.getOp() == FieldTerm.Operator.GEQ;
                     }
                     
                     //

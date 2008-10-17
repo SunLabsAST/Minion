@@ -28,7 +28,7 @@ import java.util.List;
 
 public abstract class ComplexFieldTerm extends FieldTerm {
     public ComplexFieldTerm(List subexpr) {
-	super("", 0, "");
+	super("", Operator.COMPLEX, "");
 	
     } // ComplexFieldTerm constructor
     

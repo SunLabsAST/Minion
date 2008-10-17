@@ -60,7 +60,7 @@ public class FieldTerm extends QueryTerm {
      * The parametric operator, selected from one of the constants defined
      * in the class.
      */
-    protected int op;
+    protected Operator op;
 
     /**
      * The value given in the query.
@@ -123,7 +123,7 @@ public class FieldTerm extends QueryTerm {
      * @param op The operator that we're using.
      * @param val The value to compare against, given in the query.
      */
-    public FieldTerm(String name, int op, String val) {
+    public FieldTerm(String name, Operator op, String val) {
         this.name = name;
         this.op = op;
         this.val = val;
@@ -145,7 +145,7 @@ public class FieldTerm extends QueryTerm {
                       Object lowerBound, boolean includeLower,
                       Object upperBound, boolean includeUpper) {
         this.name = name;
-        this.op = RANGE;
+        this.op = Operator.RANGE;
         this.lowerBound = lowerBound;
         this.includeLower = includeLower;
         this.upperBound = upperBound;
@@ -157,7 +157,7 @@ public class FieldTerm extends QueryTerm {
         return name;
     }
 
-    public int getOp() {
+    public Operator getOp() {
         return op;
     }
 
@@ -189,7 +189,7 @@ public class FieldTerm extends QueryTerm {
         //
         // Similar doesn't use the iterator or a dictionary value, so it's a 
         // special case.
-        if(op == SIMILAR) {
+        if(op == Operator.SIMILAR) {
             super.setPartition(part);
             return;
         }
@@ -228,7 +228,7 @@ public class FieldTerm extends QueryTerm {
         // we're supposed to have a date, parse it and then figure out
         // whether it is for a whole day.  The range case is handled specially
         // below since it requires two dates.
-        if(sf.getField().getType() == FieldInfo.Type.DATE && op != RANGE) {
+        if(sf.getField().getType() == FieldInfo.Type.DATE && op != Operator.RANGE) {
             try {
                 d = NDateParser.parse(val);
                 time = d.getTime();
@@ -427,7 +427,7 @@ public class FieldTerm extends QueryTerm {
      */
     public ArrayGroup eval(ArrayGroup ag) {
 
-        if(op == SIMILAR) {
+        if(op == Operator.SIMILAR) {
             if(sf == null) {
                 return new ArrayGroup(0);
             }
@@ -473,7 +473,8 @@ public class FieldTerm extends QueryTerm {
         // those separately.  The score assigned to the documents for a given 
         // field value will be the maximum proportion of a field value matched.
         if(sf.getField().getType() == FieldInfo.Type.STRING &&
-                (op == MATCHES || op == SUBSTRING || op == STARTS || op == ENDS)) {
+                (op == Operator.MATCHES || op == Operator.SUBSTRING ||
+                op == Operator.STARTS || op == Operator.ENDS)) {
             PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
             feat.setCaseSensitive(true);
             feat.setQueryStats(qs);
@@ -557,8 +558,8 @@ public class FieldTerm extends QueryTerm {
     }
 
     public String toString(String prefix) {
-        String myStr = name + " " + OPNAMES[op];
-        if(op != RANGE) {
+        String myStr = name + " " + op;
+        if(op != Operator.RANGE) {
             myStr = myStr + " " + val + " (" + estSize + ")";
         } else {
             myStr = myStr + " " + (includeLower ? "[" : "{") + lowerBound + "-" + upperBound + (includeUpper
@@ -566,49 +567,14 @@ public class FieldTerm extends QueryTerm {
         }
         return super.toString(prefix) + " " + myStr + " (" + estSize + ")";
     }
+
     /**
-     * Opcodes for the various field operators.
+     * The saved field operators.
      */
-    public static final int EQUAL = 1;
-
-    public static final int LESS = 2;
-
-    public static final int GREATER = 3;
-
-    public static final int LEQ = 4;
-
-    public static final int GEQ = 5;
-
-    public static final int MATCHES = 6;
-
-    public static final int SUBSTRING = 7;
-
-    public static final int STARTS = 8;
-
-    public static final int ENDS = 9;
-
-    public static final int NOT$EQUAL = 10;
-
-    public static final int RANGE = 11;
-
-    public static final int SIMILAR = 12;
-
-    public static final String[] OPNAMES = {
-        "",
-        "EQUAL",
-        "LESS",
-        "GREATER",
-        "LEQ",
-        "GEQ",
-        "MATCHES",
-        "SUBSTRING",
-        "STARTS",
-        "ENDS",
-        "NOT EQUAL",
-        "RANGE",
-        "SIMILAR"
-    ,}
-;
+    public enum Operator {
+        COMPLEX, EQUAL, LESS, GREATER, LEQ, GEQ, MATCHES, SUBSTRING, STARTS, ENDS,
+        NOT$EQUAL, RANGE, SIMILAR;
+    }
     
 } // FieldTerm
 

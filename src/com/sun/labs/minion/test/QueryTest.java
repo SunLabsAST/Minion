@@ -173,26 +173,7 @@ public class QueryTest extends SEMain {
     
     protected PrintStream output;
 
-    //
-    // Field operators.
-    protected static Map<String, Integer> opMap =
-            new HashMap<String, Integer>();
-
     private SimpleHighlighter shigh;
-
-    static {
-        opMap.put("equal", new Integer(FieldTerm.EQUAL));
-        opMap.put("less", new Integer(FieldTerm.LESS));
-        opMap.put("greater", new Integer(FieldTerm.GREATER));
-        opMap.put("leq", new Integer(FieldTerm.LEQ));
-        opMap.put("geq", new Integer(FieldTerm.GEQ));
-        opMap.put("matches", new Integer(FieldTerm.MATCHES));
-        opMap.put("substring", new Integer(FieldTerm.SUBSTRING));
-        opMap.put("similar", new Integer(FieldTerm.SIMILAR));
-        opMap.put("starts", new Integer(FieldTerm.STARTS));
-        opMap.put("ends", new Integer(FieldTerm.ENDS));
-        opMap.put("not$equal", new Integer(FieldTerm.NOT$EQUAL));
-    }
 
     public QueryTest(URL cmFile, String indexDir, String engineType, String ds,
             String ss, PrintStream output) throws java.io.IOException,
@@ -1204,7 +1185,7 @@ public class QueryTest extends SEMain {
             String operator = fields[1].toLowerCase();
             String value = fields[2];
 
-            Integer op = opMap.get(operator);
+            FieldTerm.Operator op = FieldTerm.Operator.valueOf(operator.toUpperCase());
             if(op == null) {
                 output.println("Unknown operator: " + op);
                 return 1;

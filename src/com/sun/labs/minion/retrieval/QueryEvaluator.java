@@ -49,7 +49,7 @@ public class QueryEvaluator {
      */
     public List eval(List parts,
             QueryConfig qc,
-            String name, int op, String value) {
+            String name, FieldTerm.Operator op, String value) {
         QueryElement qe = new FieldTerm(name, op, value);
         qe.setQueryConfig(qc);
         return eval(parts, qe);

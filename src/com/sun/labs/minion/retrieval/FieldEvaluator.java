@@ -52,7 +52,7 @@ public class FieldEvaluator {
      * @param op the operation to use
      * @param val the value to test
      */
-    public FieldEvaluator(String field, int op, Object val) {
+    public FieldEvaluator(String field, FieldTerm.Operator op, Object val) {
         term = new FieldTerm(field, op, val.toString());
     }
     

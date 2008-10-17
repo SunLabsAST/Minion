@@ -300,44 +300,44 @@ public class StrictElementFactory
             if (StrictTransformer.isQuoted(value)) {
                 value = value.substring(1, value.length() - 1);
             }
-            int opcode = -1;
+            FieldTerm.Operator opcode;
             switch (theOp) {
                 case StrictParserConstants.STARTS:
-                    opcode = FieldTerm.STARTS;
+                    opcode = FieldTerm.Operator.STARTS;
                     break;
                 case StrictParserConstants.ENDS:
-                    opcode = FieldTerm.ENDS;
+                    opcode = FieldTerm.Operator.ENDS;
                     break;
                 case StrictParserConstants.MATCHES:
-                    opcode = FieldTerm.MATCHES;
+                    opcode = FieldTerm.Operator.MATCHES;
                     break;
                 case StrictParserConstants.SIMILAR:
-                    opcode = FieldTerm.SIMILAR;
+                    opcode = FieldTerm.Operator.SIMILAR;
                     break;
                 case StrictParserConstants.SUBSTRING:
-                    opcode = FieldTerm.SUBSTRING;
+                    opcode = FieldTerm.Operator.SUBSTRING;
                     break;
                 case StrictParserConstants.LESS:
                 case StrictParserConstants.LT:
-                    opcode = FieldTerm.LESS;
+                    opcode = FieldTerm.Operator.LESS;
                     break;
                 case StrictParserConstants.EQUALS:
-                    opcode = FieldTerm.EQUAL;
+                    opcode = FieldTerm.Operator.EQUAL;
                     break;
                 case StrictParserConstants.NOTEQUAL:
                     // For !=, we'll make a regular equals field,
                     // but below, we'll wrap it in a Not node
-                    opcode = FieldTerm.EQUAL;
+                    opcode = FieldTerm.Operator.EQUAL;
                     break;
                 case StrictParserConstants.GREATER:
                 case StrictParserConstants.GT:
-                    opcode = FieldTerm.GREATER;
+                    opcode = FieldTerm.Operator.GREATER;
                     break;
                 case StrictParserConstants.LEQ:
-                    opcode = FieldTerm.LEQ;
+                    opcode = FieldTerm.Operator.LEQ;
                     break;
                 case StrictParserConstants.GEQ:
-                    opcode = FieldTerm.GEQ;
+                    opcode = FieldTerm.Operator.GEQ;
                     break;
                 default:
                     throw new ParseException("Unknown field operator", 0);
