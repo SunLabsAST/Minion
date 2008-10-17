@@ -127,6 +127,42 @@ import java.util.Collections;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 
+/**
+ * <p>
+ * QueryTest is a set of utility methods and a query interface to operate on
+ * an index.  Run QueryTest with the "-d <index>" option specifying an index
+ * directory.  Queries can be issued by simply typing the query and hitting
+ * return.  By default, the top 10 results are displayed.  Each line will show
+ * the partition number, document ID (within the partition), and the document
+ * key that was specified at indexing time.  The data displayed can be changed
+ * with the ":display" command.  Arguments to the display command can be the
+ * names of any saved field or any of the following:
+ * </p>
+ * <ul>
+ * <li>score: the score, between 0 and 1, of the result
+ * <li>dockey: the key of the document
+ * <li>partNum: the partition number that the result occurs in
+ * <il>docID: the id number (within the partition) of the document
+ * <li>dvl: the length of the document vector
+ * </ul>
+ * <p>
+ * In addition, you can put "\n" or "\t" for a newline or a space.  Arguments
+ * should be separated with spaces.  The number of results displayed can be
+ * changed with the ":n" command.
+ * </p>
+ * <p>
+ * By default, results are sorted according to their score.  Results with the
+ * highest score are printed first.  The sorting specification can be changed
+ * by using the ":sort" command and giving it a sorting spec, as defined
+ * in the {@link com.sun.labs.minion.SearchEngine} interface.  To get the
+ * default sort back, use ":sort -score".
+ * </p>
+ * <p>
+ * To see the full set of commands available, use the ":help" command.  To
+ * exit QueryTest cleanly, use the ":q" command.
+ * <p>
+ */
+
 public class QueryTest extends SEMain {
 
     protected static Log log;
@@ -241,11 +277,12 @@ public class QueryTest extends SEMain {
                 ":variants <term>        Prints the LiteMorph variants of a term\n" +
                 ":stem <term>            Prints stem-matched terms from each partition\n" +
                 ":spell <term>           Prints the top 10 spelling variants of the term\n" +
-                "\nTaxonomy\n" +
+                "\nTaxonomy:\n" +
                 ":child <term>           Prints taxonomic children of a term\n" +
                 ":par <term>             Prints taxonomic parents of a term\n" +
                 ":sub <term>             Prints subsumed terms for <term>\n" +
-                "\nFields & Postings\n" + ":fs <part> <field>      \n" +
+                "\nFields & Postings:\n" +
+                ":fs <part> <field>      \n" +
                 ":sim <dockey> <dockey>  Compute similarity between docs\n" +
                 ":findsim <dockey> [<skim>]      Find documents similar to a doc\n" +
                 ":ffs <field> <dockey> [<skim>]   Find documents similar to a doc based on a particular field\n" +
@@ -2333,7 +2370,7 @@ public class QueryTest extends SEMain {
                 cmFile,
                 indexDir,
                 engineType,
-                "partNum,\\t,docID,\\t,aura-type,aura-key",
+                "partNum,\\t,docID,\\t,dockey",
                 "-score", 
                 output);
 
