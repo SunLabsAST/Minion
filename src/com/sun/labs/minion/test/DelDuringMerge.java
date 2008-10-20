@@ -131,7 +131,9 @@ public class DelDuringMerge {
             File f = PartitionManager.makeDeletedDocsFile(indexDir + File.separatorChar + "index", p);
             logger.info("Deleting: " + f);
             if(f.exists()) {
-                f.delete();
+                if (!f.delete()) {
+                    logger.severe("Failed to delete deleted doc file " + f.getName());
+                }
             }
         }
         

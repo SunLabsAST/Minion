@@ -425,6 +425,9 @@ public class ConceptEntry implements IndexEntry, QueryEntry {
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object conceptEntry) {
-        return id == ((ConceptEntry)conceptEntry).id;
+        if (conceptEntry instanceof ConceptEntry) {
+            return id == ((ConceptEntry)conceptEntry).id;
+        }
+        return false;
     }
 }

@@ -617,8 +617,12 @@ public class DiskPartition extends Partition implements Closeable {
 
         //
         // Remove the deletion bitmap and the removed partition files.
-        m.makeDeletedDocsFile(n).delete();
-        m.makeRemovedPartitionFile(n).delete();
+        if (!m.makeDeletedDocsFile(n).delete()) {
+            log.error(logTag, 2, "Failed to reap partition " + n);
+        }
+        if (!m.makeRemovedPartitionFile(n).delete()) {
+            log.error(logTag, 2, "Failed to reap partition " + n);
+        }
     }
 
     /**
@@ -1268,10 +1272,14 @@ public class DiskPartition extends Partition implements Closeable {
                 // Rename the files that were remapped
                 for (int i = 0; i < files.length;
                         i++) {
-                    files[i].delete();
+                    if (!files[i].delete()) {
+                        throw new IOException("Failed to delete pre-remap file " + files[i].getName());
+                    }
                     File mappedFile =
                             new File(files[i].getAbsolutePath() + ".remap");
-                    mappedFile.renameTo(files[i]);
+                    if (!mappedFile.renameTo(files[i])) {
+                        throw new IOException("Failed to rename remapped file " + files[i].getName() + ".remap");
+                    }
                 }
             }
 

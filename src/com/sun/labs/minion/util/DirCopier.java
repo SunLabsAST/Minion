@@ -25,6 +25,7 @@
 package com.sun.labs.minion.util;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
@@ -35,15 +36,17 @@ public class DirCopier {
     private File source;
     
     private File target;
-    public DirCopier(File source, File target) throws java.io.IOException {
+    public DirCopier(File source, File target) throws IOException {
         if(!source.isDirectory()) {
-            throw new java.io.IOException(source + " is not a directory");
+            throw new IOException(source + " is not a directory");
         }
         if(!target.exists()) {
-            target.mkdirs();
+            if (!target.mkdirs()) {
+                throw new IOException("Failed to create " + target.getName());
+            }
         }
         if(!target.isDirectory()) {
-            throw new java.io.IOException(target + " is not a directory");
+            throw new IOException(target + " is not a directory");
         }
         this.source = source;
         this.target = target;
@@ -58,7 +61,9 @@ public class DirCopier {
         for(File f : files) {
             File nt = new File(td, f.getName());
             if(f.isDirectory()) {
-                nt.mkdir();
+                if (!nt.mkdir()) {
+                    throw new IOException("Failed to make dir " + nt.getName());
+                }
                 copyDir(f, nt);
             } else {
                 copyFile(f, nt);

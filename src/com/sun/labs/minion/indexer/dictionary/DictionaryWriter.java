@@ -326,13 +326,21 @@ public class DictionaryWriter {
         //
         // Close and delete the temporary files.
         namesRAF.close();
-        namesFile.delete();
+        if (!namesFile.delete()) {
+            log.error(logTag, 2, "Failed to delete temporary namesFile");
+        }
         nameOffsetsRAF.close();
-        nameOffsetsFile.delete();
+        if (!nameOffsetsFile.delete()) {
+            log.error(logTag, 2, "Failed to delete temporary nameOffsetsFile");
+        }
         infoRAF.close();
-        infoFile.delete();
+        if (!infoFile.delete()) {
+            log.error(logTag, 2, "Failed to delete temporary infoFile");
+        }
         infoOffsetsRAF.close();
-        infoOffsetsFile.delete();
+        if (!infoOffsetsFile.delete()) {
+            log.error(logTag, 2, "Failed to delete temporary infoOffsetsFile");
+        }
     }
         
     

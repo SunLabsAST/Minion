@@ -911,7 +911,9 @@ public class MergeTest {
         File[] files = outputDirectory.listFiles();
         for (int i = 0; i < files.length; i++) {
             File file = files[i];
-            file.delete();
+            if (!file.delete()) {
+                log.error(logTag, 2, "Failed to delete old file " + file.getName());
+            }
         }
         //
         // Create a new index inverter and output the inverted documents into

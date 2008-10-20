@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 import com.sun.labs.minion.util.Getopt;
+import java.io.IOException;
 
 /**
  * A class that can be used to recover an index, removing partitions that are
@@ -53,12 +54,15 @@ import com.sun.labs.minion.util.Getopt;
  */
 public class Recover {
 
-    protected static void move(File od, File nd, String fn) {
-        (new File(od, fn)).renameTo(new File(nd, fn));
+    protected static void move(File od, File nd, String fn) throws IOException {
+        if (!(new File(od, fn)).renameTo(new File(nd, fn))) {
+            throw new IOException ("Failed to move file " + fn +
+                    " from " + od + " to " + nd);
+        }
     }
 
     public static void main(String[] args)
-            throws NumberFormatException, java.io.IOException {
+            throws NumberFormatException, IOException {
         String flags = "d:r:";
 
         //

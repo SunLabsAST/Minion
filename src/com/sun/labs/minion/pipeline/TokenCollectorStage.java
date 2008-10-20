@@ -177,17 +177,20 @@ public class TokenCollectorStage extends StageAdapter {
     }
     
     public boolean equals(Object o) {
-        TokenCollectorStage ocs = (TokenCollectorStage) o;
-        if(ranges.length != ocs.ranges.length) {
-            log.log(logTag, 4, "unequal: " + ranges.length + " " + ocs.ranges.length);
-            return false;
-        }
-        for(int i = 0; i < ranges.length; i++) {
-            if(!ranges[i].equals(ocs.ranges[i])) {
+        if (o instanceof TokenCollectorStage) {
+            TokenCollectorStage ocs = (TokenCollectorStage) o;
+            if(ranges.length != ocs.ranges.length) {
+                log.log(logTag, 4, "unequal: " + ranges.length + " " + ocs.ranges.length);
                 return false;
             }
+            for(int i = 0; i < ranges.length; i++) {
+                if(!ranges[i].equals(ocs.ranges[i])) {
+                    return false;
+                }
+            }
+            return true;
         }
-        return true;
+        return false;
     }
     
     /**
@@ -284,31 +287,34 @@ public class TokenCollectorStage extends StageAdapter {
         }
         
         public boolean equals(Object o) {
-            Range or = (Range) o;
-            
-            boolean bad = false;
-            for(int i = 0; i < nTokens; i++) {
-                log.log(logTag, 4, tokens[i].getToken() +  " " +
-                        tokens[i].getType() +
-                        " / " +
-                        or.tokens[i].getToken() +
-                        " " + or.tokens[i].getType());
-                
-                if(!tokens[i].getToken().equals(or.tokens[i].getToken())) {
-                    return false;
+            if (o instanceof Range) {
+                Range or = (Range) o;
+
+                boolean bad = false;
+                for(int i = 0; i < nTokens; i++) {
+                    log.log(logTag, 4, tokens[i].getToken() +  " " +
+                            tokens[i].getType() +
+                            " / " +
+                            or.tokens[i].getToken() +
+                            " " + or.tokens[i].getType());
+
+                    if(!tokens[i].getToken().equals(or.tokens[i].getToken())) {
+                        return false;
+                    }
+
+                    if(tokens[i].getType() != or.tokens[i].getType()) {
+                        log.warn(logTag, 4, tokens[i].getToken() + ": " +
+                                tokens[i].getType() + " " + or.tokens[i].getType());
+                        bad = true;
+                    }
                 }
-                
-                if(tokens[i].getType() != or.tokens[i].getType()) {
-                    log.warn(logTag, 4, tokens[i].getToken() + ": " +
-                            tokens[i].getType() + " " + or.tokens[i].getType());
-                    bad = true;
+
+                if(bad) {
+                    log.warn(logTag, 4, "Got all the way through, but bad!");
                 }
+                return !bad;
             }
-            
-            if(bad) {
-                log.warn(logTag, 4, "Got all the way through, but bad!");
-            }
-            return !bad;
+            return false;
         }
         
         public String toString() {

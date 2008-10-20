@@ -43,6 +43,7 @@ import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.WeightedField;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponent;
@@ -66,7 +67,6 @@ import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.SimpleFilter;
-import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.dictionary.FeatureVector;
@@ -211,7 +211,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         File iDFile = new File(indexDir);
         if(!iDFile.exists()) {
             log.log(logTag, 3, "Making index directory: " + iDFile);
-            iDFile.mkdirs();
+            if (!iDFile.mkdirs()) {
+                log.error(logTag, 2, "Failed to create index directory");
+            }
             
             //
             // If there's data that we need to copy, then do it now.
@@ -867,7 +869,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     break;
                 }
             }
-            activeFile.setLastModified(System.currentTimeMillis());
+            if (!activeFile.setLastModified(System.currentTimeMillis())) {
+                log.error(logTag, 2, "Failed to update active file mod time");
+            }
         }
     }
 
@@ -891,7 +895,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     dp.syncDeletedMap();
                 }
             }
-            activeFile.setLastModified(System.currentTimeMillis());
+            if (!activeFile.setLastModified(System.currentTimeMillis())) {
+                log.error(logTag, 2, "Failed to update active file mod time");
+            }
         }
     }
 
@@ -909,7 +915,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 ((DiskPartition) parts.get(i)).updatePartition(keys);
             }
         }
-        activeFile.setLastModified(System.currentTimeMillis());
+        if (!activeFile.setLastModified(System.currentTimeMillis())) {
+            log.error(logTag, 2, "Failed to update active file mod time");
+        }
     }
 
     /**
@@ -1327,7 +1335,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     //
                     // Check for a set of term stats that needs to be removed.
                     if(curr.startsWith("termstats")) {
-                        currF.delete();
+                        if (!currF.delete()) {
+                            log.error(logTag, 2, "Failed to delete termstats " + currF.getName());
+                        }
                         (new File(indexDirFile.toString(),
                                 curr.replace(".rem",
                                 ""))).delete();
@@ -1654,7 +1664,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             if(n.endsWith(".lock")) {
                 //
                 // Remove lock file.
-                dir[i].delete();
+                if (!dir[i].delete()) {
+                    log.error(logTag, 2, "Failed to delete lock file " + dir[i].getName());
+                }
             } else if(n.charAt(0) == 'p' && n.endsWith("post")) {
 
                 //
@@ -1670,8 +1682,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                         for(int j = 0; j < parts.length;
                                 j++) {
                             if(parts[j] == partNum) {
-                                makeRemovedPartitionFile(iD, partNum).
-                                        createNewFile();
+                                if (!makeRemovedPartitionFile(iD, partNum).
+                                        createNewFile()) {
+                                    log.error(logTag, 2, "Failed to create rem file for part " + partNum);
+                                }
                                 break;
                             }
                         }
@@ -2881,7 +2895,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     /**
      * The tag for this module.
      */
-    protected String logTag = "PM";
+    protected static String logTag = "PM";
 
     /**
      * The subdirectory of the main index directory where we will put our

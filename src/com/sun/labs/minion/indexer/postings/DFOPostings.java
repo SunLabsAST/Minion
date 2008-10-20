@@ -1350,7 +1350,10 @@ public class DFOPostings implements Postings {
          * same ID, <code>false</code> otherwise.
          */
         public boolean equals(Object o) {
-            return getID() == ((PostingsIterator) o).getID();
+            if (o instanceof PostingsIterator) {
+                return getID() == ((PostingsIterator) o).getID();
+            }
+            return false;
         }
         
         public int get(int[] ids) {

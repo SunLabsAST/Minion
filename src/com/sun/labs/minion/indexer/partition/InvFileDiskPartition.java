@@ -694,8 +694,12 @@ public class InvFileDiskPartition extends DiskPartition {
 
         //
         // Remove the deletion bitmap and the removed partition files.
-        m.makeDeletedDocsFile(n).delete();
-        m.makeRemovedPartitionFile(n).delete();
+        if (m.makeDeletedDocsFile(n).exists() && !m.makeDeletedDocsFile(n).delete()) {
+            log.error(logTag, 2, "Failed to reap partition " + n + " deleted docs");
+        }
+        if (!m.makeRemovedPartitionFile(n).delete()) {
+            log.error(logTag, 2, "Failed to reap partition " + n + " rem file");
+        }
     }
 
     /**

@@ -395,7 +395,9 @@ public class QueryRunner implements Runnable {
             return logFile;
         }
         logFile = new File("/tmp/" + toString());
-        logFile.createNewFile();
+        if (!logFile.createNewFile()) {
+            throw new IOException("Failed to create log file");
+        }
         return logFile;
     }
 

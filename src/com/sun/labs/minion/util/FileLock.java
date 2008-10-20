@@ -56,7 +56,7 @@ import java.util.logging.Logger;
  * the same file share the same map, even if the number of retries and the sleep
  * periods are different.
  */
-public class FileLock implements Cloneable {
+public class FileLock {
 
     MinionLog log = MinionLog.getLog();
     
@@ -250,7 +250,9 @@ public class FileLock implements Cloneable {
 
                 //
                 // We'll try to delete the lock file, but if it doesn't go, it's OK.
-                lockFile.delete();
+                if (!lockFile.delete()) {
+                    log.debug(logTag, 4, "Couldn't delete lock file (this is OK): " + lockFile.getName());
+                }
 
 
                 //

@@ -26,7 +26,7 @@ package com.sun.labs.minion.retrieval.parser;
 
 import java.util.*;
 
-public class SimpleNode implements Node {
+public class SimpleNode implements Node, Cloneable {
     protected Node parent;
     protected ArrayList children;
     protected int id;

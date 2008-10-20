@@ -617,7 +617,9 @@ public class ClassifierDiskPartition extends DiskPartition {
      * @param n The partition number to reap.
      */
     protected static void reap(PartitionManager m, int n) {
-        ((ClassifierManager) m).makeModelSpecificFile(n).delete();
+        if (!((ClassifierManager) m).makeModelSpecificFile(n).delete()) {
+            log.error(logTag, 1, "Failed to reap classifier partition");
+        }
         DiskPartition.reap(m, n);
     }
 }
