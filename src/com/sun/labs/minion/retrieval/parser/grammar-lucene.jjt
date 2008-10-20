@@ -255,15 +255,13 @@ TOKEN : { <PAND: "PAND-IS-UNDEFINED" >} // exists so the constant is generated
 //TOKEN : { <VALIDCHAR: ~["\""," ","\t","\r","\n","[","]"] >}
 TOKEN : { <VALIDCHAR: (<SPACESEPCHAR>) >}
 TOKEN : { <PHRASE: ((<MINUS>|<PLUS>)?
-                    (<DUBQUOTE>) (<VALIDCHAR>|<WHITESPACE>|<PUNCTUATION>|<SPECIAL>)+ (<DUBQUOTE>) (<PROX>)? (<BOOST>)? )
-                 | ((<MINUS>|<PLUS>)?
-                    (<DUBQUOTE>) (<NGRAMTOKEN>) (<DUBQUOTE>) (<PROX>)? (<BOOST>)?) >}
+                    (<DUBQUOTE>) (<NGRAMTOKEN>|<VALIDCHAR>|<WHITESPACE>|<PUNCTUATION>|<SPECIAL>)+ (<DUBQUOTE>) (<PROX>)? (<BOOST>)? )
+                   >}
 
 
 TOKEN : { <TERM: ((<MINUS>|<PLUS>)?
-                  (<VALIDCHAR>|<PUNCTUATION>)+ (<FUZZY>)? (<BOOST>)? )
-               | ((<MINUS>|<PLUS>)?
-                  (<NGRAMTOKEN>) (<FUZZY>)? (<BOOST>)? ) >}
+                  (<NGRAMTOKEN>|<VALIDCHAR>|<PUNCTUATION>)+ (<FUZZY>)? (<BOOST>)? )
+                   >}
 
 
 /*
