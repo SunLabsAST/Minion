@@ -582,7 +582,7 @@ public class SearchEngineImpl implements SearchEngine,
 //            log.error(logTag, 1, "Error parsing query", ex);
             log.debug(logTag, 4, "Parse error", ex);
             String msg = ex.getMessage().substring(0, ex.getMessage().indexOf('\n'));
-            throw new SearchEngineException("Error parsing query: " + msg);
+            throw new SearchEngineException("Error parsing query: " + msg, ex);
         } catch(TokenMgrError tme) {
             log.debug(logTag, 4, "Parse error", tme);
             throw new SearchEngineException("Error parsing query: " + tme);
