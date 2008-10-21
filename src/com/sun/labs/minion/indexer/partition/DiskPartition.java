@@ -503,9 +503,9 @@ public class DiskPartition extends Partition implements Closeable {
         return dvl.getVectorLength(docID, fieldID);
     }
 
-    public void normalize(int[] docs, float[] scores, int p, float qw) {
+    public void normalize(int[] docs, float[] scores, int p, float qw, int field) {
         initDVL(false);
-        dvl.normalize(docs, scores, p, qw);
+        dvl.normalize(docs, scores, p, qw, field);
     }
 
     /**

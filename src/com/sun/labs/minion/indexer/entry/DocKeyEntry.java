@@ -150,6 +150,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
         }
         return ((DocumentVectorPostings) p).getWeightedFeatures(
                 id,
+                -1,
                 dict,
                 wf, wc);
     }

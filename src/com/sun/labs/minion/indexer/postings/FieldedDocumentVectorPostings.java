@@ -273,11 +273,11 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
             WeightingFunction wf,
             WeightingComponents wc) {
         if(field == -1) {
-            return full.getWeightedFeatures(docID, dict, wf, wc);
+            return full.getWeightedFeatures(docID, -1, dict, wf, wc);
         }
         
         if(field < postings.length && postings[field] != null) {
-            return postings[field].getWeightedFeatures(docID, dict, wf, wc);
+            return postings[field].getWeightedFeatures(docID, field, dict, wf, wc);
         }
         
         return new WeightedFeature[0];

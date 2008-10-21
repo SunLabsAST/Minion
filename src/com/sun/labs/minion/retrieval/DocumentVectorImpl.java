@@ -589,7 +589,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         for(DiskPartition curr : e.getManager().getActivePartitions()) {
 
             DictionaryIterator di = curr.getMainDictionaryIterator();
-            ScoredQuickOr qor = new ScoredQuickOr(curr, v.length);
+            ScoredQuickOr qor = new ScoredQuickOr(curr, 1024);
             qor.setQueryStats(qs);
             qor.setField(fieldID);
 

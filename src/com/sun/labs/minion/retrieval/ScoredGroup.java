@@ -292,11 +292,12 @@ public class ScoredGroup extends ArrayGroup {
      * used.  If this is not 0, then the length of that field is used.  Note if
      * this ID is not for a vectored field, then a default length of 1 will be
      * used!
+     * @return this group with normalized scores
      */
     public ArrayGroup normalize(int field) {
         if(!normalized) {
             sqw = (float) Math.sqrt(sqw);
-            part.normalize(docs, scores, size, sqw);
+            part.normalize(docs, scores, size, sqw, field);
             normalized = true;
         }
         return this;

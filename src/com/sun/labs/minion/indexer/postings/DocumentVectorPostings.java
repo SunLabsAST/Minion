@@ -200,6 +200,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
      * dictionary lookups required.
      * 
      * @param docID the id of this document, if it is in an already dumped partition.
+     * @param fieldID the id of the field from which the postings were drawn
      * @param dict a dictionary that we can use to fetch term names when all we
      * have is IDs.
      * @param wf a weighting function to use to weight the entries in the document vector.
@@ -213,6 +214,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
      */
     public WeightedFeature[] getWeightedFeatures(
             int docID,
+            int fieldID,
             Dictionary dict,
             WeightingFunction wf,
             WeightingComponents wc) {
@@ -228,7 +230,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
             }
 
             WeightedFeature[] ret = new WeightedFeature[nIDs];
-            wc.dvl = ((DiskPartition) dict.getPartition()).getDocumentVectorLength(docID);
+            wc.dvl = ((DiskPartition) dict.getPartition()).getDocumentVectorLength(docID, fieldID);
             List<WeightedFeature> fl = new ArrayList<WeightedFeature>();
             if(getN() > 0.1 * ((DiskPartition) dict.getPartition()).getNEntries()) {
                 //

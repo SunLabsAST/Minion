@@ -267,7 +267,7 @@ public class QueryTest extends SEMain {
                 ":clustermerge           Merge all cluster partitions\n" +
                 ":ob                     Prints number of small docs and total docs\n" +
                 ":ts                     Prints term stats dictionary\n" +
-                ":cts [<part> ...]       Calculate and dump term stats\n" +
+                ":cvl [<part> ...]       Calculate and dump vector lengths for a given partition\n" +
                 ":rts                    Re-generates term stats using all active partitions\n" +
                 "\nWild Card, etc:\n" +
                 ":sw                     Toggles case-sensitivity for wild cards\n" +
@@ -288,7 +288,7 @@ public class QueryTest extends SEMain {
                 ":ffs <field> <dockey> [<skim>]   Find documents similar to a doc based on a particular field\n" +
                 ":cfs <dockey> <field> <weight> ... [<skim>]   Find documents similar to a doc based on a particular field combination\n" +
                 ":dv <dockey>            Show the document vector for a doc\n" +
-                ":fdv <dockey> <field>   Show the document vector for a field in a doc\n" +
+                ":fdv <field> <dockey>   Show the document vector for a field in a doc\n" +
                 ":ft <field> <op> <val>  Evaluate a field query\n" +
                 ":del <dockey>           Deletes the document\n" +
                 ":deld <partNum> <docid> [<docid...] Deletes the documents from the given partition\n" +
@@ -1927,9 +1927,9 @@ public class QueryTest extends SEMain {
             String key = q.substring(q.indexOf(' ') + 1).trim();
             ClassifierManager cm = engine.getClassifierManager();
             output.println("Similarity score: " + cm.similarity(cn, key));
-        } else if(q.startsWith(":cts ")) {
+        } else if(q.startsWith(":cvl ")) {
             //
-            // Calcuate term stats for a given partition using the current
+            // Calcuate vector lengths for a given partition using the current
             // term stats dictionary.
             String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
             int partNum = Integer.parseInt(vals[0]);
@@ -1940,7 +1940,7 @@ public class QueryTest extends SEMain {
                 }
                 DocumentVectorLengths dvl = p.getDVL();
                 try {
-                    dvl.calculateLengths(p, manager.getTermStatsDict(), true);
+                    dvl.calculateLengths(p, manager.getTermStatsDict(), false);
                 } catch(Exception e) {
                     output.println("Error calculating");
                     e.printStackTrace(output);
@@ -2096,7 +2096,7 @@ public class QueryTest extends SEMain {
                 InvFileDiskPartition dp = (InvFileDiskPartition) it.next();
                 int count = 0;
                 for(DictionaryIterator dit = dp.getFieldIterator("asin"); dit.hasNext();) {
-                    String asin = (String) ((QueryEntry) dit.next()).getName();
+                    String asin = (String) dit.next().getName();
                     QueryEntry e = dp.getDocumentTerm(asin);
                     if(e == null) {
                         count++;
@@ -2108,8 +2108,9 @@ public class QueryTest extends SEMain {
             }
         } else if(q.startsWith(":fdv")) {
             String[] vals = parseMessage(q);
-            DocumentVector dv = vals.length == 2 ? engine.getDocumentVector(vals[1], "")
-                    : engine.getDocumentVector(vals[1], vals[2]);
+            String field = vals[1];
+            String dockey = vals[2];
+            DocumentVector dv = engine.getDocumentVector(dockey, field);
             if(dv == null) {
                 output.println("Unknown key: " + vals[1]);
             } else {
