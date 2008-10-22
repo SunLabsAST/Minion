@@ -172,4 +172,12 @@ public class TermStatsImpl implements TermStats {
     public String toString() {
         return String.format("name: %s doc freq: %d total freq: %d max term freq: %d", name, ft, Ft, maxfdt);
     }
+
+    public boolean equals(TermStatsImpl tsi) {
+        return name.equals(tsi.name) &&
+                ft == tsi.ft &&
+                Ft == tsi.Ft &&
+                maxfdt == tsi.maxfdt;
+    }
+    
 } // TermStats
