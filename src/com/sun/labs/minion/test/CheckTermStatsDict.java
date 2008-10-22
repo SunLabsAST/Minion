@@ -2,7 +2,6 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.indexer.dictionary.UncachedTermStatsDictionary;
@@ -13,7 +12,9 @@ import com.sun.labs.minion.util.Util;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,30 +35,42 @@ public class CheckTermStatsDict {
 
     public boolean check(PrintStream output, boolean quiet) {
         boolean ret = true;
-        Map<String, TermStatsImpl> m = new LinkedHashMap();
+        List<TermStatsImpl> actual = new ArrayList();
         for (QueryEntry qe : dict) {
-            m.put(qe.getName().toString(), ((TermStatsEntry) qe).getTermStats());
+            actual.add(((TermStatsEntry) qe).getTermStats());
         }
-        if(!quiet) {
-        output.format("Read %d entries\n", m.size());
+        List<TermStatsImpl> sorted = new ArrayList<TermStatsImpl>(actual);
+        Collections.sort(sorted);
+        if (!quiet) {
+            output.format("Read %d entries\n", actual.size());
         }
 
-        for (Map.Entry<String, TermStatsImpl> e : m.entrySet()) {
-            TermStatsEntry ts = dict.getTermStats(e.getKey());
+        //
+        // Make sure the order of the entries is right.
+        for(int i = 0; i < actual.size(); i++) {
+            if(actual.get(i) != sorted.get(i)) {
+                output.format("Actual: %s Sorted: %s\n", actual.get(i), sorted.get(i));
+                ret = false;
+            }
+        }
+
+        for (TermStatsImpl tsi : actual) {
+            TermStatsEntry ts = dict.getTermStats(tsi.getName());
             if (ts == null) {
-                if(!quiet) {
-                output.format("Couldn't find: \"%s\"\n", Util.escape(e.getValue().
-                        getName().toString(), true));
+                if (!quiet) {
+                    output.format("Couldn't find: \"%s\"\n", 
+                            Util.escape(tsi.getName(), true));
                 }
                 ret = false;
                 continue;
             }
 
-            if (!ts.getTermStats().equals(e.getValue())) {
-                if(!quiet) {
-                output.format("Unequal: %s iter: %s get: %s\n", Util.escape(e.getKey(), true),
-                        e.getValue(),
-                        ts.getTermStats());
+            if (!ts.getTermStats().equals(tsi)) {
+                if (!quiet) {
+                    output.format("Unequal: %s iter: %s get: %s\n", Util.escape(
+                            tsi.getName(), true),
+                            tsi,
+                            ts.getTermStats());
                 }
                 ret = false;
                 continue;
@@ -72,11 +85,10 @@ public class CheckTermStatsDict {
     public static void main(String[] args) throws Exception {
         CheckTermStatsDict check = new CheckTermStatsDict(args[0]);
         boolean ret = check.check(System.out, false);
-        if(ret) {
+        if (ret) {
             System.out.format("Dictionary is good\n");
         } else {
             System.out.format("Dictionary is bad\n");
         }
     }
-
 }

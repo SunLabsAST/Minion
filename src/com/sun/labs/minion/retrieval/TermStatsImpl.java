@@ -36,7 +36,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 /**
  * A class that holds collection-wide statistics for a term.
  */
-public class TermStatsImpl implements TermStats {
+public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
     
     /**
      * The name of the term for which we're collecting stats.
@@ -178,6 +178,10 @@ public class TermStatsImpl implements TermStats {
                 ft == tsi.ft &&
                 Ft == tsi.Ft &&
                 maxfdt == tsi.maxfdt;
+    }
+
+    public int compareTo(TermStatsImpl o) {
+       return name.compareTo(o.name);
     }
     
 } // TermStats
