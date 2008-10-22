@@ -410,11 +410,6 @@ public class DocumentVectorLengths {
                             if(fvl[i] == null) {
                                 fvl[i] = new float[p.getMaxDocumentID() + 1];
                             }
-                            if (pi.getID() == 3 && i == 15) {
-                                int[] ffreqs = ((FieldedPostingsIterator) pi).getFieldFreq();
-                                log.debug(logTag, 0, String.format(
-                                        "stats: %s term freq: %d fw: %.3f", ts, ffreqs[i], fw[i]));
-                            }
                             fvl[i][pi.getID()] += fw[i] * fw[i];
                         }
                     }
