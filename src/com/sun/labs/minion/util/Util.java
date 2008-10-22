@@ -248,9 +248,24 @@ public class Util {
      * @return The string with unicode escapes
      */
     public static final String escape(String s) {
+        return escape(s, false);
+    }
+    
+    /**
+     * Converts a String to a unicode escaped String.
+     * @param s The string to escape.
+     * @param leaveAscii if <code>true</code>, leave ASCII characters as-is.
+     * @return The string with unicode escapes
+     */
+    public static final String escape(String s, boolean leaveAscii) {
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < s.length(); ++i) {
-            b.append(escape(s.charAt(i)));
+            char c = s.charAt(i);
+            if (leaveAscii && !UniversalTokenizer.isAsian(c)) {
+                b.append(c);
+            } else {
+                b.append(escape(c));
+            }
         }
         return b.toString();
     }
