@@ -31,7 +31,6 @@ import com.sun.labs.minion.indexer.dictionary.DictionaryWriter;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDictionary;
-import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 import com.sun.labs.minion.indexer.postings.FieldedPostingsIterator;
@@ -228,8 +227,7 @@ public class DocumentVectorLengths {
         if(adjustStats) {
             wc.N += part.getNDocs();
         }
-        PostingsIteratorFeatures feat =
-                new PostingsIteratorFeatures(wf, wc);
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
         int[] vectored = null;
 
         //
@@ -246,109 +244,47 @@ public class DocumentVectorLengths {
         float[] vl = new float[p.getMaxDocumentID() + 1];
 
         //
-        // Iterate through the new partition and the old term stats.
-        TermStatsEntry gte = null;
+        // Get the first entries from the dictionaries.
         QueryEntry mde = null;
-        Entry[] entries = new Entry[2];
-        while(gti.hasNext() && mdi.hasNext()) {
-            if(gte == null) {
-                gte = (TermStatsEntry) gti.next();
-            }
-
-            if(mde == null) {
-                mde = mdi.next();
-            }
-            entries[0] = mde;
-            entries[1] = gte;
-            
-            compareEntries(p, entries, wf, wc, feat, vectored, fvl, vl, gtw,
-                    adjustStats);
-            
-            mde = (QueryEntry) entries[0];
-            gte = (TermStatsEntry) entries[1];
-        }
-        
-        //
-        // Use up the last two entries that we got from the iterators.
-        while(mde != null || gte != null) {
-            entries[0] = mde;
-            entries[1] = gte;
-            compareEntries(p, entries, wf, wc, feat, vectored, fvl, vl, gtw,
-                    adjustStats);
-            mde = (QueryEntry) entries[0];
-            gte = (TermStatsEntry) entries[1];
-        }
-        
-        //
-        // Finish off the iterators.
-        while(mdi.hasNext()) {
-            entries[0] = mdi.next();
-            entries[1] = null;
-            compareEntries(p, entries, wf, wc, feat, vectored, fvl, vl, gtw,
-                    adjustStats);
+        if(mdi.hasNext()) {
+            mde = mdi.next();
         }
 
-        if(adjustStats) {
-            while(gti.hasNext()) {
-                gtw.write((TermStatsEntry) gti.next());
-            }
+        TermStatsEntry gte = null;
+        if (gti.hasNext()) {
+            gte = (TermStatsEntry) gti.next();
         }
 
         //
-        // Write the new term stats.
-        if(adjustStats) {
-            int tsn = part.getManager().getMetaFile().getNextTermStatsNumber();
-            File ntsf = part.getManager().makeTermStatsFile(tsn);
-            RandomAccessFile gtraf = new RandomAccessFile(ntsf, "rw");
-            gtw.finish(gtraf);
-            gtraf.close();
+        // Iterate until there are no more entries in either of the dictionaries.
+        while (mde != null || gte != null) {
 
-            //
-            // It's now safe to use this term stats dictionary.
-            part.getManager().getMetaFile().setTermStatsNumber(tsn);
-        }
-
-        //
-        // Reduce the refcount in the term stats dictionary so that it can close.
-        gts.iterationDone();
-
-        //
-        // Write the document vector lengths.
-        dump(fvl, vl, part);
-    }
-    
-    private void compareEntries(DiskPartition p,
-            Entry[] ine,
-            WeightingFunction wf, WeightingComponents wc, 
-            PostingsIteratorFeatures feat, 
-            int[] vectored,
-            float[][] fvl,
-            float[] vl,
-            DictionaryWriter gtw,
-            boolean adjustStats) {
-            QueryEntry mde = (QueryEntry) ine[0];
-            TermStatsEntry gte = (TermStatsEntry) ine[1];
             int cmp;
-            if(mde == null) {
+            if (mde == null) {
                 cmp = 1;
-            } else if(gte == null) {
+            } else if (gte == null) {
                 cmp = -1;
             } else {
                 cmp = ((Comparable) mde.getName()).compareTo(gte.getName());
             }
-            TermStatsEntry we = gte;
-            if(cmp == 0) {
+
+            //
+            // The entry to use for the merged global term stats dictionary.
+            TermStatsEntry we;
+
+            if (cmp == 0) {
                 //
                 // Both iterators have the term.  Combine stats!
+                we = gte;
                 TermStatsImpl ts = gte.getTermStats();
-                if(adjustStats) {
+                if (adjustStats) {
                     ts.add(mde);
                 }
                 wf.initTerm(wc.setTerm(ts));
                 addPostings(p, mde.iterator(feat), ts, vectored, fvl, vl);
                 gte = null;
                 mde = null;
-            } else if(cmp < 0) {
+            } else if (cmp < 0) {
                 //
                 // Only the new partition has the term.  Create the stats.
                 we = new TermStatsEntry(mde.getName().toString());
@@ -360,13 +296,50 @@ public class DocumentVectorLengths {
             } else {
                 //
                 // Only the global file has the stats.  Keep them.
+                we = gte;
                 gte = null;
             }
-            if(adjustStats) {
+
+            //
+            // Write the entry to the new global term stats dictionary.
+            if (adjustStats) {
                 gtw.write(we);
             }
-            ine[0] = mde;
-            ine[1] = gte;
+
+            //
+            // Pump whichever iterators are necessary.
+            if (gte == null && gti.hasNext()) {
+                gte = (TermStatsEntry) gti.next();
+            }
+
+            if (mde == null && mdi.hasNext()) {
+                mde = mdi.next();
+            }
+        }
+
+        //
+        // Write the new term stats dictionary.
+        if(adjustStats) {
+
+            int tsn = part.getManager().getMetaFile().getNextTermStatsNumber();
+            File ntsf = part.getManager().makeTermStatsFile(tsn);
+            RandomAccessFile gtraf = new RandomAccessFile(ntsf, "rw");
+            gtw.finish(gtraf);
+            gtraf.close();
+
+            //
+            // It's now safe to use this term stats dictionary.
+            part.getManager().getMetaFile().setTermStatsNumber(tsn);
+            part.getManager().updateTermStats();
+        }
+
+        //
+        // Reduce the refcount in the term stats dictionary so that it can close.
+        gts.iterationDone();
+
+        //
+        // Write the document vector lengths.
+        dump(fvl, vl, part);
     }
     
     /**
@@ -433,9 +406,14 @@ public class DocumentVectorLengths {
                             ((FieldedPostingsIterator) pi).getFieldWeights();
                     for(int i = 0; i < fw.length && i < fvl.length;
                             i++) {
-                        if(vectored[i] != 0) {
+                        if(vectored[i] != 0 && fw[i] > 0) {
                             if(fvl[i] == null) {
                                 fvl[i] = new float[p.getMaxDocumentID() + 1];
+                            }
+                            if (pi.getID() == 3 && i == 15) {
+                                int[] ffreqs = ((FieldedPostingsIterator) pi).getFieldFreq();
+                                log.debug(logTag, 0, String.format(
+                                        "stats: %s term freq: %d fw: %.3f", ts, ffreqs[i], fw[i]));
                             }
                             fvl[i][pi.getID()] += fw[i] * fw[i];
                         }
@@ -496,7 +474,7 @@ public class DocumentVectorLengths {
      */
     public void normalize(int[] docs, float[] scores, int p, float qw, int fieldID) {
         ReadableBuffer lvl;
-       
+
         switch(fieldID) {
             case -1:
                 lvl = vecLens.duplicate();

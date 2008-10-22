@@ -3141,7 +3141,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         updateTermStats();
     }
 
-    private void updateTermStats() throws java.io.IOException,
+    protected void updateTermStats() throws java.io.IOException,
             FileLockException {
         File newTSF = makeTermStatsFile(metaFile.getTermStatsNumber());
         if(!newTSF.equals(currTSF) && newTSF.exists()) {
