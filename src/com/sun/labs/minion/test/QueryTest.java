@@ -36,7 +36,6 @@ import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +57,6 @@ import com.sun.labs.minion.classification.FeatureClusterer;
 import com.sun.labs.minion.classification.FeatureSelector;
 import com.sun.labs.minion.classification.KnowledgeSourceClusterer;
 import com.sun.labs.minion.classification.MIFeatureSelector;
-import com.sun.labs.minion.classification.Rocchio;
 import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.entry.Entry;
@@ -76,7 +74,6 @@ import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.FieldTerm;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
-import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.StopWatch;
@@ -117,6 +114,7 @@ import com.sun.labs.minion.classification.ExplainableClassifierModel;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDictionary;
+import com.sun.labs.minion.indexer.dictionary.UncachedTermStatsDictionary;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.lexmorph.disambiguation.Unsupervised;
@@ -413,7 +411,9 @@ public class QueryTest extends SEMain {
 
     protected void queryStats() {
         QueryStats eqs = engine.getQueryStats();
-        output.println(eqs.dump());
+        if(eqs.queryW.getClicks() > 0) {
+            output.println(eqs.dump());
+        }
     }
 
     /**
@@ -1933,6 +1933,17 @@ public class QueryTest extends SEMain {
             // term stats dictionary.
             String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
             int partNum = Integer.parseInt(vals[0]);
+            TermStatsDictionary tsd = manager.getTermStatsDict();
+            boolean adjustStats = false;
+            if(vals.length > 1) {
+                try {
+                    tsd = new UncachedTermStatsDictionary(new File(vals[1]));
+                    adjustStats = true;
+                } catch (IOException ex) {
+                    output.format("Unable to read term stats dict %s: %s\b", vals[1], ex.getMessage());
+                    return 1;
+                }
+            }
             for(Iterator i = manager.getActivePartitions().iterator(); i.hasNext();) {
                 DiskPartition p = (DiskPartition) i.next();
                 if(p.getPartitionNumber() != partNum) {
@@ -1940,10 +1951,19 @@ public class QueryTest extends SEMain {
                 }
                 DocumentVectorLengths dvl = p.getDVL();
                 try {
-                    dvl.calculateLengths(p, manager.getTermStatsDict(), false);
+                    dvl.calculateLengths(p, tsd, adjustStats);
                 } catch(Exception e) {
                     output.println("Error calculating");
                     e.printStackTrace(output);
+                }
+                tsd.close(0);
+                tsd = manager.getTermStatsDict();
+                CheckTermStatsDict checker = new CheckTermStatsDict((UncachedTermStatsDictionary) tsd);
+                boolean checked = checker.check(output, false);
+                if(checked) {
+                    output.println("Good");
+                } else {
+                    output.println("Bad");
                 }
             }
         } else if(q.startsWith(":rts")) {
