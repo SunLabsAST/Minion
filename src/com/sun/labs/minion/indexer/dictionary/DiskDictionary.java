@@ -141,6 +141,12 @@ public class DiskDictionary implements Dictionary {
     protected Partition part;
 
     /**
+     * A final object that we can use to synchronize on the name and position
+     * caches.
+     */
+    private final Object cacheLock = new Object();
+
+    /**
      * The log.
      */
     protected static MinionLog log = MinionLog.getLog();
@@ -355,10 +361,8 @@ public class DiskDictionary implements Dictionary {
      * @param s The size of the caches to use.
      */
     public void setCacheSize(int s) {
-        posnCache =
-                new LRACache<Integer, Object>(s);
-        nameCache =
-                new LRACache<Object, QueryEntry>(s);
+        posnCache = new LRACache<Integer, Object>(s);
+        nameCache = new LRACache<Object, QueryEntry>(s);
     }
 
     /**
@@ -399,6 +403,9 @@ public class DiskDictionary implements Dictionary {
      * Gets a entry from the dictionary, given the name for the entry.
      *
      * @param name The name of the entry to get.
+     * @param lus a lookup state for this dictionary.  A lookup state can be
+     * re-used when doing multiple lookups to save time.  If this parameter is
+     * <code>null</code>, a lookup state will be generated for each lookup.
      * @return The entry associated with the name, or <code>null</code> if
      * the name doesn't appear in the dictionary.
      */
@@ -414,7 +421,7 @@ public class DiskDictionary implements Dictionary {
         //
         // Check our cache first.
         QueryEntry ret = null;;
-        synchronized(nameCache) {
+        synchronized(cacheLock) {
             ret = nameCache.get(name);
         }
         if(ret != null) {
@@ -443,7 +450,7 @@ public class DiskDictionary implements Dictionary {
             //
             // Cache the entry.
             if (ret != null) {
-                synchronized (posnCache) {
+                synchronized (cacheLock) {
                     posnCache.put(new Integer(pos), ret);
                     nameCache.put(name, ret);
                 }
@@ -481,8 +488,8 @@ public class DiskDictionary implements Dictionary {
         // use that map, otherwise the position must be one less than the
         // ID.
         int posn;
-        if(idToPosn != null) {
-            posn = idToPosn.byteDecode(id * dh.idToPosnBytes, dh.idToPosnBytes);
+        if(lus.localIDToPosn != null) {
+            posn = lus.localIDToPosn.byteDecode(id * dh.idToPosnBytes, dh.idToPosnBytes);
         } else {
             posn = id - 1;
         }
@@ -491,7 +498,7 @@ public class DiskDictionary implements Dictionary {
 
         //
         // Check our cache first!
-        synchronized(posnCache) {
+        synchronized(cacheLock) {
             Object o = posnCache.get(p);
             if(o != null && o instanceof Entry) {
                 return (QueryEntry) ((Entry) o).getEntry();
@@ -504,7 +511,7 @@ public class DiskDictionary implements Dictionary {
         //
         // We'll cache the name for later if we got one.
         if(e != null) {
-            synchronized(posnCache) {
+            synchronized(cacheLock) {
                 posnCache.put(p, e);
                 nameCache.put(e.getName(), e);
             }
@@ -574,7 +581,7 @@ public class DiskDictionary implements Dictionary {
             //
             // Check the cache for this position.
             Object compare;
-            synchronized(posnCache) {
+            synchronized(cacheLock) {
                 compare = posnCache.get(m);
             }
 
@@ -593,7 +600,7 @@ public class DiskDictionary implements Dictionary {
 
                 //
                 // Cache this one.
-                synchronized(posnCache) {
+                synchronized(cacheLock) {
                     posnCache.put(m, compare);
                 }
             }
@@ -1790,6 +1797,7 @@ public class DiskDictionary implements Dictionary {
         ReadableBuffer localNameOffsets;
         ReadableBuffer localInfo;
         ReadableBuffer localInfoOffsets;
+        ReadableBuffer localIDToPosn;
         QueryStats qs;
 
         public LookupState() {
@@ -1797,6 +1805,9 @@ public class DiskDictionary implements Dictionary {
             localNameOffsets = nameOffsets.duplicate();
             localInfo = entryInfo.duplicate();
             localInfoOffsets = entryInfoOffsets.duplicate();
+            if(idToPosn != null) {
+                localIDToPosn = idToPosn.duplicate();
+            }
             qs = new QueryStats();
         }
 
@@ -2137,7 +2148,7 @@ public class DiskDictionary implements Dictionary {
         }
 
         public int getID() {
-            if(idToPosn != null) {
+            if(lus.localIDToPosn != null) {
                 return getEntry().getID();
             } else {
                 return posn + 1;
