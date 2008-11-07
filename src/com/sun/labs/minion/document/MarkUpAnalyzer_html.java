@@ -864,6 +864,12 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
         fieldMap.put("a",
                      new FieldInfo("anchor", all,
                                    FieldInfo.Type.STRING));
+        fieldMap.put("b",
+                     new FieldInfo("bold", all,
+                                   FieldInfo.Type.STRING));
+        fieldMap.put("i",
+                     new FieldInfo("italic", all,
+                                   FieldInfo.Type.STRING));
         
         spaceSet = new HashSet<String>();
         spaceSet.add("br /");
