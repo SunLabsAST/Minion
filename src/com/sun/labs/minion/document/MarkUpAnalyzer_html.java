@@ -622,7 +622,8 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
             return;
         }
 
-        while(c != (char) -1 && c != ';') {
+        while(c != (char) -1 && c != ';' && !Character.isWhitespace(c)
+                && c != '<' && c != '>' && c!= '"') {
             if(entLen >= tag.length) {
                 tag = Util.expandChar(tag, tag.length * 2);
             }
