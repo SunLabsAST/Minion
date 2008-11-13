@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.document;
 
+import com.sun.labs.minion.IndexableFile;
 import java.io.File;
 import java.io.Reader;
 import java.io.StringReader;
@@ -92,8 +93,25 @@ public abstract class MarkUpAnalyzer {
     public static MarkUpAnalyzer getMarkUpAnalyzer(File f,
 						   Reader r,
 						   String key) {
-
-	String ext = Util.getExtension(f.getName()).toLowerCase();
+        //
+        // If this is an indexable file, check the file type.
+	if (f instanceof IndexableFile) {
+            IndexableFile idxf = (IndexableFile)f;
+            switch (idxf.getMarkupType()) {
+                case TEXT:
+                    return new MarkUpAnalyzer_txt(r, 0, key);
+                case XML:
+                    return new MarkUpAnalyzer_xml(r, 0, key);
+                case HTML:
+                    return new MarkUpAnalyzer_html(r, 0, key);
+                //
+                // By default, fall through and use the logic below
+                default:
+                    break;
+            }
+        }
+        
+        String ext = Util.getExtension(f.getName()).toLowerCase();
 	
 	//
 	// Get the extension off the location.

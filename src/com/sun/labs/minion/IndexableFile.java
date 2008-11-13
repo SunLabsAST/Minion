@@ -34,6 +34,28 @@ import java.io.File;
  */
 public class IndexableFile extends File {
 
+    public enum Type {
+        /**
+         * The default (unspecified) type.
+         */
+        PLAIN,
+
+        /**
+         * A simple text file.
+         */
+        TEXT,
+        
+        /**
+         * A type for HTML files.
+         */
+        HTML,
+     
+        /**
+         * A type for XML files
+         */
+        XML
+    }
+
     /**
      * The encoding for the file
      */
@@ -45,6 +67,12 @@ public class IndexableFile extends File {
      */
     protected String exactPath;
 
+    /**
+     * The markup type that is contained in this file.  Setting this takes
+     * the guesswork out.
+     */
+    protected Type markupType = Type.PLAIN;
+    
     /**
      * Creates a new IndexableFile that is the child of a parent IndexableFile.
      * @param parent The IndexableFile that is the parent of the newly created IndexableFile
@@ -124,5 +152,25 @@ public class IndexableFile extends File {
      */
     public String getExactPathname() {
         return exactPath;
+    }
+
+    /**
+     * Gets the markupType value.
+     * @return the markupType value.
+     */
+    public Type getMarkupType() {
+        return markupType;
+    }
+
+    /**
+     * Sets the markupType value.  Setting the markup type will cause the
+     * engine to assume the file is of the specified type.  An appropriate
+     * analyzer will be used to index the file.  Leaving the type as PLAIN
+     * (the default) will use the regular logic for determining the type.
+     * 
+     * @param markupType The new markupType value.
+     */
+    public void setMarkupType(Type markupType) {
+        this.markupType = markupType;
     }
 } // IndexableFile
