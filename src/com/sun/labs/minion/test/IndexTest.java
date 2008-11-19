@@ -269,7 +269,7 @@ public class IndexTest extends SEMain {
             return;
         }
         
-        ((SearchEngineImpl) engine).setLongIndexingRun(true);
+//        ((SearchEngineImpl) engine).setLongIndexingRun(true);
         
         if(stuff != null) {
             BufferedReader r;
