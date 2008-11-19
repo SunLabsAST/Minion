@@ -124,6 +124,8 @@ public class DictTerm extends QueryTerm implements Comparator {
         // Set up the features for our postings iterators once.
         if(feat == null) {
             feat = new PostingsIteratorFeatures();
+            searchFields = part.getManager().getMetaFile().getFieldArray(
+                    searchFieldNames);
             feat.setFields(searchFields);
             feat.setCaseSensitive(matchCase);
             feat.setPositions(loadPositions);
