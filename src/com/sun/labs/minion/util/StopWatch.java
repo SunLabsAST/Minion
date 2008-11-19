@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.util;
 
 import java.io.Serializable;
@@ -30,7 +29,7 @@ import java.io.Serializable;
  * A class implementing a simple stop watch that can be used for timing.
  */
 public class StopWatch implements Serializable {
-    
+
     /**
      * Creates a new stop watch.
      */
@@ -41,24 +40,24 @@ public class StopWatch implements Serializable {
      * Starts the timer.
      */
     public void start() {
-	lastStart = System.currentTimeMillis();
+        lastStart = System.currentTimeMillis();
     }
 
     /**
      * Stops the timer.
      */
     public void stop() {
-	clicks++;
+        clicks++;
         lastTime = System.currentTimeMillis() - lastStart;
-	time += lastTime;
+        time += lastTime;
     }
 
     /**
      * Resets the accumulated time.
      */
     public void reset() {
-	time = 0;
-	clicks = 0;
+        time = 0;
+        clicks = 0;
     }
 
     /**
@@ -66,7 +65,7 @@ public class StopWatch implements Serializable {
      * @return The number of milliseconds on the timer.
      */
     public long getTime() {
-	return time;
+        return time;
     }
 
     public long getLastTime() {
@@ -84,7 +83,7 @@ public class StopWatch implements Serializable {
      * @see #reset()
      */
     public int getClicks() {
-	return clicks;
+        return clicks;
     }
 
     public void accumulate(StopWatch sw) {
@@ -94,7 +93,6 @@ public class StopWatch implements Serializable {
         time += sw.time;
         clicks += sw.clicks;
     }
-
     /**
      * The amount of time accumulated on the timer.
      */
@@ -103,15 +101,16 @@ public class StopWatch implements Serializable {
     /**
      * The amount of time for the last start/stop pair.
      */
-     protected long lastTime;
-     
+    protected long lastTime;
+
     /**
      * The number of starts and stops since the last reset.
      */
     protected int clicks;
+
     /**
      * The last start time.
      */
     protected long lastStart;
-    
+
 } // StopWatch

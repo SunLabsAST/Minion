@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.util;
 
 import java.io.Serializable;
@@ -35,18 +34,18 @@ public class NanoWatch extends StopWatch implements Serializable {
      * Starts the timer.
      */
     public void start() {
-	lastStart = System.nanoTime();
+        lastStart = System.nanoTime();
     }
 
     /**
      * Stops the timer.
      */
     public void stop() {
-	clicks++;
+        clicks++;
         lastTime = System.nanoTime() - lastStart;
-	time += lastTime;
+        time += lastTime;
     }
-    
+
     /**
      * Gets the time for this nano stop watch in milliseconds.
      * @return the accumulated time for this stop watch in milliseconds.
@@ -54,7 +53,7 @@ public class NanoWatch extends StopWatch implements Serializable {
     public double getTimeMillis() {
         return getTime() / 1000000.0;
     }
-    
+
     public double getLastTimeMillis() {
         return lastTime / 1000000.0;
     }
