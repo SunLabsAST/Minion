@@ -24,6 +24,8 @@
 
 package com.sun.labs.minion.pipeline;
 
+import java.util.regex.Pattern;
+
 /**
  * Drops any tokens that parse as integers.  This stage should be inserted
  * after the universal tokenizer.  Since the tokenizer will split number
@@ -32,6 +34,8 @@ package com.sun.labs.minion.pipeline;
  */
 public class DropNumbersStage extends StageAdapter {
 
+    protected Pattern number = Pattern.compile("\\d+");
+    
     public DropNumbersStage() {
     }
     
@@ -43,12 +47,12 @@ public class DropNumbersStage extends StageAdapter {
      * @param t The token to process.
      */
     public void token(Token t) {
-        try {
-            Integer.parseInt(t.getToken());
-        } catch (NumberFormatException e) {
-            if (downstream != null) {
-                downstream.token(t);
-            }
+        String val = t.getToken();
+        if (number.matcher(val).matches()) {
+            return;
+        }
+        if (downstream != null) {
+            downstream.token(t);
         }
     }
 }
