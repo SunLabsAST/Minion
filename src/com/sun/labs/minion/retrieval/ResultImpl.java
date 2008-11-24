@@ -347,6 +347,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable, Result
         // partition, then do a quick retrieval.
         Passage pass = new Passage(ag.queryTerms);
         pass.setQueryConfig(((ResultSetImpl) set).e.getQueryConfig());
+        pass.setQueryStats(new QueryStats());
         pass.setPartition(ag.part);
         pass.setStorePassages(true);
         
