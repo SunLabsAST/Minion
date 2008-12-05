@@ -2000,6 +2000,22 @@ public class QueryTest extends SEMain {
             ResultSet rs = dv.findSimilar("-score");
             displayResults(rs);
             
+        } else if(q.startsWith(":mffs")) {
+            String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
+            String field = vals[0];
+            List<DocumentVector> vecs = new ArrayList();
+            for(int i = 1; i < vals.length; i++) {
+                DocumentVector dv = engine.getDocumentVector(vals[i], field);
+                if(dv != null) {
+                    vecs.add(dv);
+                }
+            }
+            MultiDocumentVectorImpl dv = new MultiDocumentVectorImpl(vecs, field);
+            dv.setEngine(engine);
+            output.println("dv: " + dv);
+            ResultSet rs = dv.findSimilar("-score");
+            displayResults(rs);
+
         } else if(q.startsWith(":ffs ")) {
             String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
             String key = vals.length > 1 ? vals[1] : vals[0];
@@ -2011,6 +2027,7 @@ public class QueryTest extends SEMain {
             } else {
                 dv = engine.getDocumentVector(key);
             }
+            output.println("dv: " + dv);
             if(dv != null) {
                 ResultSet rs = ((DocumentVectorImpl) dv).findSimilar("-score",
                         skim);
