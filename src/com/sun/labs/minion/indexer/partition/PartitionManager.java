@@ -1665,7 +1665,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 //
                 // Remove lock file.
                 if (!dir[i].delete()) {
-                    log.error(logTag, 2, "Failed to delete lock file " + dir[i].getName());
+                    log.error("PM", 2, "Failed to delete lock file " + dir[i].getName());
                 }
             } else if(n.charAt(0) == 'p' && n.endsWith("post")) {
 
@@ -1684,7 +1684,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                             if(parts[j] == partNum) {
                                 if (!makeRemovedPartitionFile(iD, partNum).
                                         createNewFile()) {
-                                    log.error(logTag, 2, "Failed to create rem file for part " + partNum);
+                                    log.error("PM", 2, "Failed to create rem file for part " + partNum);
                                 }
                                 break;
                             }
@@ -2895,7 +2895,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     /**
      * The tag for this module.
      */
-    protected static String logTag = "PM";
+    protected String logTag = "PM";
 
     /**
      * The subdirectory of the main index directory where we will put our
