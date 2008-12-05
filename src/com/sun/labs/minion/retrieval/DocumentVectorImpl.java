@@ -868,6 +868,15 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
 
     public void setField(String field) {
         this.field = field;
+
+        //
+        // If we don't have a search engine (possible if we're a subclass or we
+        // were sent over RMI), then we have to defer figuring out the field ID
+        // until setEngine gets called.
+        if(e == null) {
+            return;
+        }
+        
         //
         // Figure out the ID of the field that we're building a vector for.  If
         // the field value is null, we won't do any field restriction, i.e.,
@@ -877,7 +886,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         // empty, we'll treat it as the name of a (hopefully vectored) field.
         //
         // We're going to need the field ID in order to fetch the correct weight
-        // from the postings iterator when we're iterating through them.
+        // from the postings iterator when we're iterating through them, and to
+        // do normalization correctly when findSimilar is called.
         fieldID = -1;
         if(field != null) {
             if(field.equals("")) {
