@@ -49,6 +49,22 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
         v = combineFeatures(fvs);
     }
     
+    public MultiDocumentVectorImpl(List<DocumentVector> dvs, String field) {
+        this(dvs, null, field);
+    }
+
+    public MultiDocumentVectorImpl(List<DocumentVector> dvs, SearchEngine e, String field) {
+        List<WeightedFeature[]> fvs = new ArrayList<WeightedFeature[]>(dvs.size());
+        for(DocumentVector dv : dvs) {
+            fvs.add(((DocumentVectorImpl) dv).getFeatures());
+        }
+        v = combineFeatures(fvs);
+        this.field = field;
+        if(e != null) {
+            setEngine(e);
+        }
+    }
+
     /**
      * Creates a document vector for a set of documents.  The resulting document
      * vector is the centroid of the vectors fro the individual documnts.
@@ -105,11 +121,11 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
     private WeightedFeature[] initFeatures() {
         List<WeightedFeature[]> fvs = new ArrayList<WeightedFeature[]>();
         for(DocKeyEntry dke : keys) {
-            if(key instanceof FieldedDocKeyEntry) {
-                fvs.add(((FieldedDocKeyEntry) key).getWeightedFeatures(fieldID, wf,
+            if(dke instanceof FieldedDocKeyEntry) {
+                fvs.add(((FieldedDocKeyEntry) dke).getWeightedFeatures(fieldID, wf,
                         wc));
             } else {
-                fvs.add(key.getWeightedFeatures(wf, wc));
+                fvs.add(dke.getWeightedFeatures(wf, wc));
             }
         }
         return combineFeatures(fvs);
