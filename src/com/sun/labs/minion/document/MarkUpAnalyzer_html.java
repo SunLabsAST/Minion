@@ -67,6 +67,12 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
     protected boolean stopIndexAtEnd = false;
 
     /**
+     * True when a parsing function has read far enough as to start reading
+     * a tag (specifically a &lt; character).
+     */
+    protected boolean startedTag = false;
+
+    /**
      * The head of the pipeline that we'll use for processing text.
      */
     protected Stage stage;
@@ -127,12 +133,12 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
 
         this.stage = stage;
 
-        char c;
+        char c = 0;
 
         //
         // Process text until the end of file is encountered.
-        while((c = read()) != (char) -1) {
-
+        while(startedTag || (c = read()) != (char) -1) {
+            startedTag = false;
             switch(c) {
 
                 case '<':
@@ -163,6 +169,9 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
                 case '&':
                     tokenizeBuffer();
                     parseEntity();
+                    if (startedTag) {
+                        c = '<';
+                    }
                     textFilePos = pos;
                     break;
                 default:
@@ -634,6 +643,9 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
         if(!indexText) {
             return;
         }
+        if (c == '<') {
+            startedTag = true;
+        }
 
         Character val;
 
@@ -657,15 +669,21 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
             val =   (Character) entityMap.get(new String(tag, 0, entLen));
 
             //
-            // If we got null, pass along the entity as separate characters.
+            // If we got null, pass along the entity as separate characters,
+            // including the & and the end character (for the benefit of saved
+            // fields)
             if(val == null) {
-                if(textPos + entLen >= text.length) {
+                if(textPos + entLen + 2 >= text.length) {
                     text =  Util.expandChar(text,
-                                            Math.max(textPos + entLen,
+                                            Math.max(textPos + entLen + 2,
                                                      text.length * 2));
                 }
+                text[textPos++] = '&';
                 System.arraycopy(tag, 0, text, textPos, entLen);
                 textPos += entLen;
+                if (c != '<' && c != '>' && c != -1) {
+                    text[textPos++] = c;
+                }
                 return;
             }
         }
