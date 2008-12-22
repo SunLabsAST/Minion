@@ -92,10 +92,28 @@ public class DocumentIterator implements Iterator<Document> {
         
         //
         // Get the next entry from the current document iterator and check to
-        // see if it's been deleted.  If so, we'll recurse.
+        // see if it's been deleted.  If so, we'll scan ahead and recur.
         currEntry = (QueryEntry) docIter.next();
         if(currPart.isDeleted(currEntry.getID())) {
-            return hasNext();
+            //
+            // Scan the rest of this partition, looking for the next non-
+            // deleted doc.  If we don't find one, make the recursive call
+            // to switch partitions.
+            while (docIter.hasNext()) {
+                currEntry = (QueryEntry) docIter.next();
+                if (!currPart.isDeleted(currEntry.getID())) {
+                    break;
+                }
+            }
+            //
+            // Check our result - if there are no more entries and the current
+            // one is deleted, move to the next partition
+            if (!docIter.hasNext() && currPart.isDeleted(currEntry.getID())) {
+                return hasNext();
+            }
+            //
+            // Otherwise, fall through since we have a good entry in this
+            // partition.
         }
         
         //
