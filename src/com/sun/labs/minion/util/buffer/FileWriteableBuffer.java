@@ -35,6 +35,7 @@ import java.nio.channels.WritableByteChannel;
 
 import com.sun.labs.minion.util.ChannelUtil;
 import com.sun.labs.minion.util.MinionLog;
+import java.io.FileOutputStream;
 
 /**
  * A class for a writeable buffer that encodes data directly to a file,
@@ -487,13 +488,17 @@ public class FileWriteableBuffer implements WriteableBuffer {
             // If it's a random access file, we can do a channel transfer.
             write(((RandomAccessFile) o).getChannel());
         } else {
-            byte[] b = new byte[pos];
+            flush();
             raf.seek(off);
-            raf.readFully(b, 0, pos - bPos);
-            if(bPos > 0) {
-                System.arraycopy(buff, 0, b, pos - bPos, bPos);
+            int nWritten = 0;
+            while(nWritten < pos) {
+                int nRead = raf.read(buff);
+                if(nRead < 0) {
+                    break;
+                }
+                o.write(buff, 0, nRead);
+                nWritten += nRead;
             }
-            o.write(b);
         }
     }
 
@@ -506,11 +511,25 @@ public class FileWriteableBuffer implements WriteableBuffer {
      */
     public void write(OutputStream os)
             throws java.io.IOException {
-        flush();
-        byte[] b = new byte[pos];
-        raf.seek(off);
-        raf.readFully(b);
-        os.write(b);
+        if(os instanceof FileOutputStream) {
+            write(((FileOutputStream) os).getChannel());
+        } else {
+            //
+            // We'll write the data from the on-disk buffer into the output
+            // stream in buffer-sized chunks.  First we'll flush our data to
+            // the disk so that we can re-use our buffer.
+            flush();
+            raf.seek(off);
+            int nWritten = 0;
+            while(nWritten < pos) {
+                int nRead = raf.read(buff);
+                if(nRead < 0) {
+                    break;
+                }
+                os.write(buff, 0, nRead);
+                nWritten += nRead;
+            }
+        }
     }
 } // FileWriteableBuffer
 

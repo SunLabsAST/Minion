@@ -33,6 +33,7 @@ import java.util.PriorityQueue;
 
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.minion.pipeline.Token;
+import java.io.File;
 
 /**
  * A class holding various static utility functions.
@@ -62,6 +63,16 @@ public class Util {
         }
         System.arraycopy(a, 0, ret, 0, a.length);
         return ret;
+    }
+
+    public static File getTempFile(String path, String prefix,
+            String suffix) throws java.io.IOException {
+        return getTempFile(new File(path), prefix, suffix);
+    }
+
+    public static File getTempFile(File path, String prefix,
+            String suffix) throws java.io.IOException {
+        return File.createTempFile(prefix, suffix, path);
     }
     
     /**

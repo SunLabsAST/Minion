@@ -57,6 +57,8 @@ import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
+import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
+import java.io.File;
 
 /**
  * A class to hold the data for a saved field during indexing.
@@ -809,7 +811,9 @@ public class BasicField implements SavedField {
         //
         // Merge the docs to vals data.
         int[] temp = new int[1024];
-        WriteableBuffer mdtvData = new NIOBuffer(32768);
+        File mdtvFile = Util.getTempFile(path, "mdtv", ".dtv");
+        RandomAccessFile mdtvRAF = new RandomAccessFile(mdtvFile, "rw");
+        WriteableBuffer mdtvData = new FileWriteableBuffer(mdtvRAF, 32768);
 
         //
         // Go through all the fields.  Some may be null, but that doesn't
@@ -878,8 +882,9 @@ public class BasicField implements SavedField {
         //
         // Now encode the offsets.
         mHeader.offsetBytes = NIOBuffer.bytesRequired(mdtvData.position());
-        WriteableBuffer mdtvOffsets = new NIOBuffer(mHeader.offsetBytes *
-                (mHeader.nDocs + 1));
+        File mdtvOffFile = Util.getTempFile(path, "mdtv", ".dtv");
+        RandomAccessFile mdtvOffRAF = new RandomAccessFile(mdtvOffFile, "rw");
+        WriteableBuffer mdtvOffsets = new FileWriteableBuffer(mdtvOffRAF, 32768);
         for(int i = 0; i < mHeader.nDocs; i++) {
             mdtvOffsets.byteEncode(temp[i], mHeader.offsetBytes);
         }
@@ -893,6 +898,15 @@ public class BasicField implements SavedField {
         mHeader.dtvOffsetOffset = postOut.position();
         mHeader.dtvOffsetSize = mdtvOffsets.position();
         postOut.write(mdtvOffsets);
+
+        mdtvRAF.close();
+        if(!mdtvFile.delete()) {
+            log.error(logTag, 2, "Failed to delete docs to values buffer file after merge");
+        }
+        mdtvOffRAF.close();
+        if(!mdtvOffFile.delete()) {
+            log.error(logTag, 2, "Failed to delete docs to values offset buffer file after merge");
+        }
 
         long end = dictFile.getFilePointer();
 

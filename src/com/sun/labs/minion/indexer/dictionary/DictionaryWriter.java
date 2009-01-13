@@ -172,20 +172,22 @@ public class DictionaryWriter {
         // Create the files to which we'll write our data.  We'll base the
         // name on the path and the name of our thread.
         String tname = Thread.currentThread().getName();
+
+        File pf = new File(path);
         
-        namesFile = new File(path + File.separator + tname + ".n");
+        namesFile = Util.getTempFile(pf, "names", ".n");
         namesRAF = new RandomAccessFile(namesFile, "rw");
         names = new FileWriteableBuffer(namesRAF, OUT_BUFFER_SIZE);
         
-        nameOffsetsFile = new File(path + File.separator + tname + ".no");
+        nameOffsetsFile = Util.getTempFile(pf, "offsets", ".no");
         nameOffsetsRAF = new RandomAccessFile(nameOffsetsFile, "rw");
         nameOffsets = new FileWriteableBuffer(nameOffsetsRAF, OUT_BUFFER_SIZE);
 
-        infoFile = new File(path + File.separator + tname + ".i");
+        infoFile = Util.getTempFile(pf, "info", ".i");
         infoRAF = new RandomAccessFile(infoFile, "rw");
         info = new FileWriteableBuffer(infoRAF, OUT_BUFFER_SIZE);
 
-        infoOffsetsFile = new File(path + File.separator + tname + ".io");
+        infoOffsetsFile = Util.getTempFile(pf, "infooff", ".io");
         infoOffsetsRAF = new RandomAccessFile(infoOffsetsFile, "rw");
         infoOffsets = new FileWriteableBuffer(infoOffsetsRAF, OUT_BUFFER_SIZE);
 
