@@ -49,6 +49,7 @@ import com.sun.labs.minion.indexer.postings.DocOccurrence;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.StopWatch;
+import java.util.Date;
 
 /**
  * A class for holding a partition in memory while it is under
@@ -127,7 +128,7 @@ public abstract class MemoryPartition extends Partition {
      * data to disk
      */
     protected int dump() throws java.io.IOException {
-        
+        Date startTime = new Date();
         //
         // Do nothing if we have no data.
         if(docDict.size() == 0) {
@@ -263,8 +264,17 @@ public abstract class MemoryPartition extends Partition {
                 docDict.size(),
                 mainDict.size(),
                 (System.currentTimeMillis() - start)));
-        
-        manager.addNewPartition(ndp, docDict.getKeys());
+
+        //
+        // Check to see if a purge happened while dumping.  If so, we don't
+        // want to add this partition to the manager.
+        if (!startTime.after(manager.getLastPurgeTime())) {
+            log.log(logTag, 2, "Dump of " + partNumber + " started before " +
+                    "a purge, removing");
+            ndp.removedFile.createNewFile();
+        } else {
+            manager.addNewPartition(ndp, docDict.getKeys());
+        }
         
         //
         // Some stats for our partition.

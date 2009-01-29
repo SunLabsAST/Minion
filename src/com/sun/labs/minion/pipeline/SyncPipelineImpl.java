@@ -91,6 +91,15 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
     public void dump() {
         realDump();
     }
+
+    /**
+     * Purge the contents of this pipeline / partition.  Since the pipeline
+     * is synchronous, just call realPurge to dump the data that has already
+     * been indexed in-memory.
+     */
+    public void purge() {
+        realPurge();
+    }
     
     public void shutdown() {
         realDump();

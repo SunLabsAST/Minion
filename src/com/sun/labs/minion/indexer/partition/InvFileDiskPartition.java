@@ -734,7 +734,7 @@ public class InvFileDiskPartition extends DiskPartition {
                 continue;
             }
 
-            DocumentImpl d = new DocumentImpl((SearchEngineImpl) manager.engine, this, dke.getID());
+            DocumentImpl d = new DocumentImpl(manager.engine, this, dke.getID());
             d.export(o);
         }
     }

@@ -544,6 +544,15 @@ public abstract class AbstractPipelineImpl implements Pipeline {
     }
 
     /**
+     * Purges the current in-memory data, not dumping it out to disk.
+     */
+    protected void realPurge() {
+        //
+        // Just throw away the current indexer, replacing it with a new one.
+        setIndexer(factory.getIndexingStage());
+    }
+
+    /**
      * The current key that we're working on.
      */
     protected String currKey;

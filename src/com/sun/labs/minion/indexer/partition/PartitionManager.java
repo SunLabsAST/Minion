@@ -43,7 +43,6 @@ import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
-import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.WeightedField;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponent;
@@ -79,6 +78,7 @@ import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.util.DirCopier;
+import java.util.Date;
 import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
@@ -126,7 +126,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     /**
      * The search engine that is using us.
      */
-    protected SearchEngine engine;
+    protected SearchEngineImpl engine;
 
     /**
      * The index configuration for the index we'll be managing.
@@ -155,6 +155,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     private List<IndexListener> listeners;
     
+    /**
+     * The last time that a purge was called.  If new partitions start dumping
+     * before this time, they shouldn't be added to the active list.
+     */
+    protected Date lastPurgeTime = new Date(0);
+
     /**
      * Whether we're shutting down or not.
      */
@@ -1429,7 +1435,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * active list and writes the list.
      */
     public synchronized void purge() {
-
+        lastPurgeTime = new Date();
         try {
             activeLock.acquireLock();
 
@@ -1451,22 +1457,20 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             }
 
             //
-            // Write an empty active file, and reset the meta file.
+            // Write an empty active file, but leave the meta file since we
+            // want to keep field definitions (and it doesn't matter if the
+            // partition number or termstats number isn't reset)
             try {
                 synchronized(activeParts) {
                     writeActiveFile(activeParts);
                 }
-                metaFile.lock();
-                metaFile.reset();
-                metaFile.write();
-                metaFile.unlock();
             } catch(FileLockException fle) {
                 log.error(logTag, 1,
-                        "Exception locking meta file during purge: " +
+                        "Exception locking active file during purge: " +
                         fle);
             } catch(java.io.IOException ioe) {
                 log.error(logTag, 1,
-                        "Error writing meta file during purge: " +
+                        "Error writing active file during purge: " +
                         ioe);
             }
             log.log(logTag, 2, "Purged index in: " + indexDir);
@@ -1593,7 +1597,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // opportunity to compute vector lengths and a term stats dictionary.
         //
         // Once that's done, we need to re-write the active partitions list!
-        if(calculateDVL && ((SearchEngineImpl) engine).getLongIndexingRun()) {
+        if(calculateDVL && engine.getLongIndexingRun()) {
             try {
                 DiskPartition mdp = mergeAll();
                 if(mdp != null) {
@@ -1903,7 +1907,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * Sets the search engine associated with this partition manager.
      * @param engine the engine associated with this manager
      */
-    public void setEngine(SearchEngine engine) {
+    public void setEngine(SearchEngineImpl engine) {
         this.engine = engine;
     }
     
@@ -2308,6 +2312,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     public String getName() {
         return name;
+    }
+
+    public Date getLastPurgeTime() {
+        return lastPurgeTime;
     }
 
     /**

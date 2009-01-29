@@ -68,6 +68,11 @@ public class MetaDataStoreImpl implements MetaDataStore
     public String getProperty(String name, String defaultValue) {
         return prop.getProperty(name, defaultValue);
     }
+
+    public void purge() throws IOException {
+        prop.clear();
+        store();
+    }
     
     public void store() throws IOException {
         prop.store(new FileOutputStream(metaDataFile),

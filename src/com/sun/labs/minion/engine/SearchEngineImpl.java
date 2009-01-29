@@ -1041,10 +1041,28 @@ public class SearchEngineImpl implements SearchEngine,
      * Deletes all of the data in the index.
      */
     public void purge() {
-        if(invFilePartitionManager == null) {
-            return;
+        
+        if(invFilePartitionManager != null) {
+            invFilePartitionManager.purge();
+            for(int i = 0; i < pipes.length; i++) {
+                pipes[i].purge();
+            }
         }
-        invFilePartitionManager.purge();
+        if (classManager != null) {
+            classManager.purge();
+        }
+        if (clusterManager != null) {
+            clusterManager.purge();
+        }
+        try {
+            MetaDataStoreImpl mds = (MetaDataStoreImpl)getMetaDataStore();
+            mds.purge();
+        } catch (SearchEngineException e) {
+            log.log(logTag, 2, "Failed to purge meta data store", e);
+        } catch (IOException  e) {
+            log.log(logTag, 2, "Failed to purge meta data store", e);
+        }
+
     }
 
     /**

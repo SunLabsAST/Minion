@@ -72,6 +72,11 @@ public class AsyncPipelineImpl extends AbstractPipelineImpl implements Runnable 
      * Whether we need to dump our partition.
      */
     protected boolean doDump;
+
+    /**
+     * Whether we need to purge the data in this partition/pipeline.
+     */
+    protected boolean doPurge;
     
     /**
      * Instantiates a pipeline.
@@ -107,7 +112,17 @@ public class AsyncPipelineImpl extends AbstractPipelineImpl implements Runnable 
                 // seconds before checking to see if something else is going on
                 // (e.g., we were asked for a flush.
                 Indexable doc = indexingQueue.poll(1, TimeUnit.SECONDS);
-                
+
+                //
+                // If we got asked to do a purge, drain the queue and purge
+                // our collected in-memory data
+                if (doPurge) {
+                    List<Indexable> l = new ArrayList<Indexable>();
+                    indexingQueue.drainTo(l);
+                    realPurge();
+                    doPurge = false;
+                }
+
                 if(doc != null) {
                     
                     //
@@ -181,6 +196,16 @@ public class AsyncPipelineImpl extends AbstractPipelineImpl implements Runnable 
         doDump = true;
     }
     
+    /**
+     * Purge the data currently in the pipeline.  The data is thrown out,
+     * not getting written out to disk.  It is best not to be indexing while
+     * a purge is in progress.
+     *
+     * @throws com.sun.labs.minion.SearchEngineException
+     */
+    public void purge() {
+        doPurge = true;
+    }
     
     /**
      * Shuts down this pipeline, making sure that any documents in the

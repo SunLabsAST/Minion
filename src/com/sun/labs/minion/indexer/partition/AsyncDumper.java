@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.NanoWatch;
+import java.util.Date;
 
 /**
  * A class that will be used to dump partitions in an orderly fashion.  This
@@ -65,7 +66,7 @@ public class AsyncDumper implements Runnable, Dumper {
     /**
      * A queue onto which partitions will be placed for dumping.
      */
-    protected BlockingQueue<Stage> toDump;
+    protected BlockingQueue<StageHolder> toDump;
 
     /**
      * The interval for polling the partition queue.
@@ -124,7 +125,7 @@ public class AsyncDumper implements Runnable, Dumper {
     public void dump(Stage s) {
         try {
             nw.start();
-            toDump.put(s);
+            toDump.put(new StageHolder(s, new Date()));
             nw.stop();
         } catch (InterruptedException ex) {
             log.warn(logTag, 4, "Dumper interrupted during put");
@@ -137,10 +138,10 @@ public class AsyncDumper implements Runnable, Dumper {
                 //
                 // We'll poll for a defined interval so that we can catch when
                 // we're finished.
-                Stage s = toDump.poll(pollInterval, TimeUnit.SECONDS);
-                if (s != null) {
+                StageHolder sh = toDump.poll(pollInterval, TimeUnit.SECONDS);
+                if (sh != null && sh.time.after(pm.getLastPurgeTime())) {
                     try {
-                        s.dump(null);
+                        sh.stage.dump(null);
 
                         //
                         // Merges will happen synchronously in the thread
@@ -175,10 +176,12 @@ public class AsyncDumper implements Runnable, Dumper {
 
         //
         // Drain the list of partitions to dump and then dump them.
-        List<Stage> l = new ArrayList<Stage>();
+        List<StageHolder> l = new ArrayList<StageHolder>();
         toDump.drainTo(l);
-        for (Stage s : l) {
-            s.dump(null);
+        for (StageHolder sh : l) {
+            if (sh.time.after(pm.getLastPurgeTime())) {
+                sh.stage.dump(null);
+            }
         }
     }
 
@@ -199,7 +202,7 @@ public class AsyncDumper implements Runnable, Dumper {
     public void newProperties(PropertySheet ps)
             throws PropertyException {
         queueLength = ps.getInt(PROP_QUEUE_LENGTH);
-        toDump = new ArrayBlockingQueue<Stage>(queueLength);
+        toDump = new ArrayBlockingQueue<StageHolder>(queueLength);
         pollInterval = ps.getInt(PROP_POLL_INTERVAL);
         doGC = ps.getBoolean(PROP_DO_GC);
         nw = new NanoWatch();
@@ -215,4 +218,12 @@ public class AsyncDumper implements Runnable, Dumper {
         return name;
     }
 
+    class StageHolder {
+        public Stage stage;
+        public Date time;
+        public StageHolder(Stage s, Date t) {
+            stage = s;
+            time = t;
+        }
+    }
 }

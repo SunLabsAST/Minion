@@ -58,6 +58,15 @@ public interface Pipeline {
     public void dump() throws SearchEngineException;
 
     /**
+     * Purge the data currently in the pipeline.  The data is thrown out,
+     * not getting written out to disk.  It is best not to be indexing while
+     * a purge is in progress.
+     *
+     * @throws com.sun.labs.minion.SearchEngineException
+     */
+    public void purge();
+
+    /**
      * Flushes all the data currently held in the queue.  If the pipeline
      * is asynchronous, then the flush to disk will occur asynchronously
      * when all of the data in the pipline has been indexed.

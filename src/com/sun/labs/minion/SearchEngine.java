@@ -565,6 +565,13 @@ public interface SearchEngine extends Searcher, Classifier {
 
     /**
      * Purges all of the data in the index.  This operation is not reversible!
+     * Any documents in the indexing pipeline will be flushed out and purged
+     * during this process.  Any meta data in the MetaDataStore will also be
+     * purged.
+     * 
+     * Indexing documents while purge is called isn't recommended.
+     * If you are using a SimpleIndexer, you should call
+     * {@link SimpleIndexer#finish()} before calling purge.
      */
     public void purge();
 
