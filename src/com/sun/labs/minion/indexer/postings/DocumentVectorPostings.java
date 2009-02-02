@@ -251,8 +251,8 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
                             twf.setFreq(pi.getFreq());
                             twf.setEntry(qe);
                             fl.add(twf);
+                            break;
                         }
-                        break;
                     }
                 }
             } else {
