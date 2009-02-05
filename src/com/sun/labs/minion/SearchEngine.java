@@ -25,6 +25,7 @@
 package com.sun.labs.minion;
 
 import com.sun.labs.minion.indexer.partition.PartitionManager;
+import com.sun.labs.minion.query.Element;
 import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
@@ -363,6 +364,27 @@ public interface SearchEngine extends Searcher, Classifier {
     public ResultSet search(String query, String sortOrder,
                             int defaultOperator, int grammar)
             throws SearchEngineException;
+
+    /**
+     * Runs a query against the index, returning a set of results.
+     * @param el the query, expressed using the programattic query API
+     * @return the set of documents that match the query
+     * @throws com.sun.labs.minion.SearchEngineException if there are any errors
+     * evaluating the query
+     */
+    ResultSet search(Element el) throws SearchEngineException;
+
+    /**
+     * Runs a query against the index, returning a set of results.
+     * @param el the query, expressed using the programattic query API
+     * @param sortOrder How the results should be sorted.  This is a set of
+     * comma-separated field names, each preceeded by a <code>+</code> (for
+     * increasing order) or by a <code>-</code> (for decreasing order).
+     * @return the set of documents that match the query
+     * @throws com.sun.labs.minion.SearchEngineException if there are any errors
+     * evaluating the query
+     */
+    ResultSet search(Element el, String sortOrder) throws SearchEngineException;
 
     /**
      * Gets a set of results corresponding to the document keys passed in.
@@ -720,4 +742,5 @@ public interface SearchEngine extends Searcher, Classifier {
      */
     public MetaDataStore getMetaDataStore()
             throws SearchEngineException;
+
 }

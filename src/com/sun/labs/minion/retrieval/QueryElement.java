@@ -35,7 +35,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
 import com.sun.labs.minion.util.MinionLog;
-import com.sun.labs.minion.util.Util;
+import java.util.Collection;
 
 /**
  * An abstract base class for all of the term and operator classes that
@@ -282,6 +282,9 @@ public abstract class QueryElement implements Comparable {
         }
     }
 
+    public void setSearchFields(Collection<String> fieldNames) {
+        searchFieldNames = fieldNames.toArray(new String[0]);
+    }
 
     /** 
      * Returns a list of all the regular terms in this query in the order

@@ -30,6 +30,7 @@ import java.text.ParseException;
 import com.sun.labs.minion.retrieval.*;
 
 import com.sun.labs.minion.Searcher;
+import com.sun.labs.minion.query.Relation;
 
 /**
  * Creates QueryElements based on SimpleNodes generated from the parser
@@ -300,44 +301,44 @@ public class StrictElementFactory
             if (StrictTransformer.isQuoted(value)) {
                 value = value.substring(1, value.length() - 1);
             }
-            FieldTerm.Operator opcode;
+            Relation.Operator opcode;
             switch (theOp) {
                 case StrictParserConstants.STARTS:
-                    opcode = FieldTerm.Operator.STARTS;
+                    opcode = Relation.Operator.STARTS;
                     break;
                 case StrictParserConstants.ENDS:
-                    opcode = FieldTerm.Operator.ENDS;
+                    opcode = Relation.Operator.ENDS;
                     break;
                 case StrictParserConstants.MATCHES:
-                    opcode = FieldTerm.Operator.MATCHES;
+                    opcode = Relation.Operator.MATCHES;
                     break;
                 case StrictParserConstants.SIMILAR:
-                    opcode = FieldTerm.Operator.SIMILAR;
+                    opcode = Relation.Operator.SIMILAR;
                     break;
                 case StrictParserConstants.SUBSTRING:
-                    opcode = FieldTerm.Operator.SUBSTRING;
+                    opcode = Relation.Operator.SUBSTRING;
                     break;
                 case StrictParserConstants.LESS:
                 case StrictParserConstants.LT:
-                    opcode = FieldTerm.Operator.LESS;
+                    opcode = Relation.Operator.LESS_THAN;
                     break;
                 case StrictParserConstants.EQUALS:
-                    opcode = FieldTerm.Operator.EQUAL;
+                    opcode = Relation.Operator.EQUALS;
                     break;
                 case StrictParserConstants.NOTEQUAL:
                     // For !=, we'll make a regular equals field,
                     // but below, we'll wrap it in a Not node
-                    opcode = FieldTerm.Operator.EQUAL;
+                    opcode = Relation.Operator.EQUALS;
                     break;
                 case StrictParserConstants.GREATER:
                 case StrictParserConstants.GT:
-                    opcode = FieldTerm.Operator.GREATER;
+                    opcode = Relation.Operator.GREATER_THAN;
                     break;
                 case StrictParserConstants.LEQ:
-                    opcode = FieldTerm.Operator.LEQ;
+                    opcode = Relation.Operator.LEQ;
                     break;
                 case StrictParserConstants.GEQ:
-                    opcode = FieldTerm.Operator.GEQ;
+                    opcode = Relation.Operator.GEQ;
                     break;
                 default:
                     throw new ParseException("Unknown field operator", 0);

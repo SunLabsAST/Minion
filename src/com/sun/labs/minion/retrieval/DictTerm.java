@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary.LookupState;
@@ -62,7 +61,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      * term, when the term is instantiated.
      */
     protected String[] knowledgeVariants;
-    
+
     /**
      * The array of semantic variantions of the term as returned from the
      * taxonomies of all the partitions. We only need to compute this once per query term.
@@ -102,7 +101,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      * @param val The value from the query.
      */
     public DictTerm(String val) {
-        this.val    = val;
+        this.val = val;
     } // DictTerm constructor
 
     /**
@@ -113,10 +112,12 @@ public class DictTerm extends QueryTerm implements Comparator {
      */
     public void setPartition(DiskPartition part) {
 
+//        log.debug(logTag, 0, String.format(part + " " + matchCase));
+
         //
         // If this isn't a term in an inverted file then we stop
         // here
-        if (!(part instanceof InvFileDiskPartition)) {
+        if(!(part instanceof InvFileDiskPartition)) {
             return;
         }
 
@@ -131,17 +132,18 @@ public class DictTerm extends QueryTerm implements Comparator {
             feat.setPositions(loadPositions);
             feat.setQueryStats(qs);
 
-            if (!strictEval) {
+            if(!strictEval) {
                 feat.setWeightingFunction(wf);
                 feat.setWeightingComponents(wc);
                 feat.setMult(fieldMultipliers);
             }
             feat.setQueryStats(qs);
         }
-        
+
         //
         // We'll get morphological variants once.
-        if(doMorph && knowledgeVariants == null && qc.getKnowledgeSource() != null) {
+        if(doMorph && knowledgeVariants == null && qc.getKnowledgeSource() !=
+                null) {
 
             //
             // If we're supposed to match case, we'll use the case given in
@@ -149,35 +151,38 @@ public class DictTerm extends QueryTerm implements Comparator {
             Set<String> variants = qc.getKnowledgeSource().variantsOf(val);
             knowledgeVariants = new String[variants.size()];
             int i = 0;
-            for (Iterator<String> iter = variants.iterator(); iter.hasNext();) {
+            for(Iterator<String> iter = variants.iterator(); iter.hasNext();) {
                 knowledgeVariants[i++] = iter.next();
             }
         }
-        
+
         //
         //We'll get the semantic expansions once, for all the partitions
-        if (doExpand && semanticVariants == null) {
+        if(doExpand && semanticVariants == null) {
             Set semanticExpansions = new HashSet();
-            Iterator partitionIterator = part.getManager().getActivePartitions().iterator();
-            while (partitionIterator.hasNext()) {
-                InvFileDiskPartition p = (InvFileDiskPartition) partitionIterator.next();
+            Iterator partitionIterator = part.getManager().getActivePartitions().
+                    iterator();
+            while(partitionIterator.hasNext()) {
+                InvFileDiskPartition p =
+                        (InvFileDiskPartition) partitionIterator.next();
                 Set subsumedConceptEntries = p.getSubsumed(this.getName());
-                if (subsumedConceptEntries != null) {
-                    for (Iterator iter = subsumedConceptEntries.iterator(); iter
-                            .hasNext();) {
-                        semanticExpansions.add(((ConceptEntry) iter.next()).getName());
-                        
+                if(subsumedConceptEntries != null) {
+                    for(Iterator iter = subsumedConceptEntries.iterator(); iter.
+                            hasNext();) {
+                        semanticExpansions.add(((ConceptEntry) iter.next()).
+                                getName());
+
                     }
                 }
             }
             semanticVariants = new String[semanticExpansions.size()];
             int i = 0;
-            for (Iterator iter = semanticExpansions.iterator(); iter.hasNext();) {
+            for(Iterator iter = semanticExpansions.iterator(); iter.hasNext();) {
                 Object element = iter.next();
                 semanticVariants[i++] = (String) element;
             }
         }
-        
+
         //
         // A set to hold term variants from morphology or other sources.
         Set variants = new HashSet();
@@ -191,19 +196,20 @@ public class DictTerm extends QueryTerm implements Comparator {
         //
         // We'll start with the term itself, unless we're doing a wildcard.
         if(!doWild) {
-            if (val != null) {
+            if(val != null) {
                 QueryEntry e = part.getTerm(val, matchCase, lus);
                 if(e != null) {
                     variants.add(e);
                 }
             }
         }
-	
+
         //
         // Knowledge Variants are up next.
         if(doMorph) {
             for(int i = 0; i < knowledgeVariants.length; i++) {
-                QueryEntry me = part.getTerm(knowledgeVariants[i], matchCase, lus);
+                QueryEntry me = part.getTerm(knowledgeVariants[i], matchCase,
+                        lus);
                 if(me != null) {
                     variants.add(me);
                 }
@@ -213,10 +219,10 @@ public class DictTerm extends QueryTerm implements Comparator {
         //
         // Stemological variants.
         if(doStem) {
-            QueryEntry[] e = ((InvFileDiskPartition)part).getStemMatches(val,
-                                                 matchCase,
-                                                 qc.getMaxDictTerms(),
-                                                 qc.getMaxDictLookupTime());
+            QueryEntry[] e = ((InvFileDiskPartition) part).getStemMatches(val,
+                    matchCase,
+                    qc.getMaxDictTerms(),
+                    qc.getMaxDictLookupTime());
             if(e != null) {
                 for(int i = 0; i < e.length; i++) {
                     variants.add(e[i]);
@@ -227,22 +233,23 @@ public class DictTerm extends QueryTerm implements Comparator {
         //
         // Find wildcards.
         if(doWild) {
-            QueryEntry[] e = ((InvFileDiskPartition)part).getMatching(val,
-                                              matchCase,
-                                              qc.getMaxDictTerms(),
-                                              qc.getMaxDictLookupTime());
+            QueryEntry[] e = ((InvFileDiskPartition) part).getMatching(val,
+                    matchCase,
+                    qc.getMaxDictTerms(),
+                    qc.getMaxDictLookupTime());
             if(e != null) {
                 for(int i = 0; i < e.length; i++) {
                     variants.add(e[i]);
                 }
             }
         }
-        
+
         //
         // Do semantic expansion.
         if(doExpand) {
             for(int i = 0; i < semanticVariants.length; i++) {
-                QueryEntry me = part.getTerm(semanticVariants[i], matchCase, lus);
+                QueryEntry me =
+                        part.getTerm(semanticVariants[i], matchCase, lus);
                 if(me != null) {
                     variants.add(me);
                 }
@@ -295,13 +302,13 @@ public class DictTerm extends QueryTerm implements Comparator {
         // We'll see if there's a cached term (or generate one) here.
         TermCacheElement tce = getTermCacheElement(feat);
 
-        if (tce != null) {
+        if(tce != null) {
 
             //
             // We'll handle things from the cache.
             ArrayGroup tg = tce.getGroup(feat.getWeightingComponents(),
                     feat.getWeightingFunction());
-            if (ag != null) {
+            if(ag != null) {
                 tg = tg.intersect(ag);
             }
             return tg;
@@ -322,13 +329,13 @@ public class DictTerm extends QueryTerm implements Comparator {
             }
             return or.getGroup();
         }
-        
+
         //
         // We're going to intersect the documents in the term with the
         // documents in the set we were given, returning a new set.  We
         // need to do things differently depending on the type of the
         // group.
-        if (ag instanceof ScoredGroup) {
+        if(ag instanceof ScoredGroup) {
             return intersect((ScoredGroup) ag);
         } else if(ag instanceof NegativeGroup) {
             return intersect((NegativeGroup) ag);
@@ -348,15 +355,15 @@ public class DictTerm extends QueryTerm implements Comparator {
 
     private TermCacheElement getTermCacheElement(PostingsIteratorFeatures feat) {
         TermCache tc = part.getTermCache();
-        if (tc == null) {
+        if(tc == null) {
             return null;
         }
         String cacheName = getCacheKey();
         TermCacheElement tce = tc.get(cacheName);
-        if (tce == null) {
+        if(tce == null) {
             qs.termCacheMisses++;
             tce = tc.create(cacheName);
-            for (QueryEntry qe : dictEntries) {
+            for(QueryEntry qe : dictEntries) {
                 tce.add(qe, feat);
             }
             tc.put(tce);
@@ -393,7 +400,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         if(!strictEval) {
             scores = new float[ag.size];
         }
-            
+
         //
         // Loop through our terms.
         float sqw = 0;
@@ -452,7 +459,7 @@ public class DictTerm extends QueryTerm implements Comparator {
             }
         }
         qs.intersectW.stop();
-	
+
         //
         // Make a new set with only the docs that got used.  This may be a
         // scored array or a strict array.
@@ -502,10 +509,10 @@ public class DictTerm extends QueryTerm implements Comparator {
         //
         // Features for the iterators we'll create.
         PostingsIteratorFeatures feat =
-            new PostingsIteratorFeatures(wf, wc, searchFields,
-                                         fieldMultipliers,
-                                         loadPositions,
-                                         matchCase);
+                new PostingsIteratorFeatures(wf, wc, searchFields,
+                fieldMultipliers,
+                loadPositions,
+                matchCase);
         feat.setQueryStats(qs);
 
         //
@@ -555,7 +562,7 @@ public class DictTerm extends QueryTerm implements Comparator {
             }
         }
         qs.intersectW.stop();
-	
+
         //
         // Make a new set with only the docs that got used.
         ScoredGroup ret = new ScoredGroup(ag.size);
@@ -608,20 +615,20 @@ public class DictTerm extends QueryTerm implements Comparator {
 
         //
         // If this isn't a term in an inverted file, return now
-        if (!(part instanceof InvFileDiskPartition)) {
+        if(!(part instanceof InvFileDiskPartition)) {
             return new int[0][0];
         }
-        
+
         //
         // If we don't have iterators, then generate them now.
         if(pis == null) {
             //
             // Features for the iterators we'll create.
             PostingsIteratorFeatures feat =
-                new PostingsIteratorFeatures(wf, wc, searchFields,
-                                             fieldMultipliers,
-                                             loadPositions,
-                                             matchCase);
+                    new PostingsIteratorFeatures(wf, wc, searchFields,
+                    fieldMultipliers,
+                    loadPositions,
+                    matchCase);
             feat.setQueryStats(qs);
 
             pis = new PosPostingsIterator[dictEntries.length];
@@ -632,11 +639,12 @@ public class DictTerm extends QueryTerm implements Comparator {
             //
             // Make a place to store our positions while we're at it.
             if(searchFields == null) {
-                searchFields = new int[part.getManager().getMetaFile().size()+1];
+                searchFields = new int[part.getManager().getMetaFile().size() +
+                        1];
                 for(int i = 0; i < searchFields.length; i++) {
                     searchFields[i] = 1;
                 }
-            }                
+            }
             posns = new int[searchFields.length][];
             for(int i = 0; i < posns.length; i++) {
                 posns[i] = new int[4];
@@ -669,11 +677,11 @@ public class DictTerm extends QueryTerm implements Comparator {
 
                     if(posns[j][0] + 1 + n >= posns[j].length) {
                         posns[j] = Util.expandInt(posns[j],
-                                                  (posns[j].length+n+1)*2);
+                                (posns[j].length + n + 1) * 2);
                     }
                     System.arraycopy(fpos, 1,
-                                     posns[j], posns[j][0] + 1,
-                                     n);
+                            posns[j], posns[j][0] + 1,
+                            n);
                     posns[j][0] += n;
                 }
             }
@@ -683,7 +691,6 @@ public class DictTerm extends QueryTerm implements Comparator {
     }
 
     // Implementation of java.util.Comparator
-
     /**
      * Compares this comparator with another.
      *
@@ -713,7 +720,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         l.add(this);
         return l;
     }
-    
+
     public QueryEntry[] getTerms() {
         return dictEntries;
     }
@@ -721,16 +728,14 @@ public class DictTerm extends QueryTerm implements Comparator {
     public String getName() {
         return val;
     }
-    
+
     public String toString() {
         return toString("");
     }
 
     public String toString(String prefix) {
         return super.toString(prefix) + " " + val +
-            " estSize: " + estSize +
-            " order: " + order;
+                " estSize: " + estSize +
+                " order: " + order;
     }
-
-    
 } // DictTerm

@@ -59,7 +59,7 @@ public class MailIndexer {
      */
     protected Pattern header;
 
-    private Logger log;
+    private Logger logger;
 
     /**
      * Creates a mail indexer that will index into the given directory.
@@ -77,7 +77,7 @@ public class MailIndexer {
         // default configuration for the engine.
         URL cu = getClass().getResource("mailIndexerConfig.xml");
         engine = SearchEngineFactory.getSearchEngine(indexDir, cu);
-        log = Logger.getLogger("com.sun.labs.minion.samples.MailIndexer");
+        logger = Logger.getLogger("com.sun.labs.minion.samples.MailIndexer");
 
         //
         // Get a couple of sets of attributes for the fields that we want to
@@ -127,27 +127,37 @@ public class MailIndexer {
         engine.close();
     }
 
+    public void indexMBox(String mbox)
+            throws java.io.IOException, SearchEngineException {
+        indexMBox(mbox, null);
+    }
+
     /**
      * Indexes a mailbox at a given path
      * @param mbox the path to the mbox file we want to index
+     * @param strip a string to strip from the starts of subjects.
      */
-    public void indexMBox(String mbox)
+    public void indexMBox(String mbox, String strip)
             throws java.io.IOException, SearchEngineException {
         URL mbu = getClass().getResource(mbox);
         if(mbu == null) {
             mbu = (new File(mbox)).toURI().toURL();
         }
-        indexMBox(mbu);
+        indexMBox(mbu, strip);
     }
 
-    /**
+    public void indexMBox(URL mbox) throws java.io.IOException, SearchEngineException {
+        indexMBox(mbox, null);
+    }
+    
+   /**
      * Indexes a mailbox at a given location
      * @param mbox the path to the mbox file we want to index
      */
-    public void indexMBox(URL mbox) throws java.io.IOException, SearchEngineException {
+    public void indexMBox(URL mbox, String strip) throws java.io.IOException, SearchEngineException {
         BufferedReader r =
                 new BufferedReader(new InputStreamReader(mbox.openStream()));
-        log.info("Indexing: " + mbox);
+        logger.info("Indexing: " + mbox);
 
 
         //
@@ -174,7 +184,7 @@ public class MailIndexer {
                     body.delete(0, body.length());
                     si.endDocument();
                     if(sequence % 100 == 0) {
-                        System.out.println("Indexed: " + sequence);
+                        logger.info("Indexed: " + sequence);
                     }
                 }
 
@@ -205,20 +215,27 @@ public class MailIndexer {
                 // Match against the header, and save the two parts.
                 Matcher m = header.matcher(l);
                 if(!m.matches()) {
-                    log.severe("Bad header: \"" + l + "\" in " + key);
+                    logger.severe("Bad header: \"" + l + "\" in " + key);
                 } else {
                     String h = m.group(1);
+                    String val = m.group(2);
+
+                    if(strip != null && h.equalsIgnoreCase("subject")) {
+                        if(val.startsWith(strip)) {
+                            val = val.substring(strip.length()).trim();
+                        }
+                    }
 
                     //
                     // There might be multiple references, so we better deal 
                     // with that!
                     if(h.equalsIgnoreCase("references")) {
-                        String[] refs = m.group(2).split("\\s+");
+                        String[] refs = val.split("\\s+");
                         for(String ref : refs) {
                             si.addField("reference", ref);
                         }
                     } else {
-                        si.addField(h, m.group(2));
+                        si.addField(h, val);
                     }
                 }
             } else {
@@ -228,7 +245,7 @@ public class MailIndexer {
             }
         }
         si.finish();
-        log.info("Indexed: " + (sequence - 1));
+        logger.info("Indexed: " + (sequence - 1));
     }
 
     /**
@@ -244,7 +261,7 @@ public class MailIndexer {
             throws java.io.IOException, SearchEngineException {
 
         Log log = Log.getLog();
-        log.setStream(System.out);
+        log.setLogger(Logger.getLogger(MailIndexer.class.getName()));
         log.setLevel(3);
         Logger l = Logger.getLogger("");
         for(Handler h : l.getHandlers()) {

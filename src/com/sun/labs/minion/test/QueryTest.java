@@ -71,7 +71,6 @@ import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
 import com.sun.labs.minion.lextax.DiskTaxonomy;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
-import com.sun.labs.minion.retrieval.FieldTerm;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.util.CharUtils;
@@ -118,6 +117,7 @@ import com.sun.labs.minion.indexer.dictionary.UncachedTermStatsDictionary;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.lexmorph.disambiguation.Unsupervised;
+import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.retrieval.FieldEvaluator;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
 import com.sun.labs.util.SimpleLabsLogFormatter;
@@ -465,6 +465,36 @@ public class QueryTest extends SEMain {
                 displayResults(r);
             } catch(SearchEngineException se) {
                 log.error(logTag, 1, "Error running search", se);
+            }
+        } else if(q.startsWith(":all")) {
+            String[] vals =
+                    parseMessage(q.substring(q.indexOf(' ') + 1).trim());
+            Set<String> fields = new HashSet<String>();
+            fields.add(vals[0]);
+            Set<String> terms = new HashSet<String>();
+            for(int i = 1; i < vals.length; i++) {
+                terms.add(vals[i]);
+            }
+            try {
+                ResultSet rs = engine.allTerms(terms, fields);
+                displayResults(rs);
+            } catch (SearchEngineException see) {
+                log.error(logTag, 1, "Error finding all terms", see);
+            }
+        } else if(q.startsWith(":any")) {
+            String[] vals =
+                    parseMessage(q.substring(q.indexOf(' ') + 1).trim());
+            Set<String> fields = new HashSet<String>();
+            fields.add(vals[0]);
+            Set<String> terms = new HashSet<String>();
+            for(int i = 1; i < vals.length; i++) {
+                terms.add(vals[i]);
+            }
+            try {
+                ResultSet rs = engine.anyTerms(terms, fields);
+                displayResults(rs);
+            } catch (SearchEngineException see) {
+                log.error(logTag, 1, "Error finding all terms", see);
             }
         } else if(q.startsWith(":qop")) {
             String op = q.substring(q.indexOf(' ') + 1).trim();
@@ -827,13 +857,19 @@ public class QueryTest extends SEMain {
                 log.error(logTag, 1, "Error getting features", e);
             }
         } else if(q.startsWith(":diff ")) {
-            String[] args = parseMessage(q.substring(q.indexOf(' ') + 1).trim());
-            DocumentVector dv = engine.getDocumentVector(args[0], "content");
-            ResultSet r1 = dv.findSimilar();
-            ResultSet r2 = engine.anyTerms(Collections.singleton(args[1]),
-                    Collections.singleton("content"));
-            ResultSet diff = r1.difference(r2);
-            displayResults(diff);
+            try {
+                String[] args =
+                        parseMessage(q.substring(q.indexOf(' ') + 1).trim());
+                DocumentVector dv =
+                        engine.getDocumentVector(args[0], "content");
+                ResultSet r1 = dv.findSimilar();
+                ResultSet r2 = engine.anyTerms(Collections.singleton(args[1]),
+                        Collections.singleton("content"));
+                ResultSet diff = r1.difference(r2);
+                displayResults(diff);
+            } catch(SearchEngineException ex) {
+                log.error(logTag, 1, "Error", ex);
+            }
         } else if(q.startsWith(":bq ")) {
             q = q.substring(q.indexOf(' ') + 1).trim();
             try {
@@ -1222,7 +1258,7 @@ public class QueryTest extends SEMain {
             String operator = fields[1].toLowerCase();
             String value = fields[2];
 
-            FieldTerm.Operator op = FieldTerm.Operator.valueOf(operator.toUpperCase());
+            Relation.Operator op = Relation.Operator.valueOf(operator.toUpperCase());
             if(op == null) {
                 output.println("Unknown operator: " + op);
                 return 1;

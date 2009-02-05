@@ -30,6 +30,7 @@ import java.util.ListIterator;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import com.sun.labs.minion.query.Relation;
 
 /**
  * The QueryOptimizer steps through a query, looking for
@@ -97,27 +98,27 @@ public class QueryOptimizer
                     //
                     // Is term one a < or <= and term two a
                     // > or >=?
-                    if (((ft1.getOp() == FieldTerm.Operator.LESS)
-                         || (ft1.getOp() == FieldTerm.Operator.LEQ))
-                        && ((ft2.getOp() == FieldTerm.Operator.GREATER)
-                            || (ft2.getOp() == FieldTerm.Operator.GEQ))) {
+                    if (((ft1.getOp() == Relation.Operator.LESS_THAN)
+                         || (ft1.getOp() == Relation.Operator.LEQ))
+                        && ((ft2.getOp() == Relation.Operator.GREATER_THAN)
+                            || (ft2.getOp() == Relation.Operator.GEQ))) {
                         
                         objUpper = ft1.getValue();
-                        incUpper = ft1.getOp() == FieldTerm.Operator.LEQ;
+                        incUpper = ft1.getOp() == Relation.Operator.LEQ;
                         objLower = ft2.getValue();
-                        incLower = ft2.getOp() == FieldTerm.Operator.GEQ;
+                        incLower = ft2.getOp() == Relation.Operator.GEQ;
                     }
                     //
                     // Is term one a > or >= and term two a
                     // < or <=?
-                    if (((ft1.getOp() == FieldTerm.Operator.GREATER)
-                         || (ft1.getOp() == FieldTerm.Operator.GEQ))
-                        && ((ft2.getOp() == FieldTerm.Operator.LESS)
-                            || (ft2.getOp() == FieldTerm.Operator.LEQ))) {
+                    if (((ft1.getOp() == Relation.Operator.GREATER_THAN)
+                         || (ft1.getOp() == Relation.Operator.GEQ))
+                        && ((ft2.getOp() == Relation.Operator.LESS_THAN)
+                            || (ft2.getOp() == Relation.Operator.LEQ))) {
                         objUpper = ft2.getValue();
-                        incUpper = ft2.getOp() == FieldTerm.Operator.LEQ;
+                        incUpper = ft2.getOp() == Relation.Operator.LEQ;
                         objLower = ft1.getValue();
-                        incLower = ft1.getOp() == FieldTerm.Operator.GEQ;
+                        incLower = ft1.getOp() == Relation.Operator.GEQ;
                     }
                     
                     //

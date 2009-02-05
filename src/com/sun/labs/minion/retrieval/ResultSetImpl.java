@@ -763,6 +763,29 @@ public class ResultSetImpl implements ResultSet {
         return ret;
     }
 
+    /**
+     * A method to test whether two result sets are the same.
+     *
+     * @param other the other set to test against this one.
+     * @return <code>true</code> if the documents contain the same documents
+     * and the documents have the same scores, <code>false</code> otherwise.
+     */
+    public boolean same(ResultSetImpl other) {
+        for(Iterator<ArrayGroup> i = results.iterator(); i.hasNext();) {
+            ArrayGroup ag1 = i.next();
+            for(Iterator<ArrayGroup> j = other.results.iterator();
+                    j.hasNext();) {
+                ArrayGroup ag2 = j.next();
+                if(ag1.part == ag2.part) {
+                    if(!ag1.equals(ag2)) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     public class AGDocs {
 
         protected int[] docIDs;

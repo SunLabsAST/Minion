@@ -51,6 +51,7 @@ import com.sun.labs.minion.MetaDataStore;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.Progress;
 import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.QueryException;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
@@ -95,25 +96,32 @@ import java.util.concurrent.ArrayBlockingQueue;
 import com.sun.labs.minion.classification.ClassifierModel;
 import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
 import com.sun.labs.minion.indexer.partition.Dumper;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.AbstractPipelineImpl;
 import com.sun.labs.minion.pipeline.AsyncPipelineImpl;
 import com.sun.labs.minion.pipeline.PipelineFactory;
+import com.sun.labs.minion.query.Element;
+import com.sun.labs.minion.query.Operator;
+import com.sun.labs.minion.query.Range;
+import com.sun.labs.minion.query.Relation;
+import com.sun.labs.minion.query.StringRelation;
+import com.sun.labs.minion.query.Term;
+import com.sun.labs.minion.retrieval.And;
+import com.sun.labs.minion.retrieval.Or;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
+import com.sun.labs.minion.retrieval.DictTerm;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
-import com.sun.labs.minion.retrieval.QuickOr;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.parser.LuceneParser;
 import com.sun.labs.minion.retrieval.parser.StrictParser;
 import com.sun.labs.minion.retrieval.parser.TokenMgrError;
 import com.sun.labs.minion.retrieval.parser.WebParser;
+import com.sun.labs.minion.util.CDateParser;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -606,7 +614,10 @@ public class SearchEngineImpl implements SearchEngine,
         QueryOptimizer opti = new QueryOptimizer();
         qe = opti.optimize(qe);
 
-        log.debug(logTag, 5, "\n" + qe.toString(""));
+        return search(qe, sortOrder);
+    }
+
+    private ResultSet search(QueryElement qe, String sortOrder) throws SearchEngineException {
 
         try {
             CollectionStats cs =
@@ -628,6 +639,108 @@ public class SearchEngineImpl implements SearchEngine,
             log.error(logTag, 1, "Caught throwable", t);
             throw new SearchEngineException("Throwable error evaluating query",
                     null);
+        }
+    }
+
+    public ResultSet search(Element el) throws SearchEngineException {
+        return search(el, "-score");
+    }
+
+    public ResultSet search(Element el, String sortOrder) throws SearchEngineException {
+        checkQuery(null, el);
+        return search(el.getQueryElement(), sortOrder);
+    }
+
+    /**
+     * Checks to make sure that the given query makes sense for this engine.
+     * @param el the query element to check.
+     */
+    private void checkQuery(CDateParser dp, Element el) throws QueryException {
+        if(el instanceof Relation && !(el instanceof StringRelation)) {
+            Relation r = (Relation) el;
+            String field = r.getField();
+            String val = r.getValue();
+
+            //
+            // Check if the field exists.
+            FieldInfo fi = getFieldInfo(field);
+            if(fi == null) {
+                throw new QueryException(String.format("Field %s is not defined for relation %s",
+                        field, r));
+            }
+
+            //
+            // The field exists, lets make sure that the type makes sense for the
+            // types where we need to parsing.
+            checkType(dp, fi, r.getOperator(), val);
+        } else if (el instanceof Range) {
+            Range range = (Range) el;
+            String field = range.getField();
+            
+            //
+            // Check if the field exists.
+            FieldInfo fi = getFieldInfo(field);
+            if(fi == null) {
+                throw new QueryException(String.format(
+                        "Field %s is not defined for range operator %s",
+                        field, range));
+            }
+
+            checkType(dp, fi, range.getLeftOperator(), range.getLeftValue());
+            checkType(dp, fi, range.getRightOperator(), range.getRightValue());
+        } else if (el instanceof Term) {
+            
+        }
+        
+    }
+
+    private void checkType(CDateParser dp,
+            FieldInfo fi, 
+            Relation.Operator op,
+            String val) throws QueryException {
+        switch(fi.getType()) {
+            case DATE:
+                if(dp == null) {
+                    dp = new CDateParser();
+                }
+                try {
+                    dp.parse(val);
+                } catch(java.text.ParseException pe) {
+                    throw new QueryException(String.format(
+                            "Value in relation %s %s %s is not parseable as a date, " +
+                            "where %s is a date field",
+                            fi.getName(), 
+                            op.getRep(),
+                            val, fi.getName()));
+                }
+                break;
+            case INTEGER:
+                try {
+                    Long.parseLong(val);
+                } catch(NumberFormatException nfe) {
+                    throw new QueryException(String.format(
+                            "Value in relation %s %s %s is not parseable as a " +
+                            "64 bit integer, where %s is an integer field",
+                            fi.getName(),
+                            op.getRep(),
+                            val, fi.getName()));
+
+                }
+                break;
+            case FLOAT:
+                try {
+                    Double.parseDouble(val);
+                } catch(NumberFormatException nfe) {
+                    throw new QueryException(String.format(
+                            "Value in relation %s %s %s is not parseable as a " +
+                            "64 bit float, where %s is a float field",
+                            fi.getName(),
+                            op.getRep(),
+                            val,
+                            fi.getName()));
+
+                }
+                break;
         }
     }
 
@@ -758,25 +871,51 @@ public class SearchEngineImpl implements SearchEngine,
      * @return the set of documents that contain any of the given terms in any
      * of the given fields.
      */
-    public ResultSet anyTerms(Set<String> terms, Set<String> fields) {
-        List<ArrayGroup> ags = new ArrayList<ArrayGroup>();
-        PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
-        if(fields != null && fields.size() > 0) {
-            feat.setFields(invFilePartitionManager.getMetaFile().getFieldArray(
-                fields.toArray(new String[0])));
+    public ResultSet anyTerms(Collection<String> terms,
+            Collection<String> fields) throws SearchEngineException {
+        List<QueryElement> qes = new ArrayList<QueryElement>();
+        for(String term : terms) {
+            DictTerm dt = new DictTerm(term);
+            dt.setDoMorph(false);
+            dt.setDoExpand(false);
+            dt.setDoStem(false);
+            dt.setDoWild(false);
+            dt.setMatchCase(false);
+            dt.setSearchFields(fields);
+            dt.strictEval = true;
+            qes.add(dt);
         }
-        for(DiskPartition dp : invFilePartitionManager.getActivePartitions()) {
-            QuickOr qor = new QuickOr(dp, 2048);
-            for(String term : terms) {
-                QueryEntry qe = dp.getTerm(term);
-                if(qe == null) {
-                    continue;
-                }
-                qor.add(qe.iterator(feat));
-            }
-            ags.add(qor.getGroup());
+        Or or = new Or(qes);
+        or.strictEval = true;
+        or.setSearchFields(fields);
+        return search(or, "-score");
+    }
+
+    /**
+     * Builds a result set containing all of the given terms in any of the given
+     * fields.
+     * @param terms the terms that we want to find
+     * @param fields the fields that we must find the terms in
+     * @throws SearchEngineException if there is an error during the search.
+     */
+    public ResultSet allTerms(Collection<String> terms,
+            Collection<String> fields) throws SearchEngineException {
+        List<QueryElement> qes = new ArrayList<QueryElement>();
+        for(String term : terms) {
+            DictTerm dt = new DictTerm(term);
+            dt.setDoMorph(false);
+            dt.setDoExpand(false);
+            dt.setDoStem(false);
+            dt.setDoWild(false);
+            dt.setMatchCase(false);
+            dt.setSearchFields(fields);
+            dt.strictEval = true;
+            qes.add(dt);
         }
-        return new ResultSetImpl(this, invFilePartitionManager.getQueryConfig(), ags);
+        And and = new And(qes);
+        and.strictEval = true;
+        and.setSearchFields(fields);
+        return search(and, "-score");
     }
 
     /**

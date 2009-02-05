@@ -27,10 +27,10 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.query.Relation;
 
 /**
  * A class that can be used to evaluate a simple parametric query against a 
@@ -52,7 +52,7 @@ public class FieldEvaluator {
      * @param op the operation to use
      * @param val the value to test
      */
-    public FieldEvaluator(String field, FieldTerm.Operator op, Object val) {
+    public FieldEvaluator(String field, Relation.Operator op, Object val) {
         term = new FieldTerm(field, op, val.toString());
     }
     

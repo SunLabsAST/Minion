@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.util.MinionLog;
 
 public class QueryEvaluator {
@@ -49,7 +50,7 @@ public class QueryEvaluator {
      */
     public List eval(List parts,
             QueryConfig qc,
-            String name, FieldTerm.Operator op, String value) {
+            String name, Relation.Operator op, String value) {
         QueryElement qe = new FieldTerm(name, op, value);
         qe.setQueryConfig(qc);
         return eval(parts, qe);
