@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.lexmorph.disambiguation;
 
 import com.sun.labs.minion.Result;
@@ -38,8 +37,8 @@ import java.util.Random;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.util.LogMath;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.StopWatch;
+import java.util.logging.Logger;
 
 /**
  * An EM algorithm for unsupervised sense disambiguation.  This is based on
@@ -52,50 +51,50 @@ import com.sun.labs.minion.util.StopWatch;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class Unsupervised {
-    
+
     /**
      * The contexts in which a term occurs.
      */
     private Context[] contexts;
-    
+
     /**
      * The set of features occuring in contexts.  This is indexed by the feature
      * id.
      */
     private String[] features;
-    
+
     private SearchEngine e;
-    
+
     private String term;
-    
+
     private String field;
-    
+
     private Random rand;
-    
+
     private Model model;
-    
+
     private LogMath lm;
-    
+
     private int numModelsPerK = 2;
-    
+
     private float epsilon = 1E-15f;
-    
+
     private int maxContexts;
-    
+
     /**
      * The number of contexts.
      */
     int I;
-    
+
     /**
      * The number of features.
      */
     int J;
-    
-    private static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     private static String logTag = "DIS";
-    
+
     /**
      * Creates a disambiguator.
      */
@@ -105,7 +104,7 @@ public class Unsupervised {
             String field) throws SearchEngineException {
         this(e, term, field, 20, 500, Integer.MAX_VALUE);
     }
-    
+
     /**
      * Creates a disambiguator.
      */
@@ -122,26 +121,27 @@ public class Unsupervised {
         } else {
             rs = e.search(String.format("%s <contains> '%s'", field, term));
         }
-        
+
         init(rs, term, field, maxContextFeat, maxTotalFeat, maxContexts);
     }
-    
-    public Unsupervised(ResultSet rs, String term, int maxContextFeat, int maxTotalFeat,
+
+    public Unsupervised(ResultSet rs, String term, int maxContextFeat,
+            int maxTotalFeat,
             int maxContexts)
             throws SearchEngineException {
         init(rs, term, field, maxContextFeat, maxTotalFeat, maxContexts);
     }
-    
+
     protected void init(ResultSet rs, String term, String field,
             int maxContextFeat, int maxTotalFeat, int maxContexts)
             throws SearchEngineException {
-        
+
         e = rs.getEngine();
         this.term = term;
         this.field = field;
         lm = new LogMath(1.0001f, true);
         rand = new Random();
-        
+
         //
         // Get the list of results.
         ArrayList<Context> tc = new ArrayList<Context>();
@@ -153,22 +153,24 @@ public class Unsupervised {
                 tc.add(new Context(term, field, dke, maxContextFeat));
             }
         } else {
-            
+
             //
             // We have too many contexts, so choose some randomly.
-            java.util.List<Result> rl = new LinkedList<Result>(rs.getAllResults(false));
+            java.util.List<Result> rl = new LinkedList<Result>(rs.getAllResults(
+                    false));
             while(tc.size() < maxContexts) {
                 Result r = rl.remove(rand.nextInt(rl.size()));
-                tc.add(new Context(term, field, ((ResultImpl) r).getKeyEntry(), maxContextFeat));
+                tc.add(new Context(term, field, ((ResultImpl) r).getKeyEntry(),
+                        maxContextFeat));
             }
         }
-        
+
         contexts = tc.toArray(new Context[0]);
         I = contexts.length;
-        
+
         //
         // Compute the total feature set.
-        Map<String,TermFreq> tfs = new HashMap<String,TermFreq>();
+        Map<String, TermFreq> tfs = new HashMap<String, TermFreq>();
         for(Context c : contexts) {
             for(TermFreq ctf : c.getTerms().values()) {
                 TermFreq ttf = tfs.get(ctf.term);
@@ -180,25 +182,25 @@ public class Unsupervised {
                 }
             }
         }
-        
+
         PriorityQueue<TermFreq> stf = new PriorityQueue<TermFreq>(tfs.values());
         while(stf.size() > maxTotalFeat) {
             stf.poll();
         }
-        
+
         features = new String[stf.size()];
         for(int i = 0; stf.size() > 0; i++) {
             features[i] = stf.poll().term;
         }
         com.sun.labs.minion.util.Util.sort(features);
-        
+
         for(Context c : contexts) {
             c.setCounts(features);
         }
-        
+
         J = features.length;
     }
-    
+
     /**
      * Sets the number of models to compute per value of K.  This allows us
      * to generate a few models for each value of K and keep the best one.
@@ -206,11 +208,11 @@ public class Unsupervised {
     public void setModels(int numModelsPerK) {
         this.numModelsPerK = numModelsPerK;
     }
-    
+
     public Model disambiguate() {
         return disambiguate(2, 7);
     }
-    
+
     /**
      * Disambiguates a term, looking for the best number of senses to use.
      *
@@ -221,7 +223,7 @@ public class Unsupervised {
     public Model disambiguate(int minK, int maxK) {
         Model ret = null;
         for(int i = minK; i <= maxK; i++) {
-            
+
             //
             // We'll generate some models here.
             for(int j = 0; j < numModelsPerK; j++) {
@@ -233,7 +235,7 @@ public class Unsupervised {
         }
         return ret;
     }
-    
+
     public Model disambiguate(int K) {
         StopWatch dw = new StopWatch();
         dw.start();
@@ -241,7 +243,7 @@ public class Unsupervised {
         Model currModel = new Model(K);
         Model bestModel = new Model();
         int nIter = 0;
-        
+
         //
         // OK, here's the main disambiguation loop.  Note that we let it run a
         // couple of times before we start keeping track of the best model and that
@@ -264,21 +266,23 @@ public class Unsupervised {
         }
         model = bestModel;
         dw.stop();
-        log.log(logTag, 3, term + " " + K + " took " + dw.getTime() + " ms for " + nIter + " iterations.");
+        logger.info(term + " " + K + " took " + dw.getTime() + " ms for " +
+                nIter + " iterations.");
         return model;
     }
-    
+
     /**
      * The model associated with a particular estimation.
      */
     public class Model {
+
         Model() {
             pvs = new float[J][];
             pcs = new float[I][];
             h = new float[I][];
             ll = Float.NEGATIVE_INFINITY;
         }
-        
+
         /**
          * Randomly initializes a model for this word with K
          * senses.
@@ -290,7 +294,7 @@ public class Unsupervised {
             ps = new float[K];
             h = new float[K][I];
             ll = Float.NEGATIVE_INFINITY;
-            
+
             //
             // We'll just use non-zero random numbers to initialize without worrying
             // about whether they're real distributions.
@@ -301,7 +305,7 @@ public class Unsupervised {
                     }
                 }
             }
-            
+
             //
             // Initialize the probability of each sense.  Note that we don't
             // worry about summing to 1 here.
@@ -311,7 +315,7 @@ public class Unsupervised {
                 }
             }
         }
-        
+
         /**
          * Creates a model by copying another, so that we can remember the
          * last model.
@@ -328,7 +332,7 @@ public class Unsupervised {
                 h[k] = m.h[k].clone();
             }
         }
-        
+
         /**
          * Computes the log likelihood of the context given this model, i.e.,
          * l(C|\mu).  Note that we transform from the log domain back to the
@@ -339,13 +343,14 @@ public class Unsupervised {
             for(int i = 0; i < I; i++) {
                 float temp = lm.getLogZero();
                 for(int k = 0; k < K; k++) {
-                    temp = lm.addAsLinear(temp, lm.multiplyAsLinear(pcs[k][i], ps[k]));
+                    temp = lm.addAsLinear(temp, lm.multiplyAsLinear(pcs[k][i],
+                            ps[k]));
                 }
                 ll += temp;
             }
             return ll;
         }
-        
+
         /**
          * Computes P(c<sub>i</sub> | s<sub>k</sub>) using the naive Bayes
          * assumption.
@@ -357,7 +362,7 @@ public class Unsupervised {
                 }
             }
         }
-        
+
         public float computePCS(Context c, int k) {
             float prod = 0;
             for(int j = 0; j < J; j++) {
@@ -365,7 +370,7 @@ public class Unsupervised {
             }
             return prod;
         }
-        
+
         /**
          * Performs the E step of the EM algorithm, estimating the probability
          * of s<sub>k</sub> generating c<sub>i</sub>, h<sub>i,k</sub>.
@@ -384,7 +389,7 @@ public class Unsupervised {
                 }
             }
         }
-        
+
         /**
          * Performs the M step of the EM algorithm, re-estimating the model
          * parameters P(v<sub>j</sub> | s<sub>k</sub>) and P(s<sub>k</sum>)
@@ -392,7 +397,7 @@ public class Unsupervised {
          */
         public void mStep() {
             for(int k = 0; k < K; k++) {
-                
+
                 //
                 // Recompute P(v|s_k)
                 float[] sums = new float[J];
@@ -405,7 +410,7 @@ public class Unsupervised {
                 for(int j = 0; j < J; j++) {
                     pvst[j] = lm.divideAsLinear(sums[j], totalSum);
                 }
-                
+
                 //
                 // Recompute P(s_k)
                 float[] ht = h[k];
@@ -417,21 +422,21 @@ public class Unsupervised {
             }
             computeLL();
         }
-        
-        
+
         protected float countSum(int j, int k) {
             float sum = lm.getLogZero();
             float[] ht = h[k];
             for(int i = 0; i < I; i++) {
-                sum = lm.addAsLinear(sum, lm.multiplyAsLinear(lm.linearToLog(contexts[i].counts[j]), ht[i]));
+                sum = lm.addAsLinear(sum, lm.multiplyAsLinear(lm.linearToLog(
+                        contexts[i].counts[j]), ht[i]));
             }
             return sum;
         }
-        
+
         public int getNumSenses() {
             return K;
         }
-        
+
         /**
          * Disambiguates a give term found in a given context against this model
          * @param context the words that occur with the word that we want to
@@ -445,11 +450,12 @@ public class Unsupervised {
             for(int k = 0; k < K; k++) {
                 sp[k] = ps[k];
             }
-            
+
             int j = 0;
             for(String v : context) {
                 int cmp = 0;
-                while(j < features.length && (cmp = features[j].compareTo(v)) < 0) {
+                while(j < features.length && (cmp = features[j].compareTo(v)) <
+                        0) {
                     j++;
                 }
                 if(j >= features.length) {
@@ -461,7 +467,7 @@ public class Unsupervised {
                     }
                 }
             }
-            
+
             float max = sp[0];
             int maxp = 0;
             for(int k = 1; k < K; k++) {
@@ -470,41 +476,41 @@ public class Unsupervised {
                     maxp = k;
                 }
             }
-            
+
             return maxp;
         }
-        
+
         /**
          * Gets labels for the senses in the model.
          */
         public String[] getSenseLabels() {
-            
+
             if(senseLabels == null) {
-                
+
                 //
                 // Get the top features for each sense.
                 TermProb[][] top = new TermProb[K][];
                 int[] cp = new int[K];
                 for(int k = 0; k < K; k++) {
-                    top[k] = getTopFeatures(k, K+2);
+                    top[k] = getTopFeatures(k, K + 2);
                 }
-                
+
                 for(int k = 0; k < K; k++) {
                     while(checkLabel(k, cp, top));
                 }
-                
+
                 senseLabels = new String[K];
                 for(int k = 0; k < K; k++) {
                     senseLabels[k] = term + "/" + top[k][cp[k]].term;
                 }
             }
             return senseLabels;
-            
+
         }
-        
+
         private boolean checkLabel(int ck, int[] cp, TermProb[][] top) {
             TermProb curr = top[ck][cp[ck]];
-            for(int k = ck+1; k < K; k++) {
+            for(int k = ck + 1; k < K; k++) {
                 TermProb tp = top[k][cp[k]];
                 if(curr.term.equals(tp.term)) {
                     if(curr.prob < tp.prob) {
@@ -517,15 +523,16 @@ public class Unsupervised {
             }
             return false;
         }
-        
+
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("log likelihood: " + ll + "\n");
             for(int k = 0; k < K; k++) {
                 TermProb[] tp = getTopFeatures(k, 5);
-                sb.append("sense " + (k+1) + String.format(" (%.3f)", lm.logToLinear(ps[k])) +
+                sb.append("sense " + (k + 1) + String.format(" (%.3f)", lm.
+                        logToLinear(ps[k])) +
                         ": [");
-                for(int i = 0;  i < tp.length; i++) {
+                for(int i = 0; i < tp.length; i++) {
                     if(i > 0) {
                         sb.append(", ");
                     }
@@ -535,7 +542,7 @@ public class Unsupervised {
             }
             return sb.toString();
         }
-        
+
         /**
          * Gets the top n most probable features for a given sense.
          * @param k the number of senses
@@ -543,18 +550,18 @@ public class Unsupervised {
          * @return the top <code>n</code> most probable features for this sense
          */
         public TermProb[] getTopFeatures(int k, int n) {
-            
+
             PriorityQueue<TermProb> probs = new PriorityQueue<TermProb>(J,
                     new Comparator<TermProb>() {
-                public int compare(TermProb o1, TermProb o2) {
-                    return -1 * o1.compareTo(o2);
-                }
-                
-            });
+
+                        public int compare(TermProb o1, TermProb o2) {
+                            return -1 * o1.compareTo(o2);
+                        }
+                    });
             for(int j = 0; j < J; j++) {
                 probs.offer(new TermProb(features[j], lm.logToLinear(pvs[k][j])));
             }
-            
+
             ArrayList<TermProb> ret = new ArrayList<TermProb>();
             while(probs.size() > 0 && ret.size() <= n) {
                 ret.add(probs.poll());
@@ -565,39 +572,40 @@ public class Unsupervised {
          * The sense labels for this model.
          */
         String[] senseLabels;
-        
+
         /**
          * The number of senses.
          */
         int K;
-        
+
         /**
          * The log likelihood of this model.
          */
         float ll;
-        
+
         /**
          * P(v<sub>j</sub> | s<sub>k</sub>).  Note that K will typically be a lot
          * smaller than J, so we store things in a K by J matrix.
          */
         float[][] pvs;
-        
+
         /**
          * P(C<sub>i</sub> | s<sub>k</sub>).  Note that K will typically be a lot
          * smaller than I, so we store things in a K by I matrix.
          */
         float[][] pcs;
-        
+
         /**
          * P(s<sub>k</sub>)
          */
         float[] ps;
-        
+
         /**
          * The probability that s<sub>k</sub> generated c<sub>i</sub>.
          * Note that K will typically be a lot
          * smaller than I, so we store things in a K by I matrix.
          */
         float[][] h;
+
     }
 }

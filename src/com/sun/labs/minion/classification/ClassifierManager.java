@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -88,6 +89,8 @@ public class ClassifierManager extends PartitionManager {
      * classifiers.
      */
     private Map<String, HumanSelected> humanSelected;
+
+    private Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * Constructs the ClassifierManager.  The Term selector and clusterer are
@@ -258,7 +261,7 @@ public class ClassifierManager extends PartitionManager {
                 }
             }
         }
-        log.warn(logTag, 3, "No classifier with name: " + cname);
+        logger.warning("No classifier with name: " + cname);
         return 0;
     }
 
@@ -324,7 +327,7 @@ public class ClassifierManager extends PartitionManager {
             selectorInstance = (FeatureSelector) Class.forName(selectorClassName).
                     newInstance();
         } catch(Exception e) {
-            log.debug(logTag, 0, "Exception: " + e);
+            logger.info("Exception: " + e);
             throw new PropertyException(ps.getInstanceName(),
                     PROP_SELECTOR_CLASS_NAME, "Unable to load class: " +
                     selectorClassName);

@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.QueryStats;
@@ -36,25 +35,33 @@ import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * An element in a term cache.  Stores the weighted postings for a single
  * term in a single partition.
  */
 public class TermCacheElement {
-    
+
     protected String name;
+
     protected DiskPartition part;
+
     protected int[] ids;
+
     protected int[] counts;
+
     protected float[] weights;
+
     int n;
+
     protected TermStatsImpl ts;
-    protected static MinionLog log = MinionLog.getLog();
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "TCE";
-    
+
     /**
      * Creates a cache element with a given name.
      * @param name the name of this element.  Typically this will be the term that
@@ -66,7 +73,7 @@ public class TermCacheElement {
         this.name = name;
         this.part = part;
     }
-    
+
     /**
      * Adds the counts for the given term from this partition
      * to the counts that we're collecting.
@@ -85,7 +92,7 @@ public class TermCacheElement {
         if(e == null) {
             return;
         }
-        
+
         QueryStats qs = feat == null ? null : feat.getQueryStats();
 
         if(qs != null) {
@@ -93,12 +100,12 @@ public class TermCacheElement {
         }
         PostingsIterator pi = e.iterator(feat);
         if(pi == null) {
-            if (qs != null) {
+            if(qs != null) {
                 qs.termCacheW.stop();
             }
             return;
         }
-        
+
         if(ids == null) {
             ids = new int[e.getN()];
             counts = new int[e.getN()];
@@ -109,12 +116,12 @@ public class TermCacheElement {
         } else {
             merge(pi);
         }
-        
-        if (qs != null) {
+
+        if(qs != null) {
             qs.termCacheW.stop();
         }
     }
-    
+
     private void merge(PostingsIterator pi) {
         int[] ti = new int[n + pi.getN()];
         int[] tc = new int[n + pi.getN()];
@@ -144,24 +151,24 @@ public class TermCacheElement {
                 }
             }
         }
-        
+
         if(p < n) {
             System.arraycopy(ids, p, ti, np, n - p);
             System.arraycopy(counts, p, tc, np, n - p);
             np += (n - p);
         } else if(iterLeft) {
-            while (iterLeft) {
+            while(iterLeft) {
                 ti[np] = pi.getID();
                 tc[np++] = pi.getFreq();
                 iterLeft = pi.next();
             }
         }
-        
+
         ids = ti;
         counts = tc;
         n = np;
     }
-    
+
     /**
      * Adds the counts for the given term from this partition
      * to the counts that we're collecting.
@@ -171,7 +178,7 @@ public class TermCacheElement {
     public void add(WeightedFeature feat) {
         add(feat.getName());
     }
-    
+
     /**
      * Gets the term statistics associated with the counts that we've collected.
      *
@@ -197,7 +204,7 @@ public class TermCacheElement {
     public String getName() {
         return name;
     }
-    
+
     /**
      * Computes the weights for the documents in this group, given a
      * weighting function and set of weighting components.  We make the
@@ -229,24 +236,25 @@ public class TermCacheElement {
             WeightingFunction wf) {
         return new TCEIterator(wc, wf);
     }
-    
+
     /**
      * An iterator for this element of the term cache.
      */
     public class TCEIterator implements PostingsIterator {
 
         int p;
+
         public TCEIterator(
-            WeightingComponents wc,
-            WeightingFunction wf) {
+                WeightingComponents wc,
+                WeightingFunction wf) {
             computeWeights(wc, wf);
             p = -1;
         }
-        
+
         public PostingsIteratorFeatures getFeatures() {
             return null;
         }
-        
+
         public int getN() {
             return n;
         }
@@ -260,11 +268,11 @@ public class TermCacheElement {
 
         public int get(int[] ids, int[] freq) {
             throw new UnsupportedOperationException("Not supported yet.");
-       }
+        }
 
         public int get(int[] ids, float[] weights) {
             throw new UnsupportedOperationException("Not supported yet.");
-       }
+        }
 
         public boolean next() {
             p++;
@@ -273,8 +281,8 @@ public class TermCacheElement {
 
         public boolean findID(int id) {
             int start = 0; // p > 0 && id > ids[p] ? p : 0;
-            int pos = Util.binarySearch(ids, start, n-1, id);
-                    
+            int pos = Util.binarySearch(ids, start, n - 1, id);
+
             if(pos > 0) {
                 p = pos;
                 return true;
@@ -303,7 +311,5 @@ public class TermCacheElement {
         public int compareTo(Object o) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
-        
     }
-    
 } // TermCacheElement

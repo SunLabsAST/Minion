@@ -53,7 +53,7 @@ public class TestStringRelations extends TestBase {
     }
 
     private void runQuery(String field, Operator o, String val) throws SearchEngineException {
-        Relation r = new Relation(field, o, val);
+        StringRelation r = new StringRelation(field, o, val);
         ResultSet rs1 = mi.getSearchEngine().search(r);
         ResultSet rs2 = mi.getSearchEngine().search(String.format(
                 "%s %s \"%s\"", field, o.getRep(), val));

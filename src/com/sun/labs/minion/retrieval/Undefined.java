@@ -64,7 +64,7 @@ public class Undefined extends UnaryOperator {
         NameTerm field = (NameTerm) operands.get(0);
         FieldInfo fi = part.getManager().getMetaFile().getFieldInfo(field.getName());
         if(!fi.isSaved()) {
-            log.warn(logTag, 4, "Non saved field " + field.getName() + " for <undefined> operator");
+            logger.warning("Non saved field " + field.getName() + " for <undefined> operator");
             
             //
             // If this isn't a saved field, return the empty set.

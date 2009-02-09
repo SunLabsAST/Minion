@@ -29,14 +29,13 @@ import java.util.Arrays;
 
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
-import com.sun.labs.minion.util.DescriptiveStats;
 
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.Buffer;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * A postings class for storing IDs, frequencies, and field and word
@@ -233,7 +232,7 @@ public class DFOPostings implements Postings {
      */
     protected int skipSize = 64;
     
-    protected static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
     
     protected static String logTag = "DFOP";
     
@@ -1124,7 +1123,7 @@ public class DFOPostings implements Postings {
          */
         public boolean findID(int id) {
             
-//             log.debug(logTag, 0, id + " " + curr + " " + cb + " " + skipID[cb]);
+//             logger.info(id + " " + curr + " " + cb + " " + skipID[cb]);
             
             if(nIDs == 0) {
                 return false;
@@ -1168,7 +1167,7 @@ public class DFOPostings implements Postings {
                 // block that we're checking and only binary search if we
                 // need to.
                 if(cb >= skipID.length || skipID[cb] < id || curr > id) {
-//                     log.debug(logTag, 0, " searching");
+//                     logger.info(" searching");
                     int p = Arrays.binarySearch(skipID, id);
                     if(p < 0) {
                         p = -p - 2;

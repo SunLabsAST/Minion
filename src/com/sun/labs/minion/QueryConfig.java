@@ -45,8 +45,9 @@ import com.sun.labs.minion.retrieval.TFIDF;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.CharUtils;
-import com.sun.labs.util.props.ConfigStringList;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A class that holds configuration data for querying.
@@ -264,7 +265,7 @@ public class QueryConfig implements Cloneable,
     /**
      * Our log.
      */
-    protected static Log log = Log.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The log tag.
@@ -404,7 +405,7 @@ public class QueryConfig implements Cloneable,
 
             return (WeightingFunction) wf.getClass().newInstance();
         } catch(Exception ex) {
-            log.error(logTag, 1, "Exception creating weighting function", ex);
+            logger.log(Level.SEVERE, "Exception creating weighting function", ex);
             return null;
         }
     }
@@ -444,7 +445,7 @@ public class QueryConfig implements Cloneable,
             ret.setCollection(cs);
             return ret;
         } catch(Exception ex) {
-            log.error(logTag, 1, "Exception creating weighting function", ex);
+            logger.log(Level.SEVERE, "Exception creating weighting function", ex);
             return null;
         }
     }
@@ -631,23 +632,19 @@ public class QueryConfig implements Cloneable,
             try {
                 wf = (WeightingFunction) Class.forName(wfClass).newInstance();
             } catch(ClassNotFoundException cnf) {
-                log.warn(logTag, 3,
-                        "Unable to load weighting function class: " +
+                logger.warning("Unable to load weighting function class: " +
                         wfClass +
                         " using default: " + wf.toString());
             } catch(InstantiationException ine) {
-                log.warn(logTag, 3,
-                        "Error instantiating weighting function class: " +
+                logger.log(Level.WARNING, "Error instantiating weighting function class: " +
                         wfClass + " using default: " + wf.toString(), ine);
             } catch(ClassCastException cce) {
-                log.warn(logTag, 3,
-                        "Weighting function class: " + wfClass +
+                logger.warning("Weighting function class: " + wfClass +
                         " does not appear to implement WeightingFunction " +
                          " using default: " +
                         wf.toString());
             } catch(Exception oe) {
-                log.warn(logTag, 3,
-                        "Error instantiating weighting function class: " +
+                logger.log(Level.WARNING, "Error instantiating weighting function class: " +
                         wfClass + " using default: " + wf.toString(), oe);
             }
         }
@@ -666,7 +663,7 @@ public class QueryConfig implements Cloneable,
     public void addDefaultField(String field) {
         FieldInfo fi = e.getFieldInfo(field);
         if(fi == null) {
-            log.warn(logTag, 3, "Field: " + field + " does not exist");
+            logger.warning("Field: " + field + " does not exist");
         } else {
             defaultFields.add(fi);
         }
@@ -675,7 +672,7 @@ public class QueryConfig implements Cloneable,
     public void removeDefaultField(String field) {
         FieldInfo fi = e.getFieldInfo(field);
         if (fi == null) {
-            log.warn(logTag, 3, "Field: " + field + " does not exist");
+            logger.warning("Field: " + field + " does not exist");
         } else {
             defaultFields.remove(fi);
         }

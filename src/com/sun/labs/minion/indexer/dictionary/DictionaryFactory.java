@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.util.props.ConfigInteger;
@@ -34,7 +33,8 @@ import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.Partition;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -47,7 +47,7 @@ public class DictionaryFactory implements Configurable {
      */
     public DictionaryFactory() {
     }
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "DF";
 
@@ -121,7 +121,7 @@ public class DictionaryFactory implements Configurable {
         try {
             return ((Entry) entryClass.newInstance()).getNumChannels();
         } catch(Exception e) {
-            log.error(logTag, 1, "Error instantiating main entry", e);
+            logger.log(Level.SEVERE, "Error instantiating main entry", e);
             return 1;
         }
     }

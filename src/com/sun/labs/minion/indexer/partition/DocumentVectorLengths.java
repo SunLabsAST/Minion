@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.partition;
 
 import java.io.File;
@@ -41,12 +40,12 @@ import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.FileLockException;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * A class that holds the document vector lengths for a partition.  It can
@@ -91,7 +90,7 @@ public class DocumentVectorLengths {
      */
     protected static int BUFF_SIZE = 4096;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "DVL";
 
@@ -181,8 +180,7 @@ public class DocumentVectorLengths {
             vecLens = new FileReadableBuffer(raf, offset, buffSize);
             lock.releaseLock();
         } catch(FileLockException fle) {
-            log.error(logTag, 1,
-                    "Error locking vector lengths file: " + vlFile + ": " + fle);
+            logger.severe("Error locking vector lengths file: " + vlFile + ": " + fle);
         }
     }
 
@@ -251,18 +249,18 @@ public class DocumentVectorLengths {
         }
 
         TermStatsEntry gte = null;
-        if (gti.hasNext()) {
+        if(gti.hasNext()) {
             gte = (TermStatsEntry) gti.next();
         }
 
         //
         // Iterate until there are no more entries in either of the dictionaries.
-        while (mde != null || gte != null) {
+        while(mde != null || gte != null) {
 
             int cmp;
-            if (mde == null) {
+            if(mde == null) {
                 cmp = 1;
-            } else if (gte == null) {
+            } else if(gte == null) {
                 cmp = -1;
             } else {
                 cmp = ((Comparable) mde.getName()).compareTo(gte.getName());
@@ -272,19 +270,19 @@ public class DocumentVectorLengths {
             // The entry to use for the merged global term stats dictionary.
             TermStatsEntry we;
 
-            if (cmp == 0) {
+            if(cmp == 0) {
                 //
                 // Both iterators have the term.  Combine stats!
                 we = gte;
                 TermStatsImpl ts = gte.getTermStats();
-                if (adjustStats) {
+                if(adjustStats) {
                     ts.add(mde);
                 }
                 wf.initTerm(wc.setTerm(ts));
                 addPostings(p, mde.iterator(feat), ts, vectored, fvl, vl);
                 gte = null;
                 mde = null;
-            } else if (cmp < 0) {
+            } else if(cmp < 0) {
                 //
                 // Only the new partition has the term.  Create the stats.
                 we = new TermStatsEntry(mde.getName().toString());
@@ -302,17 +300,17 @@ public class DocumentVectorLengths {
 
             //
             // Write the entry to the new global term stats dictionary.
-            if (adjustStats) {
+            if(adjustStats) {
                 gtw.write(we);
             }
 
             //
             // Pump whichever iterators are necessary.
-            if (gte == null && gti.hasNext()) {
+            if(gte == null && gti.hasNext()) {
                 gte = (TermStatsEntry) gti.next();
             }
 
-            if (mde == null && mdi.hasNext()) {
+            if(mde == null && mdi.hasNext()) {
                 mde = mdi.next();
             }
         }
@@ -341,7 +339,7 @@ public class DocumentVectorLengths {
         // Write the document vector lengths.
         dump(fvl, vl, part);
     }
-    
+
     /**
      * Dumps the vector lengths to the appropriate file.
      * @param fvl the specific field vector lengths for any vectored fields
@@ -454,7 +452,7 @@ public class DocumentVectorLengths {
     public void normalize(int[] docs, float[] scores, int p, float qw) {
         normalize(docs, scores, p, qw, -1);
     }
-    
+
     /**
      * Normalizes a set of document scores all in one go, using a local buffer
      * copy to avoid synchronization and churn in the buffer.  This will modify
@@ -467,7 +465,8 @@ public class DocumentVectorLengths {
      * @param fieldID the ID of the field that the scores were computed from and that
      * should be used for normalization.
      */
-    public void normalize(int[] docs, float[] scores, int p, float qw, int fieldID) {
+    public void normalize(int[] docs, float[] scores, int p, float qw,
+            int fieldID) {
         ReadableBuffer lvl;
 
         switch(fieldID) {
@@ -475,12 +474,12 @@ public class DocumentVectorLengths {
                 lvl = vecLens.duplicate();
                 break;
             default:
-                if (fieldLens[fieldID] == null) {
+                if(fieldLens[fieldID] == null) {
                     return;
                 }
                 lvl = fieldLens[fieldID].duplicate();
         }
-        
+
         for(int i = 0; i < p; i++) {
             lvl.position((docs[i] - 1) * 4);
             scores[i] /= (lvl.decodeFloat() * qw);

@@ -34,7 +34,7 @@ import com.sun.labs.minion.util.buffer.Buffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * An implementation of Postings that we can use to store classifier
@@ -79,7 +79,7 @@ public class FeaturePostings implements Postings {
      */
     protected Buffer info;
 
-    protected static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "FP";
 
@@ -146,7 +146,7 @@ public class FeaturePostings implements Postings {
         //
         // Warn on a duplicate feature.
         if(feats[f.getID()] != null) {
-            log.warn(logTag, 3, "Duplicate feature in FeaturePostings: " +
+            logger.warning("Duplicate feature in FeaturePostings: " +
                      f.getName());
         } else {
             nIDs++;

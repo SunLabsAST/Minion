@@ -21,21 +21,20 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 public class LowerCaseStage extends StageAdapter {
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "LCS";
-    
+
     public LowerCaseStage() {
     }
 
-     public LowerCaseStage(Stage d) {
+    public LowerCaseStage(Stage d) {
         downstream = d;
     }
 
@@ -45,9 +44,10 @@ public class LowerCaseStage extends StageAdapter {
      * @param t The token to process.
      */
     public void token(Token t) {
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         t.setToken(t.getToken().toLowerCase());
         downstream.token(t);
     }
-
 } // LowerCaseStage

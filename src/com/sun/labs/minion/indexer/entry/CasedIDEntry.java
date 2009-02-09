@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.entry;
 
 import com.sun.labs.minion.QueryStats;
@@ -36,6 +35,7 @@ import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Level;
 
 /**
  * A class for storing ID only postings for dictionary entries that need to
@@ -47,6 +47,7 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 public class CasedIDEntry extends CasedEntry {
 
     protected static final int CS = 0;
+
     protected static final int CI = 1;
 
     /**
@@ -55,7 +56,7 @@ public class CasedIDEntry extends CasedEntry {
     public CasedIDEntry() {
         this(null);
     } // CasedIDEntry constructor
-    
+
     /**
      * Creates an entry of this type.
      *
@@ -68,14 +69,14 @@ public class CasedIDEntry extends CasedEntry {
     public Entry getEntry(Object name) {
         return new CasedIDEntry(name);
     }
-    
+
     protected void init() {
-        p      = new IDPostings[2];
-        n      = new int[2];
-        size   = new int[2];
+        p = new IDPostings[2];
+        n = new int[2];
+        size = new int[2];
         offset = new long[2];
     }
-    
+
     /**
      * Creates a set of postings for indexing or merging.
      *
@@ -85,10 +86,9 @@ public class CasedIDEntry extends CasedEntry {
     protected void initPostings(int pos) {
         p[pos] = new IDPostings();
     }
-    
+
     //
     // Implementation of IndexEntry.
-
     /**
      * Returns the number of channels needed to store the postings for this
      * entry type.
@@ -127,8 +127,8 @@ public class CasedIDEntry extends CasedEntry {
      * postings.
      */
     public boolean writePostings(PostingsOutput[] out,
-                              int[] idMap)
-        throws java.io.IOException {
+            int[] idMap)
+            throws java.io.IOException {
         boolean postingsWritten = false;
         for(int i = 0; i < p.length; i++) {
 
@@ -145,7 +145,7 @@ public class CasedIDEntry extends CasedEntry {
             }
             offset[i] = out[0].position();
             WriteableBuffer[] b = p[i].getBuffers();
-            if (p[i].getN() == 0) {
+            if(p[i].getN() == 0) {
                 p[i] = null;
                 continue;
             }
@@ -169,7 +169,7 @@ public class CasedIDEntry extends CasedEntry {
     public void append(QueryEntry qe, int start, int[] idMap) {
 
         CasedIDEntry cie = (CasedIDEntry) qe;
-        
+
         for(int i = 0; i < p.length; i++) {
             if(cie.p[i] == null) {
                 continue;
@@ -185,7 +185,6 @@ public class CasedIDEntry extends CasedEntry {
 
     //
     // Implementation of QueryEntry.
-
     /**
      * Decodes the postings information associated with this entry.
      *
@@ -223,7 +222,7 @@ public class CasedIDEntry extends CasedEntry {
         }
         if(p[pos] == null) {
             p[pos] = new IDPostings(postIn[0].read(offset[pos],
-                                                  size[pos]));
+                    size[pos]));
         }
     }
 
@@ -258,7 +257,7 @@ public class CasedIDEntry extends CasedEntry {
     public boolean hasFieldInformation() {
         return false;
     }
-    
+
     /**
      * Gets an iterator that will iterate through a set of postings
      * associated with this entry.  These postings will be unfielded.
@@ -282,12 +281,13 @@ public class CasedIDEntry extends CasedEntry {
                 readPostings(CI);
                 return p[CI].iterator(features);
             }
-            
-            if(features.getCaseSensitive() || CharUtils.isUncased(name.toString())) {
+
+            if(features.getCaseSensitive() || CharUtils.isUncased(
+                    name.toString())) {
                 if(size[CS] == 0) {
                     return null;
                 }
-                if (qs != null) {
+                if(qs != null) {
                     qs.postingsSize += size[CS];
                 }
                 readPostings(CS);
@@ -296,15 +296,15 @@ public class CasedIDEntry extends CasedEntry {
                 if(size[CI] == 0) {
                     return null;
                 }
-                if (qs != null) {
+                if(qs != null) {
                     qs.postingsSize += size[CI];
                 }
                 readPostings(CI);
                 return p[CI].iterator(features);
             }
-        } catch (java.io.IOException ioe) {
-            log.error(logTag, 1, "Error reading postings for " + name,
-                      ioe);
+        } catch(java.io.IOException ioe) {
+            logger.log(Level.SEVERE, "Error reading postings for " + name,
+                    ioe);
             return null;
         } finally {
             if(qs != null) {
@@ -315,7 +315,6 @@ public class CasedIDEntry extends CasedEntry {
 
     //
     // Implementation of CasedPostingsEntry
-    
     /**
      * Adds an occurrence to the case sensitive postings for this entry.
      *
@@ -324,7 +323,7 @@ public class CasedIDEntry extends CasedEntry {
     public void addCaseSensitive(Occurrence o) {
         add(o, CS);
     }
-    
+
     /**
      * Adds an occurrence to the case insensitive postings for this entry.
      *
@@ -333,7 +332,7 @@ public class CasedIDEntry extends CasedEntry {
     public void addCaseInsensitive(Occurrence o) {
         add(o, CI);
     }
-    
+
     /**
      * Gets the postings that are case sensitive.
      */
@@ -347,7 +346,7 @@ public class CasedIDEntry extends CasedEntry {
     public Postings getCaseInsensitivePostings() {
         return p[CI];
     }
-    
+
     /**
      * Indicates whether the name of this entry actually occurred in the data,
      * that is, whether it has any case sensitive postings.
@@ -355,7 +354,7 @@ public class CasedIDEntry extends CasedEntry {
     public boolean nameOccurred() {
         return n[CS] > 0;
     }
-    
+
     public int getNCaseInsensitive() {
         return n[CI];
     }

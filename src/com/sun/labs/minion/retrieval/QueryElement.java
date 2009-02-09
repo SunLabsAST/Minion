@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
@@ -34,8 +33,8 @@ import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
-import com.sun.labs.minion.util.MinionLog;
 import java.util.Collection;
+import java.util.logging.Logger;
 
 /**
  * An abstract base class for all of the term and operator classes that
@@ -115,7 +114,7 @@ public abstract class QueryElement implements Comparable {
      */
     protected float[] fieldMultipliers;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * Sets the current partition, and makes sure that we have valid search
@@ -130,22 +129,24 @@ public abstract class QueryElement implements Comparable {
         //
         // We only need to set up the search fields and multipliers once.
         if(searchFields == null) {
-            if (part instanceof InvFileDiskPartition) {
+            if(part instanceof InvFileDiskPartition) {
                 InvFileDiskPartition ifpart = (InvFileDiskPartition) part;
-                if (searchFieldNames == null) {
+                if(searchFieldNames == null) {
                     //
                     // Set up any default fields if there are none specified in
                     // the query.
                     List<FieldInfo> df = qc.getDefaultFields();
-                    if (df.size() > 0) {
+                    if(df.size() > 0) {
                         searchFieldNames = new String[df.size()];
-                        for (int i = 0; i < df.size(); i++) {
+                        for(int i = 0; i < df.size(); i++) {
                             searchFieldNames[i] = df.get(i).getName();
                         }
                     }
                 }
-                searchFields = ifpart.getFieldStore().getFieldArray(searchFieldNames);
-                fieldMultipliers = ifpart.getFieldStore().getMultArray(qc.getMultFields(),
+                searchFields = ifpart.getFieldStore().getFieldArray(
+                        searchFieldNames);
+                fieldMultipliers = ifpart.getFieldStore().getMultArray(qc.
+                        getMultFields(),
                         qc.getMultValues());
             } else {
                 searchFields = new int[0];
@@ -249,19 +250,17 @@ public abstract class QueryElement implements Comparable {
         this.inOrder = inOrder;
     }
 
-
     /** 
      * Returns an array of field names to which search should be
      * restricted.
      * @return a clone of the internal array of field names
      */
     public String[] getSearchFieldNames() {
-        if (searchFieldNames == null) {
+        if(searchFieldNames == null) {
             return new String[0];
         }
         return searchFieldNames.clone();
     }
-
 
     /** 
      * Adds a field name to which the search should should be restricted
@@ -269,12 +268,12 @@ public abstract class QueryElement implements Comparable {
      * @param fieldName the name of the field
      */
     public void addSearchFieldName(String fieldName) {
-        if (searchFieldNames == null) {
+        if(searchFieldNames == null) {
             searchFieldNames = new String[1];
             searchFieldNames[0] = fieldName;
         } else {
             String[] str = new String[searchFieldNames.length + 1];
-            for (int i = 0; i < searchFieldNames.length; i++) {
+            for(int i = 0; i < searchFieldNames.length; i++) {
                 str[i] = searchFieldNames[i];
             }
             str[str.length - 1] = fieldName;
@@ -303,7 +302,7 @@ public abstract class QueryElement implements Comparable {
      * @param c A comparator used to order the terms.
      */
     protected abstract List getQueryTerms(Comparator c);
-    
+
     /**
      * Compares a query element to another, based on its estimated size.
      * This can be used to sort elements for more efficient processing.
@@ -327,16 +326,17 @@ public abstract class QueryElement implements Comparable {
     public String toString(String prefix) {
         String name = getClass().getName();
         String fields = "";
-        if (searchFieldNames != null) {
-            for (int i=0; i < searchFieldNames.length; i++) {
-                fields = fields + searchFieldNames[i] + (i != searchFieldNames.length - 1 ? ", " : "");
+        if(searchFieldNames != null) {
+            for(int i = 0; i < searchFieldNames.length; i++) {
+                fields = fields + searchFieldNames[i] + (i !=
+                        searchFieldNames.length - 1 ? ", " : "");
             }
         }
-        return prefix + name.substring(name.lastIndexOf('.') + 1) + (!fields.equals("")?" (fields: " + fields + ") ":"");
+        return prefix + name.substring(name.lastIndexOf('.') + 1) + (!fields.
+                equals("") ? " (fields: " + fields + ") " : "");
     }
 
     public void dump(String prefix) {
         System.out.println(toString(prefix));
     }
-    
 } // QueryElement

@@ -34,6 +34,7 @@ import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.logging.Level;
 
 public class DFOEntry extends SinglePostingsEntry {
 
@@ -281,7 +282,7 @@ public class DFOEntry extends SinglePostingsEntry {
                 return null;
             }
         } catch (java.io.IOException ioe) {
-            log.error(logTag, 1, "Error reading postings for " + name,
+            logger.log(Level.SEVERE, "Error reading postings for " + name,
                       ioe);
             return null;
         } finally {

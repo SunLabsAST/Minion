@@ -21,18 +21,15 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.classification;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-
-
-
 import java.util.PriorityQueue;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * A class for holding a weighted feature vector.  Such a vector may hold
@@ -41,27 +38,27 @@ import com.sun.labs.minion.util.Util;
  * track of how each vector is used!
  */
 public class WeightedFeatureVector {
-    
+
     /**
      * An array to hold the features clusters that make up our vector.
      * This array must be ordered by cluster name!
      */
     protected FeatureCluster[] v;
-    
+
     /**
      * The number of features in our vector.
      */
     protected int nFeat;
-    
+
     /**
      * Whether we've been normalized.
      */
     protected boolean normalized;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "WFV";
-    
+
     /**
      * Creates a feature vector from a collection of feature clusters.
      * @param c a collection of feature clusters from which we should make 
@@ -73,7 +70,7 @@ public class WeightedFeatureVector {
             v[nFeat++] = fc.copy();
         }
     } // WeightedFeatureVector constructor
-    
+
     /**
      * Creates a feature vector from a collection of feature clusters and some
      * associated weights
@@ -88,7 +85,7 @@ public class WeightedFeatureVector {
             nFeat++;
         }
     } // WeightedFeatureVector constructor
-    
+
     /**
      * Creates a feature vector that can hold a certain number of
      * features.
@@ -98,7 +95,7 @@ public class WeightedFeatureVector {
     public WeightedFeatureVector(int nFeat) {
         v = new FeatureCluster[nFeat];
     }
-    
+
     /**
      * Creates a feature vector that's a copy of the given vector.
      * @param fv the vector that we want to copy
@@ -110,7 +107,7 @@ public class WeightedFeatureVector {
             v[i] = fv.v[i].copy();
         }
     }
-    
+
     /**
      * Gets the size of this vector, which is the number of features it
      * contains.
@@ -120,7 +117,7 @@ public class WeightedFeatureVector {
     public int size() {
         return nFeat;
     }
-    
+
     /**
      * Adds a feature to this vector.  This method assumes that the feature
      * has not already been added, so be careful to only add a feature
@@ -130,18 +127,18 @@ public class WeightedFeatureVector {
      * @param f the feature cluster
      */
     public void add(FeatureCluster f) {
-        
+
         //
         // Make sure we don't get too big!
-        if(nFeat+1 >= v.length) {
-            FeatureCluster[] temp = new FeatureCluster[v.length+256];
+        if(nFeat + 1 >= v.length) {
+            FeatureCluster[] temp = new FeatureCluster[v.length + 256];
             System.arraycopy(v, 0, temp, 0, v.length);
             v = temp;
         }
-        
+
         v[nFeat++] = f;
     }
-    
+
     public FeatureCluster getCluster(String name) {
         for(int i = 0; i < v.length; i++) {
             if(v[i] == null) {
@@ -153,6 +150,7 @@ public class WeightedFeatureVector {
         }
         return null;
     }
+
     /**
      * Adds a feature vector to this vector, returning a new vector.
      *
@@ -176,9 +174,9 @@ public class WeightedFeatureVector {
         while(i1 < nFeat && i2 < fv.nFeat) {
             FeatureCluster f1 = v[i1];
             FeatureCluster f2 = fv.v[i2];
-            
+
             int cmp = f1.getName().compareTo(f2.getName());
-            
+
             if(cmp == 0) {
                 float w = fac1 * f1.getWeight() +
                         fac2 * f2.getWeight();
@@ -209,7 +207,7 @@ public class WeightedFeatureVector {
                 i2++;
             }
         }
-        
+
         while(i1 < nFeat) {
             FeatureCluster f1 = v[i1++];
             float w = fac1 * f1.getWeight();
@@ -219,7 +217,7 @@ public class WeightedFeatureVector {
                 ret.add(c);
             }
         }
-        
+
         while(i2 < fv.nFeat) {
             FeatureCluster f2 = fv.v[i2++];
             float w = fac2 * f2.getWeight();
@@ -229,10 +227,10 @@ public class WeightedFeatureVector {
                 ret.add(c);
             }
         }
-        
+
         return ret;
     }
-    
+
     /**
      * Adds a feature vector to this vector, returning a new vector.
      *
@@ -243,7 +241,7 @@ public class WeightedFeatureVector {
     public WeightedFeatureVector add(WeightedFeatureVector fv) {
         return add(fv, 1, 1, false);
     }
-    
+
     /**
      * Subtracts a feature vector from this vector, returning a new vector.
      *
@@ -260,7 +258,7 @@ public class WeightedFeatureVector {
             boolean dropNegative) {
         return add(fv, fac1, -fac2, dropNegative);
     }
-    
+
     /**
      * Subtracts a feature vector from this vector, returning a new vector.
      *
@@ -271,7 +269,7 @@ public class WeightedFeatureVector {
     public WeightedFeatureVector sub(WeightedFeatureVector fv) {
         return sub(fv, 1, 1, false);
     }
-    
+
     /**
      * Subtracts a feature vector from this vector, returning a new vector.
      *
@@ -285,7 +283,7 @@ public class WeightedFeatureVector {
             boolean dropNegative) {
         return sub(fv, 1, 1, dropNegative);
     }
-    
+
     /**
      * Multiplies a feature vector by a scalar, producing a new vector.
      * @param s a scalar that we want to multiply the weights by
@@ -301,7 +299,7 @@ public class WeightedFeatureVector {
         }
         return ret;
     }
-    
+
     /**
      * Calculate the dot product of this feature vector and another feature
      * vector.
@@ -315,21 +313,21 @@ public class WeightedFeatureVector {
         int i1 = 0;
         int i2 = 0;
         int x = 0;
-        while (i1 < nFeat && i2 < fv.nFeat) {
+        while(i1 < nFeat && i2 < fv.nFeat) {
             FeatureCluster f1 = v[i1];
             FeatureCluster f2 = fv.v[i2];
-            
+
             int cmp = f1.getName().compareTo(f2.getName());
-            
-            if (cmp == 0) {
-                
+
+            if(cmp == 0) {
+
                 //
                 // The cluster names are the same, so we'll have some
                 // non-zero value to add for this cluster's dimension
                 res += f1.getWeight() * f2.getWeight();
                 i1++;
                 i2++;
-            } else if (cmp < 0) {
+            } else if(cmp < 0) {
                 //
                 // fv is zero in this dimension
                 i1++;
@@ -341,7 +339,7 @@ public class WeightedFeatureVector {
         }
         return res;
     }
-    
+
     /**
      * Gets an array of weighted feature from this WeightedFeatureVector.
      * The WeightedFeatureVector is flattened -- that is, the resulting
@@ -357,18 +355,19 @@ public class WeightedFeatureVector {
         // weight of the cluster, then put them into an array that
         // can easily be compared to a doc vector
         ArrayList<WeightedFeature> features = new ArrayList<WeightedFeature>();
-        for (int i = 0; i < nFeat; i++) {
-            for (Iterator fit = v[i].getContents().iterator(); fit.hasNext();) {
-                WeightedFeature f = (WeightedFeature)fit.next();
+        for(int i = 0; i < nFeat; i++) {
+            for(Iterator fit = v[i].getContents().iterator(); fit.hasNext();) {
+                WeightedFeature f = (WeightedFeature) fit.next();
                 f.setWeight(v[i].getWeight());
                 features.add(f);
             }
         }
         //
         // Sort the results and return them.
-        return Util.sort(features.toArray(new com.sun.labs.minion.classification.WeightedFeature[features.size()]));
+        return Util.sort(features.toArray(new com.sun.labs.minion.classification.WeightedFeature[features.
+                size()]));
     }
-    
+
     /**
      * Normalizes the length of this vector to 1.
      */
@@ -382,7 +381,7 @@ public class WeightedFeatureVector {
         }
         normalized = true;
     }
-    
+
     /**
      * Gets the euclidean length of this vector.
      * @return the length of this vector
@@ -397,8 +396,7 @@ public class WeightedFeatureVector {
         }
         return (float) Math.sqrt(l);
     }
-    
-    
+
     /**
      * Gets a sorted set of features.
      *
@@ -411,7 +409,7 @@ public class WeightedFeatureVector {
         }
         return ret;
     }
-    
+
     /**
      * Given a number of partition-specific feature vectors, generate a
      * new, cross-partition feature vector.  The resulting vector is
@@ -432,17 +430,17 @@ public class WeightedFeatureVector {
      */
     public static WeightedFeatureVector getCrossPartition(List vecs,
             FeatureClusterSet clusters) {
-        
+
         PriorityQueue<FeatureCluster> h = new PriorityQueue<FeatureCluster>();
         int max = Integer.MIN_VALUE;
-        
+
         //
         // For each vector, get the clusters and put them on the heap.
-        for(Iterator i = vecs.iterator(); i.hasNext(); ) {
-            WeightedFeatureVector wfv  = (WeightedFeatureVector) i.next();
-            
+        for(Iterator i = vecs.iterator(); i.hasNext();) {
+            WeightedFeatureVector wfv = (WeightedFeatureVector) i.next();
+
             max = Math.max(wfv.nFeat, max);
-            
+
             //
             // For each element of the group, make a weighted feature and
             // put it on the heap for later combination.
@@ -450,10 +448,10 @@ public class WeightedFeatureVector {
                 h.offer(wfv.v[j]);
             }
         }
-        
-        
+
+
         WeightedFeatureVector ret = new WeightedFeatureVector(max);
-        
+
         //
         // Empty the heap, collecting up the clusters that share a name,
         // combining their weights.
@@ -463,24 +461,25 @@ public class WeightedFeatureVector {
             while(top != null && top.getName().equals(curr.getName())) {
                 h.poll();
                 // FIXME: I think this should merge clusters, not just add weights
-                curr.setWeight(curr.getWeight() + top.getWeight());;
+                curr.setWeight(curr.getWeight() + top.getWeight());
+                ;
                 top = h.peek();
             }
-            
+
             //
             // curr is now a unique (in the set of WFVs passed in) feature cluster.
             // it can be added to the output set.
             ret.add(curr);
-            
+
         }
-        
+
         return ret;
     }
-    
+
     public String toString() {
         return toString(0);
     }
-    
+
     public String toString(int t) {
         StringBuffer b = new StringBuffer();
         for(int i = 0; i < nFeat; i++) {
@@ -501,6 +500,4 @@ public class WeightedFeatureVector {
         }
         return b.toString();
     }
-    
-    
 } // WeightedFeatureVector

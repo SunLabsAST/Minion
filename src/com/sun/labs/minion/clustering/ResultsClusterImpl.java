@@ -51,7 +51,6 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.ScoredGroup;
-import com.sun.labs.minion.util.MinionLog;
 
 /**
  *
@@ -91,7 +90,7 @@ public class ResultsClusterImpl implements ResultsCluster,
      */
     double[] centroid;
 
-    protected static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "RCI";
 

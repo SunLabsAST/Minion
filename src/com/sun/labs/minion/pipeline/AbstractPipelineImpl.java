@@ -21,13 +21,11 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.minion.CustomAnalyzer;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableString;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
@@ -50,6 +48,8 @@ import com.sun.labs.minion.indexer.partition.Dumper;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An abstract implementation of pipeline.
@@ -86,7 +86,7 @@ public abstract class AbstractPipelineImpl implements Pipeline {
     /**
      * The log.
      */
-    protected static Log log = Log.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * Our log tag.
@@ -107,9 +107,9 @@ public abstract class AbstractPipelineImpl implements Pipeline {
      * Creates a AbstractPipelineImpl
      */
     public AbstractPipelineImpl(PipelineFactory factory,
-                                SearchEngine engine,
-                                List<Stage> pipeline,
-                                Dumper dumper) {
+            SearchEngine engine,
+            List<Stage> pipeline,
+            Dumper dumper) {
         this.factory = factory;
         this.engine = engine;
         this.pipeline = pipeline;
@@ -125,7 +125,6 @@ public abstract class AbstractPipelineImpl implements Pipeline {
     public Stage getHead() {
         return head;
     }
-
 
     /**
      * Gets the indexer stage for this pipline.  This can be used by a
@@ -168,7 +167,7 @@ public abstract class AbstractPipelineImpl implements Pipeline {
                 if(s[j] != null) {
                     docSize +=
                             handleField(fi, s[j],
-                                        IndexableString.Type.PLAIN);
+                            IndexableString.Type.PLAIN);
                 }
             }
         } else if(val instanceof Object[]) {
@@ -178,8 +177,8 @@ public abstract class AbstractPipelineImpl implements Pipeline {
         } else if(val instanceof IndexableString) {
             docSize +=
                     handleField(fi,
-                                ((IndexableString) val).getValue(),
-                                ((IndexableString) val).getMarkupType());
+                    ((IndexableString) val).getValue(),
+                    ((IndexableString) val).getMarkupType());
         } else if(val instanceof IndexableString[]) {
             IndexableString[] s = (IndexableString[]) val;
             for(int j = 0; j < s.length;
@@ -187,7 +186,7 @@ public abstract class AbstractPipelineImpl implements Pipeline {
                 if(s[j] != null) {
                     docSize +=
                             handleField(fi, s[j].getValue(),
-                                        s[j].getMarkupType());
+                            s[j].getMarkupType());
                 }
             }
         } else if(val instanceof File) {
@@ -202,8 +201,8 @@ public abstract class AbstractPipelineImpl implements Pipeline {
                 FileInputStream fis = new FileInputStream(file);
                 InputStreamReader isr;
                 if(val instanceof IndexableFile) {
-                    isr =   new InputStreamReader(fis,
-                                                  ((IndexableFile) val).getEncoding());
+                    isr = new InputStreamReader(fis,
+                            ((IndexableFile) val).getEncoding());
                 } else {
                     isr = new InputStreamReader(fis);
                 }
@@ -220,22 +219,22 @@ public abstract class AbstractPipelineImpl implements Pipeline {
                     head.endField(fi);
                 }
             } else {
-                log.warn(logTag, 3, file + " is not a file");
+                logger.warning(file + " is not a file");
             }
-        } else if (val instanceof URL) {
+        } else if(val instanceof URL) {
             //
             // Get an input stream for the URL and read the data into an
             // analyzer
-            if (fi != null) {
+            if(fi != null) {
                 head.startField(fi);
             }
-            URL url = (URL)val;
+            URL url = (URL) val;
             URLConnection conn = url.openConnection();
             try {
                 conn.connect();
                 String contentType = conn.getContentType();
-                if (!contentType.startsWith("text")) {
-                    log.warn(logTag, 3, "URL does not contain text: " + url);
+                if(!contentType.startsWith("text")) {
+                    logger.warning("URL does not contain text: " + url);
                     conn.getInputStream().close();
                     return;
                 }
@@ -244,18 +243,18 @@ public abstract class AbstractPipelineImpl implements Pipeline {
                 try {
                     MarkUpAnalyzer mua =
                             MarkUpAnalyzer.getMarkUpAnalyzer(contentType,
-                                                             isr, currKey);
+                            isr, currKey);
                     mua.analyze(head);
                 } finally {
                     isr.close();
                 }
-            } catch (IOException e) {
-                log.warn(logTag, 3, "Unable to read " + url);
+            } catch(IOException e) {
+                logger.warning("Unable to read " + url);
             } finally {
-                if (fi != null) {
+                if(fi != null) {
                     head.endField(fi);
                 }
-                
+
             }
         } else if(val instanceof Collection) {
 
@@ -268,7 +267,6 @@ public abstract class AbstractPipelineImpl implements Pipeline {
             docSize += handleField(fi, val, IndexableString.Type.PLAIN);
         }
     }
-
 
     /**
      * Handle the characters for one instance of a given field.
@@ -286,7 +284,7 @@ public abstract class AbstractPipelineImpl implements Pipeline {
      * @see IndexableFile
      */
     protected long handleField(FieldInfo fi, Object val,
-                               IndexableString.Type type) {
+            IndexableString.Type type) {
 
         if(val == null) {
             return 0;
@@ -300,13 +298,14 @@ public abstract class AbstractPipelineImpl implements Pipeline {
             tokenized = fi.isTokenized();
             saved = fi.isSaved();
         }
-        
+
         //
         // Handle a posting here.
         if(val instanceof Posting) {
             Posting p = (Posting) val;
             if(p.getTerm() == null) {
-                log.warn(logTag, 3, "Null term in posting", new Exception("Here"));
+                logger.log(Level.WARNING, "Null term in posting", new Exception(
+                        "Here"));
                 return 0;
             }
             if(fi != null) {
@@ -339,11 +338,11 @@ public abstract class AbstractPipelineImpl implements Pipeline {
                 // We need to format dates with milliseconds!  Note that
                 // com.sun.labs.minion.util.NDateParser needs to know about this format!
                 if(d64 == null) {
-                    d64 =   new SimpleDateFormat("E, d MMM y h:m:s.S a z");
+                    d64 = new SimpleDateFormat("E, d MMM y h:m:s.S a z");
                 }
                 sval = d64.format((Date) val);
-            } else if (val instanceof IndexableString) {
-                sval = ((IndexableString)val).getValue();
+            } else if(val instanceof IndexableString) {
+                sval = ((IndexableString) val).getValue();
             } else {
                 sval = val.toString();
             }
@@ -371,17 +370,18 @@ public abstract class AbstractPipelineImpl implements Pipeline {
                     try {
                         hmu.analyze(head);
                     } catch(IOException ioe) {
-                        log.warn(logTag, 2,
-                                 "Error reading from HTML string for: " + currKey);
+                        logger.warning("Error reading from HTML string for: " + currKey);
                     }
 
                     break;
                 case CUSTOM:
-                    CustomAnalyzer ca = ((IndexableString)val).getCustomAnalyzer();
+                    CustomAnalyzer ca = ((IndexableString) val).
+                            getCustomAnalyzer();
                     try {
-                        ca.analyze(((IndexableString)val).getValue(), head);
-                    } catch (IOException ioe) {
-                        log.warn(logTag, 2, "Error reading text from custom analyzer for " + currKey + ": " + ioe.getMessage());
+                        ca.analyze(((IndexableString) val).getValue(), head);
+                    } catch(IOException ioe) {
+                        logger.warning("Error reading text from custom analyzer for " +
+                                currKey + ": " + ioe.getMessage());
                     }
                     break;
             }
@@ -393,17 +393,17 @@ public abstract class AbstractPipelineImpl implements Pipeline {
         } else if(saved) {
 
             if(val instanceof Date &&
-               fi.getType() != FieldInfo.Type.DATE) {
-                log.warn(logTag, 4,
-                         "Date added to non-date saved field: " + fi.getName());
+                    fi.getType() != FieldInfo.Type.DATE) {
+                logger.warning("Date added to non-date saved field: " + fi.
+                        getName());
             }
 
             //
             // If the data is only to be saved, then send it down in its
             // original format.
             head.startField(fi);
-            if (val instanceof IndexableString) {
-                head.savedData(((IndexableString)val).getValue());
+            if(val instanceof IndexableString) {
+                head.savedData(((IndexableString) val).getValue());
             } else {
                 head.savedData(val);
             }
@@ -413,7 +413,6 @@ public abstract class AbstractPipelineImpl implements Pipeline {
 
         return 0;
     }
-
 
     /**
      * Does the actual work of indexing a document.
@@ -479,8 +478,8 @@ public abstract class AbstractPipelineImpl implements Pipeline {
 
     public synchronized FieldInfo addImpliedField(String name) {
 
-        log.log(logTag, 4, "Defining undefined field: " + name);
-        
+        logger.fine("Defining undefined field: " + name);
+
         //
         // Create the field using the defaults defined in the index config.
         FieldInfo fi = engine.getIndexConfig().getDefaultFieldInfo(name);
@@ -506,7 +505,6 @@ public abstract class AbstractPipelineImpl implements Pipeline {
         return engine.isIndexed(key);
     }
 
-
     /**
      * Ends the current document.
      *
@@ -515,7 +513,6 @@ public abstract class AbstractPipelineImpl implements Pipeline {
     public void endDocument() {
         head.endDocument(docSize);
     }
-
 
     /**
      * Starts the indexing of a document.
@@ -551,15 +548,14 @@ public abstract class AbstractPipelineImpl implements Pipeline {
         // Just throw away the current indexer, replacing it with a new one.
         setIndexer(factory.getIndexingStage());
     }
-
     /**
      * The current key that we're working on.
      */
     protected String currKey;
 
-
     /**
      * The size of the current document, in characters.
      */
     protected long docSize;
+
 }

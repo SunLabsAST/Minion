@@ -42,8 +42,8 @@ import java.util.TreeMap;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.FileLockException;
-import com.sun.labs.minion.util.MinionLog;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 /**
  * A class to read and write the indexer's metafile.
@@ -72,7 +72,7 @@ public class MetaFile {
 
     protected Map<Integer, FieldInfo> idToInfo;
 
-    protected MinionLog log;
+    protected Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "MetaFile";
 
@@ -96,7 +96,6 @@ public class MetaFile {
                 new HashMap<String, FieldInfo>();
         idToInfo =
                 new TreeMap<Integer, FieldInfo>();
-        log = MinionLog.getLog();
     }
 
     /**
@@ -502,7 +501,7 @@ public class MetaFile {
         } else {
             FieldInfo fi = getFieldInfo(name);
             if(fi == null || !fi.isVectored()) {
-                log.warn(logTag, 3, name + " is unknown or not a vectored field");
+                logger.warning(name + " is unknown or not a vectored field");
                 return 0;
             } else {
                 return fi.getID();

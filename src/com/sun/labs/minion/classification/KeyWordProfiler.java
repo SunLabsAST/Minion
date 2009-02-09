@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.classification;
 
 import com.sun.labs.minion.QueryConfig;
@@ -53,7 +52,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.retrieval.DictTerm;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -66,70 +65,70 @@ import org.xml.sax.SAXException;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class KeyWordProfiler implements Profiler, Configurable {
-    
+
     /**
      * A map from keywords to class names.
      */
-    private Map<String,List<String>> m;
-    
-    private static MinionLog log = MinionLog.getLog();
+    private Map<String, List<String>> m;
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     private static String logTag = "KWP";
+
     public KeyWordProfiler() {
-        m = new HashMap<String,List<String>>();
+        m = new HashMap<String, List<String>>();
     }
-    
+
     public void newProperties(PropertySheet ps) throws PropertyException {
         classField = ps.getString(PROP_CLASS_FIELD);
         keywordData = ps.getString(PROP_KEYWORD_DATA);
         loadKeywords(ps.getInstanceName(), keywordData);
     }
-    
+
     public String getName() {
         return null;
     }
-    
-    @ConfigString(defaultValue="class")
+    @ConfigString(defaultValue = "class")
     public static final String PROP_CLASS_FIELD = "class_field";
-    
+
     private String classField;
-    
+
     public String getClassField() {
         return classField;
     }
-    
+
     public void setClassField(String classField) {
         this.classField = classField;
     }
-    
-    @ConfigString(defaultValue="why")
+    @ConfigString(defaultValue = "why")
     public static final String PROP_FROM_FIELD = "from_field";
-    
+
     private String fromField;
-    
+
     public String getFromField() {
         return fromField;
     }
-    
+
     public void setFromField(String fromField) {
         this.fromField = fromField;
     }
-    
-    @ConfigString(defaultValue="keywords.xml")
+    @ConfigString(defaultValue = "keywords.xml")
     public static final String PROP_KEYWORD_DATA = "keyword_data";
-    
+
     private String keywordData;
-    
+
     public String getKeywordData() {
         return keywordData;
     }
-    
+
     public void setKeywordData(String keywordData) {
         this.keywordData = keywordData;
     }
-    
+
     private void loadKeywords(String instanceName, String keywordData) throws PropertyException {
         try {
-            DocumentBuilder b = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            DocumentBuilder b = DocumentBuilderFactory.newInstance().
+                    newDocumentBuilder();
             URL kwu = getClass().getResource(keywordData);
             if(kwu == null) {
                 kwu = (new File(keywordData)).toURI().toURL();
@@ -145,25 +144,30 @@ public class KeyWordProfiler implements Profiler, Configurable {
                 }
                 m.put(ce.getAttribute("name"), words);
             }
-        } catch (MalformedURLException ex) {
-            throw new PropertyException(instanceName, PROP_KEYWORD_DATA, "Bad file name: " + keywordData);
-        } catch (SAXException ex) {
-            throw new PropertyException(instanceName, PROP_KEYWORD_DATA, "Parse error: " + ex.getMessage());
-        } catch (IOException ex) {
-            throw new PropertyException(instanceName, PROP_KEYWORD_DATA, "Error reading file: " + ex.getMessage());
-        } catch (ParserConfigurationException ex) {
-            throw new PropertyException(instanceName, PROP_KEYWORD_DATA, "Error in parser configuration: " + ex.getMessage());
+        } catch(MalformedURLException ex) {
+            throw new PropertyException(instanceName, PROP_KEYWORD_DATA,
+                    "Bad file name: " + keywordData);
+        } catch(SAXException ex) {
+            throw new PropertyException(instanceName, PROP_KEYWORD_DATA,
+                    "Parse error: " + ex.getMessage());
+        } catch(IOException ex) {
+            throw new PropertyException(instanceName, PROP_KEYWORD_DATA,
+                    "Error reading file: " + ex.getMessage());
+        } catch(ParserConfigurationException ex) {
+            throw new PropertyException(instanceName, PROP_KEYWORD_DATA,
+                    "Error in parser configuration: " + ex.getMessage());
         }
-        
+
     }
-    
+
     /**
      * Runs the keyword profile.
      */
-    public boolean profile(SearchEngineImpl engine, InvFileMemoryPartition mp, InvFileDiskPartition dp) {
+    public boolean profile(SearchEngineImpl engine, InvFileMemoryPartition mp,
+            InvFileDiskPartition dp) {
         QueryConfig qc = engine.getQueryConfig();
         boolean modified = false;
-        
+
         //
         // Figure out whether we need to look at a particular field and set up
         // the features for the postings iterator.
@@ -187,13 +191,13 @@ public class KeyWordProfiler implements Profiler, Configurable {
             }
             feat.setFields(fields);
         }
-        
+
         //
         // Get info for the field where we will put the classes.
         FieldInfo fi = dp.getManager().getMetaFile().getFieldInfo(classField);
-        Set[] vm = new Set[dp.getMaxDocumentID()+1];
-        for(Map.Entry<String,List<String>> e : m.entrySet()) {
-            float[] scores = new float[dp.getMaxDocumentID()+1];
+        Set[] vm = new Set[dp.getMaxDocumentID() + 1];
+        for(Map.Entry<String, List<String>> e : m.entrySet()) {
+            float[] scores = new float[dp.getMaxDocumentID() + 1];
             Set<String> terms = new HashSet<String>();
             List<QueryEntry> qes = new ArrayList<QueryEntry>();
             for(String w : e.getValue()) {
@@ -209,8 +213,8 @@ public class KeyWordProfiler implements Profiler, Configurable {
                     }
                 }
             }
-            
-            
+
+
             for(QueryEntry qe : qes) {
                 if(noStats) {
                     wc.ft = qe.getN();
@@ -222,7 +226,8 @@ public class KeyWordProfiler implements Profiler, Configurable {
                 if(pi != null) {
                     while(pi.next()) {
                         if(field > 0) {
-                            float[] fw = ((FieldedPostingsIterator) pi).getFieldWeights();
+                            float[] fw = ((FieldedPostingsIterator) pi).
+                                    getFieldWeights();
                             scores[pi.getID()] += fw[field];
                         } else {
                             scores[pi.getID()] += pi.getWeight();
@@ -230,22 +235,22 @@ public class KeyWordProfiler implements Profiler, Configurable {
                     }
                 }
             }
-            
+
             for(int i = 1; i < scores.length; i++) {
                 scores[i] /= dp.getDocumentLength(i);
             }
-            
+
             float thresh = getThreshold(scores);
             for(int i = 1; i < scores.length; i++) {
                 if(scores[i] > thresh) {
                     if(vm[i] == null) {
-                        vm[i] =new HashSet<String>();
+                        vm[i] = new HashSet<String>();
                     }
                     vm[i].add(e.getKey());
                 }
             }
         }
-        
+
         for(int i = 1; i < vm.length; i++) {
             if(vm[i] != null) {
                 for(String v : (Set<String>) vm[i]) {
@@ -254,11 +259,11 @@ public class KeyWordProfiler implements Profiler, Configurable {
                 modified = true;
             }
         }
-        
-        
+
+
         return modified;
     }
-    
+
     /**
      * Gets a threshold for determining class membership.
      */
@@ -284,5 +289,4 @@ public class KeyWordProfiler implements Profiler, Configurable {
         //        return mean + sd;
         return 0.04f;
     }
-    
 }

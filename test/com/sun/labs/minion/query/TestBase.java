@@ -23,11 +23,10 @@
  */
 package com.sun.labs.minion.query;
 
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.indexer.TestUtil;
 import com.sun.labs.minion.samples.MailIndexer;
-import com.sun.labs.util.SimpleLabsLogFormatter;
+import com.sun.labs.util.LabsLogFormatter;
 import java.io.File;
 import java.net.URL;
 import java.util.logging.Handler;
@@ -42,6 +41,7 @@ import org.junit.BeforeClass;
  *
  */
 public class TestBase {
+
     protected static File indexDir;
 
     protected static Logger logger;
@@ -62,17 +62,16 @@ public class TestBase {
     public static void setUpClass() throws Exception {
         Logger l = Logger.getLogger("");
         for(Handler h : l.getHandlers()) {
-            h.setFormatter(new SimpleLabsLogFormatter());
+            h.setFormatter(new LabsLogFormatter());
         }
         logger = Logger.getLogger(TestTerms.class.getName());
-        Log.setLogger(logger);
-        Log.setLevel(3);
         indexDir =
                 new File(System.getProperty("java.io.tmpdir"), "indextest.idx");
         try {
             mi = new MailIndexer(indexDir.toString());
             URL u =
-                    TestTerms.class.getResource("/com/sun/labs/minion/indexer/dtrace.txt");
+                    TestTerms.class.getResource(
+                    "/com/sun/labs/minion/indexer/dtrace.txt");
             mi.indexMBox(u, "[dtrace-discuss]");
         } catch(SearchEngineException ex) {
             logger.log(Level.SEVERE, "Error opening engine", ex);
@@ -99,5 +98,4 @@ public class TestBase {
     @After
     public void tearDown() {
     }
-
 }

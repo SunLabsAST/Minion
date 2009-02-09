@@ -39,7 +39,7 @@ import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.DocOccurrence;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A memory partition that will hold classifier data.
@@ -52,7 +52,7 @@ public class ClusterMemoryPartition extends MemoryPartition
     /**
      * The log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The tag for this module.
@@ -99,7 +99,7 @@ public class ClusterMemoryPartition extends MemoryPartition
             // If there's already an entry, get rid of it, but we need to make
             // sure that we keep whatever's in this cluster already!
             if (old != null) {
-                log.warn(logTag, 4, "Duplicate cluster in partition: " + docName +
+                logger.fine("Duplicate cluster in partition: " + docName +
                          " deleting old version: " + old.getID());
                 del.delete(old.getID());
                 clusterEntry.merge(old, null);

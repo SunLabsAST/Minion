@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion;
 
 import com.sun.labs.util.props.ConfigurationManager;
@@ -29,7 +28,7 @@ import com.sun.labs.util.props.PropertyException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * This is a factory class that can be used to get a search engine instance.
@@ -48,15 +47,14 @@ public class SearchEngineFactory {
      */
     public static final String DEFAULT_ENGINE = "search_engine";
 
-    private static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     public static final String logTag = "SEF";
 
-    public static final String[] configFiles =
-            {"standardConfig.xml",
-            "dictionaryConfig.xml", "partitionConfig.xml",
-            "pipelineConfig.xml",
-            "classifierConfig.xml"};
+    public static final String[] configFiles = {"standardConfig.xml",
+        "dictionaryConfig.xml", "partitionConfig.xml",
+        "pipelineConfig.xml",
+        "classifierConfig.xml"};
 
     /**
      * Creates a SearchEngineFactory
@@ -93,6 +91,7 @@ public class SearchEngineFactory {
             throws SearchEngineException {
         return getSearchEngine(indexDir, engineName, null);
     }
+
     /**
      * Gets a search engine that combines the given configuration management
      * file with the default.
@@ -104,7 +103,6 @@ public class SearchEngineFactory {
      * @throws com.sun.labs.minion.SearchEngineException if there is an error
      * opening the search engine
      */
-
     public static SearchEngine getSearchEngine(String indexDir,
             URL configFile)
             throws SearchEngineException {
@@ -129,6 +127,7 @@ public class SearchEngineFactory {
             URL configFile)
             throws SearchEngineException {
         ConfigurationManager cm;
+        Logger sl = Logger.getLogger(SearchEngineFactory.class.getName());
         try {
             File f = getDefaultConfigFile(indexDir);
             if(f != null && f.exists()) {
@@ -140,21 +139,19 @@ public class SearchEngineFactory {
                 try {
                     cm.addProperties(f.toURI().toURL());
                 } catch(IOException ioe) {
-                    log.warn(logTag, 3,
-                            "Error loading index config file: " + f +
+                    sl.warning("Error loading index config file: " + f +
                             " Continuing without it");
                 }
-                
+
                 //
                 // Check for an engine name in the configuration and make sure
                 // it matches up with what we were given.
                 String en = cm.getGlobalProperty("engine_name");
                 if(en != null) {
                     if(!en.equals(engineName)) {
-                    log.warn(logTag, 3,
-                            "getSearchEngine using inconsistent engine names.  Given \"" +
-                            engineName + "\" config contains: \"" + en +
-                            "\" using config name!");
+                        sl.warning("getSearchEngine using inconsistent engine names.  Given \"" +
+                                engineName + "\" config contains: \"" + en +
+                                "\" using config name!");
                     }
                     engineName = en;
                 }
@@ -176,11 +173,12 @@ public class SearchEngineFactory {
                 }
             }
             checkConfigurationManager(cm);
-            
+
             SearchEngine se =
                     (SearchEngine) cm.lookup(engineName);
             if(se == null) {
-                throw new SearchEngineException("Unable to find configuration: " + engineName);
+                throw new SearchEngineException("Unable to find configuration: " +
+                        engineName);
             }
             return se;
         } catch(IOException ex) {

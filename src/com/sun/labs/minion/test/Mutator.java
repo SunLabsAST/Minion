@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test;
 
 import java.io.BufferedReader;
@@ -42,102 +41,104 @@ import java.net.URL;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Level;
 
 public class Mutator extends SEMain implements Runnable {
-    
-    
+
     protected SearchEngine engine;
-    
+
     protected Thread indexingThread;
-    
+
     protected String logTag;
-    
+
     protected List<String> indexList;
-    
+
     protected static String stuff;
+
     protected static int nLines;
+
     protected static int maxUpd;
+
     protected static int nUpdates;
+
     protected static int updateInterval;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     private static String indexDir;
-    
+
     public Mutator(SearchEngine engine, List<String> l, int index)
-    throws SearchEngineException {
+            throws SearchEngineException {
         this.engine = engine;
-        logTag 	  = "M" + index;
+        logTag = "M" + index;
         indexList = new ArrayList<String>(l);
     }
-    
+
     public void run() {
-        
-        int 	nIter = 1;
-        boolean done  = false;
+
+        int nIter = 1;
+        boolean done = false;
         Thread.currentThread().setName(logTag);
         Random rand = new Random();
-        
+
         //
         // Loop until we're done.
-        mainLoop: while(!done) {
-            
+        mainLoop:
+        while(!done) {
+
             //
             // How many documents will we do this time around?  Note that
             // the answer can be 0!
             int toIndex = rand.nextInt(maxUpd);
-            log.log(logTag, 0, "Iteration: " + nIter + " " + toIndex + " docs");
-            
+            logger.info("Iteration: " + nIter + " " + toIndex + " docs");
+
             for(int i = 0; i < toIndex; i++) {
-                
+
                 //
                 // Choose a random document from the list
                 IndexableFile file =
                         new IndexableFile(
                         indexList.get(rand.nextInt(indexList.size())));
-                
+
                 //
                 // Try to index it.
                 try {
                     engine.index(makeDocument(file));
-                } catch (SearchEngineException se) {
-                    log.error(logTag, 1, "Error indexing document " + file,
+                } catch(SearchEngineException se) {
+                    logger.log(Level.SEVERE, "Error indexing document " + file,
                             se);
-                } catch (Exception e) {
-                    log.error(logTag, 0, "Error indexing", e);
+                } catch(Exception e) {
+                    logger.log(Level.SEVERE, "Error indexing", e);
                 }
             }
-            
+
             if(toIndex > 0) {
                 try {
                     engine.flush();
-                } catch (SearchEngineException se) {
-                    log.error(logTag, 1, "Error flushing", se);
+                } catch(SearchEngineException se) {
+                    logger.log(Level.SEVERE, "Error flushing", se);
                 }
             }
-            
+
             if(updateInterval > 0) {
-                
-                int ms = rand.nextInt(updateInterval*1000);
-                
-                log.log(logTag, 0,
-                        "Sleeping " + ms + "ms");
-                
+
+                int ms = rand.nextInt(updateInterval * 1000);
+
+                logger.info("Sleeping " + ms + "ms");
+
                 try {
                     Thread.sleep(ms);
                 } catch(InterruptedException ie) {
                 }
             }
-            
+
             //
             // See whether we're done.
             done = nUpdates >= 0 && nIter >= nUpdates;
             nIter++;
         }
     }
-    
-  
+
     public static void usage() {
         System.out.println(
                 "Usage: java Mutator\n" +
@@ -160,102 +161,95 @@ public class Mutator extends SEMain implements Runnable {
                 " -n <num>         " +
                 "The number of lines in the input file (required)\n" +
                 " -m <num>          " +
-                "The maximum number of files to index/update\n"+
+                "The maximum number of files to index/update\n" +
                 " -x <file>        " +
                 "An XML configuration file specifying extra props for " +
-                "the index"
-                );
+                "the index");
         return;
     }
-    
+
     public static void main(String[] args) throws java.io.IOException, SearchEngineException {
-        
-        String 	flags  	     = "i:d:w:e:s:n:m:r:t:g:x:";
-        stuff 	       	     = null;
-        updateInterval 	     = 10;
-        nUpdates       	     = 10;
-        nLines 	       	     = Integer.MAX_VALUE;
-        maxUpd 	       	     = 100;
-        int 	nThreads     = 1;
-        Getopt 	gopt   	     = new Getopt(args, flags);
-        int 	c;
+
+        String flags = "i:d:w:e:s:n:m:r:t:g:x:";
+        stuff = null;
+        updateInterval = 10;
+        nUpdates = 10;
+        nLines = Integer.MAX_VALUE;
+        maxUpd = 100;
+        int nThreads = 1;
+        Getopt gopt = new Getopt(args, flags);
+        int c;
         URL cmFile = null;
-        
+
         if(args.length == 0) {
             usage();
             return;
         }
-        
+
         //
         // Set up the log.
         Logger logger = Logger.getLogger("");
         for(Handler h : logger.getHandlers()) {
             h.setFormatter(new SimpleLabsLogFormatter());
         }
-        
-        MinionLog.setLogger(logger);
-        MinionLog.setLevel(3);
-        
+
         //
         // Handle the options.
-        while ((c = gopt.getopt()) != -1) {
-            switch (c) {
-                
+        while((c = gopt.getopt()) != -1) {
+            switch(c) {
+
                 case 'i':
                     stuff = gopt.optArg;
                     break;
-                    
+
                 case 'd':
                     indexDir = gopt.optArg;
                     break;
-                    
+
                 case 's':
                     try {
                         updateInterval = Integer.parseInt(gopt.optArg);
-                    } catch (NumberFormatException nfe) {
+                    } catch(NumberFormatException nfe) {
                         //
                         // Unknown type.
-                        log.warn("M", 0,
-                                "Invalid update interval: " + gopt.optArg);
+                        logger.warning("Invalid update interval: " + gopt.optArg);
                         usage();
                         return;
                     }
                     break;
-                    
+
                 case 'm':
                     try {
                         maxUpd = Integer.parseInt(gopt.optArg);
-                    } catch (NumberFormatException nfe) {
+                    } catch(NumberFormatException nfe) {
                         //
                         // Unknown type.
-                        log.warn("M", 0,
-                                "Invalid maximum update: " + gopt.optArg);
+                        logger.warning("Invalid maximum update: " + gopt.optArg);
                         usage();
                         return;
                     }
                     break;
-                    
+
                 case 'n':
                     try {
                         nLines = Integer.parseInt(gopt.optArg);
-                    } catch (NumberFormatException nfe) {
+                    } catch(NumberFormatException nfe) {
                         //
                         // Unknown type.
-                        log.warn("M", 0,
-                                "Invalid number of lines: " + gopt.optArg);
+                        logger.warning("Invalid number of lines: " + gopt.optArg);
                         usage();
                         return;
                     }
                     break;
-                    
+
                 case 'r':
                     try {
                         nUpdates = Integer.parseInt(gopt.optArg);
-                    } catch (NumberFormatException nfe) {
+                    } catch(NumberFormatException nfe) {
                         //
                         // Unknown type.
-                        log.warn("M", 0,
-                                "Invalid number of updates: " + gopt.optArg);
+                        logger.warning("Invalid number of updates: " +
+                                gopt.optArg);
                         usage();
                         return;
                     }
@@ -263,11 +257,11 @@ public class Mutator extends SEMain implements Runnable {
                 case 't':
                     try {
                         nThreads = Integer.parseInt(gopt.optArg);
-                    } catch (NumberFormatException nfe) {
+                    } catch(NumberFormatException nfe) {
                         //
                         // Unknown type.
-                        log.warn("M", 0,
-                                "Invalid number of threads: " + gopt.optArg);
+                        logger.warning("Invalid number of threads: " +
+                                gopt.optArg);
                         usage();
                         return;
                     }
@@ -276,67 +270,68 @@ public class Mutator extends SEMain implements Runnable {
                     cmFile = (new File(gopt.optArg)).toURI().toURL();
                     break;
             }
-            
+
         }
-        
+
         if(stuff == null) {
-            log.warn("M", 0,
-                    "You must specify a list of files to index.");
+            logger.warning("You must specify a list of files to index.");
             usage();
             return;
         }
-        
+
         if(cmFile == null) {
             cmFile = Mutator.class.getResource("Mutator-config.xml");
         }
-        
+
         //
         // Open the file of file names.
         BufferedReader inFile = null;
-        
+
         try {
             inFile = new BufferedReader(new FileReader(stuff));
-        } catch (java.io.IOException ioe) {
-            log.error("M", 0, "Unable to open file: " + stuff, ioe);
+        } catch(java.io.IOException ioe) {
+            logger.log(Level.SEVERE, "Unable to open file: " + stuff, ioe);
             usage();
             return;
         }
-        
+
         String l;
         int n = 0;
         List<String> il = new ArrayList<String>();
         while((l = inFile.readLine()) != null && n < nLines) {
             il.add(l);
         }
-        
+
         Thread[] threads = new Thread[nThreads];
         Mutator[] muts = new Mutator[nThreads];
-        
-        SearchEngine engine = SearchEngineFactory.getSearchEngine(indexDir, cmFile);
-        
+
+        SearchEngine engine = SearchEngineFactory.getSearchEngine(indexDir,
+                cmFile);
+
         try {
             for(int i = 0; i < nThreads; i++) {
-                muts[i] = new Mutator(engine, il, i+1);
+                muts[i] = new Mutator(engine, il, i + 1);
                 threads[i] = new Thread(muts[i]);
                 threads[i].start();
             }
-        } catch (SearchEngineException se) {
-            log.error("M", 1, "Error creating mutators", se);
+        } catch(SearchEngineException se) {
+            logger.log(Level.SEVERE, "Error creating mutators", se);
             return;
         }
-        
+
         for(int i = 0; i < nThreads; i++) {
             try {
                 threads[i].join();
-            } catch(InterruptedException ie) {}
+            } catch(InterruptedException ie) {
+            }
         }
-        
+
         //
         // Close the search engines.
         try {
             engine.close();
-        } catch (SearchEngineException se) {
-            log.error("M", 1, "Error closing engines", se);
+        } catch(SearchEngineException se) {
+            logger.log(Level.SEVERE, "Error closing engines", se);
         }
     }
 } // Mutator

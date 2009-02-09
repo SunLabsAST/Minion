@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import com.sun.labs.minion.pipeline.TokenCollectorStage;
-import com.sun.labs.minion.util.MinionLog;
 
 /**
  *
@@ -71,16 +70,11 @@ public class Test {
      */
     public static void main(String[] args) throws IOException {
         
-        MinionLog.setStream(System.out);
-        MinionLog.setLevel(4);
-        
         TokenCollectorStage tcs1 = new TokenCollectorStage();
-//        PrintStage ps1 = new PrintStage(tcs1, true);
         Tokenizer tok1 = new UniversalTokenizer(tcs1);
         Test t1 = new Test(tok1);
         
         TokenCollectorStage tcs2 = new TokenCollectorStage();
-//        PrintStage ps2 = new PrintStage(tcs2, true);
         Tokenizer tok2 = new JCCTokenizer(tcs2);
         Test t2 = new Test(tok2);
 
@@ -94,10 +88,6 @@ public class Test {
             lr = new InputStreamReader(new FileInputStream(lf), args[1]);
             t2.tokenize(lr, f);
             lr.close();
-//            MinionLog.log("TEST", 0, "Universal Tokenizer");
-//            MinionLog.log("TEST", 0, "\n" + t1.tok.getDownstream().toString());
-//            MinionLog.log("TEST", 0, "JCC Tokenizer");
-//            MinionLog.log("TEST", 0, "\n" + t2.tok.getDownstream().toString());
             if(!t1.tok.getDownstream().equals(t2.tok.getDownstream())) {
                 System.err.println("Error tokenizing: " + f);
             }

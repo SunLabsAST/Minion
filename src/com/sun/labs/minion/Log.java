@@ -29,6 +29,7 @@ import com.sun.labs.minion.util.MinionLog;
 /**
  * A class that logs information for the search engine.
  */
+@Deprecated
 public class Log extends MinionLog {
 
     /**

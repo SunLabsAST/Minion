@@ -27,8 +27,6 @@ package com.sun.labs.minion.retrieval;
 import java.util.Iterator;
 import java.util.List;
 
-import com.sun.labs.minion.util.MinionLog;
-
 public class And extends Operator {
 
     protected static String logTag = "AND";

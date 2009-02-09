@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.document;
 
 import java.io.BufferedReader;
@@ -39,8 +38,8 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.pipeline.Stage;
-
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An implementation of a SAX XML handler that we can use to parse one or
@@ -78,10 +77,10 @@ public class XMLAnalyzer extends DefaultHandler {
      */
     protected Map fields = new HashMap();
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "XMLA";
-    
+
     /**
      * Instantiates a handler for the given document that will use the
      * given tokenizer to tokenize the document.
@@ -93,22 +92,22 @@ public class XMLAnalyzer extends DefaultHandler {
      * <code>XMLReader</code>.
      */
     public XMLAnalyzer(Reader r, Stage stage, MarkUpAnalyzer mua)
-	throws org.xml.sax.SAXException {
-	super();
+            throws org.xml.sax.SAXException {
+        super();
 
-	this.r = new BufferedReader(r);
-	this.mua = mua;
-	this.stage = stage;
-	
-	//
-	// Create the reader, then hand it ourself as the handler.
-	xr = XMLReaderFactory.createXMLReader();
-	
-	xr.setContentHandler(this);
-	xr.setErrorHandler(this);
-	xr.setFeature(
-	    "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-	    false);
+        this.r = new BufferedReader(r);
+        this.mua = mua;
+        this.stage = stage;
+
+        //
+        // Create the reader, then hand it ourself as the handler.
+        xr = XMLReaderFactory.createXMLReader();
+
+        xr.setContentHandler(this);
+        xr.setErrorHandler(this);
+        xr.setFeature(
+                "http://apache.org/xml/features/nonvalidating/load-external-dtd",
+                false);
     }
 
     /**
@@ -116,70 +115,67 @@ public class XMLAnalyzer extends DefaultHandler {
      *
      */
     public void analyze() {
-	try {
-	    xr.parse(new InputSource(r));
-	} catch (org.xml.sax.SAXParseException se) {
-	    log.warn(logTag, 0,
-		     "Error parsing XML " + mua.key + " " +
-		     se.getLineNumber() + " " + se.getMessage());
-	    endDocument();
-	} catch (org.xml.sax.SAXException se) {
-	    log.warn(logTag, 0,
-		     "Error parsing XML " + mua.key + " " +
-		     "line: " + se.getMessage());
-	    endDocument();
-	} catch (java.io.IOException ioe) {
-	    log.warn(logTag, 0, "Error reading during XML " + mua.key,
-		     ioe);
-	    endDocument();
-	} 
+        try {
+            xr.parse(new InputSource(r));
+        } catch(org.xml.sax.SAXParseException se) {
+            logger.warning("Error parsing XML " + mua.key + " " +
+                    se.getLineNumber() + " " + se.getMessage());
+            endDocument();
+        } catch(org.xml.sax.SAXException se) {
+            logger.warning("Error parsing XML " + mua.key + " " +
+                    "line: " + se.getMessage());
+            endDocument();
+        } catch(java.io.IOException ioe) {
+            logger.log(Level.WARNING, "Error reading during XML " + mua.key,
+                    ioe);
+            endDocument();
+        }
     }
 
     /**
      * Begin tag.
      */
     public void startElement(String namespaceURI, String localName,
-                             String qName, Attributes atts) {
+            String qName, Attributes atts) {
 
-	//
-	// We'll keep character positions from the start of each element.
-	pos = 0;
+        //
+        // We'll keep character positions from the start of each element.
+        pos = 0;
 
-	//
-	// See if we have a field info object for this field.
-	String hk = qName.toLowerCase();
-	FieldInfo fi = (FieldInfo) fields.get(hk);
+        //
+        // See if we have a field info object for this field.
+        String hk = qName.toLowerCase();
+        FieldInfo fi = (FieldInfo) fields.get(hk);
 
-	if(fi == null) {
-	    fi = new FieldInfo(hk, EnumSet.of(FieldInfo.Attribute.INDEXED, 
+        if(fi == null) {
+            fi = new FieldInfo(hk, EnumSet.of(FieldInfo.Attribute.INDEXED,
                     FieldInfo.Attribute.TOKENIZED));
-	    fields.put(hk, fi);
-	}
+            fields.put(hk, fi);
+        }
 
-	stage.startField(fi);
+        stage.startField(fi);
     }
 
     /**
      * Character data.
      */
     public void characters(char[] ch, int start, int length) {
-	stage.text(ch, start, start+length);
-	pos += length;
+        stage.text(ch, start, start + length);
+        pos += length;
     }
 
     /**
      * End tag.
      */
     public void endElement(String namespaceURI, String localName,
-			   String qName) {
-	stage.endField((FieldInfo)null);
+            String qName) {
+        stage.endField((FieldInfo) null);
     }
 
     /**
      * Document end.
      */
     public void endDocument() {
-	stage.endDocument(0);
+        stage.endDocument(0);
     }
-    
 } // XMLAnalyzer

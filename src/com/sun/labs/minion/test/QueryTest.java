@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.Document;
@@ -83,7 +82,6 @@ import com.sun.labs.minion.FieldFrequency;
 import com.sun.labs.minion.FieldValue;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.Passage;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.PassageHighlighter;
@@ -120,9 +118,10 @@ import com.sun.labs.minion.lexmorph.disambiguation.Unsupervised;
 import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.retrieval.FieldEvaluator;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
-import com.sun.labs.util.SimpleLabsLogFormatter;
+import com.sun.labs.util.LabsLogFormatter;
 import java.util.Collections;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -160,10 +159,9 @@ import java.util.logging.Logger;
  * exit QueryTest cleanly, use the ":q" command.
  * <p>
  */
-
 public class QueryTest extends SEMain {
 
-    protected static Log log;
+    protected Logger logger = Logger.getLogger(getClass().getName());
 
     protected static final String logTag = "QT";
 
@@ -198,13 +196,13 @@ public class QueryTest extends SEMain {
     protected long totalTime,  nQueries;
 
     protected int grammar = Searcher.GRAMMAR_STRICT;
-    
+
     protected int queryOp = Searcher.OP_AND;
 
     protected boolean ttyInput = true;
 
     protected Unsupervised.Model currModel;
-    
+
     protected PrintStream output;
 
     private SimpleHighlighter shigh;
@@ -214,11 +212,13 @@ public class QueryTest extends SEMain {
             SearchEngineException {
         if(engineType == null) {
             engine =
-                    (SearchEngineImpl) SearchEngineFactory.getSearchEngine(indexDir,
+                    (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                    indexDir,
                     cmFile);
         } else {
             engine =
-                    (SearchEngineImpl) SearchEngineFactory.getSearchEngine(indexDir,
+                    (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                    indexDir,
                     engineType, cmFile);
         }
         manager = engine.getManager();
@@ -230,7 +230,7 @@ public class QueryTest extends SEMain {
         displayPassage = false;
         this.output = output;
         shigh = new SimpleHighlighter("<font color=\"#FF0000\">", "</font>",
-                            "<b>", "</b>");
+                "<b>", "</b>");
     }
 
     public void help() {
@@ -310,7 +310,8 @@ public class QueryTest extends SEMain {
     }
 
     public static void usage() {
-        System.err.println("Usage: java com.sun.labs.minion.test.QueryTest [options] -d indexDir");
+        System.err.println(
+                "Usage: java com.sun.labs.minion.test.QueryTest [options] -d indexDir");
     }
 
     public void stats() {
@@ -381,10 +382,10 @@ public class QueryTest extends SEMain {
         try {
             results = set.getResults(0, nHits);
         } catch(SearchEngineException se) {
-            log.error(logTag, 1, "Error getting search results", se);
+            logger.log(Level.SEVERE, "Error getting search results", se);
             return;
         } catch(Exception e) {
-            log.error(logTag, 1, "Error getting search results", e);
+            logger.log(Level.SEVERE, "Error getting search results", e);
             return;
         }
 
@@ -464,7 +465,7 @@ public class QueryTest extends SEMain {
                         queryOp, grammar);
                 displayResults(r);
             } catch(SearchEngineException se) {
-                log.error(logTag, 1, "Error running search", se);
+                logger.log(Level.SEVERE, "Error running search", se);
             }
         } else if(q.startsWith(":all")) {
             String[] vals =
@@ -478,8 +479,8 @@ public class QueryTest extends SEMain {
             try {
                 ResultSet rs = engine.allTerms(terms, fields);
                 displayResults(rs);
-            } catch (SearchEngineException see) {
-                log.error(logTag, 1, "Error finding all terms", see);
+            } catch(SearchEngineException see) {
+                logger.log(Level.SEVERE, "Error finding all terms", see);
             }
         } else if(q.startsWith(":any")) {
             String[] vals =
@@ -493,8 +494,8 @@ public class QueryTest extends SEMain {
             try {
                 ResultSet rs = engine.anyTerms(terms, fields);
                 displayResults(rs);
-            } catch (SearchEngineException see) {
-                log.error(logTag, 1, "Error finding all terms", see);
+            } catch(SearchEngineException see) {
+                logger.log(Level.SEVERE, "Error finding all terms", see);
             }
         } else if(q.startsWith(":qop")) {
             String op = q.substring(q.indexOf(' ') + 1).trim();
@@ -539,9 +540,9 @@ public class QueryTest extends SEMain {
                     displayResults("\t", rc.getResults());
                 }
             } catch(SearchEngineException se) {
-                log.error(logTag, 1, "Error running search", se);
+                logger.log(Level.SEVERE, "Error running search", se);
             } catch(Exception e) {
-                log.error(logTag, 1, "Exception clustering", e);
+                logger.log(Level.SEVERE, "Exception clustering", e);
             }
         } else if(q.startsWith(":export ")) {
             q = q.substring(q.indexOf(' ') + 1).trim();
@@ -591,9 +592,9 @@ public class QueryTest extends SEMain {
                 ResultSetImpl r = (ResultSetImpl) searcher.search(query, "");
                 engine.trainClass(r, className, classField);
             } catch(SearchEngineException se) {
-                log.error(logTag, 1, "Error running search", se);
+                logger.log(Level.SEVERE, "Error running search", se);
             } catch(Exception e) {
-                log.error(logTag, 1, "Error", e);
+                logger.log(Level.SEVERE, "Error", e);
             }
         } else if(q.startsWith(":describe ")) {
             q = q.substring(q.indexOf(' ') + 1).trim();
@@ -603,7 +604,7 @@ public class QueryTest extends SEMain {
 
             ExplainableClassifierModel ecm = (ExplainableClassifierModel) cm;
             if(ecm == null) {
-                log.log(logTag, 0, "No classifier for: " + q);
+                logger.info("No classifier for: " + q);
             } else {
 
                 output.println("---++ Classifier " + q);
@@ -652,9 +653,9 @@ public class QueryTest extends SEMain {
                 }
 
             } catch(SearchEngineException se) {
-                log.error(logTag, 1, "Error running search", se);
+                logger.log(Level.SEVERE, "Error running search", se);
             } catch(Exception e) {
-                log.error(logTag, 1, "Error", e);
+                logger.log(Level.SEVERE, "Error", e);
             }
         } else if(q.startsWith(":train ")) {
             //
@@ -675,7 +676,7 @@ public class QueryTest extends SEMain {
                     }
 
                     public void next(String s) {
-                        log.debug(logTag, 4, "Progress: " + s);
+                        logger.fine("Progress: " + s);
                     }
 
                     public void next() {
@@ -689,9 +690,9 @@ public class QueryTest extends SEMain {
                 // Now train the classifier
                 engine.trainClass(r, className, "test", null, p);
             } catch(SearchEngineException se) {
-                log.error(logTag, 1, "Error running search", se);
+                logger.log(Level.SEVERE, "Error running search", se);
             } catch(Exception e) {
-                log.error(logTag, 1, "Error", e);
+                logger.log(Level.SEVERE, "Error", e);
             }
         } else if(q.startsWith(":clusters ")) {
             //
@@ -699,7 +700,8 @@ public class QueryTest extends SEMain {
             String term = q.substring(q.indexOf(' ') + 1).trim();
             try {
                 ClusterManager cm = engine.getClusterManager();
-                for(Iterator it = cm.getActivePartitions().iterator(); it.hasNext();) {
+                for(Iterator it = cm.getActivePartitions().iterator(); it.
+                        hasNext();) {
                     ClusterDiskPartition part = (ClusterDiskPartition) it.next();
                     output.println("Partition " + part + ":");
                     QueryEntry ent = part.getTerm(term);
@@ -717,7 +719,8 @@ public class QueryTest extends SEMain {
                             pit.next();
                             termStr += "[Cluster: " + fc.getName() + "/" +
                                     pit.getID() + "] ";
-                            for(Iterator fit = fc.getContents().iterator(); fit.hasNext();) {
+                            for(Iterator fit = fc.getContents().iterator(); fit.
+                                    hasNext();) {
 
                                 Feature feat = (Feature) fit.next();
                                 termStr += feat.getName();
@@ -730,29 +733,33 @@ public class QueryTest extends SEMain {
                     }
                 }
             } catch(Exception e) {
-                log.error(logTag, 1, "Exception!", e);
+                logger.log(Level.SEVERE, "Exception!", e);
             }
         } else if(q.equals(":pclusters")) {
             try {
                 ClusterManager cm = engine.getClusterManager();
-                for(Iterator it = cm.getActivePartitions().iterator(); it.hasNext();) {
+                for(Iterator it = cm.getActivePartitions().iterator(); it.
+                        hasNext();) {
                     ClusterDiskPartition part = (ClusterDiskPartition) it.next();
                     output.println(part);
-                    for(Iterator docit = part.getDocumentIterator(); docit.hasNext();) {
+                    for(Iterator docit = part.getDocumentIterator(); docit.
+                            hasNext();) {
                         QueryEntry ent = (QueryEntry) docit.next();
                         output.println(ent);
                     }
                 }
             } catch(Exception e) {
-                log.error(logTag, 1, "Exception!", e);
+                logger.log(Level.SEVERE, "Exception!", e);
             }
         } else if(q.equals(":checkclusters")) {
             try {
                 ClusterManager cm = engine.getClusterManager();
-                for(Iterator it = cm.getActivePartitions().iterator(); it.hasNext();) {
+                for(Iterator it = cm.getActivePartitions().iterator(); it.
+                        hasNext();) {
                     ClusterDiskPartition part = (ClusterDiskPartition) it.next();
                     output.println(part);
-                    for(Iterator docit = part.getDocumentIterator(); docit.hasNext();) {
+                    for(Iterator docit = part.getDocumentIterator(); docit.
+                            hasNext();) {
                         QueryEntry ent = (QueryEntry) docit.next();
                         String docName = (String) ent.getName();
                         FeatureCluster cluster = part.getCluster(docName);
@@ -764,7 +771,7 @@ public class QueryTest extends SEMain {
                     }
                 }
             } catch(Exception e) {
-                log.error(logTag, 1, "Exception!", e);
+                logger.log(Level.SEVERE, "Exception!", e);
             }
         } else if(q.startsWith(":clusternamed ")) {
             //
@@ -772,7 +779,8 @@ public class QueryTest extends SEMain {
             String cname = q.substring(q.indexOf(' ') + 1).trim();
             try {
                 ClusterManager cm = engine.getClusterManager();
-                for(Iterator it = cm.getActivePartitions().iterator(); it.hasNext();) {
+                for(Iterator it = cm.getActivePartitions().iterator(); it.
+                        hasNext();) {
                     ClusterDiskPartition part = (ClusterDiskPartition) it.next();
                     FeatureCluster cluster = part.getCluster(cname);
                     output.println("Partition " + part + ":");
@@ -783,7 +791,8 @@ public class QueryTest extends SEMain {
                     QueryEntry doc = part.getDocumentTerm(cname);
                     output.println("Found doc " + cname + " with ID " +
                             doc.getID());
-                    for(Iterator fit = cluster.getContents().iterator(); fit.hasNext();) {
+                    for(Iterator fit = cluster.getContents().iterator(); fit.
+                            hasNext();) {
                         Feature feat = (Feature) fit.next();
                         termStr += feat.getName() + "/" + feat.getID();
                         termStr += ", ";
@@ -792,7 +801,7 @@ public class QueryTest extends SEMain {
 
                 }
             } catch(Exception e) {
-                log.error(logTag, 1, "Exception!", e);
+                logger.log(Level.SEVERE, "Exception!", e);
             }
         } else if(q.startsWith(":cf ")) {
             //
@@ -803,7 +812,8 @@ public class QueryTest extends SEMain {
                 ClassifierManager cm = engine.getClassifierManager();
                 for(Iterator i = cm.getActivePartitions().iterator(); i.hasNext();) {
                     Set s =
-                            ((ClassifierDiskPartition) i.next()).getFeatures(cname);
+                            ((ClassifierDiskPartition) i.next()).getFeatures(
+                            cname);
                     if(s == null) {
                         continue;
                     }
@@ -817,7 +827,7 @@ public class QueryTest extends SEMain {
                     }
                 }
             } catch(Exception e) {
-                log.error(logTag, 1, "Error getting features", e);
+                logger.log(Level.SEVERE, "Error getting features", e);
             }
         } else if(q.startsWith(":cfw ")) {
             //
@@ -828,7 +838,8 @@ public class QueryTest extends SEMain {
                 ClassifierManager cm = engine.getClassifierManager();
                 for(Iterator i = cm.getActivePartitions().iterator(); i.hasNext();) {
                     Set s =
-                            ((ClassifierDiskPartition) i.next()).getFeatures(cname);
+                            ((ClassifierDiskPartition) i.next()).getFeatures(
+                            cname);
                     if(s == null) {
                         continue;
                     }
@@ -854,7 +865,7 @@ public class QueryTest extends SEMain {
                     }
                 }
             } catch(Exception e) {
-                log.error(logTag, 1, "Error getting features", e);
+                logger.log(Level.SEVERE, "Error getting features", e);
             }
         } else if(q.startsWith(":diff ")) {
             try {
@@ -868,7 +879,7 @@ public class QueryTest extends SEMain {
                 ResultSet diff = r1.difference(r2);
                 displayResults(diff);
             } catch(SearchEngineException ex) {
-                log.error(logTag, 1, "Error", ex);
+                logger.log(Level.SEVERE, "Error", ex);
             }
         } else if(q.startsWith(":bq ")) {
             q = q.substring(q.indexOf(' ') + 1).trim();
@@ -886,14 +897,15 @@ public class QueryTest extends SEMain {
                 }
                 displayResults(r);
             } catch(SearchEngineException se) {
-                log.error(logTag, 1, "Error running search", se);
+                logger.log(Level.SEVERE, "Error running search", se);
             }
         } else if(q.startsWith(":sleep ")) {
             try {
                 long st = Long.parseLong(q.substring(q.indexOf(' ') + 1).trim());
                 Thread.sleep(st);
             } catch(NumberFormatException nfe) {
-                log.warn(logTag, 1, "Invalid sleep time: " + q.substring(q.indexOf(' ') + 1).
+                logger.warning("Invalid sleep time: " + q.substring(q.indexOf(
+                        ' ') + 1).
                         trim());
             } catch(InterruptedException ie) {
             }
@@ -903,7 +915,8 @@ public class QueryTest extends SEMain {
             try {
                 nHits = Integer.parseInt(q.substring(q.indexOf(' ') + 1).trim());
             } catch(NumberFormatException nfe) {
-                log.warn(logTag, 1, "Invalid number of hits: " + q.substring(q.indexOf(' ') + 1).
+                logger.warning("Invalid number of hits: " + q.substring(q.
+                        indexOf(' ') + 1).
                         trim());
             }
         } else if(q.startsWith(":sort")) {
@@ -928,7 +941,8 @@ public class QueryTest extends SEMain {
                 } else if(g.toLowerCase().equals("lucene")) {
                     grammar = Searcher.GRAMMAR_LUCENE;
                 } else {
-                    output.println("Unrecognized grammar, valid values are \"full\", \"web\" or \"lucene\"");
+                    output.println(
+                            "Unrecognized grammar, valid values are \"full\", \"web\" or \"lucene\"");
                 }
             }
         } else if(q.startsWith(":q")) {
@@ -938,7 +952,7 @@ public class QueryTest extends SEMain {
                     engine.close();
                 }
             } catch(SearchEngineException se) {
-                log.error(logTag, 1, "Error closing search engine", se);
+                logger.log(Level.SEVERE, "Error closing search engine", se);
             }
             return -1;
         } else if(q.startsWith(":term ")) {
@@ -954,7 +968,7 @@ public class QueryTest extends SEMain {
                         : (" (" + Util.toHexDigits(e.getName().toString()) +
                         ") ") + e.getN()));
             }
-        } else if(q.startsWith(":termstats " )) {
+        } else if(q.startsWith(":termstats ")) {
             //
             // Case sensitive term lookup.
             String term = CharUtils.decodeUnicode(q.substring(
@@ -968,13 +982,14 @@ public class QueryTest extends SEMain {
         } else if(q.startsWith(":morphy ")) {
             String term = CharUtils.decodeUnicode(q.substring(
                     q.indexOf(' ') + 1).trim());
-            List<String> variants = new ArrayList<String>(engine.getTermVariations(term));
+            List<String> variants = new ArrayList<String>(engine.
+                    getTermVariations(term));
             Collections.sort(variants);
             output.println("Variants for " + term);
-            for (String v : variants) {
+            for(String v : variants) {
                 output.println(" " + v);
             }
-            
+
         } else if(q.startsWith(":termi ")) {
 
             //
@@ -1010,7 +1025,7 @@ public class QueryTest extends SEMain {
                 maxCon = Integer.parseInt(fields[4]);
             }
             try {
-                Unsupervised dis = 
+                Unsupervised dis =
                         new Unsupervised(engine, term, field, 40, mf,
                         maxCon);
                 dis.setModels(4);
@@ -1018,7 +1033,7 @@ public class QueryTest extends SEMain {
                 output.println("model:" + currModel.toString());
                 String[] labels = currModel.getSenseLabels();
                 for(String l : labels) {
-                    log.debug(logTag, 0, "label: " + l);
+                    logger.info("label: " + l);
                 }
             } catch(Exception e) {
                 System.err.println("Exception during disambiguation");
@@ -1079,7 +1094,7 @@ public class QueryTest extends SEMain {
                         " s");
                 output.println("Total variants: " + totalVariants);
             } catch(Exception e) {
-                log.log(logTag, 0, "Exception in :wild", e);
+                logger.log(Level.SEVERE, "Exception in :wild", e);
                 return 0;
             }
         } else if(q.startsWith(":spell ")) {
@@ -1113,7 +1128,7 @@ public class QueryTest extends SEMain {
                 //        + " s");
                 output.println("Spelling took: " + sw.getTime() + "ms");
             } catch(Exception e) {
-                log.log(logTag, 0, "Exception in :spell", e);
+                logger.log(Level.SEVERE, "Exception in :spell", e);
                 return 0;
             }
         } else if(q.startsWith(":morph ")) {
@@ -1190,12 +1205,14 @@ public class QueryTest extends SEMain {
                     output.println("value: " + i.next());
                 }
             } else {
-                for(Iterator l = manager.getActivePartitions().iterator(); l.hasNext();) {
+                for(Iterator l = manager.getActivePartitions().iterator(); l.
+                        hasNext();) {
                     DiskPartition p = (DiskPartition) l.next();
                     if(p.getPartitionNumber() == pn) {
 
                         DictionaryIterator i =
-                                ((InvFileDiskPartition) p).getFieldIterator(field);
+                                ((InvFileDiskPartition) p).getFieldIterator(
+                                field);
                         if(i != null) {
                             output.println(p.toString());
                             while(i.hasNext()) {
@@ -1258,7 +1275,8 @@ public class QueryTest extends SEMain {
             String operator = fields[1].toLowerCase();
             String value = fields[2];
 
-            Relation.Operator op = Relation.Operator.valueOf(operator.toUpperCase());
+            Relation.Operator op = Relation.Operator.valueOf(operator.
+                    toUpperCase());
             if(op == null) {
                 output.println("Unknown operator: " + op);
                 return 1;
@@ -1275,12 +1293,12 @@ public class QueryTest extends SEMain {
         } else if(q.startsWith(":del ")) {
             String k = q.substring(q.indexOf(' ') + 1).trim();
             manager.deleteDocument(k);
-        } else if (q.startsWith(":delq ")) {
+        } else if(q.startsWith(":delq ")) {
             q = q.substring(q.indexOf(' ') + 1).trim();
             try {
                 //
                 // Run the query
-                ResultSet rs = searcher.search(q, sortSpec, 
+                ResultSet rs = searcher.search(q, sortSpec,
                         Searcher.OP_PAND, grammar);
                 displayResults(rs);
                 BufferedReader br =
@@ -1288,17 +1306,17 @@ public class QueryTest extends SEMain {
                 output.print(
                         "Delete the documents matching this query? (y/n) ");
                 String response = br.readLine();
-                if (response.toLowerCase().equals("y") ||
+                if(response.toLowerCase().equals("y") ||
                         response.toLowerCase().equals("yes")) {
                     List<Result> results = rs.getAllResults(false);
-                    for (Result r : results) {
+                    for(Result r : results) {
                         manager.deleteDocument(r.getKey());
                     }
                 }
-            } catch (SearchEngineException se) {
-                log.error(logTag, 1, "Error running search", se);
-            } catch (IOException e) {
-                log.error(logTag, 1, "Failed to read answer", e);
+            } catch(SearchEngineException se) {
+                logger.log(Level.SEVERE, "Error running search", se);
+            } catch(IOException e) {
+                logger.log(Level.SEVERE, "Failed to read answer", e);
             }
 
         } else if(q.startsWith(":deld ")) {
@@ -1309,24 +1327,26 @@ public class QueryTest extends SEMain {
                 for(DiskPartition p : manager.getActivePartitions()) {
                     if(p.getPartitionNumber() == part) {
                         for(int i = 1; i < fields.length; i++) {
-                            boolean success = p.deleteDocument(Integer.parseInt(fields[i]));
-                            output.printf("Deletion of %d in %d returned %s ", Integer.parseInt(fields[i]),
+                            boolean success = p.deleteDocument(Integer.parseInt(
+                                    fields[i]));
+                            output.printf("Deletion of %d in %d returned %s ",
+                                    Integer.parseInt(fields[i]),
                                     p.getPartitionNumber(), success);
                         }
                     }
                 }
             }
-        } else if (q.startsWith(":ddup ")) {
+        } else if(q.startsWith(":ddup ")) {
             String[] args = parseMessage(q.substring(q.indexOf(' ') + 1).trim());
-            if (args.length == 2) {
+            if(args.length == 2) {
                 int keepPartNum = Integer.parseInt(args[1]);
                 DiskPartition keepPart = null;
                 int delPartNum = Integer.parseInt(args[0]);
                 DiskPartition delPart = null;
-                for (DiskPartition p: manager.getActivePartitions()) {
-                    if (p.getPartitionNumber() == keepPartNum) {
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    if(p.getPartitionNumber() == keepPartNum) {
                         keepPart = p;
-                    } else if (p.getPartitionNumber() == delPartNum) {
+                    } else if(p.getPartitionNumber() == delPartNum) {
                         delPart = p;
                     }
                 }
@@ -1334,12 +1354,14 @@ public class QueryTest extends SEMain {
                 while(di.hasNext()) {
                     QueryEntry key = (QueryEntry) di.next();
                     boolean success = delPart.deleteDocument(key.toString());
-                    if (success) {
-                        System.out.println("Removed key " + key + " from partition " + delPartNum);
+                    if(success) {
+                        System.out.println("Removed key " + key +
+                                " from partition " + delPartNum);
                     }
                 }
             } else {
-                System.out.println(":ddup <remove dup from part> <found in part>");
+                System.out.println(
+                        ":ddup <remove dup from part> <found in part>");
             }
         } else if(q.startsWith(":get ")) {
             StringTokenizer tok = new StringTokenizer(q.substring(
@@ -1367,7 +1389,8 @@ public class QueryTest extends SEMain {
 
                             for(i = 0; i < f.length; i++) {
                                 Object v =
-                                        ((InvFileDiskPartition) p).getSavedFieldData(f[i],
+                                        ((InvFileDiskPartition) p).
+                                        getSavedFieldData(f[i],
                                         d);
                                 output.println(f[i] + ": " + v);
                             }
@@ -1435,7 +1458,8 @@ public class QueryTest extends SEMain {
 
                 //
                 // Get an Entry for this document
-                for(Iterator partIt = manager.getActivePartitions().iterator(); partIt.hasNext();) {
+                for(Iterator partIt = manager.getActivePartitions().iterator(); partIt.
+                        hasNext();) {
                     DiskPartition p = (DiskPartition) partIt.next();
                     QueryEntry dt = p.getDocumentTerm(docKey);
                     if(dt != null) {
@@ -1444,7 +1468,8 @@ public class QueryTest extends SEMain {
                                 p.getPartitionNumber() + ":");
                         output.println(dt.getN() + " terms");
                         for(PostingsIterator postIt =
-                                dt.iterator(new PostingsIteratorFeatures()); postIt.next();) {
+                                dt.iterator(new PostingsIteratorFeatures()); postIt.
+                                next();) {
                             int tid = postIt.getID();
                             output.print(" " + p.getTerm(tid).toString() +
                                     " (" + tid + "," + postIt.getFreq() + ")");
@@ -1543,7 +1568,8 @@ public class QueryTest extends SEMain {
                                     PostingsIterator pi = e.iterator(feat);
                                     while(pi.next()) {
                                         int[][] posn =
-                                                ((PosPostingsIterator) pi).getPositions();
+                                                ((PosPostingsIterator) pi).
+                                                getPositions();
                                     }
                                 } catch(Exception ite) {
                                     output.println("Exception: " + ite);
@@ -1561,9 +1587,9 @@ public class QueryTest extends SEMain {
                                 if(!terms[0].equals("null")) {
                                     feat.setFields(
                                             new String[]{terms[0].equals("body")
-                                        ? null
-                                        : terms[0]
-                                    },
+                                                ? null
+                                                : terms[0]
+                                            },
                                             (InvFileDiskPartition) p);
                                 } else {
                                     feat.setFields(null);
@@ -1580,10 +1606,12 @@ public class QueryTest extends SEMain {
                                         continue;
                                     }
                                     int[][] posn =
-                                            ((PosPostingsIterator) pi).getPositions();
+                                            ((PosPostingsIterator) pi).
+                                            getPositions();
                                     for(int j = 0; j < posn.length; j++) {
                                         if(posn[j][0] > 0) {
-                                            output.print(" (" + j + ") " + Util.arrayToString(
+                                            output.print(" (" + j + ") " + Util.
+                                                    arrayToString(
                                                     posn[j], 0,
                                                     posn[j][0] + 1));
                                         }
@@ -1618,7 +1646,7 @@ public class QueryTest extends SEMain {
                     }
                 }
             } catch(Exception nfe) {
-                log.error(logTag, 0, "Exception", nfe);
+                logger.log(Level.SEVERE, "Exception", nfe);
                 return 0;
             }
         } else if(q.startsWith(":lmain ")) {
@@ -1642,7 +1670,7 @@ public class QueryTest extends SEMain {
                     }
                 }
             } catch(Exception nfe) {
-                log.error(logTag, 0, "Exception", nfe);
+                logger.log(Level.SEVERE, "Exception", nfe);
                 return 0;
             }
 
@@ -1668,7 +1696,7 @@ public class QueryTest extends SEMain {
                     }
                 }
 
-                log.debug(logTag, 0, "parts: " + parts);
+                logger.info("parts: " + parts);
 
                 PartitionManager.Merger merger =
                         manager.getMergerFromNumbers(parts);
@@ -1700,7 +1728,7 @@ public class QueryTest extends SEMain {
                         engine.getClassifierManager().
                         getMergerFromNumbers(parts);
                 if(merger != null) {
-                merger.merge();
+                    merger.merge();
                 } else {
                     output.println("Null merger for classifier partitions");
                 }
@@ -1728,7 +1756,7 @@ public class QueryTest extends SEMain {
                     }
                 }
 
-                log.debug(logTag, 0, "parts: " + parts);
+                logger.info("parts: " + parts);
 
                 PartitionManager.Merger merger = cm.getMergerFromNumbers(parts);
                 merger.merge();
@@ -1765,7 +1793,7 @@ public class QueryTest extends SEMain {
                 partNum =
                         Integer.parseInt(q.substring(q.indexOf(' ') + 1).trim());
             } catch(Exception e) {
-            // no part num
+                // no part num
             }
             Iterator l = manager.getActivePartitions().iterator();
             while(l.hasNext()) {
@@ -1839,14 +1867,13 @@ public class QueryTest extends SEMain {
                     try {
                         e = (QueryEntry) di.next();
                         output.println("e: " + e);
-                        log.setLevel(4);
                         pif.setCaseSensitive(true);
                         PostingsIterator pi = e.iterator(pif);
                         int nonNull = 0;
                         if(pi != null) {
                             nonNull++;
                             while(pi.next()) {
-                            // output.print(pi.getID() + " ");
+                                // output.print(pi.getID() + " ");
                             }
                         // output.println("");
                         }
@@ -1855,11 +1882,10 @@ public class QueryTest extends SEMain {
                         if(pi != null) {
                             nonNull++;
                             while(pi.next()) {
-                            // output.print(pi.getID() + " ");
+                                // output.print(pi.getID() + " ");
                             }
                         // output.println("");
                         }
-                        log.setLevel(3);
                         if(nonNull == 0) {
                             output.println("Both null: " + e);
                         }
@@ -1975,8 +2001,9 @@ public class QueryTest extends SEMain {
                 try {
                     tsd = new UncachedTermStatsDictionary(new File(vals[1]));
                     adjustStats = true;
-                } catch (IOException ex) {
-                    output.format("Unable to read term stats dict %s: %s\b", vals[1], ex.getMessage());
+                } catch(IOException ex) {
+                    output.format("Unable to read term stats dict %s: %s\b",
+                            vals[1], ex.getMessage());
                     return 1;
                 }
             }
@@ -1994,7 +2021,8 @@ public class QueryTest extends SEMain {
                 }
                 tsd.close(0);
                 tsd = manager.getTermStatsDict();
-                CheckTermStatsDict checker = new CheckTermStatsDict((UncachedTermStatsDictionary) tsd);
+                CheckTermStatsDict checker = new CheckTermStatsDict(
+                        (UncachedTermStatsDictionary) tsd);
                 boolean checked = checker.check(output, false);
                 if(checked) {
                     output.println("Good");
@@ -2035,7 +2063,7 @@ public class QueryTest extends SEMain {
             MultiDocumentVectorImpl dv = new MultiDocumentVectorImpl(dvs);
             ResultSet rs = dv.findSimilar("-score");
             displayResults(rs);
-            
+
         } else if(q.startsWith(":mffs")) {
             String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
             String field = vals[0];
@@ -2046,7 +2074,8 @@ public class QueryTest extends SEMain {
                     vecs.add(dv);
                 }
             }
-            MultiDocumentVectorImpl dv = new MultiDocumentVectorImpl(vecs, field);
+            MultiDocumentVectorImpl dv =
+                    new MultiDocumentVectorImpl(vecs, field);
             dv.setEngine(engine);
             output.println("dv: " + dv);
             ResultSet rs = dv.findSimilar("-score");
@@ -2165,10 +2194,12 @@ public class QueryTest extends SEMain {
                 output.println("Ooops: " + e);
             }
         } else if(q.startsWith(":checkparts")) {
-            for(Iterator it = manager.getActivePartitions().iterator(); it.hasNext();) {
+            for(Iterator it = manager.getActivePartitions().iterator(); it.
+                    hasNext();) {
                 InvFileDiskPartition dp = (InvFileDiskPartition) it.next();
                 int count = 0;
-                for(DictionaryIterator dit = dp.getFieldIterator("asin"); dit.hasNext();) {
+                for(DictionaryIterator dit = dp.getFieldIterator("asin"); dit.
+                        hasNext();) {
                     String asin = (String) dit.next().getName();
                     QueryEntry e = dp.getDocumentTerm(asin);
                     if(e == null) {
@@ -2205,11 +2236,12 @@ public class QueryTest extends SEMain {
                 if(part.getPartitionNumber() == pn) {
                     DocKeyEntry dke = part.getDocumentTerm(did);
                     output.println("key: " + dke.getName());
-                    DocumentVector dv = new DocumentVectorImpl(engine, dke, null);
+                    DocumentVector dv =
+                            new DocumentVectorImpl(engine, dke, null);
                     output.println("vector: " + dv);
                 }
             }
-       } else if(q.startsWith(":pkey ")) {
+        } else if(q.startsWith(":pkey ")) {
             String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
             int pn = Integer.parseInt(vals[0]);
             Set<String> keys = new HashSet<String>();
@@ -2229,7 +2261,8 @@ public class QueryTest extends SEMain {
                 for(DiskPartition part : manager.getActivePartitions()) {
                     if(part.getPartitionNumber() == pn) {
                         DocKeyEntry dke = part.getDocumentTerm(k);
-                        DocumentVector dv = new DocumentVectorImpl(engine, dke, null);
+                        DocumentVector dv = new DocumentVectorImpl(engine, dke,
+                                null);
                         output.println("key: " + dke);
                         output.println("dv: " + dv);
                     }
@@ -2377,7 +2410,7 @@ public class QueryTest extends SEMain {
         String indexDir = null;
         URL cmFile = null;
         String engineType = null;
-        
+
         PrintStream output = System.out;
 
         boolean vln = false;
@@ -2389,9 +2422,9 @@ public class QueryTest extends SEMain {
         }
 
         Thread.currentThread().setName("QueryTest");
-        
+
         for(Handler h : Logger.getLogger("").getHandlers()) {
-            h.setFormatter(new SimpleLabsLogFormatter());
+            h.setFormatter(new LabsLogFormatter());
         }
 
         //
@@ -2414,7 +2447,7 @@ public class QueryTest extends SEMain {
                 case 'f':
                     inputFile = gopt.optArg;
                     break;
-                    
+
                 case 'o':
                     output = new PrintStream(gopt.optArg, "utf-8");
                     break;
@@ -2435,17 +2468,12 @@ public class QueryTest extends SEMain {
 
         //
         // Setup logging.
-        log = Log.getLog();
-        log.setStream(output);
-        log.setLevel(logLevel);
-
-
         QueryTest qt = new QueryTest(
                 cmFile,
                 indexDir,
                 engineType,
                 "partNum,\\t,docID,\\t,dockey",
-                "-score", 
+                "-score",
                 output);
 
         BufferedReader input;

@@ -21,11 +21,9 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.samples;
 
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
@@ -37,6 +35,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.EnumSet;
 import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -149,8 +148,8 @@ public class MailIndexer {
     public void indexMBox(URL mbox) throws java.io.IOException, SearchEngineException {
         indexMBox(mbox, null);
     }
-    
-   /**
+
+    /**
      * Indexes a mailbox at a given location
      * @param mbox the path to the mbox file we want to index
      */
@@ -260,10 +259,8 @@ public class MailIndexer {
     public static void main(String[] args)
             throws java.io.IOException, SearchEngineException {
 
-        Log log = Log.getLog();
-        log.setLogger(Logger.getLogger(MailIndexer.class.getName()));
-        log.setLevel(3);
         Logger l = Logger.getLogger("");
+        l.setLevel(Level.INFO);
         for(Handler h : l.getHandlers()) {
             h.setFormatter(new SimpleLabsLogFormatter());
         }

@@ -278,7 +278,7 @@ public class IDFreqPostings extends IDPostings {
         if(features != null &&
                 (features.getMult() != null ||
                 features.getPositions())) {
-            log.warn(logTag, 3, "Requested unsupported features for " +
+            logger.warning("Requested unsupported features for " +
                     "IDFreqPostings");
             return null;
         }

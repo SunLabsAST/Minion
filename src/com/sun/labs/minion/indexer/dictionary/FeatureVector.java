@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import java.io.File;
@@ -36,10 +35,10 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
+import java.util.logging.Logger;
 
 /**
  * A class that can be used to save feature vectors in an index.  A feature vector
@@ -54,37 +53,37 @@ import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class FeatureVector implements SavedField {
-    
+
     /**
      * The information for this field.
      */
     protected FieldInfo fi;
-    
+
     /**
      * A map from document IDs to the indices where feature vectors can be found
      * in the stored features.
      */
     protected int idToFeat[];
-    
+
     /**
      * The features stored during indexing.
      */
     protected double features[];
-    
+
     /**
      * The current position in the features array.
      */
     protected int pos = 0;
-    
+
     /**
      * The width of the feature vectors that we're storing.
      */
     protected int width = 0;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "FV";
-    
+
     /**
      * Creates a <code>FeatureVector</code> that can be used to store data
      * at indexing time.
@@ -95,7 +94,7 @@ public class FeatureVector implements SavedField {
         features = new double[2048];
         pos = 1;
     }
-    
+
     /**
      * Constructs a feature vector field that will be used to retrieve
      * data during querying.
@@ -114,28 +113,27 @@ public class FeatureVector implements SavedField {
             DiskPartition part)
             throws java.io.IOException {
         this.fi = (FieldInfo) field.clone();
-        
-        
+
+
         width = dictFile.readInt();
         pos = dictFile.readInt();
         int maxID = dictFile.readInt();
         FileReadableBuffer buff = new FileReadableBuffer(dictFile,
                 dictFile.getFilePointer(),
-                maxID*4 + pos * 8,
+                maxID * 4 + pos * 8,
                 32768);
-        
-        idToFeat = new int[maxID+1];
+
+        idToFeat = new int[maxID + 1];
         for(int i = 1; i <= maxID; i++) {
             idToFeat[i] = buff.byteDecode(4);
         }
-        
+
         features = new double[pos];
         for(int i = 0; i < pos; i++) {
             features[i] = Double.longBitsToDouble(buff.byteDecodeLong(8));
         }
     }
-    
-    
+
     /**
      * Adds data to this saved field.  Assumes that data is an array
      * of <code>double</code.  The width of the vectors that are
@@ -148,68 +146,68 @@ public class FeatureVector implements SavedField {
      * @throws ClassCastException if data is not an array of double.
      */
     public void add(int docID, Object data) {
-        
+
         double[] vector = (double[]) data;
-        
+
         if(width == 0) {
             width = vector.length;
         }
-        
+
         if(vector.length != width) {
-            log.warn(logTag, 3, "Incorrect feature vector length for " +
+            logger.warning("Incorrect feature vector length for " +
                     fi.getName() + " got " + vector.length + " expected " +
                     width + ".  Ignoring");
             return;
         }
-        
+
         //
         // Make sure we have enough room in our id to features map.
         if(docID >= idToFeat.length) {
-            idToFeat = Util.expandInt(idToFeat, idToFeat.length*2);
+            idToFeat = Util.expandInt(idToFeat, idToFeat.length * 2);
         }
-        
+
         //
         // Make sure we have enough room in our features vector.
-        if(pos+width >= features.length) {
-            features = Util.expandDouble(features, features.length*2);
+        if(pos + width >= features.length) {
+            features = Util.expandDouble(features, features.length * 2);
         }
-        
+
         //
         // Save the data.
         idToFeat[docID] = pos;
         System.arraycopy(vector, 0, features, pos, width);
         pos += width;
     }
-    
+
     /**
      * Dumps our saved data to the file.  We won't actually store anything in the
      * postings file, we'll just dump everything to the dictionary file.
      */
     public void dump(String path, RandomAccessFile dictFile,
             PostingsOutput[] postOut, int maxID) throws IOException {
-        
+
         //
         // Write the header stuff.
         dictFile.writeInt(width);
         dictFile.writeInt(pos);
         dictFile.writeInt(maxID);
-        
+
         //
         // Write the positions for each document ID.
         FileWriteableBuffer buff = new FileWriteableBuffer(dictFile, 32768);
         for(int i = 1; i <= maxID; i++) {
             buff.byteEncode(idToFeat[i], 4);
         }
-        
+
         //
         // Encode the features.
         for(int i = 0; i < pos; i++) {
             buff.byteEncode(Double.doubleToRawLongBits(features[i]), 8);
         }
-        
+
         buff.flush();
     }
-    
+
     /**
      * Unsupported operation.
      */
@@ -217,11 +215,11 @@ public class FeatureVector implements SavedField {
         throw new UnsupportedOperationException("Feature vectors do not " +
                 "support get by value.");
     }
-    
+
     public FieldInfo getField() {
         return fi;
     }
-    
+
     /**
      * Gets the data saved for a particular document ID.  If no data
      * was stored for that ID, <code>null</code> is returned.
@@ -238,7 +236,7 @@ public class FeatureVector implements SavedField {
         }
         double[] ret = new double[width];
         System.arraycopy(features, pos, ret, 0, width);
-        
+
         if(all) {
             List l = new ArrayList();
             l.add(ret);
@@ -246,10 +244,10 @@ public class FeatureVector implements SavedField {
         }
         return ret;
     }
-    
+
     public ArrayGroup getUndefined(ArrayGroup ag) {
         ArrayGroup ret = new ArrayGroup(ag == null ? 2048 : ag.getSize());
-        
+
         if(ag == null) {
             for(int i = 1; i < idToFeat.length; i++) {
                 if(idToFeat[i] == 0) {
@@ -259,7 +257,7 @@ public class FeatureVector implements SavedField {
         } else {
             //
             // Just check for the documents in the set.
-            for(DocIterator i = ag.iterator(); i.next(); ) {
+            for(DocIterator i = ag.iterator(); i.next();) {
                 if(idToFeat[i.getDoc()] == 0) {
                     ret.addDoc(i.getDoc());
                 }
@@ -267,39 +265,38 @@ public class FeatureVector implements SavedField {
         }
         return ret;
     }
-    
+
     public DictionaryIterator iterator(Object lowerBound, boolean includeLower,
             Object upperBound, boolean includeUpper) {
         return null;
     }
-    
+
     public int size() {
         return features.length / width;
     }
-    
+
     public int compareTo(Object o) {
         return fi.getID() - ((FeatureVector) o).fi.getID();
     }
-    
-    
+
     public void clear() {
         pos = 1;
         for(int i = 0; i < idToFeat.length; i++) {
             idToFeat[i] = 0;
         }
     }
-    
+
     public long bytesInUse() {
         return idToFeat.length * 4 + features.length * 8;
     }
-    
+
     /**
      * Gets the default value for a feature vector, which is <code>null</code>
      */
     public Object getDefault() {
         return null;
     }
-    
+
     /**
      * Computes the Euclidean distance of the given feature vector to the vector
      * for the given ID.
@@ -316,7 +313,7 @@ public class FeatureVector implements SavedField {
         if(p == 0) {
             return Double.POSITIVE_INFINITY;
         }
-        
+
         double d = 0;
         for(int i = 0; i < vec.length; i++) {
             double x = vec[i] - features[p++];
@@ -324,7 +321,7 @@ public class FeatureVector implements SavedField {
         }
         return Math.sqrt(d);
     }
-    
+
     /**
      * Computes the Euclidean distance from the given document to all other
      * documents.
@@ -338,15 +335,15 @@ public class FeatureVector implements SavedField {
      */
     public double[] euclideanDistance(int docID) {
         double[] ret = new double[idToFeat.length];
-        
+
         //
         // Get the feature vector for the document ID that we were passed.
         double[] x = (double[]) getSavedData(docID, false);
-        
+
         if(x == null) {
             return null;
         }
-        
+
         //
         // Loop through the id to features array, looking for non-zero positions.
         // When we find one, calculate a distance.
@@ -356,7 +353,7 @@ public class FeatureVector implements SavedField {
                 ret[i] = Double.POSITIVE_INFINITY;
                 continue;
             }
-            
+
             double d = 0;
             for(int j = 0; j < x.length; j++) {
                 double diff = x[j] - features[p++];
@@ -364,10 +361,10 @@ public class FeatureVector implements SavedField {
             }
             ret[i] = Math.sqrt(d);
         }
-        
+
         return ret;
     }
-    
+
     /**
      * Computes the Euclidean distance from the given document to all other
      * documents.
@@ -379,7 +376,7 @@ public class FeatureVector implements SavedField {
      */
     public double[] euclideanDistance(double[] vec) {
         double[] ret = new double[idToFeat.length];
-        
+
         //
         // Loop through the id to features array, looking for non-zero positions.
         // When we find one, calculate a distance.
@@ -388,7 +385,7 @@ public class FeatureVector implements SavedField {
                 ret[i] = Double.POSITIVE_INFINITY;
                 continue;
             }
-            
+
             double d = 0;
             for(int j = 0; j < vec.length; j++) {
                 double diff = vec[j] - features[p++];
@@ -396,50 +393,50 @@ public class FeatureVector implements SavedField {
             }
             ret[i] = Math.sqrt(d);
         }
-        
+
         return ret;
     }
-    
+
     public void merge(String path, SavedField[] fields, int maxID, int[] starts,
             int[] nUndel,
             int[][] docIDMaps, RandomAccessFile dictFile,
             PostingsOutput postOut) throws IOException {
-        
+
         //
         // Create the files to which we'll write our data.  We'll base the
         // name on the path and the name of our thread.
         String tname = Thread.currentThread().getName();
-        
+
         File idFile = new File(path + File.separator + tname + ".idf");
         RandomAccessFile idRAF = new RandomAccessFile(idFile, "rw");
         FileWriteableBuffer ids = new FileWriteableBuffer(idRAF, 32768);
-        
+
         File featFile = new File(path + File.separator + tname + ".feat");
         RandomAccessFile featRAF = new RandomAccessFile(featFile, "rw");
         FileWriteableBuffer feats = new FileWriteableBuffer(featRAF, 32768);
-        
+
         //
         // The offset that needs to be applied to the positions in the merge.
         int mpos = 0;
         int mmaxID = 0;
         int mwidth = 0;
-        
+
         //
         // We need to encode an initial 0 in each of our "arrays".  After that,
         // we'll encode from 1 in each of the merging vectors.
         feats.byteEncode(Double.doubleToRawLongBits(0), 8);
-        
+
         //
         // Merge the fields, skipping null ones.
         for(int i = 0; i < fields.length; i++) {
             if(fields[i] == null) {
                 continue;
             }
-            
+
             FeatureVector v = (FeatureVector) fields[i];
             int[] idMap = docIDMaps[i];
             mwidth = v.width;
-            
+
             //
             // If there are no deleted documents, then just write things out.
             if(idMap == null) {
@@ -450,12 +447,13 @@ public class FeatureVector implements SavedField {
                     }
                     ids.byteEncode(p, 4);
                 }
-                
+
                 for(int j = 1; j < v.features.length; j++) {
-                    feats.byteEncode(Double.doubleToRawLongBits(v.features[j]), 8);
+                    feats.byteEncode(Double.doubleToRawLongBits(v.features[j]),
+                            8);
                 }
                 mmaxID += v.idToFeat.length - 1;
-                mpos += v.pos-1;
+                mpos += v.pos - 1;
             } else {
                 //
                 // We need to deal with deleted documents.
@@ -463,7 +461,8 @@ public class FeatureVector implements SavedField {
                     if(idMap[j] >= 0) {
                         ids.byteEncode(mpos, 4);
                         for(int k = 0, p = v.idToFeat[j]; k < v.width; k++, p++) {
-                            feats.byteEncode(Double.doubleToRawLongBits(v.features[p]), 8);
+                            feats.byteEncode(Double.doubleToRawLongBits(
+                                    v.features[p]), 8);
                         }
                         mpos += v.width;
                         mmaxID++;
@@ -471,22 +470,22 @@ public class FeatureVector implements SavedField {
                 }
             }
         }
-        
+
         mpos++;
-        
+
         //
         // Write the header.
         dictFile.writeInt(mwidth);
         dictFile.writeInt(mpos);
         dictFile.writeInt(mmaxID);
-        
+
         //
         // Transfer to the dictionary channel.
         FileChannel dictChan = dictFile.getChannel();
         ids.write(dictChan);
         feats.write(dictChan);
     }
-    
+
     /**
      * Gets the distance between two feature vectors stored in different
      * partitions.
@@ -503,7 +502,7 @@ public class FeatureVector implements SavedField {
         if(p1 == 0 || p2 == 0) {
             return Double.POSITIVE_INFINITY;
         }
-        
+
         double dist = 0;
         for(int i = 0; i < width; i++) {
             double diff = features[p1++] - v.features[p2++];
@@ -511,7 +510,7 @@ public class FeatureVector implements SavedField {
         }
         return Math.sqrt(dist);
     }
-    
+
     public double distance(int d1, int d2) {
         int p1 = idToFeat[d1];
         int p2 = idToFeat[d2];
@@ -522,5 +521,4 @@ public class FeatureVector implements SavedField {
         }
         return Math.sqrt(dist);
     }
-    
 }

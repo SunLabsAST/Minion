@@ -21,10 +21,7 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.entry;
-
-
 
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -33,9 +30,9 @@ import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Logger;
 
 /**
  * An abstract base class for those entries that only define a single
@@ -43,53 +40,53 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * behaviour needed for an entry that can be used at indexing or query time.
  */
 public abstract class SinglePostingsEntry extends BaseEntry {
-    
+
     /**
      * The postings associated with this entry.
      */
     protected Postings p;
-    
+
     /**
      * The number of postings associated with this entry.
      */
     protected int n;
-    
+
     /**
      * The size of the postings, in bytes.
      */
     protected int size;
-    
+
     /**
      * The offset of the postings in a postings file.
      */
     protected long offset;
-    
+
     public static long tsize;
-    
+
     /**
      * A log.
      */
-    protected static MinionLog log = MinionLog.getLog();
-    
+    Logger logger = Logger.getLogger(getClass().getName());
+
     /**
      * A tag for the log.
      */
     protected static String logTag = "SPE";
-    
+
     /**
      * Creates an entry.
      */
     public SinglePostingsEntry() {
         this(null);
     } // SinglePostingsEntry constructor
-    
+
     /**
      * Creates an entry.
      */
     public SinglePostingsEntry(Object name) {
         super(name);
     } // SinglePostingsEntry constructor
-    
+
     /**
      * Gets the appropriate postings type for the class.  These postings
      * should be useable for indexing.
@@ -97,7 +94,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
      * @return Postings suitable for use when indexing.
      */
     protected abstract Postings getPostings();
-    
+
     /**
      * Reads the postings for this class, returning a set of postings
      * useful at query time.
@@ -107,10 +104,9 @@ public abstract class SinglePostingsEntry extends BaseEntry {
      * @return The postings for this entry.
      */
     protected abstract Postings getPostings(ReadableBuffer input);
-    
+
     //
     // Remaining implementation of Entry.
-    
     /**
      * Gets a new entry that contains a copy of the data in this entry.
      *
@@ -120,25 +116,24 @@ public abstract class SinglePostingsEntry extends BaseEntry {
      */
     public Entry getEntry() {
         SinglePostingsEntry ne = (SinglePostingsEntry) getEntry(name);
-        ne.id     = id;
+        ne.id = id;
         ne.postIn = postIn;
-        ne.dict   = dict;
-        ne.n      = n;
-        ne.size   = size;
+        ne.dict = dict;
+        ne.n = n;
+        ne.size = size;
         ne.offset = offset;
         return ne;
     }
-    
+
     /**
      * Copies the data from another entry of this type into this entry.  A
      * convenience method for subclasses.
      */
     protected void copyData(SinglePostingsEntry e) {
     }
-    
+
     //
     // Implementation of IndexEntry.
-    
     /**
      * Adds an occurrence at indexing time.
      */
@@ -148,7 +143,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
         }
         p.add(o);
     }
-    
+
     /**
      * Returns the number of channels needed to store the postings for this
      * entry type.
@@ -156,7 +151,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
     public int getNumChannels() {
         return 1;
     }
-    
+
     /**
      * Writes the postings associated with this entry to some or all of the
      * given channels.
@@ -176,30 +171,30 @@ public abstract class SinglePostingsEntry extends BaseEntry {
         if(p == null) {
             return false;
         }
-        
+
         //
         // Finish any ongoing encoding in our postings entry.
         p.finish();
-        
+
         //
         // Possibly remap the data and get a buffer to write.
         p.remap(idMap);
-        
+
         WriteableBuffer[] b = p.getBuffers();
-        
-        if (p.getN() == 0) {
+
+        if(p.getN() == 0) {
             return false;
         }
-        
+
         //
         // Set the elements of the term information, so that they can
         // be encoded later.
-        n      = p.getN();
+        n = p.getN();
         offset = out[0].position();
-        size   = (int) out[0].write(b);
+        size = (int) out[0].write(b);
         return true;
     }
-    
+
     /**
      * Encodes any information associated with the postings onto the given
      * buffer.
@@ -213,7 +208,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
         b.byteEncode(size);
         b.byteEncode(offset);
     }
-    
+
     /**
      * Appends the postings from another entry onto this one.
      *
@@ -229,18 +224,17 @@ public abstract class SinglePostingsEntry extends BaseEntry {
         if(spe.p == null || spe.n == 0) {
             return;
         }
-        
+
         if(p == null) {
             p = getPostings();
         }
-        
+
         p.append(spe.p, start, idMap);
         n = p.getN();
     }
-    
+
     //
     // Implementation of QueryEntry
-    
     /**
      * Decodes the postings information associated with this entry.
      *
@@ -250,11 +244,11 @@ public abstract class SinglePostingsEntry extends BaseEntry {
      */
     public void decodePostingsInfo(ReadableBuffer b, int pos) {
         b.position(pos);
-        n      = b.byteDecode();
-        size   = b.byteDecode();
+        n = b.byteDecode();
+        size = b.byteDecode();
         offset = b.byteDecodeLong();
     }
-    
+
     /**
      * Reads the postings data for this entry.  This method must load all
      * available postings information, since this will be used at
@@ -270,7 +264,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
         }
         p = getPostings(postIn[0].read(offset, size));
     }
-    
+
     /**
      * Gets the number of postings associated with this entry.  This is
      * used to sort entries by their frequency during query operations.
@@ -280,7 +274,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
     public int getN() {
         return n;
     }
-    
+
     /**
      * Gets the total number of occurrences associated with this entry.
      * For this base class, this is the same as n.
@@ -290,7 +284,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
     public long getTotalOccurrences() {
         return n;
     }
-    
+
     /**
      * Gets the maximum frequency in the postings associated with this
      * entry.  For this base class, this is always 1.
@@ -298,15 +292,15 @@ public abstract class SinglePostingsEntry extends BaseEntry {
     public int getMaxFDT() {
         return 1;
     }
-    
+
     public boolean hasPositionInformation() {
         return false;
     }
-    
+
     public boolean hasFieldInformation() {
         return false;
     }
-    
+
     /**
      * Gets an iterator that will iterate through the postings associated
      * with this entry.
@@ -324,24 +318,21 @@ public abstract class SinglePostingsEntry extends BaseEntry {
                     qs.postingsSize += size;
                 }
                 readPostings();
-            } catch (java.io.IOException ioe) {
-                log.error(logTag, 1, "Error reading postings for " +
-                        name);
+            } catch(java.io.IOException ioe) {
+                logger.severe("Error reading postings for " + name);
                 return null;
             } finally {
-                if (qs != null) {
+                if(qs != null) {
                     qs.postReadW.stop();
                 }
             }
         }
-        
+
         //
         // p could still be null here if there were no postings
-        if (p == null) {
+        if(p == null) {
             return null;
         }
         return p.iterator(features);
     }
-    
-    
 } // SinglePostingsEntry

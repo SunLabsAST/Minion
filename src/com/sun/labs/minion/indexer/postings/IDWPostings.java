@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -32,32 +31,32 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class IDWPostings extends IDPostings {
-    
+
     protected float currWeight;
-    
+
     /**
      * Creates a IDWPostings
      */
     public IDWPostings() {
         super();
     }
-    
+
     public IDWPostings(ReadableBuffer b) {
         super(b, 0, 0);
     }
-    
+
     protected int encode(int id) {
         int nb = super.encode(id);
         ((WriteableBuffer) post).encode(currWeight);
         currWeight = 0;
         return nb + 4;
     }
-    
+
     public void add(Occurrence o) {
         super.add(o);
         currWeight += ((WeightedOccurrence) o).getWeight();
     }
-    
+
     /**
      * Re-encodes the data from another postings onto this one.
      *
@@ -69,7 +68,8 @@ public class IDWPostings extends IDPostings {
         super.recodeID(currID, lastID, pi);
         ((WriteableBuffer) post).encode(pi.getWeight());
     }
-   /**
+
+    /**
      * Gets an iterator for the postings.
      *
      * @param features A set of features that the iterator must support.
@@ -84,13 +84,13 @@ public class IDWPostings extends IDPostings {
         // We only support the cases where there are no features at all or
         // only weighting related features.
         if(features == null ||
-            (features.getFields() == null &&
-                  features.getMult() == null &&
-                  !features.getPositions())) {
+                (features.getFields() == null &&
+                features.getMult() == null &&
+                !features.getPositions())) {
             return new IDWIterator(features);
         } else {
-            log.warn(logTag, 3, "Requested unsupported features for " +
-                     "IDFreqPostings");
+            logger.warning("Requested unsupported features for " +
+                    "IDFreqPostings");
             return null;
         }
     }
@@ -108,7 +108,6 @@ public class IDWPostings extends IDPostings {
         public IDWIterator(PostingsIteratorFeatures features) {
             super(features);
         }
-        
 
         /**
          * Advances to the next ID in the postings entry.
@@ -135,7 +134,7 @@ public class IDWPostings extends IDPostings {
             }
 
             weight = rp.decodeFloat();
-            
+
             done = curr == lastID;
             return true;
         }
@@ -150,8 +149,5 @@ public class IDWPostings extends IDPostings {
         public float getWeight() {
             return weight;
         }
-
     }
-    
-
 }

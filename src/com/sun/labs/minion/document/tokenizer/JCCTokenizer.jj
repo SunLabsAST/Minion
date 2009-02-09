@@ -15,8 +15,9 @@ options {
 PARSER_BEGIN(JCCTokenizer)
 package com.sun.labs.minion.document.tokenizer;
 
-import com.sun.labs.util.props.ConfigString;
 import java.util.regex.Pattern;
+import java.util.logging.Level;
+import com.sun.labs.util.props.ConfigString;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import com.sun.labs.minion.pipeline.Stage;
@@ -113,7 +114,7 @@ public class JCCTokenizer extends Tokenizer {
         try {
             while(next());
         } catch (ParseException pe) {
-            log.warn(logTag, 3, "Tokenizer parse exception", pe);
+            logger.log(Level.WARNING, "Tokenizer parse exception", pe);
         }
     }
 
@@ -127,7 +128,7 @@ public class JCCTokenizer extends Tokenizer {
         try {
             while(next());
         } catch (ParseException pe) {
-            log.warn(logTag, 3, "Tokenizer parse exception", pe);
+            logger.log(Level.WARNING, "Tokenizer parse exception", pe);
         }
     }
 
@@ -179,7 +180,7 @@ public class JCCTokenizer extends Tokenizer {
             try {
                 noBreakChars = Pattern.compile(nbcPattern);
             } catch (java.util.regex.PatternSyntaxException pse) {
-                log.warn(logTag, 2, "Error in noBreakChars pattern: " + nbcPattern,
+                logger.log(Level.WARNING, "Error in noBreakChars pattern: " + nbcPattern,
                         pse);
                 noBreakChars = null;
             }

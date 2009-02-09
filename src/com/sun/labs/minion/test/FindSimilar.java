@@ -24,7 +24,6 @@
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.DocumentVector;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
@@ -96,7 +95,6 @@ public class FindSimilar implements Runnable {
             return;
         }
 
-        String logTag = "FS";
         String flags = "d:f:n:q:r:";
         Getopt gopt = new Getopt(args, flags);
         String indexDir = null;
@@ -124,9 +122,6 @@ public class FindSimilar implements Runnable {
                 rl.severe("Error setting output encoding");
             }
         }
-
-        Log.setLogger(rl);
-        Log.setLevel(3);
 
         //
         // Handle the options.

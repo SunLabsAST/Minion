@@ -66,6 +66,7 @@ import java.util.logging.Logger;
  * You can also specify a logging level, and only messages whose level is
  * <em>lower</em> than that level will be printed.
  */
+@Deprecated
 public class MinionLog implements Configurable {
 
     /**

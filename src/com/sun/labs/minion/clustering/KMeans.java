@@ -71,7 +71,7 @@ public class KMeans extends AbstractClusterer {
             nIter++;
         }
         sw.stop();
-        log.debug(logTag, 0, "clustering took: " + sw.getTime());
+        logger.info("clustering took: " + sw.getTime());
     }
     
     private int assignToClusters() {

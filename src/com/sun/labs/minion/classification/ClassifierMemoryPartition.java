@@ -43,7 +43,6 @@ import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 
-import com.sun.labs.minion.util.MinionLog;
 
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
@@ -59,6 +58,8 @@ import com.sun.labs.minion.retrieval.cache.DocCache;
 import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A memory partition that will hold classifier data.
@@ -91,7 +92,7 @@ public class ClassifierMemoryPartition extends MemoryPartition {
     /**
      * The log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The tag for this module.
@@ -143,7 +144,7 @@ public class ClassifierMemoryPartition extends MemoryPartition {
             splitter = (ResultSplitter) ((ClassifierManager) manager).splitterInstance.getClass().
                     newInstance();
         } catch(Exception e) {
-            log.error(logTag, 0, "Failed to instantiate splitter: " +
+            logger.log(Level.SEVERE, "Failed to instantiate splitter: " +
                     ((ClassifierManager) manager).splitterClassName, e);
             throw new SearchEngineException("Failed to instantiate result set splitter",
                     e);
@@ -153,7 +154,7 @@ public class ClassifierMemoryPartition extends MemoryPartition {
                 results, splitter, progress);
         
         if(model == null) {
-            log.warn(logTag, 3, "Unable to train model for " + name);
+            logger.warning("Unable to train model for " + name);
             return;
         }
 
@@ -180,7 +181,7 @@ public class ClassifierMemoryPartition extends MemoryPartition {
             //
             // If there's already an entry, get rid of it
             if(old != null) {
-                log.warn(logTag, 3, "Duplicate class in partition: " + name +
+                logger.warning("Duplicate class in partition: " + name +
                         " deleting old version: " + old.getID());
                 del.delete(old.getID());
             }
@@ -274,7 +275,7 @@ public class ClassifierMemoryPartition extends MemoryPartition {
             // We could conceivably get a split where the labeled training
             // documents all have no data, in which case we just try the next split.
             if(clusters.size() == 0) {
-                log.log(logTag, 3, "Split had no training data");
+                logger.info("Split had no training data");
                 continue;
             }
 

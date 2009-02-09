@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.ArrayList;
@@ -30,12 +29,12 @@ import java.util.List;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.query.Relation;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 public class QueryEvaluator {
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "EVAL";
 
     /**
@@ -55,7 +54,7 @@ public class QueryEvaluator {
         qe.setQueryConfig(qc);
         return eval(parts, qe);
     }
-    
+
     /**
      * Evaluates a query
      *
@@ -65,9 +64,9 @@ public class QueryEvaluator {
      * for the corresponding partitions.
      */
     public List eval(List parts, QueryElement qe) {
-        
+
         List ret = new ArrayList();
-        
+
         //
         // We want to check for a single all-asterisk wildcard, which is a query
         // for all documents.
@@ -75,7 +74,7 @@ public class QueryEvaluator {
             DictTerm dt = (DictTerm) qe;
             String qt = ((DictTerm) qe).getName();
             if(qt.matches("\\**")) {
-                for(Iterator i = parts.iterator(); i.hasNext(); ) {
+                for(Iterator i = parts.iterator(); i.hasNext();) {
                     DiskPartition p = (DiskPartition) i.next();
                     ArrayGroup ag = new NegativeGroup();
                     ag.part = p;
@@ -84,10 +83,10 @@ public class QueryEvaluator {
                 return ret;
             }
         }
-        
+
         //
         // This is a normal evaluation.
-        for(Iterator i = parts.iterator(); i.hasNext(); ) {
+        for(Iterator i = parts.iterator(); i.hasNext();) {
             DiskPartition p = (DiskPartition) i.next();
             qe.setPartition(p);
             ArrayGroup ag = qe.eval(null);
@@ -100,5 +99,4 @@ public class QueryEvaluator {
         }
         return ret;
     }
-
 } // QueryEvaluator

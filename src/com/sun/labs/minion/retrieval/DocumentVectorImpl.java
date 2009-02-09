@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.ArrayList;
@@ -51,8 +50,8 @@ import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 import com.sun.labs.minion.pipeline.StopWords;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * A class that holds a weighted document vector for a given document from
@@ -73,7 +72,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      * The document key for this entry.
      */
     protected transient DocKeyEntry key;
-    
+
     /**
      * The name of the key, which will survive transport.
      */
@@ -113,7 +112,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
 
     protected QueryStats qs = new QueryStats();
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "DVI";
 
@@ -122,9 +121,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
     protected String field;
 
     protected int fieldID;
-    
+
     protected DocumentVectorImpl() {
-        
     }
 
     /**
@@ -150,7 +148,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
     }
 
     public DocumentVectorImpl(SearchEngine e,
-                               WeightedFeature[] basisFeatures) {
+            WeightedFeature[] basisFeatures) {
         this.e = e;
         this.key = null;
         QueryConfig qc = e.getQueryConfig();
@@ -168,7 +166,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
 
         ignoreWords = qc.getVectorZeroWords();
     }
-    
+
     /**
      * Creates a document vector for a given document.
      *
@@ -183,15 +181,15 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      * vectored attribute set, the resulting document vector will be empty!
      */
     public DocumentVectorImpl(SearchEngine e,
-                               DocKeyEntry key, String field) {
+            DocKeyEntry key, String field) {
         this(e, key, field, e.getQueryConfig().getWeightingFunction(),
-             e.getQueryConfig().getWeightingComponents());
+                e.getQueryConfig().getWeightingComponents());
     }
 
     public DocumentVectorImpl(SearchEngine e,
-                               DocKeyEntry key, String field,
-                               WeightingFunction wf,
-                               WeightingComponents wc) {
+            DocKeyEntry key, String field,
+            WeightingFunction wf,
+            WeightingComponents wc) {
 
         this.e = e;
         this.key = key;
@@ -202,7 +200,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         length = wc.dvl;
         initFeatures();
     }
-    
+
     public DocumentVector copy() {
         DocumentVectorImpl ret = new DocumentVectorImpl();
         ret.e = e;
@@ -223,7 +221,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         }
         return v;
     }
-    
+
     /**
      * Sets the search engine that this vector will use, which is useful when 
      * we've been unserialized and need to get ourselves back into shape.
@@ -535,7 +533,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         getFeatures();
 
         qs.queryW.start();
-        
+
         //
         // OK, we can do things the usual way:  process the document vector
         // postings, build up the weighted features, and then process the
@@ -547,7 +545,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             int nf = (int) Math.floor(skimPercent * v.length);
             PriorityQueue<WeightedFeature> wfq =
                     new PriorityQueue<WeightedFeature>(nf,
-                                                       WeightedFeature.getInverseWeightComparator());
+                    WeightedFeature.getInverseWeightComparator());
             for(WeightedFeature twf : v) {
                 if(wfq.size() < nf) {
                     wfq.offer(twf);
@@ -580,7 +578,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         // Iterate through the partitions, looking for the features.
         DiskPartition part = null;
         if(key != null) {
-                part = (DiskPartition) key.getPartition();
+            part = (DiskPartition) key.getPartition();
         }
         PostingsIteratorFeatures feat =
                 new PostingsIteratorFeatures(wf, wc);
@@ -601,7 +599,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
                         part == curr ? f.getEntry() : di.get(f.getName());
                 if(entry != null) {
                     wf.initTerm(wc.setTerm(f.getName()));
-                    
+
                     //
                     // If we got an entry in this partition, add its postings
                     // to the quick or.
@@ -631,7 +629,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         }
         qs.queryW.stop();
         ((SearchEngineImpl) e).addQueryStats(qs);
-        
+
         ResultSetImpl ret =
                 new ResultSetImpl(e, sortOrder, groups);
         ret.setQueryStats(qs);
@@ -718,7 +716,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             wf.initTerm(wc);
             WeightedFeature twf =
                     new WeightedFeature(name, pi.getID(),
-                                        wf.termWeight(wc) / wc.dvl);
+                    wf.termWeight(wc) / wc.dvl);
             twf.setFreq(pi.getFreq());
             fl.add(twf);
             qor.add(mde.iterator(feat), twf.getWeight());
@@ -811,7 +809,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
 
         ResultSetImpl ret =
                 new ResultSetImpl(e, sortOrder, groups);
-                ret.setQueryStats(qs);
+        ret.setQueryStats(qs);
 
         return ret;
     }
@@ -821,11 +819,11 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
     // to Float weights.
     public Map<String, Float> getTopWeightedTerms(int nTerms) {
         getFeatures();
-        
+
         //
         // No need to sort when we're getting everything!
         if(nTerms >= v.length) {
-            Map<String,Float> ret = new LinkedHashMap<String, Float>();
+            Map<String, Float> ret = new LinkedHashMap<String, Float>();
             for(int i = 0; i < v.length; i++) {
                 ret.put(v[i].getName(), v[i].getWeight());
             }
@@ -876,7 +874,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         if(e == null) {
             return;
         }
-        
+
         //
         // Figure out the ID of the field that we're building a vector for.  If
         // the field value is null, we won't do any field restriction, i.e.,

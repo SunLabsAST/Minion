@@ -21,19 +21,19 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.partition;
 
 import java.io.File;
 import java.io.RandomAccessFile;
 
 import com.sun.labs.minion.util.FileLock;
-import com.sun.labs.minion.util.MinionLog;
 
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.Buffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A class that holds the two components of a deletion map:  the number
@@ -69,7 +69,7 @@ public class DelMap implements Cloneable {
     /**
      * The log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The log tag.
@@ -133,7 +133,7 @@ public class DelMap implements Cloneable {
             raf.close();
             return ret;
         } catch(Exception e) {
-            log.error(logTag, 1, "Error reading delmap: " + delFile, e);
+            logger.log(Level.SEVERE, "Error reading delmap: " + delFile, e);
             return null;
         } finally {
             try {
@@ -194,7 +194,7 @@ public class DelMap implements Cloneable {
             write(delFile, (WriteableBuffer) delMap);
             dirty = false;
         } catch(Exception e) {
-            log.error(logTag, 1, "Error during write", e);
+            logger.log(Level.SEVERE, "Error during write", e);
         } finally {
             if(releaseNeeded) {
                 try {
@@ -257,7 +257,7 @@ public class DelMap implements Cloneable {
             nDeleted = ((ReadableBuffer) delMap).countBits();
             write();
         } catch(Exception e) {
-            log.error(logTag, 1, "Error syncing delmap: " + delFile, e);
+            logger.log(Level.SEVERE, "Error syncing delmap: " + delFile, e);
         } finally {
             if(releaseNeeded) {
                 try {
@@ -296,7 +296,7 @@ public class DelMap implements Cloneable {
         if(!((ReadableBuffer) delMap).test(id)) {
             ((WriteableBuffer) delMap).set(id);
 //            if(part != null && part instanceof DiskPartition) {
-//                log.debug(logTag, 0, part + " del " + id);
+            logger.info(part + " del " + id);
 //            }
             nDeleted++;
             dirty = true;
@@ -307,9 +307,9 @@ public class DelMap implements Cloneable {
             return true;
         } else {
 //            if (part != null && part instanceof DiskPartition) {
-//                log.debug(logTag, 0, part + " already del " + id);
+            logger.info(part + " already del " + id);
 //            }
-                
+
         }
 
         //
@@ -393,8 +393,6 @@ public class DelMap implements Cloneable {
      * A main program that prints out a deletion map.
      */
     public static void main(String[] args) throws Exception {
-        log.setStream(System.out);
-        log.setLevel(3);
         File m = new File(args[0]);
         FileLock l = new FileLock(new File(args[0] + ".lock"));
         DelMap dl = new DelMap(m, l);

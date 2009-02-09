@@ -259,7 +259,6 @@ public class MST extends AbstractClusterer {
         }
         
         public void remove(Edge e) {
-            com.sun.labs.minion.util.MinionLog.debug("TREE", 0, this + " " + e + " " + this.e.remove(e));
         }
         
         //

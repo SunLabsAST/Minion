@@ -27,6 +27,7 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import com.sun.labs.minion.pipeline.Stage;
+import java.util.logging.Logger;
 
 /**
  * A dumper that will throw away partitions without doing anything.
@@ -52,7 +53,9 @@ public class ThrowDumper implements Dumper {
      * Dumps the given stage synchronously.
      */
     public void dump(Stage s) {
-        com.sun.labs.minion.util.MinionLog.debug("TD", 0, "dump: " + ((MemoryPartition) s).docDict.size() + " " + ((MemoryPartition) s).mainDict.size());
+        Logger.getLogger(getClass().getName()).info(((MemoryPartition) s).docDict.
+                size() + " " +
+                ((MemoryPartition) s).mainDict.size());
     }
 
     public void finish() {

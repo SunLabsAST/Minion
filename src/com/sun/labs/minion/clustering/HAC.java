@@ -115,7 +115,7 @@ public class HAC extends AbstractClusterer {
         }
         
         sw.stop();
-        log.debug(logTag, 0, "clustering took: " + sw.getTime());
+        logger.info("clustering took: " + sw.getTime());
     }
     
     class Node {

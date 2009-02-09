@@ -21,19 +21,22 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval.parser;
 
-import java.util.*;
 import java.text.ParseException;
 
-import com.sun.labs.minion.retrieval.*;
 import com.sun.labs.minion.pipeline.TokenCollectorStage;
-import com.sun.labs.minion.document.tokenizer.Tokenizer;
-import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
-import com.sun.labs.minion.util.MinionLog;
 
 import com.sun.labs.minion.Searcher;
+import com.sun.labs.minion.retrieval.And;
+import com.sun.labs.minion.retrieval.DictTerm;
+import com.sun.labs.minion.retrieval.Not;
+import com.sun.labs.minion.retrieval.Or;
+import com.sun.labs.minion.retrieval.PAnd;
+import com.sun.labs.minion.retrieval.QueryElement;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * This class transforms the output of JavaCC into a tree of
@@ -43,14 +46,13 @@ import com.sun.labs.minion.Searcher;
  * @author Jeff Alexander
  * @version $Revision: 1.1.2.2 $
  */
+public class WebTransformer extends Transformer {
 
-public class WebTransformer extends Transformer
-{
     protected final static String validMods = "+-~/";
-    
+
     public static void main(String args[]) throws Exception {
         WebParser p = new WebParser(System.in);
-        SimpleNode n = (SimpleNode)p.doParse();
+        SimpleNode n = p.doParse();
         n.dump(":");
         WebTransformer t = new WebTransformer();
         QueryElement e = t.transformTree(n);
@@ -59,18 +61,15 @@ public class WebTransformer extends Transformer
         List l = e.getQueryTerms();
         String names = "";
         Iterator it = l.iterator();
-        while (it.hasNext()) {
-            DictTerm dt = (DictTerm)it.next();
+        while(it.hasNext()) {
+            DictTerm dt = (DictTerm) it.next();
             names = names + dt.toString() + " ";
         }
         System.out.println("terms: " + names);
     }
 
-
     public WebTransformer() {
-        
     }
-
 
     /** 
      * Transforms an abstract syntax tree provided by JJTree+JavaCC into
@@ -80,11 +79,11 @@ public class WebTransformer extends Transformer
      * @return the root node of a tree describing a query
      */
     public QueryElement transformTree(SimpleNode root)
-        throws ParseException
-    {
+            throws ParseException {
         return transformTree(root, Searcher.OP_PAND);
     }
-    /** 
+
+    /**
      * Transforms an abstract syntax tree provided by JJTree+JavaCC into
      * a tree of QueryElements that can be used by the query evaluator.
      * 
@@ -95,8 +94,7 @@ public class WebTransformer extends Transformer
      * @return the root node of a tree describing a query
      */
     public QueryElement transformTree(SimpleNode root, int defaultOperator)
-        throws ParseException
-    {
+            throws ParseException {
         QueryElement result = null;
         //
         // The AST should be pretty simple for the web query language.  There
@@ -109,24 +107,25 @@ public class WebTransformer extends Transformer
         List ors = new ArrayList();
         List ands = new ArrayList();
 
-        SimpleNode q = (SimpleNode)root.getChildren().iterator().next();
+        SimpleNode q = (SimpleNode) root.getChildren().iterator().next();
         Iterator cit = q.getChildren().iterator();
-        while (cit.hasNext()) {
-            SimpleNode curr = (SimpleNode)cit.next();
+        while(cit.hasNext()) {
+            SimpleNode curr = (SimpleNode) cit.next();
             String mods = getMods(curr.value);
-            String term = curr.value.substring(mods.length(), curr.value.length());
+            String term = curr.value.substring(mods.length(),
+                    curr.value.length());
             curr.value = term;
             QueryElement qe = WebElementFactory.make(curr, mods, tcs);
 
-            if (qe != null) {
-                if (isNot(mods)) {
+            if(qe != null) {
+                if(isNot(mods)) {
                     ands.add(new Not(qe));
-                } else if (isOr(mods)) {
+                } else if(isOr(mods)) {
                     ors.add(qe);
-                } else if (isAnd(mods)) {
+                } else if(isAnd(mods)) {
                     ands.add(qe);
                 } else {
-                    switch (defaultOperator) {
+                    switch(defaultOperator) {
                         case Searcher.OP_AND:
                         case Searcher.OP_PAND:
                             ands.add(qe);
@@ -135,7 +134,8 @@ public class WebTransformer extends Transformer
                             ors.add(qe);
                             break;
                         default:
-                            throw new ParseException("Unknown default operator", 0);
+                            throw new ParseException("Unknown default operator",
+                                    0);
                     }
                 }
             }
@@ -144,14 +144,14 @@ public class WebTransformer extends Transformer
         //
         // If anything was put together with OR, put them all into an OR
         // then add it to the ANDs list.
-        if (!ors.isEmpty()) {
+        if(!ors.isEmpty()) {
             QueryElement or = new Or(ors);
             ands.add(or);
         }
 
         //
         // Now determine which kind of AND to make
-        if (defaultOperator == Searcher.OP_PAND) {
+        if(defaultOperator == Searcher.OP_PAND) {
             result = new PAnd(ands);
         } else {
             result = new And(ands);
@@ -161,21 +161,21 @@ public class WebTransformer extends Transformer
     }
 
     public static boolean isAnd(String mods) {
-        if (mods.indexOf("+") > -1) {
+        if(mods.indexOf("+") > -1) {
             return true;
         }
         return false;
     }
 
     public static boolean isNot(String mods) {
-        if (mods.indexOf("-") > -1) {
+        if(mods.indexOf("-") > -1) {
             return true;
         }
         return false;
     }
 
     public static boolean isOr(String mods) {
-        if (mods.indexOf("/") > -1) {
+        if(mods.indexOf("/") > -1) {
             return true;
         }
         return false;
@@ -188,10 +188,10 @@ public class WebTransformer extends Transformer
         // For each leading char, see if it is
         // a modifier char. If it is, put it in
         // mods.
-        while (i < term.length()) {
+        while(i < term.length()) {
             char curr = term.charAt(i);
-            if (validMods.indexOf(curr) > -1) {
-                if (mods.indexOf(curr) < 0) {
+            if(validMods.indexOf(curr) > -1) {
+                if(mods.indexOf(curr) < 0) {
                     mods = mods + curr;
                 } else {
                     // We already had this modifier

@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.clustering;
 
 import com.sun.labs.minion.ResultsCluster;
@@ -37,7 +36,7 @@ import com.sun.labs.minion.classification.FeatureClusterer;
 import com.sun.labs.minion.classification.FeatureSelector;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.util.CharUtils;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A clusterer that produces clusters based on the values of a given field.
@@ -51,53 +50,54 @@ import com.sun.labs.minion.util.MinionLog;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class FieldClusterer extends AbstractClusterer {
-    
+
     String field;
-    
+
     String scoreField;
-    
+
     boolean ignoreCase;
-    
+
     Iterator hits;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "FC";
-    
+
     /**
      * Creates a FieldClusterer
      */
     public FieldClusterer() {
         super();
     }
-    
+
     public void setField(String field) {
         this.field = field;
     }
-    
+
     public void setScoreField(String scoreField) {
         this.scoreField = scoreField;
     }
-    
+
     public void setData(String data) {
         setField(data);
         setScoreField(data + "-score");
     }
-    
+
     public void setIgnoreCase(boolean ignoreCase) {
         this.ignoreCase = ignoreCase;
     }
-    
+
     /**
      * Ignores any feature selector information that we're given, since it
      * won't affect our field-based clustering.
      */
-    public void setFeatureInfo(FeatureClusterer fc, FeatureSelector fs, int nFeat) {
+    public void setFeatureInfo(FeatureClusterer fc, FeatureSelector fs,
+            int nFeat) {
         this.fc = null;
         this.fs = null;
         this.nFeat = 0;
     }
-    
+
     /**
      * Gets the cluster elements for our clusterer.  This is a do-nothing for
      * us, since we'll compute this during clustering to account for multiple field values.
@@ -105,25 +105,25 @@ public class FieldClusterer extends AbstractClusterer {
     protected void getElements() throws SearchEngineException {
         hits = rs.getAllResults(false).iterator();
     }
-    
+
     /**
      * Clusters the elements with the same field value.
      */
     public void cluster() {
-        Map<String,Integer> cl = new HashMap<String,Integer>();
+        Map<String, Integer> cl = new HashMap<String, Integer>();
         k = 0;
         List<String> origNames = new ArrayList<String>();
         while(hits.hasNext()) {
             ResultImpl r = (ResultImpl) hits.next();
-            
+
             List l = r.getField(field);
-            
+
             //
             // No value for this field, so into the empty cluster it goes!
             if(l.size() == 0) {
                 empty.add(new ClusterElement(r, one));
             }
-            
+
             //
             // See if we need to get an iterator for the score field.
             Iterator s = null;
@@ -133,10 +133,10 @@ public class FieldClusterer extends AbstractClusterer {
                     s = sl.iterator();
                 }
             }
-            
+
             //
             // Create cluster elements for each value of the field.
-            for(Iterator j = l.iterator(); j.hasNext(); ) {
+            for(Iterator j = l.iterator(); j.hasNext();) {
                 String f = j.next().toString();
                 String origF = f;
                 if(ignoreCase) {
@@ -148,7 +148,7 @@ public class FieldClusterer extends AbstractClusterer {
                     p = k++;
                 }
                 cl.put(f, p);
-                
+
                 //
                 // We need to clone the result because we need to set per-value
                 // scores.
@@ -163,7 +163,7 @@ public class FieldClusterer extends AbstractClusterer {
                 te.add(ce);
             }
         }
-        
+
         els = te.toArray(new ClusterElement[0]);
         clusters = new double[k][];
         for(int i = 0; i < clusters.length; i++) {
@@ -171,11 +171,12 @@ public class FieldClusterer extends AbstractClusterer {
         }
         names = origNames.toArray(new String[0]);
     }
-    
+
     public Set<ResultsCluster> getClusters() {
         ResultsClusterImpl[] res = new ResultsClusterImpl[k];
         for(int i = 0; i < res.length; i++) {
-            res[i] = new ResultsClusterImpl(features, clusters[i], rs.getEngine());
+            res[i] = new ResultsClusterImpl(features, clusters[i],
+                    rs.getEngine());
             if(names != null) {
                 res[i].setName(names[i]);
             }
@@ -183,33 +184,35 @@ public class FieldClusterer extends AbstractClusterer {
         for(int i = 0; i < els.length; i++) {
             res[els[i].member].add(els[i].r, scoreField);
         }
-        
+
         //
         // Sort the results by the size of the set.
         com.sun.labs.minion.util.Util.sort(res);
         Set<ResultsCluster> ret = new LinkedHashSet<ResultsCluster>();
         for(int i = 0; i < res.length; i++) {
-            
+
             //
             // Skip clusters of size 0.
             if(res[i].res.size() > 0) {
                 ret.add(res[i]);
             }
         }
-        
+
         //
         // Add in any things that were missed out on to a final cluster.
         if(ignored.size() > 0) {
-            ResultsClusterImpl ic = new ResultsClusterImpl(features, one, rs.getEngine());
+            ResultsClusterImpl ic = new ResultsClusterImpl(features, one, rs.
+                    getEngine());
             for(ClusterElement e : ignored) {
                 ic.add(e.r, scoreField);
             }
             ic.setName("Remainder");
             ret.add(ic);
         }
-        
+
         if(empty.size() > 0) {
-            ResultsClusterImpl ec = new ResultsClusterImpl(features, one, rs.getEngine());
+            ResultsClusterImpl ec = new ResultsClusterImpl(features, one, rs.
+                    getEngine());
             for(ClusterElement e : empty) {
                 ec.add(e.r, scoreField);
             }
@@ -218,5 +221,4 @@ public class FieldClusterer extends AbstractClusterer {
         }
         return ret;
     }
-    
 }

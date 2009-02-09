@@ -21,14 +21,13 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.util.props.ConfigComponent;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * This stage provides the ability to remove stop words from  
@@ -39,18 +38,18 @@ import com.sun.labs.minion.util.MinionLog;
  *   
  * @author <a href="mailto:jeffrey.alexander@sun.com">Jeff Alexander</a>
  */
-public class StopWordsStage extends StageAdapter implements com.sun.labs.util.props.Configurable {
+public class StopWordsStage extends StageAdapter implements
+        com.sun.labs.util.props.Configurable {
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "SWS";
 
     protected boolean inVectoredField = false;
 
     public StopWordsStage() {
-        
     }
-    
+
     /**
      * Processes the event that occurs at the start of a field.
      *
@@ -58,8 +57,10 @@ public class StopWordsStage extends StageAdapter implements com.sun.labs.util.pr
      * the field that is starting.
      */
     public void startField(FieldInfo fi) {
-        if(downstream == null) return;
-        if (fi.isVectored()) {
+        if(downstream == null) {
+            return;
+        }
+        if(fi.isVectored()) {
             inVectoredField = true;
         }
         downstream.startField(fi);
@@ -72,22 +73,24 @@ public class StopWordsStage extends StageAdapter implements com.sun.labs.util.pr
      */
     public void token(Token t) {
         String val = t.getToken().toLowerCase();
-        if (inVectoredField) {
-            if (stopwords.isStop(val)) {
+        if(inVectoredField) {
+            if(stopwords.isStop(val)) {
                 return;
             }
 
-            if (val.length() > 30) {
+            if(val.length() > 30) {
                 return;
             }
-            
-            if (val.matches(".*\\d.*")) {
+
+            if(val.matches(".*\\d.*")) {
                 return;
             }
 
         }
-        
-        if(downstream == null) return;
+
+        if(downstream == null) {
+            return;
+        }
         downstream.token(t);
     }
 
@@ -95,10 +98,10 @@ public class StopWordsStage extends StageAdapter implements com.sun.labs.util.pr
      * Processes text passed in from the upstream stage.  The text is simply 
      * processed as a token.
      */
-    public  void text(char[] t, int b, int e) {
+    public void text(char[] t, int b, int e) {
         token(new Token(new String(t, b, (e - b)), 1));
     }
-    
+
     /**
      * Processes the event that occurs at the end of a field.
      *
@@ -106,7 +109,9 @@ public class StopWordsStage extends StageAdapter implements com.sun.labs.util.pr
      * the field that is ending.
      */
     public void endField(FieldInfo fi) {
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         inVectoredField = false;
         downstream.endField(fi);
     }
@@ -115,8 +120,7 @@ public class StopWordsStage extends StageAdapter implements com.sun.labs.util.pr
         super.newProperties(ps);
         stopwords = (StopWords) ps.getComponent(PROP_STOPWORDS);
     }
-
-    @ConfigComponent(type=StopWords.class)
+    @ConfigComponent(type = StopWords.class)
     public static final String PROP_STOPWORDS = "stopwords";
 
     private StopWords stopwords;

@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.minion.IndexConfig;
@@ -31,23 +30,22 @@ import com.sun.labs.util.props.PropertySheet;
 import com.sun.labs.minion.FieldInfo;
 
 import com.sun.labs.util.props.ConfigBoolean;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 public class PrintStage extends StageAdapter {
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "PS";
-    
+
     public PrintStage() {
     }
-    
+
     public PrintStage(Stage d, boolean printTokens) {
         super(d);
         this.printTokens = printTokens;
     } // PrintStage constructor
 
-    
     public void setDownstream(Stage s) {
         downstream = s;
     }
@@ -63,8 +61,10 @@ public class PrintStage extends StageAdapter {
      * the field we want defined.
      */
     public FieldInfo defineField(FieldInfo fi) {
-        log.log(logTag, 0, "DF: " + fi);
-        if(downstream == null) return null;
+        logger.info("DF: " + fi);
+        if(downstream == null) {
+            return null;
+        }
         return downstream.defineField(fi);
     }
 
@@ -74,8 +74,10 @@ public class PrintStage extends StageAdapter {
      * @param key The document key for this document.
      */
     public void startDocument(String key) {
-        log.log(logTag, 0, "SD: " + key);
-        if(downstream == null) return;
+        logger.info("SD: " + key);
+        if(downstream == null) {
+            return;
+        }
         downstream.startDocument(key);
     }
 
@@ -86,8 +88,10 @@ public class PrintStage extends StageAdapter {
      * the field that is starting.
      */
     public void startField(FieldInfo fi) {
-        log.log(logTag, 0, "SF: " + fi);
-        if(downstream == null) return;
+        logger.info("SF: " + fi);
+        if(downstream == null) {
+            return;
+        }
         downstream.startField(fi);
     }
 
@@ -98,9 +102,11 @@ public class PrintStage extends StageAdapter {
      */
     public void token(Token t) {
         if(printTokens) {
-            log.log(logTag, 0, "T: " + t);
+            logger.info("T: " + t);
         }
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         downstream.token(t);
     }
 
@@ -111,9 +117,11 @@ public class PrintStage extends StageAdapter {
      */
     public void punctuation(Token p) {
         if(printTokens) {
-            log.log(logTag, 0, "P: " + p);
+            logger.info("P: " + p);
         }
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         downstream.punctuation(p);
     }
 
@@ -123,8 +131,10 @@ public class PrintStage extends StageAdapter {
      * @param sd the saved data.
      */
     public void savedData(Object sd) {
-        log.log(logTag, 0, "SV: \"" + sd + "\"");
-        if(downstream == null) return;
+        logger.info("SV: \"" + sd + "\"");
+        if(downstream == null) {
+            return;
+        }
         downstream.savedData(sd);
     }
 
@@ -135,8 +145,10 @@ public class PrintStage extends StageAdapter {
      * the field that is ending.
      */
     public void endField(FieldInfo fi) {
-        log.log(logTag, 0, "EF: " + fi);
-        if(downstream == null) return;
+        logger.info("EF: " + fi);
+        if(downstream == null) {
+            return;
+        }
         downstream.endField(fi);
     }
 
@@ -146,8 +158,10 @@ public class PrintStage extends StageAdapter {
      * @param size The size of the data that was processed for this file.
      */
     public void endDocument(long size) {
-        log.log(logTag, 0, "ED: " + size);
-        if(downstream == null) return;
+        logger.info("ED: " + size);
+        if(downstream == null) {
+            return;
+        }
         downstream.endDocument(size);
     }
 
@@ -158,8 +172,10 @@ public class PrintStage extends StageAdapter {
      * retrieve things like the index directory.
      */
     public void dump(IndexConfig iC) {
-        log.log(logTag, 0, "DUMP");
-        if(downstream == null) return;
+        logger.info("DUMP");
+        if(downstream == null) {
+            return;
+        }
         downstream.dump(iC);
     }
 
@@ -171,14 +187,18 @@ public class PrintStage extends StageAdapter {
      * retrieve things like the index directory.
      */
     public void shutdown(IndexConfig iC) {
-        log.log(logTag, 0, "SHUT");
-        if(downstream == null) return;
+        logger.info("SHUT");
+        if(downstream == null) {
+            return;
+        }
         downstream.shutdown(iC);
     }
 
     public void text(char[] t, int b, int e) {
-        log.log(logTag, 0, "TEXT: " + new String(t, b, (e - b)));
-        if(downstream == null) return;
+        logger.info("TEXT: " + new String(t, b, (e - b)));
+        if(downstream == null) {
+            return;
+        }
         downstream.text(t, b, e);
     }
 
@@ -186,10 +206,9 @@ public class PrintStage extends StageAdapter {
         super.newProperties(ps);
         printTokens = ps.getBoolean(PROP_PRINT_TOKENS);
     }
-
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_PRINT_TOKENS = "print_tokens";
 
     private boolean printTokens;
-    
+
 } // PrintStage

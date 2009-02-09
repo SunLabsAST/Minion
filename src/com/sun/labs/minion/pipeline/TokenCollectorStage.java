@@ -21,12 +21,12 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import java.util.Iterator;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A stage that collects the tokens that come down the pipe into an array
@@ -34,7 +34,7 @@ import com.sun.labs.minion.util.Util;
  * retrieval component.
  */
 public class TokenCollectorStage extends StageAdapter {
-    
+
     /**
      * Instantiates a token collecting stage that will only collect tokens
      * in the given ranges.
@@ -49,34 +49,34 @@ public class TokenCollectorStage extends StageAdapter {
         count = 0;
         punct = new StringBuffer();
     }
-    
+
     /**
      * Instantiates a token collecting stage.  This stage never has a
      * downstream stage or pipe.
      */
     public TokenCollectorStage() {
         super(null);
-        ranges 	  = new Range[1];
+        ranges = new Range[1];
         ranges[0] = new Range(-1, -1);
-        count 	  = 0;
-        nRanges   = 1;
-        punct 	  = new StringBuffer();
+        count = 0;
+        nRanges = 1;
+        punct = new StringBuffer();
     }
-    
+
     /**
      * Processes a token.
      */
     public void token(Token tok) {
-        
+
         addPunct();
-        
+
         //
         // Add this token to the ranges.
         for(int i = 0; i < nRanges; i++) {
             ranges[i].add(tok);
         }
     }
-    
+
     /**
      * Add punctuation.
      */
@@ -92,7 +92,7 @@ public class TokenCollectorStage extends StageAdapter {
             punct.setLength(0);
         }
     }
-    
+
     /**
      * Keeps track of the punctuation that we've been given, so that we
      * don't have multiple elements in the array of punctuation.
@@ -105,7 +105,7 @@ public class TokenCollectorStage extends StageAdapter {
         pEnd = punct.getEnd();
         punctWord = punct.getWordNum();
     }
-    
+
     /**
      * Resets the stage.
      */
@@ -115,12 +115,12 @@ public class TokenCollectorStage extends StageAdapter {
         }
         count = 0;
     }
-    
+
     /**
      * Resets the stage with new starts and ends.
      */
     public void reset(int[] s, int[] e, boolean wf[]) {
-        
+
         //
         // Make sure there's enough room.
         int len = Math.min(s.length, e.length);
@@ -133,7 +133,7 @@ public class TokenCollectorStage extends StageAdapter {
             ranges = temp;
         }
         nRanges = len;
-        
+
         //
         // Reset the ranges.
         for(int i = 0; i < nRanges; i++) {
@@ -141,7 +141,7 @@ public class TokenCollectorStage extends StageAdapter {
         }
         count = 0;
     }
-    
+
     /**
      * Returns the collected tokens and punctuation.
      *
@@ -151,14 +151,14 @@ public class TokenCollectorStage extends StageAdapter {
     public Token[] getTokens() {
         return ranges[0].getTokens();
     }
-    
+
     /**
      * Returns an iterator for the tokens that we collected.
      */
     public Iterator iterator() {
         return ranges[0].iterator();
     }
-    
+
     /**
      * Returns the currently active ranges.
      */
@@ -167,20 +167,21 @@ public class TokenCollectorStage extends StageAdapter {
         System.arraycopy(ranges, 0, ret, 0, nRanges);
         return ret;
     }
-    
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < ranges.length; i++) {
+        for(int i = 0; i < ranges.length; i++) {
             sb.append(ranges[i].toString());
         }
         return sb.toString();
     }
-    
+
     public boolean equals(Object o) {
-        if (o instanceof TokenCollectorStage) {
+        if(o instanceof TokenCollectorStage) {
             TokenCollectorStage ocs = (TokenCollectorStage) o;
             if(ranges.length != ocs.ranges.length) {
-                log.log(logTag, 4, "unequal: " + ranges.length + " " + ocs.ranges.length);
+                logger.info("unequal: " + ranges.length + " " +
+                        ocs.ranges.length);
                 return false;
             }
             for(int i = 0; i < ranges.length; i++) {
@@ -192,28 +193,28 @@ public class TokenCollectorStage extends StageAdapter {
         }
         return false;
     }
-    
+
     /**
      * A class to hold the tokens for a given range of the tokenized
      * material.
      */
     public class Range {
-        
+
         /**
          * Initializes a range.
          */
         public Range(int s, int e) {
-            sw 	     = s;
-            ew 	     = e;
-            
+            sw = s;
+            ew = e;
+
             //
             // There's at least this many tokens that will be coming down
             // the pipe.
             int n = ew - sw + 1;
-            tokens   = new Token[n];
-            nTokens  = 0;
+            tokens = new Token[n];
+            nTokens = 0;
         }
-        
+
         /**
          * Tells this range that we're starting a field, and that the first
          * word of the field will be the given word.
@@ -225,57 +226,57 @@ public class TokenCollectorStage extends StageAdapter {
                 collect = true;
             }
         }
-        
+
         /**
          * Tells this range that we're ending a field.
          */
         public void endField() {
             collect = false;
         }
-        
+
         /**
          * Tries to add a token to this range.
          */
         public void add(Token token) {
-            
+
             int w = token.getWordNum();
-            
+
             //
             // Add it if we have no range defined or if it's in the range.
             if(sw == -1 || (wholeField && collect) ||
                     (!wholeField && w >= sw && w <= ew)) {
-                if(nTokens+1 > tokens.length) {
-                    int newCap = tokens.length+10;
-                    tokens   = (Token[]) Util.expand(tokens, newCap);
+                if(nTokens + 1 > tokens.length) {
+                    int newCap = tokens.length + 10;
+                    tokens = (Token[]) Util.expand(tokens, newCap);
                 }
                 tokens[nTokens++] = token;
             }
         }
-        
+
         /**
          * Get an iterator for the tokens in this range.
          */
         public Iterator iterator() {
             return new RangeIterator();
         }
-        
+
         /**
          * Resets the range.
          */
         public void reset() {
             nTokens = 0;
         }
-        
+
         /**
          * Resets the range with a new start and end position.
          */
         public void reset(int s, int e, boolean wf) {
-            sw 	       = s;
-            ew 	       = e;
+            sw = s;
+            ew = e;
             wholeField = wf;
-            nTokens    = 0;
+            nTokens = 0;
         }
-        
+
         /**
          * Returns the collected tokens and punctuation.
          *
@@ -285,15 +286,14 @@ public class TokenCollectorStage extends StageAdapter {
         public Token[] getTokens() {
             return (Token[]) Util.getExact(tokens, nTokens);
         }
-        
+
         public boolean equals(Object o) {
-            if (o instanceof Range) {
+            if(o instanceof Range) {
                 Range or = (Range) o;
 
                 boolean bad = false;
                 for(int i = 0; i < nTokens; i++) {
-                    log.log(logTag, 4, tokens[i].getToken() +  " " +
-                            tokens[i].getType() +
+                    logger.info(tokens[i].getToken() + " " + tokens[i].getType() +
                             " / " +
                             or.tokens[i].getToken() +
                             " " + or.tokens[i].getType());
@@ -303,123 +303,123 @@ public class TokenCollectorStage extends StageAdapter {
                     }
 
                     if(tokens[i].getType() != or.tokens[i].getType()) {
-                        log.warn(logTag, 4, tokens[i].getToken() + ": " +
-                                tokens[i].getType() + " " + or.tokens[i].getType());
+                        logger.warning(tokens[i].getToken() + ": " + tokens[i].
+                                getType() + " " + or.tokens[i].getType());
                         bad = true;
                     }
                 }
 
                 if(bad) {
-                    log.warn(logTag, 4, "Got all the way through, but bad!");
+                    logger.log(Level.WARNING,
+                            "Got all the way through, but bad!");
                 }
                 return !bad;
             }
             return false;
         }
-        
+
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < nTokens; i++) {
+            for(int i = 0; i < nTokens; i++) {
                 sb.append(tokens[i].toString() + "\n");
             }
             return sb.toString();
         }
-        
+
         protected class RangeIterator implements Iterator {
-            
+
             public RangeIterator() {
                 curr = 0;
             }
-            
+
             public boolean hasNext() {
                 return curr < nTokens;
             }
-            
+
             public Object next() {
-                
+
                 if(curr >= nTokens) {
                     throw new java.util.NoSuchElementException(
                             "No more elements!");
                 }
                 return tokens[curr++];
             }
-            
+
             public void remove() {
-                throw new
-                        UnsupportedOperationException(
+                throw new UnsupportedOperationException(
                         "Not supported for RangeIterator");
             }
-            
             int curr;
+
         }
-        
         /**
          * The starting word count for the range.
          */
         protected int sw;
-        
+
         /**
          * The ending word count for the range.
          */
         protected int ew;
-        
+
         /**
          * Whether we should collect the entire field surrounding the start
          * and end word, including any punctuation.
          */
         protected boolean wholeField;
-        
+
         /**
          * Whether we should be collecting words.
          */
         protected boolean collect;
-        
+
         /**
          * The number of tokens that have been collected.
          */
         protected int nTokens;
-        
+
         /**
          * The collected tokens.
          */
         protected Token[] tokens;
+
     }
-    
     /**
      * The number of tokens that have gone by.
      */
     protected int count;
-    
+
     /**
      * The number of ranges we're considering.
      */
     protected int nRanges;
-    
+
     /**
      * A buffer for punctuation.
      */
     protected StringBuffer punct;
-    
+
     /**
      * The word number for the last punctuation that we got.
      */
     protected int punctWord;
-    
+
     protected int pStart;
-    
+
     protected int pEnd;
-    
+
     /**
      * The ranges we're collecting.
      */
     protected Range[] ranges;
-    
+
     /**
      * Whether we're collecting bigrams.
      */
     protected boolean doingBigrams;
-    
-    protected static MinionLog log = MinionLog.getLog();
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "TCS";
-    
+
 } // TokenCollectorStage

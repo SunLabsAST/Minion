@@ -21,12 +21,10 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.minion.IndexableFile;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngineException;
@@ -44,25 +42,23 @@ import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 
 import com.sun.labs.minion.util.Getopt;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-/**
- *
- * @author Stephen Green <stephen.green@sun.com>
- */
 public class VectorTest {
-    
+
     protected static DecimalFormat form = new DecimalFormat("###0.00");
-    
+
     /** Creates a new instance of VectorTest */
     public VectorTest() {
     }
-    
+
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
         int vecLen = 10;
-        int    c;
+        int c;
         int nDocs;
         String indexDir = null;
         String cmFile = null;
@@ -71,24 +67,21 @@ public class VectorTest {
         boolean doTest = false;
         boolean doCheck = false;
         boolean doSort = false;
-        
-        Getopt gopt  = new Getopt(args, "cd:i:n:x:st");
-        
+
+        Getopt gopt = new Getopt(args, "cd:i:n:x:st");
+
         //
         // Set up the logging for the search engine.  We'll send everything
         // to the standard output, except for errors, which will go to
         // standard error.  We'll set the level at 3, which is pretty
         // verbose.
-        Log log = Log.getLog();
-        log.setStream(System.out);
-        log.setLevel(3);
-        String logTag = "VT";
-        
+        Logger logger = Logger.getLogger(VectorTest.class.getName());
+
         //
         // Handle the options.
-        while ((c = gopt.getopt()) != -1) {
-            switch (c) {
-                
+        while((c = gopt.getopt()) != -1) {
+            switch(c) {
+
                 case 'c':
                     doCheck = true;
                     break;
@@ -112,90 +105,91 @@ public class VectorTest {
                     break;
             }
         }
-        
+
         //
         // Open our engine for use.  We give it the properties that we read
         // and no query properties.
         SearchEngineImpl engine;
         try {
-            engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(cmFile, indexDir);
-        } catch (SearchEngineException se) {
-            log.error("Indexer", 1, "Error opening collection", se);
+            engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                    cmFile, indexDir);
+        } catch(SearchEngineException se) {
+            logger.log(Level.SEVERE, "Error opening collection", se);
             return;
         }
-        
+
         nDocs = engine.getNDocs();
-        
+
         if(stuff != null) {
             BufferedReader r;
             try {
                 r = new BufferedReader(new FileReader(stuff));
-            } catch (java.io.IOException ioe) {
-                log.error("Indexer", 0, "Error opening list of files", ioe);
+            } catch(java.io.IOException ioe) {
+                logger.log(Level.SEVERE, "Error opening list of files", ioe);
                 return;
             }
-            
+
             String n;
-            
+
             try {
                 while((n = r.readLine()) != null) {
-                    
+
                     IndexableFile f = new IndexableFile(n);
-                    
+
                     //
                     // We'll use a sequenced map because we want to process things
                     // the same way, every time!
                     Map m = new LinkedHashMap();
-                    
-                    
+
+
                     //
                     // Put the date in the map.
                     m.put("last-mod", new Date(f.lastModified()));
-                    
+
                     //
                     // Finally, put in the file to index.  We won't be saveing the
                     // data into an explicit field, but that is possible.
                     m.put("file", f);
-                    
+
                     //
                     // Make up a feature vector.
                     double[] fv = new double[vecLen];
                     for(int i = 0; i < fv.length; i++) {
-                        fv[i] = (nDocs+1) * (i+1);
+                        fv[i] = (nDocs + 1) * (i + 1);
                     }
                     m.put("features", fv);
-                    
-                    m.put("dn", new Integer(nDocs+1));
-                    
-                    
+
+                    m.put("dn", new Integer(nDocs + 1));
+
+
                     try {
                         engine.index(f.getAbsolutePath(), m);
                         nDocs++;
                         if(nDocs % 1000 == 0) {
-                            log.log(logTag, 0, "Indexed " + nDocs + " docs");
+                            logger.info("Indexed " + nDocs + " docs");
                         }
-                        
-                    } catch (Exception e) {
-                        log.error(logTag, 0, "Error indexing", e);
+
+                    } catch(Exception e) {
+                        logger.log(Level.SEVERE, "Error indexing", e);
                     }
                 }
-            } catch (java.io.IOException ioe) {
-                log.error("Indexer", 0,
+            } catch(java.io.IOException ioe) {
+                logger.log(Level.SEVERE,
                         "Error reading from list of files, continuing", ioe);
             }
- 
+
             //
             // We're now done indexing, so flush out the data and get ready to do
             // some lookups!
             engine.flush();
         }
-        
+
         if(!doTest) {
             engine.close();
             return;
         }
-        
-      
+
+
         //
         // The number of documents indexed in the engine.
         int n = engine.getNDocs();
@@ -205,46 +199,49 @@ public class VectorTest {
 
         long start = System.currentTimeMillis();
         long curr = start;
-        for(Iterator i = engine.getManager().getActivePartitions().iterator(); i.hasNext();) {
+        for(Iterator i = engine.getManager().getActivePartitions().iterator(); i.
+                hasNext();) {
             DiskPartition dp = (DiskPartition) i.next();
-            for(Iterator d = dp.getDocumentIterator(); d.hasNext(); ) {
+            for(Iterator d = dp.getDocumentIterator(); d.hasNext();) {
                 DocKeyEntry dke = (DocKeyEntry) d.next();
-                
+
                 //
                 // Get the feature vector for this document.
                 double[] feat = (double[]) engine.getFieldValue("features",
                         dke.getName().toString());
-                int dn = (int) ((Long) engine.getFieldValue("dn", dke.getName().toString())).longValue();
-                
+                int dn = (int) ((Long) engine.getFieldValue("dn", dke.getName().
+                        toString())).longValue();
+
                 //
                 // We'll check for null, no matter what.
                 if(feat == null) {
-                    System.out.println("null features for: " + dke.getName() + " " +
+                    System.out.println("null features for: " + dke.getName() +
+                            " " +
                             dn);
                     continue;
                 }
-                
+
                 if(doCheck) {
                     //
                     // Check whether the values are the same.
                     for(int f = 0; f < feat.length; f++) {
-                        if(feat[f] != dn * (f+1)) {
+                        if(feat[f] != dn * (f + 1)) {
                             System.out.println(dn + " " + f + " " +
-                                    feat[f] + " " + (dn * (f+1)));
+                                    feat[f] + " " + (dn * (f + 1)));
                         }
                     }
                 }
-                
+
                 //
                 // Run the similarity computation for this document.
                 ResultSet rs = engine.getSimilar((String) dke.getName(),
                         "features");
                 List l = rs.getAllResults(doSort);
-                
+
                 if(doCheck) {
                     //
                     // See whether the distance/similarity calculation works.
-                    for (Iterator j = l.iterator(); j.hasNext();) {
+                    for(Iterator j = l.iterator(); j.hasNext();) {
                         Result r = (Result) j.next();
                         double[] ovec = (double[]) r.getField("features").get(0);
                         double dist = 0;
@@ -259,14 +256,15 @@ public class VectorTest {
                         }
                         nc++;
                         if(nc % p == 0) {
-                            System.out.println(nc + "/" + tc + " " + (System.currentTimeMillis() - curr));
+                            System.out.println(nc + "/" + tc + " " + (System.
+                                    currentTimeMillis() - curr));
                             curr = System.currentTimeMillis();
                         }
                     }
                 }
             }
         }
-        
+
         long time = System.currentTimeMillis() - start;
         System.out.println("Calc took: " + time);
         if(doCheck) {
@@ -274,7 +272,7 @@ public class VectorTest {
         } else {
             System.out.println(form.format(tc / (double) time) + " calcs per ms");
         }
-        
+
         engine.close();
     }
 }

@@ -21,15 +21,15 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.SearchEngineException;
 import java.util.EnumSet;
 import java.util.Map;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.indexer.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A common base class for <code>MemoryFieldStore</code> and
@@ -50,7 +50,7 @@ public class FieldStore {
     /**
      * The log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The log tag.
@@ -84,15 +84,15 @@ public class FieldStore {
      * there was some problem with the meta file.
      */
     protected FieldInfo getFieldInfo(String name,
-                                     EnumSet<FieldInfo.Attribute> attributes,
-                                     FieldInfo.Type type) {
+            EnumSet<FieldInfo.Attribute> attributes,
+            FieldInfo.Type type) {
 
         //
         // Get the field ID from our current meta file.
         try {
             return metaFile.addField(name, attributes, type);
         } catch(SearchEngineException see) {
-            log.error(logTag, 1, "Error getting field info", see);
+            logger.log(Level.SEVERE, "Error getting field info", see);
             return null;
         }
     }
@@ -115,7 +115,7 @@ public class FieldStore {
             try {
                 fi = metaFile.addField(f);
             } catch(SearchEngineException see) {
-                log.error(logTag, 1, "Error getting field info", see);
+                logger.log(Level.SEVERE, "Error getting field info", see);
                 return 0;
             }
         }

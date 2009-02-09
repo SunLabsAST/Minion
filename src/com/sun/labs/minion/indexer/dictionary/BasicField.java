@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldValue;
@@ -37,7 +36,6 @@ import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.CDateParser;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.NIOBuffer;
@@ -59,6 +57,8 @@ import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A class to hold the data for a saved field during indexing.
@@ -122,7 +122,7 @@ public class BasicField implements SavedField {
     /**
      * The log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The log tag.
@@ -170,10 +170,11 @@ public class BasicField implements SavedField {
 
         header = new SavedFieldHeader(dictFile);
 
-        log.debug(logTag, 5, "Loading dictionary for field: " + field.getName());
+        logger.finer("Loading dictionary for field: " + field.getName());
         dictFile.seek(header.valOffset);
         values =
-                fieldStoreDictFactory.getDiskDictionary(BasicField.getEntryClass(field),
+                fieldStoreDictFactory.getDiskDictionary(
+                BasicField.getEntryClass(field),
                 BasicField.getNameDecoder(field), dictFile, postFiles, part);
 
         //
@@ -181,12 +182,12 @@ public class BasicField implements SavedField {
         if(field.getType() == FieldInfo.Type.STRING) {
             dictFile.seek(header.bgOffset);
             bigrams =
-                    bigramDictFactory.getBiGramDictionary((DiskDictionary) values,
+                    bigramDictFactory.getBiGramDictionary(
+                    (DiskDictionary) values,
                     dictFile, postFiles[0], part);
         }
 
-        log.debug(logTag, 5, "Loading docsToValues for field: " +
-                field.getName());
+        logger.finer("Loading docsToValues for field: " + field.getName());
 
         //
         // Load the docs to vals data, using a file backed buffer.
@@ -261,7 +262,7 @@ public class BasicField implements SavedField {
         }
         dv[docID].add(e);
     }
-    
+
     /**
      * Gets a name decoder of the appropriate type for the given field.
      *
@@ -278,7 +279,7 @@ public class BasicField implements SavedField {
             case STRING:
                 return new StringNameHandler();
             default:
-                log.warn(logTag, 2, "Field: " + field.getName() + " " +
+                Logger.getLogger(BasicField.class.getName()).warning("Field: " + field.getName() + " " +
                         "has unknown SAVED type: " + field.getType() +
                         ", using VARCHAR.");
                 return new StringNameHandler();
@@ -316,7 +317,7 @@ public class BasicField implements SavedField {
                         return new Long(val.toString());
                     }
                 } catch(NumberFormatException nfe) {
-                    log.warn(logTag, 2, "Non integer value: " + val +
+                    logger.warning("Non integer value: " + val +
                             " for integer saved field " + field.getName() +
                             ", ignoring " + val.getClass());
                     return null;
@@ -331,7 +332,7 @@ public class BasicField implements SavedField {
                         return new Double(val.toString());
                     }
                 } catch(NumberFormatException nfe) {
-                    log.warn(logTag, 2, "Non float value: " + val +
+                    logger.warning("Non float value: " + val +
                             " for float saved field " + field.getName() +
                             ", ignoring");
                     return null;
@@ -349,7 +350,7 @@ public class BasicField implements SavedField {
                         return dp.parse(val.toString());
                     }
                 } catch(java.text.ParseException pe) {
-                    log.warn(logTag, 2, "Non-parseable date: " + val +
+                    logger.warning("Non-parseable date: " + val +
                             " for date saved field " + field.getName() +
                             ", ignoring");
                     return null;
@@ -357,7 +358,7 @@ public class BasicField implements SavedField {
             case STRING:
                 return val.toString();
             default:
-                log.warn(logTag, 2, "Field: " + field.getName() + " " +
+                logger.warning("Field: " + field.getName() + " " +
                         "has unknown SAVED type: " + field.getType() +
                         ", using VARCHAR.");
                 return val.toString();
@@ -382,7 +383,7 @@ public class BasicField implements SavedField {
         header = new SavedFieldHeader();
         header.write(dictFile);
 
-        log.log(logTag, 5, "Dump values dictionary for field: " +
+        logger.finer("Dump values dictionary for field: " +
                 field.getName());
 
         header.nDocs = maxID;
@@ -773,7 +774,7 @@ public class BasicField implements SavedField {
 
         //
         // Collect the non-null dictionaries into our dicts array.
-        for(int i = 0,  n = 0; i < fields.length; i++) {
+        for(int i = 0, n = 0; i < fields.length; i++) {
             if(fields[i] != null) {
                 dicts[n] = (DiskDictionary) ((BasicField) fields[i]).values;
                 bgdicts[n] = ((BasicField) fields[i]).bigrams;
@@ -787,7 +788,7 @@ public class BasicField implements SavedField {
         try {
             ef = (IndexEntry) BasicField.getEntryClass(field).newInstance();
         } catch(Exception e) {
-            log.error(logTag, 1, "Error instantiating entry factory", e);
+            logger.log(Level.SEVERE, "Error instantiating entry factory", e);
             ef = null;
         }
 
@@ -795,11 +796,13 @@ public class BasicField implements SavedField {
         // Merge the field values.
         PostingsOutput[] mergeOut = new PostingsOutput[]{postOut};
 
-        log.log(logTag, 4, "Merge dictionary for field: " + field.getName());
+        logger.fine("Merge dictionary for field: " + field.getName());
         mHeader.valOffset = dictFile.getFilePointer();
         int[][] idMap;
 
-        idMap = dicts[0].merge(ef, BasicField.getNameEncoder(field), dicts, null, nnStarts, nnDocIDMaps, dictFile, mergeOut, true);
+        idMap =
+                dicts[0].merge(ef, BasicField.getNameEncoder(field), dicts, null,
+                nnStarts, nnDocIDMaps, dictFile, mergeOut, true);
 
         //
         // Merge the bigram dictionaries, if there are any.
@@ -838,7 +841,7 @@ public class BasicField implements SavedField {
 
                 //
                 // No data so all positions are zero.
-                for(int j = 0,  p = starts[i] - 1; j < nUndel[i]; j++, p++) {
+                for(int j = 0, p = starts[i] - 1; j < nUndel[i]; j++, p++) {
                     //
                     // Note the position we're about to write at
                     temp[p] = mdtvData.position();
@@ -851,7 +854,7 @@ public class BasicField implements SavedField {
             int[] docIDMap = docIDMaps[i];
             int[] valIDMap = idMap[currNonNullField++];
 
-            for(int j = 0,  p = starts[i] - 1; j <
+            for(int j = 0, p = starts[i] - 1; j <
                     ((BasicField) fields[i]).header.nDocs; j++) {
                 int n = dtvDup.byteDecode();
 
@@ -901,11 +904,13 @@ public class BasicField implements SavedField {
 
         mdtvRAF.close();
         if(!mdtvFile.delete()) {
-            log.error(logTag, 2, "Failed to delete docs to values buffer file after merge");
+            logger.severe(
+                    "Failed to delete docs to values buffer file after merge");
         }
         mdtvOffRAF.close();
         if(!mdtvOffFile.delete()) {
-            log.error(logTag, 2, "Failed to delete docs to values offset buffer file after merge");
+            logger.severe(
+                    "Failed to delete docs to values offset buffer file after merge");
         }
 
         long end = dictFile.getFilePointer();

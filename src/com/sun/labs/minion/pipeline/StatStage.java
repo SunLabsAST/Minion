@@ -21,32 +21,29 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import java.text.DecimalFormat;
 
 import com.sun.labs.minion.IndexConfig;
 
-import com.sun.labs.minion.util.MinionLog;
-
 public class StatStage extends StageAdapter {
 
     public StatStage() {
-	start = System.currentTimeMillis();
+        start = System.currentTimeMillis();
     }
-    
+
     /**
      * Processes the event that comes at the end of a document.
      *
      * @param size The size of the data that was processed for this file.
      */
     public void endDocument(long size) {
-	bytes += size;
-	nDocs++;
-	if(nDocs % 1000 == 0) {
-	    report();
-	}
+        bytes += size;
+        nDocs++;
+        if(nDocs % 1000 == 0) {
+            report();
+        }
     }
 
     /**
@@ -57,27 +54,22 @@ public class StatStage extends StageAdapter {
      * retrieve things like the index directory.
      */
     public void shutdown(IndexConfig iC) {
-	report();
+        report();
     }
 
     public void report() {
-	float secs = (float) (System.currentTimeMillis() -
-			      start) / 1000;
-	float MB = (bytes / (1024 * 1024));
+        float secs = (float) (System.currentTimeMillis() -
+                start) / 1000;
+        float MB = (bytes / (1024 * 1024));
 
-	MinionLog.log("STAT", 3, nDocs + " documents, " +
-		    form.format(MB) + " MB, " +
-		    form.format(secs) + " s, " +
-		    form.format(MB / (secs / 3600)) + " MB/h");
-    }	
-
+    }
     /**
      * A format object for formatting the output.
      */
     protected static DecimalFormat form = new DecimalFormat("########0.00");
 
     long start;
-    
+
     int nDocs = 0;
 
     long bytes = 0;

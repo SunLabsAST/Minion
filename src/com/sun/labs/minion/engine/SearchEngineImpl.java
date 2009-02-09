@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.engine;
 
 import com.sun.labs.minion.Document;
@@ -46,7 +45,6 @@ import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.minion.IndexListener;
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableMap;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.MetaDataStore;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.Progress;
@@ -105,7 +103,6 @@ import com.sun.labs.minion.pipeline.AbstractPipelineImpl;
 import com.sun.labs.minion.pipeline.AsyncPipelineImpl;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.query.Element;
-import com.sun.labs.minion.query.Operator;
 import com.sun.labs.minion.query.Range;
 import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.query.StringRelation;
@@ -124,6 +121,8 @@ import com.sun.labs.minion.retrieval.parser.WebParser;
 import com.sun.labs.minion.util.CDateParser;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is the main class for handling a search engine, both for indexing
@@ -236,7 +235,7 @@ public class SearchEngineImpl implements SearchEngine,
     /**
      * The log.
      */
-    protected static Log log = Log.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * Our log tag.
@@ -296,11 +295,10 @@ public class SearchEngineImpl implements SearchEngine,
         return ret;
     }
 
-
     public TermStats getTermStats(String term) {
         return invFilePartitionManager.getTermStats(term);
     }
-    
+
     public Document getDocument(String key) {
         DocKeyEntry dke =
                 (DocKeyEntry) invFilePartitionManager.getDocumentTerm(key);
@@ -405,7 +403,7 @@ public class SearchEngineImpl implements SearchEngine,
 
             checkDump();
         } catch(InterruptedException ex) {
-            log.error(logTag, 1, "Interrupted during index", ex);
+            logger.log(Level.SEVERE, "Interrupted during index", ex);
         }
     }
 
@@ -419,7 +417,7 @@ public class SearchEngineImpl implements SearchEngine,
     public void addIndexListener(IndexListener il) {
         invFilePartitionManager.addIndexListener(il);
     }
-    
+
     public void removeIndexListener(IndexListener il) {
         invFilePartitionManager.removeIndexListener(il);
     }
@@ -470,7 +468,7 @@ public class SearchEngineImpl implements SearchEngine,
             try {
                 metaDataStore.store();
             } catch(IOException e) {
-                log.warn(logTag, 3, "MetaData failed in store()", e);
+                logger.log(Level.WARNING, "MetaData failed in store()", e);
                 throw new SearchEngineException("MetaData could not be stored",
                         e);
             }
@@ -587,26 +585,27 @@ public class SearchEngineImpl implements SearchEngine,
         try {
             parseTree = (SimpleNode) p.doParse();
         } catch(ParseException ex) {
-//            log.error(logTag, 1, "Error parsing query", ex);
-            log.debug(logTag, 4, "Parse error", ex);
-            String msg = ex.getMessage().substring(0, ex.getMessage().indexOf('\n'));
+            logger.log(Level.SEVERE, "Error parsing query", ex);
+            String msg = ex.getMessage().substring(0, ex.getMessage().indexOf(
+                    '\n'));
             throw new SearchEngineException("Error parsing query: " + msg);
         } catch(TokenMgrError tme) {
-            log.debug(logTag, 4, "Parse error", tme);
+            logger.log(Level.SEVERE, "Error parsing query", tme);
             throw new SearchEngineException("Error parsing query: " + tme);
         }
 
         try {
             qe = xer.transformTree(parseTree, defaultOperator);
         } catch(java.text.ParseException ex) {
-            log.error(logTag, 1, "Error transforming query", ex);
+            logger.log(Level.SEVERE, "Error transforming query", ex);
             throw new SearchEngineException("Error transforming query", ex);
         }
 
         if(qe == null) {
             //
             // The query construction code returned an empty query
-            throw new SearchEngineException("Error evaluating query: Query is empty");
+            throw new SearchEngineException(
+                    "Error evaluating query: Query is empty");
         }
 
         //
@@ -633,10 +632,10 @@ public class SearchEngineImpl implements SearchEngine,
             qs.accumulate(lqs);
             return rsi;
         } catch(Exception e) {
-            log.error(logTag, 1, "Error evaluating query", e);
+            logger.log(Level.SEVERE, "Error evaluating query", e);
             throw new SearchEngineException("Error evaluating query", e);
         } catch(Throwable t) {
-            log.error(logTag, 1, "Caught throwable", t);
+            logger.log(Level.SEVERE, "Caught throwable", t);
             throw new SearchEngineException("Throwable error evaluating query",
                     null);
         }
@@ -665,7 +664,8 @@ public class SearchEngineImpl implements SearchEngine,
             // Check if the field exists.
             FieldInfo fi = getFieldInfo(field);
             if(fi == null) {
-                throw new QueryException(String.format("Field %s is not defined for relation %s",
+                throw new QueryException(String.format(
+                        "Field %s is not defined for relation %s",
                         field, r));
             }
 
@@ -673,10 +673,10 @@ public class SearchEngineImpl implements SearchEngine,
             // The field exists, lets make sure that the type makes sense for the
             // types where we need to parsing.
             checkType(dp, fi, r.getOperator(), val);
-        } else if (el instanceof Range) {
+        } else if(el instanceof Range) {
             Range range = (Range) el;
             String field = range.getField();
-            
+
             //
             // Check if the field exists.
             FieldInfo fi = getFieldInfo(field);
@@ -688,14 +688,13 @@ public class SearchEngineImpl implements SearchEngine,
 
             checkType(dp, fi, range.getLeftOperator(), range.getLeftValue());
             checkType(dp, fi, range.getRightOperator(), range.getRightValue());
-        } else if (el instanceof Term) {
-            
+        } else if(el instanceof Term) {
         }
-        
+
     }
 
     private void checkType(CDateParser dp,
-            FieldInfo fi, 
+            FieldInfo fi,
             Relation.Operator op,
             String val) throws QueryException {
         switch(fi.getType()) {
@@ -709,7 +708,7 @@ public class SearchEngineImpl implements SearchEngine,
                     throw new QueryException(String.format(
                             "Value in relation %s %s %s is not parseable as a date, " +
                             "where %s is a date field",
-                            fi.getName(), 
+                            fi.getName(),
                             op.getRep(),
                             val, fi.getName()));
                 }
@@ -862,7 +861,7 @@ public class SearchEngineImpl implements SearchEngine,
         // Return the result set.
         return new ResultSetImpl(this, "-score", sets);
     }
-    
+
     /**
      * Builds a result set of the documents containing any of the given terms
      * in any of the given fields.
@@ -974,15 +973,15 @@ public class SearchEngineImpl implements SearchEngine,
             boolean ignoreCase) {
         return invFilePartitionManager.getTopFieldValues(field, n, ignoreCase);
     }
-    
+
     public List<FieldValue> getSimilarClassifiers(String cname, int n) {
         if(classManager == null) {
             return new ArrayList<FieldValue>();
         }
         return classManager.findSimilar(cname, n);
     }
-    
-    public List<WeightedFeature> getSimilarClassifierTerms(String cname1, 
+
+    public List<WeightedFeature> getSimilarClassifierTerms(String cname1,
             String cname2, int n) {
         if(classManager == null) {
             return new ArrayList<WeightedFeature>();
@@ -1060,13 +1059,14 @@ public class SearchEngineImpl implements SearchEngine,
         //
         // Get the document key for the indexed document.
         DocKeyEntry dke =
-                ((MemoryPartition) ((AbstractPipelineImpl) si).getIndexer()).getDocumentTerm(doc.getKey());
+                ((MemoryPartition) ((AbstractPipelineImpl) si).getIndexer()).
+                getDocumentTerm(doc.getKey());
 
         //
         // If this is an unfielded document key, then return the full vector,
         // no matter what field was asked for.
         if(!(dke instanceof FieldedDocKeyEntry)) {
-            log.debug(logTag, 0, "here?");
+            logger.info("here?");
             return new DocumentVectorImpl(this,
                     dke.getWeightedFeatures(queryConfig.getWeightingFunction(),
                     queryConfig.getWeightingComponents()));
@@ -1109,7 +1109,8 @@ public class SearchEngineImpl implements SearchEngine,
         //
         // Get the document key for the indexed document.
         DocKeyEntry dke =
-                ((MemoryPartition) ((AbstractPipelineImpl) si).getIndexer()).getDocumentTerm(doc.getKey());
+                ((MemoryPartition) ((AbstractPipelineImpl) si).getIndexer()).
+                getDocumentTerm(doc.getKey());
 
         //
         // If this is an unfielded document key, then return the full vector,
@@ -1180,26 +1181,26 @@ public class SearchEngineImpl implements SearchEngine,
      * Deletes all of the data in the index.
      */
     public void purge() {
-        
+
         if(invFilePartitionManager != null) {
             invFilePartitionManager.purge();
             for(int i = 0; i < pipes.length; i++) {
                 pipes[i].purge();
             }
         }
-        if (classManager != null) {
+        if(classManager != null) {
             classManager.purge();
         }
-        if (clusterManager != null) {
+        if(clusterManager != null) {
             clusterManager.purge();
         }
         try {
-            MetaDataStoreImpl mds = (MetaDataStoreImpl)getMetaDataStore();
+            MetaDataStoreImpl mds = (MetaDataStoreImpl) getMetaDataStore();
             mds.purge();
-        } catch (SearchEngineException e) {
-            log.log(logTag, 2, "Failed to purge meta data store", e);
-        } catch (IOException  e) {
-            log.log(logTag, 2, "Failed to purge meta data store", e);
+        } catch(SearchEngineException e) {
+            logger.log(Level.INFO, "Failed to purge meta data store", e);
+        } catch(IOException e) {
+            logger.log(Level.INFO, "Failed to purge meta data store", e);
         }
 
     }
@@ -1220,7 +1221,8 @@ public class SearchEngineImpl implements SearchEngine,
         }
 
         PartitionManager.Merger m =
-                invFilePartitionManager.getMerger(invFilePartitionManager.mergeGeometric());
+                invFilePartitionManager.getMerger(invFilePartitionManager.
+                mergeGeometric());
         if(m == null) {
             return false;
         }
@@ -1297,8 +1299,7 @@ public class SearchEngineImpl implements SearchEngine,
                 try {
                     pipeThreads[i].join();
                 } catch(InterruptedException ex) {
-                    log.warn(logTag, 3,
-                            "Interrupted during join for pipeline " + i);
+                    logger.warning("Interrupted during join for pipeline " + i);
                 }
             }
         } else {
@@ -1340,7 +1341,7 @@ public class SearchEngineImpl implements SearchEngine,
             try {
                 metaDataStore.store();
             } catch(IOException e) {
-                log.warn(logTag, 3, "MetaData failed in store()", e);
+                logger.log(Level.WARNING, "MetaData failed in store()", e);
                 throw new SearchEngineException("MetaData could not be stored",
                         e);
             }
@@ -1520,7 +1521,8 @@ public class SearchEngineImpl implements SearchEngine,
      */
     public void classify(String[] docKeys, String[] classNames)
             throws SearchEngineException {
-        throw new SearchEngineException("SearchEngine.classify is currently unimplemented/unsupported");
+        throw new SearchEngineException(
+                "SearchEngine.classify is currently unimplemented/unsupported");
     }
 
     /**
@@ -1562,7 +1564,7 @@ public class SearchEngineImpl implements SearchEngine,
     public String[] getClasses() {
         return null;
     }
-    
+
     public ClassifierModel getClassifier(String name) {
         if(classManager != null) {
             return classManager.getClassifier(name);
@@ -1596,7 +1598,7 @@ public class SearchEngineImpl implements SearchEngine,
                         new MetaDataStoreImpl(indexConfig.getIndexDirectory());
             }
         } catch(IOException e) {
-            log.warn(logTag, 3, "Failed to load MetaData store", e);
+            logger.log(Level.WARNING, "Failed to load MetaData store", e);
             throw new SearchEngineException("Failed to load MetaData store", e);
         }
         return metaDataStore;
@@ -1616,10 +1618,10 @@ public class SearchEngineImpl implements SearchEngine,
         // memory is low.
         double freePercent = (mu.getMax() - mu.getUsed()) / (double) mu.getMax();
         if(freePercent < minMemoryPercent) {
-            log.debug(logTag, 4,
-                      String.format("Memory is low %.1fMB used %.1fMB max %.1f%% free",
-                                    toMB(mu.getUsed()), toMB(mu.getMax()),
-                                    freePercent * 100));
+            logger.fine(String.format(
+                    "Memory is low %.1fMB used %.1fMB max %.1f%% free",
+                    toMB(mu.getUsed()), toMB(mu.getMax()),
+                    freePercent * 100));
             return true;
         }
         return false;
@@ -1637,7 +1639,8 @@ public class SearchEngineImpl implements SearchEngine,
             throws PropertyException {
         cm = ps.getConfigurationManager();
         invFilePartitionManager =
-                (PartitionManager) ps.getComponent(PROP_INV_FILE_PARTITION_MANAGER);
+                (PartitionManager) ps.getComponent(
+                PROP_INV_FILE_PARTITION_MANAGER);
         invFilePartitionManager.setEngine(this);
 
         setQueryConfig((QueryConfig) ps.getComponent(PROP_QUERY_CONFIG));
@@ -1690,7 +1693,8 @@ public class SearchEngineImpl implements SearchEngine,
             try {
                 defineField(fi);
             } catch(SearchEngineException ex) {
-                log.error(logTag, 1, "Error defining field: " + fi.getName(), ex);
+                logger.log(Level.SEVERE, "Error defining field: " + fi.getName(),
+                        ex);
             }
         }
 
@@ -1714,9 +1718,11 @@ public class SearchEngineImpl implements SearchEngine,
                     (ClusterManager) ps.getComponent(PROP_CLUSTER_MANAGER);
             clusterManager.setEngine(this);
             classMemoryPartition =
-                    (ClassifierMemoryPartition) ps.getComponent(PROP_CLASS_MEMORY_PARTITION);
+                    (ClassifierMemoryPartition) ps.getComponent(
+                    PROP_CLASS_MEMORY_PARTITION);
             clusterMemoryPartition =
-                    (ClusterMemoryPartition) ps.getComponent(PROP_CLUSTER_MEMORY_PARTITION);
+                    (ClusterMemoryPartition) ps.getComponent(
+                    PROP_CLUSTER_MEMORY_PARTITION);
         }
         minMemoryPercent =
                 ps.getDouble(PROP_MIN_MEMORY_PERCENT);
@@ -1732,7 +1738,7 @@ public class SearchEngineImpl implements SearchEngine,
 //            cm.save(new File(indexConfig.getIndexDirectory() +
 //                    File.separatorChar + "config.xml"));
 //        } catch(java.io.IOException ioe) {
-//            log.error(logTag, 0, "Error saving config file", ioe);
+//        logger.log(Level.SEVERE, "Error saving config file", ioe);
 //        }
 
     }
@@ -1779,7 +1785,7 @@ public class SearchEngineImpl implements SearchEngine,
                 iterator(); i.hasNext();) {
             InvFileDiskPartition p =
                     (InvFileDiskPartition) i.next();
-            log.debug(logTag, 0, "export: " + p);
+            logger.info("export: " + p);
             p.export(o);
         }
         o.println("</export>");
@@ -1795,7 +1801,8 @@ public class SearchEngineImpl implements SearchEngine,
 
     private PipelineFactory pipelineFactory;
 
-    @ConfigComponent(type = com.sun.labs.minion.indexer.partition.PartitionManager.class)
+    @ConfigComponent(type =
+    com.sun.labs.minion.indexer.partition.PartitionManager.class)
     public static final String PROP_INV_FILE_PARTITION_MANAGER =
             "inv_file_partition_manager";
 
@@ -1808,17 +1815,21 @@ public class SearchEngineImpl implements SearchEngine,
 
     private boolean buildClassifiers;
 
-    @ConfigComponent(type = com.sun.labs.minion.classification.ClassifierManager.class)
+    @ConfigComponent(type =
+    com.sun.labs.minion.classification.ClassifierManager.class)
     public static final String PROP_CLASS_MANAGER = "class_manager";
 
-    @ConfigComponent(type = com.sun.labs.minion.classification.ClusterManager.class)
+    @ConfigComponent(type =
+    com.sun.labs.minion.classification.ClusterManager.class)
     public static final String PROP_CLUSTER_MANAGER = "cluster_manager";
 
-    @ConfigComponent(type = com.sun.labs.minion.indexer.partition.MemoryPartition.class)
+    @ConfigComponent(type =
+    com.sun.labs.minion.indexer.partition.MemoryPartition.class)
     public static final String PROP_CLASS_MEMORY_PARTITION =
             "class_memory_partition";
 
-    @ConfigComponent(type = com.sun.labs.minion.classification.ClusterMemoryPartition.class)
+    @ConfigComponent(type =
+    com.sun.labs.minion.classification.ClusterMemoryPartition.class)
     public static final String PROP_CLUSTER_MEMORY_PARTITION =
             "cluster_memory_partition";
 
@@ -1826,7 +1837,7 @@ public class SearchEngineImpl implements SearchEngine,
     public static final String PROP_MIN_MEMORY_PERCENT = "min_memory_percent";
 
     private double minMemoryPercent;
-    
+
     @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Dumper.class)
     public static final String PROP_DUMPER = "dumper";
 
@@ -1849,7 +1860,8 @@ public class SearchEngineImpl implements SearchEngine,
 
     private String classifierClassName;
 
-    @ConfigComponentList(type = com.sun.labs.minion.classification.Profiler.class)
+    @ConfigComponentList(type =
+    com.sun.labs.minion.classification.Profiler.class)
     public static final String PROP_PROFILERS = "profilers";
 
     private List profilers;

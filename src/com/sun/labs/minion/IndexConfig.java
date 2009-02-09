@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion;
 
 import com.sun.labs.util.props.ConfigBoolean;
@@ -37,12 +36,13 @@ import com.sun.labs.util.props.ConfigurationManager;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import com.sun.labs.minion.lexmorph.Lexicon;
+import java.util.logging.Logger;
 
 /**
  * A class that holds configuration data for indexing documents.
  */
 public class IndexConfig implements Cloneable,
-                                    Configurable {
+        Configurable {
 
     //Configuration Manager properties
     /**
@@ -62,14 +62,14 @@ public class IndexConfig implements Cloneable,
      * property can be set and used by an application that wishes to display a
      * user-friendly name.
      */
-    @ConfigString(mandatory=false)
+    @ConfigString(mandatory = false)
     public static final String PROP_INDEX_NAME = "index_name";
 
     /**
      * The property for the number of random splits to use when doing validation
      * using a random splitter when building classifiers.
      */
-    @ConfigInteger(defaultValue=10)
+    @ConfigInteger(defaultValue = 10)
     public static final String PROP_RANDOM_SPLITTER_NUMSPLITS =
             "random_splitter_numsplits";
 
@@ -77,7 +77,7 @@ public class IndexConfig implements Cloneable,
      * The property for the number of folds to use when doing k-fold cross
      * validation when building classifiers.
      */
-    @ConfigInteger(defaultValue=10)
+    @ConfigInteger(defaultValue = 10)
     public static final String PROP_KFOLD_SPLITTER_NUMFOLDS =
             "kfold_splitter_numfolds";
 
@@ -88,7 +88,7 @@ public class IndexConfig implements Cloneable,
      * to build the classifiers to see if doing that improves the classification
      * performance on the test data.
      */
-    @ConfigBoolean(defaultValue=true)
+    @ConfigBoolean(defaultValue = true)
     public static final String PROP_ENABLE_FEATURE_BACKOFF =
             "enable_feature_backoff";
 
@@ -98,38 +98,38 @@ public class IndexConfig implements Cloneable,
      * can use the stored classifier scores to show the user how likely it is
      * that a given document belongs to a given class of documents.
      */
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_STORE_CLASSIFIER_SCORES =
             "store_classifier_scores";
 
-    @ConfigBoolean(defaultValue=false)
-	public static final String PROP_STORE_NON_CLASSIFIED =
-	"store_non_classified";
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_STORE_NON_CLASSIFIED =
+            "store_non_classified";
 
     /**
      * The property that contains a list of the names of the field information
      * objects that this index should contain.
      */
-    @ConfigComponentList(type=FieldInfo.class)
+    @ConfigComponentList(type = FieldInfo.class)
     public static final String PROP_FIELD_INFO = "field_info";
 
     /**
      * The property that names the location of the lexicon.
      */
-    @ConfigString(mandatory=false)
+    @ConfigString(mandatory = false)
     public static final String PROP_LEXICON_LOCATION = "lexicon_location";
 
     /**
      * The property indicating for whether the taxonomy should be enabled?
      */
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_TAXONOMY_ENABLED = "taxonomy_enabled";
 
     /**
      * A property that names the default field information to use when
      * encountering an unknown field during indexing.
      */
-    @ConfigComponent(type=FieldInfo.class)
+    @ConfigComponent(type = FieldInfo.class)
     public static final String PROP_DEFAULT_FIELD_INFO =
             "default_field_info";
 
@@ -206,7 +206,7 @@ public class IndexConfig implements Cloneable,
     /**
      * The log for the search engine
      */
-    protected static Log log = Log.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * A tag that will be used for log entries
@@ -287,9 +287,8 @@ public class IndexConfig implements Cloneable,
     }
 
     public boolean storeNonClassified() {
-	return storeNonClassified;
+        return storeNonClassified;
     }
-
 
     /**
      * Creates an indexing configuration from a property sheet described in an external XML file.  A
@@ -329,7 +328,6 @@ public class IndexConfig implements Cloneable,
         taxonomyEnabled =
                 ps.getBoolean(PROP_TAXONOMY_ENABLED);
     }
-
 
     private Lexicon readLexiconFile(String filename) {
         //
@@ -373,7 +371,7 @@ public class IndexConfig implements Cloneable,
     public void setDefaultFieldInfo(FieldInfo fieldInfo) {
         defaultField = fieldInfo.clone();
     }
-    
+
     /**
      * Gets the field information to use for an unknown field.
      * 

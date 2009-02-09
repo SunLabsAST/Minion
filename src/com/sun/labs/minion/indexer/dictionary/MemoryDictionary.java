@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import java.io.RandomAccessFile;
@@ -42,9 +41,9 @@ import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.PartitionStats;
 
 import com.sun.labs.minion.util.CharUtils;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A dictionary that will be used during indexing.  The entries will be
@@ -72,103 +71,102 @@ import com.sun.labs.minion.util.Util;
  *
  */
 public class MemoryDictionary implements Dictionary {
-    
+
     /**
      * The partition with which this dictionary is associated.
      */
     protected Partition part;
-    
+
     /**
      * A map to hold the entries.
      */
-    protected Map<Object,Entry> map;
-    
+    protected Map<Object, Entry> map;
+
     /**
      * The class of the entries that we will be holding.
      */
     protected Class entryClass;
-    
+
     /**
      * The ID that we will assign to entries as they are added.
      */
     protected int id;
-    
+
     /**
      * A map from the IDs assigned before sorting to the IDs assigned after
      * sorting.  Which way the map goes depends on the
      * <code>renumber</code> parameter of {@link #dump}
      */
     protected int[] idMap;
-    
+
     /**
      * The log.
      */
-    protected static MinionLog log = MinionLog.getLog();
-    
+    Logger logger = Logger.getLogger(getClass().getName());
+
     /**
      * The tag for this module.
      */
     protected static String logTag = "MD";
-    
+
     /**
      * An enumeration of the kinds of renumbering that may need to be done when
      * dumping a dictionary to disk.
      */
     public enum Renumber {
+
         /**
          * No renumbering is necessary.  This is typical in, for example, 
          * document dictionaries.
          */
         NONE,
-        
         /**
          * Renumbering is necessary.  Entries in the dictionaries will have their
          * IDs renumbered so that the IDs are in the same order as the names of
          * the entries in the dictionary.
          */
         RENUMBER
+
     }
-    
+
     /**
      * An enumeration of the kinds of ID maps that may have to be built when
      * dumping a dictionary.
      */
     public enum IDMap {
-        
+
         /**
          * No map needs to be kept.
          */
         NONE,
-        
         /**
          * A map from the old IDs to the new IDs should be kept.
          */
         OLDTONEW,
-        
         /**
          * A map from the new IDs to the old IDs should be kept.
          */
         NEWTOOLD,
     }
-    
+
     /**
      * Creates a dictionary that can be used during indexing.
      *
      */
     public MemoryDictionary(Class entryClass) {
-        map = new HashMap<Object,Entry>();
-        id  = 0;
+        map = new HashMap<Object, Entry>();
+        id = 0;
         this.entryClass = entryClass;
     }
-    
+
     public Class getEntryClass() {
         return entryClass;
     }
-    
+
     public Set<Object> getKeys() {
         return map.keySet();
     }
-    
+
     /**
      * Gets a new entry that can be added to this dictionary.
      *
@@ -180,12 +178,12 @@ public class MemoryDictionary implements Dictionary {
             e.setID(++id);
             e.setName(name);
             return e;
-        } catch (Exception e) {
-            log.error(logTag, 1, "Error instantiating entry", e);
+        } catch(Exception e) {
+            logger.log(Level.SEVERE, "Error instantiating entry", e);
             return null;
         }
     }
-    
+
     /**
      * Gets a new, possibly cased, entry that can be added to this
      * dictionary.  If the entry is cased, then this method assumes that
@@ -198,27 +196,27 @@ public class MemoryDictionary implements Dictionary {
     public IndexEntry newEntry(Object name) {
         IndexEntry e = simpleNewEntry(name);
         if(e instanceof CasedPostingsEntry) {
-            
+
             //
             // We may need to set the pointer to the lowercase entry for
             // this new entry.  First we lowercase the string.
             String lc = CharUtils.toLowerCase((String) name);
             IndexEntry lce = null;
             if(lc.equals(name)) {
-                
+
                 //
                 // If the uppercase version of the name is also equal to
                 // the name, then we only need one set of postings, so only
                 // set the lowercase entry if we need to.
                 if(!CharUtils.isUncased((String) name)) {
-                    
+
                     //
                     // This is only the lowercase version, so the lowercase
                     // entry is the new entry.
                     lce = e;
                 }
             } else {
-                
+
                 //
                 // This is not the lowercase version, so we may need to
                 // make a new entry for that and that will be the lowercase
@@ -229,7 +227,7 @@ public class MemoryDictionary implements Dictionary {
                     put(lc, lce);
                 }
             }
-            
+
             if(lce != null) {
                 //
                 // Set the pointers in both of the entries.
@@ -239,7 +237,7 @@ public class MemoryDictionary implements Dictionary {
         }
         return e;
     }
-    
+
     /**
      * Puts an entry into the dictionary.  This will assign an ID to the
      * entry if it is not already in the dictionary.
@@ -254,7 +252,7 @@ public class MemoryDictionary implements Dictionary {
         e.setDictionary(this);
         return old;
     }
-    
+
     /**
      * Given a name, figure out how big it is in bytes.
      */
@@ -264,7 +262,7 @@ public class MemoryDictionary implements Dictionary {
         }
         return 4;
     }
-    
+
     /**
      * Gets an entry from the dictionary, given the name for the entry.
      *
@@ -275,7 +273,7 @@ public class MemoryDictionary implements Dictionary {
     public QueryEntry get(Object name) {
         return (QueryEntry) map.get(name);
     }
-    
+
     /**
      * Deletes an entry from the dictionary, given the name for the entry.
      *
@@ -286,7 +284,7 @@ public class MemoryDictionary implements Dictionary {
     public Entry remove(Object name) {
         return map.remove(name);
     }
-    
+
     /**
      * Gets the partition to which this dictionary belongs.
      * @return the partition
@@ -294,18 +292,18 @@ public class MemoryDictionary implements Dictionary {
     public Partition getPartition() {
         return part;
     }
-    
+
     public void setPartition(Partition partition) {
         part = partition;
     }
-    
+
     /**
      * Gets the number of entries in the dictionary.
      */
     public int size() {
         return map.size();
     }
-    
+
     /**
      * Gets an iterator for the entries in the dictionary.
      *
@@ -314,16 +312,16 @@ public class MemoryDictionary implements Dictionary {
     public DictionaryIterator iterator() {
         return new MemoryDictionaryIterator();
     }
-    
+
     /**
      * Clears the dictionary, emptying it of all data.
      */
     public void clear() {
         map.clear();
-        id 	        = 0;
-        idMap 	    = null;
+        id = 0;
+        idMap = null;
     }
-    
+
     /**
      * Sorts the dictionary entries.  Depending on the value of
      * <code>renumber</code>, new IDs may be assigned to the entries in
@@ -336,35 +334,36 @@ public class MemoryDictionary implements Dictionary {
      * @return The entries, in sorted order.
      */
     protected IndexEntry[] sort(Renumber renumber, IDMap idMapType) {
-        IndexEntry[] entries = Util.sort(map.values().toArray(new IndexEntry[0]));
-        
+        IndexEntry[] entries =
+                Util.sort(map.values().toArray(new IndexEntry[0]));
+
         //
         // Check if we need to keep an ID map.
         if(idMapType != IDMap.NONE) {
-            idMap = new int[entries.length+1];
+            idMap = new int[entries.length + 1];
         }
-        
-        switch (renumber) {
+
+        switch(renumber) {
             case NONE:
                 break;
             case RENUMBER:
-                switch (idMapType) {
+                switch(idMapType) {
                     case NONE:
-                        for (int i = 0; i < entries.length;
-                             i++) {
+                        for(int i = 0; i < entries.length;
+                                i++) {
                             entries[i].setID(i + 1);
                         }
                         break;
                     case OLDTONEW:
-                        for (int i = 0; i < entries.length;
-                             i++) {
+                        for(int i = 0; i < entries.length;
+                                i++) {
                             IndexEntry e = entries[i];
                             idMap[e.getID()] = i + 1;
                             e.setID(i + 1);
                         }
                     case NEWTOOLD:
-                        for (int i = 0; i < entries.length;
-                             i++) {
+                        for(int i = 0; i < entries.length;
+                                i++) {
                             IndexEntry e = entries[i];
                             idMap[i + 1] = e.getID();
                             e.setID(i + 1);
@@ -374,7 +373,7 @@ public class MemoryDictionary implements Dictionary {
         }
         return entries;
     }
-    
+
     /**
      * Gets the largest ID in this dictionary as of the time the method
      * is called.
@@ -384,7 +383,7 @@ public class MemoryDictionary implements Dictionary {
     public int getMaxId() {
         return id;
     }
-    
+
     /**
      * Gets a map from the IDs assigned before sorting to the IDs assigned
      * after sorting.
@@ -394,7 +393,7 @@ public class MemoryDictionary implements Dictionary {
     public int[] getIdMap() {
         return idMap;
     }
-    
+
     /**
      * Prepares a dictionary for dumping.  This can be used by subclasses
      * to do anything that needs doing before dumping begins.
@@ -403,7 +402,7 @@ public class MemoryDictionary implements Dictionary {
      */
     public void dumpPrepare(IndexEntry[] sortedEntries) {
     }
-    
+
     /**
      * Dumps the dictionary and the associated postings to files.  Once the
      * dumping is complete, the pointer in the file must be pointing to a
@@ -436,9 +435,10 @@ public class MemoryDictionary implements Dictionary {
             IDMap idMap,
             int[] postIDMap)
             throws java.io.IOException {
-        return dump(path, encoder, null, dictFile, postOut, renumber, idMap, postIDMap);
+        return dump(path, encoder, null, dictFile, postOut, renumber, idMap,
+                postIDMap);
     }
-    
+
     /**
      * Dumps the dictionary and the associated postings to files.  Once the
      * dumping is complete, the pointer in the file must be pointing to a
@@ -474,8 +474,8 @@ public class MemoryDictionary implements Dictionary {
             IDMap idMapType,
             int[] postIDMap)
             throws java.io.IOException {
-        log.log(logTag, 5, "Dumping: " + map.size() + " entries");
-        
+        logger.fine("Dumping: " + map.size() + " entries");
+
         //
         // Get a writer for the dictionary.  If we're not renumbering, it
         // will need to keep an ID to position map.
@@ -484,52 +484,52 @@ public class MemoryDictionary implements Dictionary {
                 partStats,
                 postOut.length,
                 renumber);
-        
+
         //
         // Set the max entry ID.
         dw.dh.maxEntryID = id;
-        
+
         //
         // Record the starting positions for each of our postings outputs.
         for(int i = 0; i < postOut.length; i++) {
             dw.dh.postStart[i] = postOut[i].position();
         }
-        
+
         //
         // Sort the entries in preparation for writing them out.  This will
         // generate an old-to-new ID mapping if we're renumbering.
         IndexEntry[] sorted = sort(renumber, idMapType);
-        
+
         //
         // Write the postings and entries.
         for(int i = 0; i < sorted.length; i++) {
-            
+
             //
             // Give subclasses a crack at the entry.
             processEntry(sorted[i]);
-            
-            
+
+
             //
             // Write it out.
-            if (sorted[i].writePostings(postOut, postIDMap) == true) {
+            if(sorted[i].writePostings(postOut, postIDMap) == true) {
                 dw.write(sorted[i]);
             }
         }
-        
+
         //
         // Flush whatever's left in the postings buffers.
         for(int i = 0; i < postOut.length; i++) {
             postOut[i].flush();
             dw.dh.postEnd[i] = postOut[i].position();
         }
-        
+
         //
         // Write the final dictionary.
         dw.finish(dictFile);
-        
+
         return sorted;
     }
-    
+
     /**
      * Processes a single entry before dumping it.  Does nothing at this
      * level.
@@ -538,41 +538,40 @@ public class MemoryDictionary implements Dictionary {
      */
     public void processEntry(IndexEntry e) {
     }
-    
+
     /**
      * A class that implements a dictionary iterator for this dictionary.
      */
     public class MemoryDictionaryIterator implements DictionaryIterator {
-        
+
         protected Iterator iter;
-        
+
         protected boolean actualOnly;
-        
+
         public MemoryDictionaryIterator() {
             iter = map.values().iterator();
         }
-        
+
         public boolean hasNext() {
             return iter.hasNext();
         }
-        
+
         public QueryEntry next() {
             return (QueryEntry) iter.next();
         }
-        
+
         public void remove() {
-            throw new
-                    UnsupportedOperationException("Dictionary is read only");
+            throw new UnsupportedOperationException("Dictionary is read only");
         }
-        
+
         public int estimateSize() {
             return 0;
         }
-        
+
         public int getNEntries() {
             return map.size();
         }
-        
+
         public void setActualOnly(boolean actualOnly) {
             this.actualOnly = actualOnly;
         }

@@ -21,22 +21,20 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.entry;
-
 
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Logger;
 
 /**
  * A class for holding cased dictionary entries.
  */
 public abstract class CasedEntry extends BaseEntry implements CasedPostingsEntry {
-    
+
     /**
      * A reference to the case insensitive postings that are associated
      * with this entry.
@@ -68,11 +66,11 @@ public abstract class CasedEntry extends BaseEntry implements CasedPostingsEntry
      * The offset of the case sensitive postings.
      */
     protected long[] offset;
-    
+
     /**
      * A log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * A tag.
@@ -85,7 +83,7 @@ public abstract class CasedEntry extends BaseEntry implements CasedPostingsEntry
     public CasedEntry() {
         this(null);
     }
-    
+
     /**
      * Creates a cased postings entry.
      */
@@ -106,7 +104,6 @@ public abstract class CasedEntry extends BaseEntry implements CasedPostingsEntry
 
     //
     // Remaining implementation of Entry.
-
     /**
      * Gets a new entry that contains a copy of the data in the given
      * entry.
@@ -115,12 +112,12 @@ public abstract class CasedEntry extends BaseEntry implements CasedPostingsEntry
      */
     public Entry getEntry() {
         CasedEntry ne = (CasedEntry) getEntry(name);
-        ne.id         = id;
-        ne.postIn     = postIn;
-        ne.dict       = dict;
-        ne.n          = new int[n.length];
-        ne.size       = new int[size.length];
-        ne.offset     = new long[offset.length];
+        ne.id = id;
+        ne.postIn = postIn;
+        ne.dict = dict;
+        ne.n = new int[n.length];
+        ne.size = new int[size.length];
+        ne.offset = new long[offset.length];
         for(int i = 0; i < n.length; i++) {
             ne.n[i] = n[i];
             ne.size[i] = size[i];
@@ -175,7 +172,7 @@ public abstract class CasedEntry extends BaseEntry implements CasedPostingsEntry
             b.byteEncode(offset[i]);
         }
     }
-            
+
     /**
      * Decodes the postings information associated with this entry.
      *
@@ -189,15 +186,14 @@ public abstract class CasedEntry extends BaseEntry implements CasedPostingsEntry
         }
         b.position(pos);
         for(int i = 0; i < n.length; i++) {
-            n[i]      = b.byteDecode();
-            size[i]   = b.byteDecode();
+            n[i] = b.byteDecode();
+            size[i] = b.byteDecode();
             offset[i] = b.byteDecodeLong();
-        }                
+        }
     }
-                
+
     //
     // Implementation of CasedPostingsEntry.
-
     /**
      * Sets the case insensitive entry for this entry.
      */
@@ -211,5 +207,4 @@ public abstract class CasedEntry extends BaseEntry implements CasedPostingsEntry
     public Entry getCaseInsensitiveEntry() {
         return ciEntry;
     }
-
 } // CasedEntry

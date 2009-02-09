@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.postings;
 
 import java.util.LinkedList;
@@ -30,10 +29,10 @@ import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Logger;
 
 /**
  * A set of fielded document vector postings.  We will store a set of document vector
@@ -41,32 +40,33 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  *
  * @author stgreen
  */
-public class FieldedDocumentVectorPostings implements Postings, MergeablePostings {
-    
+public class FieldedDocumentVectorPostings implements Postings,
+        MergeablePostings {
+
     DocumentVectorPostings[] postings;
-    
+
     DocumentVectorPostings full;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     public static final String logTag = "FDVP";
-    
+
     /** Creates a new instance of FieldedDocumentVectorPostings */
     public FieldedDocumentVectorPostings() {
         full = new DocumentVectorPostings();
     }
-    
+
     /**
      * Creates a set of fielded document vector postings from a buffer.
      */
     public FieldedDocumentVectorPostings(ReadableBuffer b) {
         int n = b.byteDecode();
         int maxField = b.byteDecode();
-        int[] offs = new int[maxField+1];
+        int[] offs = new int[maxField + 1];
         for(int i = 0; i < offs.length; i++) {
             offs[i] = -1;
         }
-        postings = new DocumentVectorPostings[maxField+1];
+        postings = new DocumentVectorPostings[maxField + 1];
         b.byteDecode();
         b.byteDecode();
         //
@@ -74,7 +74,7 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
         for(int i = 1; i < n; i++) {
             offs[b.byteDecode()] = b.byteDecode();
         }
-        
+
         //
         // Get the postion of the end of the offsets.
         int p = b.position();
@@ -86,54 +86,55 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
             }
         }
     }
-    
+
     public void setSkipSize(int size) {
     }
-    
+
     public void add(Occurrence o) {
-        
+
         DocOccurrence d = (DocOccurrence) o;
-        
+
         //
         // Make sure we have enough room for all of the postings.
         if(postings == null || d.fields.length > postings.length) {
-            DocumentVectorPostings[] temp = new DocumentVectorPostings[d.fields.length];
+            DocumentVectorPostings[] temp =
+                    new DocumentVectorPostings[d.fields.length];
             if(postings != null) {
                 System.arraycopy(postings, 0, temp, 0, postings.length);
             }
             postings = temp;
         }
-        
+
         for(int i = 0; i < d.fields.length; i++) {
             if(d.fields[i] == 0) {
                 continue;
             }
-            
+
             if(postings[i] == null) {
                 postings[i] = new DocumentVectorPostings();
             }
             postings[i].add(d);
         }
-        
+
         full.add(d);
     }
-    
+
     public int getN() {
         return full.getN();
     }
-    
+
     public int getLastID() {
         return full.getLastID();
     }
-    
+
     public long getTotalOccurrences() {
         return full.getTotalOccurrences();
     }
-    
+
     public int getMaxFDT() {
         return full.getMaxFDT();
     }
-    
+
     public void finish() {
         full.finish();
         if(postings != null) {
@@ -144,17 +145,17 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
             }
         }
     }
-    
+
     public int size() {
         return full.size();
     }
-    
+
     /**
      * Gets the buffers for these postings, which includes all of the buffers for the fields as
      * well as the buffer for the complete document and a set of offsets into the buffers.
      */
     public WriteableBuffer[] getBuffers() {
-        
+
         //
         // Compute the number of buffers that we'll be encoding here.
         int n = 1;
@@ -167,17 +168,17 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
                 }
             }
         }
-        
+
         LinkedList<WriteableBuffer> buffs = new LinkedList<WriteableBuffer>();
         WriteableBuffer offs = new ArrayBuffer(32);
-        
+
         //
         // Encode the number of fields to expect in the input and the maximum
         // field ID.
         offs.byteEncode(n);
         offs.byteEncode(maxField);
         long offset = 0;
-        
+
         //
         // The first set of postings is at offset 0 (after the offsets!)
         offs.byteEncode(0);
@@ -195,7 +196,7 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
         buffs.addFirst(offs);
         return buffs.toArray(new WriteableBuffer[0]);
     }
-    
+
     public void remap(int[] idMap) {
         full.remap(idMap);
         if(postings != null) {
@@ -206,7 +207,7 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
             }
         }
     }
-    
+
     public void merge(MergeablePostings mp, int[] map) {
         FieldedDocumentVectorPostings f = (FieldedDocumentVectorPostings) mp;
         full.merge(f.full, map);
@@ -215,7 +216,8 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
                 postings = new DocumentVectorPostings[f.postings.length];
             }
             if(postings.length < f.postings.length) {
-                DocumentVectorPostings[] temp = new DocumentVectorPostings[f.postings.length];
+                DocumentVectorPostings[] temp =
+                        new DocumentVectorPostings[f.postings.length];
                 System.arraycopy(postings, 0, temp, 0, postings.length);
                 postings = temp;
             }
@@ -227,11 +229,11 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
             }
         }
     }
-    
+
     public void append(Postings p, int start) {
-        append(p, start, null) ;
+        append(p, start, null);
     }
-    
+
     public void append(Postings p, int start, int[] idMap) {
         FieldedDocumentVectorPostings f = (FieldedDocumentVectorPostings) p;
         full.append(f.full, start, idMap);
@@ -240,7 +242,8 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
                 postings = new DocumentVectorPostings[f.postings.length];
             }
             if(postings.length < f.postings.length) {
-                DocumentVectorPostings[] temp = new DocumentVectorPostings[f.postings.length];
+                DocumentVectorPostings[] temp =
+                        new DocumentVectorPostings[f.postings.length];
                 System.arraycopy(postings, 0, temp, 0, postings.length);
                 postings = temp;
             }
@@ -254,7 +257,7 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
             }
         }
     }
-    
+
     /**
      * Gets the entries for a particular field in this set of postings as an array of weighted features.
      * @param field the ID of the field for which we want the entries.  If this is -1, then we
@@ -275,14 +278,15 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
         if(field == -1) {
             return full.getWeightedFeatures(docID, -1, dict, wf, wc);
         }
-        
+
         if(field < postings.length && postings[field] != null) {
-            return postings[field].getWeightedFeatures(docID, field, dict, wf, wc);
+            return postings[field].getWeightedFeatures(docID, field, dict, wf,
+                    wc);
         }
-        
+
         return new WeightedFeature[0];
     }
-    
+
     /**
      * Gets an iterator for a set of fielded postings.
      *
@@ -296,29 +300,32 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
         if(features == null) {
             return full.iterator(null);
         }
-        
-        PostingsIteratorFeatures nofields = (PostingsIteratorFeatures) features.clone();
+
+        PostingsIteratorFeatures nofields = (PostingsIteratorFeatures) features.
+                clone();
         nofields.setFields(null);
 
         int[] fields = features.getFields();
         if(fields == null) {
             return full.iterator(nofields);
         }
-        
+
         //
         // Look for a good field to return.
         for(int i = 0; i < fields.length; i++) {
             if(fields[i] == 1) {
-                if(postings != null && postings.length > i && postings[i] != null) {
+                if(postings != null && postings.length > i && postings[i] !=
+                        null) {
                     return postings[i].iterator(nofields);
                 }
             }
         }
-        
+
         return null;
     }
-    
-    private int addBuffers(List<WriteableBuffer> buffs, DocumentVectorPostings full) {
+
+    private int addBuffers(List<WriteableBuffer> buffs,
+            DocumentVectorPostings full) {
         int len = 0;
         WriteableBuffer[] b = full.getBuffers();
         for(int i = 0; i < b.length; i++) {
@@ -327,5 +334,4 @@ public class FieldedDocumentVectorPostings implements Postings, MergeablePosting
         }
         return len;
     }
-    
 }

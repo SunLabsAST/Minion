@@ -33,8 +33,8 @@ import com.sun.labs.minion.FieldInfo;
 import java.util.HashSet;
 import java.util.Set;
 import com.sun.labs.minion.pipeline.Stage;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * A <code>MarkUpAnalyzer</code> for HTML.  The heavy lifting is done by
@@ -77,8 +77,7 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
      */
     protected Stage stage;
 
-    protected static com.sun.labs.minion.util.MinionLog log = com.sun.labs.minion.util.MinionLog.getLog();
-    protected static String logTag = "HTML";
+    private Logger logger = Logger.getLogger(getClass().getName());
 
     public MarkUpAnalyzer_html(Reader r, int pos, String key) {
         super(r, pos, key);
@@ -101,8 +100,8 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
                 // NON-FATAL ERROR REPORT.
                 // IOException reading document, discontinuing.  Just act like
                 // we hit EOF.
-                MinionLog.getLog().
-                        error("HTML", 1, "Error reading " + key + " " + pos);
+                logger.warning("Error reading " + key +
+                        " " + pos + " truncating");
                 bufferEnd = -1;
             }
 

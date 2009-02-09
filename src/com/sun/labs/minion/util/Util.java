@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.util;
 
 import java.util.ArrayList;
@@ -34,21 +33,23 @@ import java.util.PriorityQueue;
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.minion.pipeline.Token;
 import java.io.File;
+import java.util.logging.Logger;
 
 /**
  * A class holding various static utility functions.
  */
 public class Util {
-    
+
     /**
      * A log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
+
     /**
      * A tag for our log entries.
      */
     protected static String logTag = "UTIL";
-    
+
     /**
      * Expands an array of bytes, copying the existing values.
      *
@@ -74,7 +75,7 @@ public class Util {
             String suffix) throws java.io.IOException {
         return File.createTempFile(prefix, suffix, path);
     }
-    
+
     /**
      * Expands an array of integers, copying the existing values.
      *
@@ -90,15 +91,15 @@ public class Util {
         System.arraycopy(a, 0, ret, 0, a.length);
         return ret;
     }
-    
+
     public static final int[] addExpand(int[] a, int n, int x) {
         if(n >= a.length) {
-            a = expandInt(a, a.length*2);
+            a = expandInt(a, a.length * 2);
         }
         a[n] = x;
         return a;
     }
-    
+
     public static double[] expandDouble(double[] a, int ns) {
         double[] ret = new double[ns];
         if(a != null) {
@@ -106,7 +107,7 @@ public class Util {
         }
         return ret;
     }
-    
+
     /**
      * Expands an array of floats, copying the existing values.
      *
@@ -122,7 +123,7 @@ public class Util {
         System.arraycopy(a, 0, ret, 0, a.length);
         return ret;
     }
-    
+
     /**
      * Expands an array of char, copying the existing values.
      *
@@ -138,7 +139,7 @@ public class Util {
         System.arraycopy(a, 0, ret, 0, a.length);
         return ret;
     }
-    
+
     /**
      * Expands any array, copying over the contents.  Slower (by about 30%)
      * than the type specific versions, but very easy to extend.
@@ -151,7 +152,7 @@ public class Util {
      * @see #expandFloat
      */
     public static final Object expand(Object a, int ns) {
-        
+
         if(a instanceof int[]) {
             return expandInt((int[]) a, ns);
         } else if(a instanceof float[]) {
@@ -182,7 +183,8 @@ public class Util {
             return ret;
         } else if(a instanceof float[][][]) {
             float[][][] ret = new float[ns][][];
-            System.arraycopy((float[][][]) a, 0, ret, 0, ((float[][][]) a).length);
+            System.arraycopy((float[][][]) a, 0, ret, 0,
+                    ((float[][][]) a).length);
             return ret;
         } else if(a instanceof String[][][]) {
             String[][][] ret = new String[ns][][];
@@ -193,7 +195,7 @@ public class Util {
             return null;
         }
     }
-    
+
     /**
      * Gets exactly the provided number of elements from an array and
      * returns an array of that size.
@@ -243,7 +245,7 @@ public class Util {
             return null;
         }
     }
-    
+
     /**
      * Converts a character to a unicode escape sequence.
      * @param c The character to convert.
@@ -252,7 +254,7 @@ public class Util {
     public static final String escape(char c) {
         return String.format("\\u%04d", (int) c);
     }
-    
+
     /**
      * Converts a String to a unicode escaped String.
      * @param s The string to escape.
@@ -261,7 +263,7 @@ public class Util {
     public static final String escape(String s) {
         return escape(s, false);
     }
-    
+
     /**
      * Converts a String to a unicode escaped String.
      * @param s The string to escape.
@@ -269,10 +271,10 @@ public class Util {
      * @return The string with unicode escapes
      */
     public static final String escape(String s, boolean leaveAscii) {
-        StringBuffer b = new StringBuffer();
-        for (int i = 0; i < s.length(); ++i) {
+        StringBuilder b = new StringBuilder();
+        for(int i = 0; i < s.length(); ++i) {
             char c = s.charAt(i);
-            if (leaveAscii && !UniversalTokenizer.isAsian(c)) {
+            if(leaveAscii && !UniversalTokenizer.isAsian(c)) {
                 b.append(c);
             } else {
                 b.append(escape(c));
@@ -280,13 +282,13 @@ public class Util {
         }
         return b.toString();
     }
-    
+
     /**
      * Converts a string to a sequence of four hex digit unicode
      * descriptions.
      */
     public static final String toHexDigits(String s) {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         for(int i = 0; i < s.length(); i++) {
             String u = Integer.toHexString((int) s.charAt(i));
             switch(u.length()) {
@@ -305,7 +307,7 @@ public class Util {
         }
         return b.toString();
     }
-    
+
     /**
      * Makes the case of two strings match, as closely as possible.
      *
@@ -321,7 +323,7 @@ public class Util {
         for(int i = 0; i < l; i++) {
             char c1 = x.charAt(i);
             char c2 = y.charAt(i);
-            
+
             //
             // If the characters are equal in lowercase, take the character
             // from x.
@@ -331,14 +333,14 @@ public class Util {
                 ret[i] = c2;
             }
         }
-        
+
         if(l < y.length()) {
             y.getChars(l, y.length(), ret, l);
         }
-        
+
         return new String(ret);
     }
-    
+
     /**
      * Generates a string containing the elements of the array.
      */
@@ -348,7 +350,7 @@ public class Util {
         }
         return arrayToString(a, 0, a.length);
     }
-    
+
     /**
      * Generates a string containing the elements of the array.
      */
@@ -356,7 +358,7 @@ public class Util {
         if(a == null) {
             return "null";
         }
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append('[');
         for(int i = s; i < e; i++) {
             if(i > s) {
@@ -367,14 +369,14 @@ public class Util {
         b.append(']');
         return b.toString();
     }
-    
+
     public static final String arrayToString(boolean[] a) {
         if(a == null) {
             return "null";
         }
         return arrayToString(a, 0, a.length);
     }
-    
+
     /**
      * Generates a string containing the elements of the array.
      */
@@ -382,7 +384,7 @@ public class Util {
         if(a == null) {
             return "null";
         }
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append('[');
         for(int i = s; i < e; i++) {
             if(i > s) {
@@ -393,7 +395,7 @@ public class Util {
         b.append(']');
         return b.toString();
     }
-    
+
     /**
      * Generates a string containing the elements of the array.
      */
@@ -403,7 +405,7 @@ public class Util {
         }
         return arrayToString(a, 0, a.length);
     }
-    
+
     /**
      * Generates a string containing the elements of the array.
      */
@@ -411,7 +413,7 @@ public class Util {
         if(a == null) {
             return "null";
         }
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append('[');
         for(int i = s; i < e; i++) {
             if(i > s) {
@@ -422,19 +424,19 @@ public class Util {
         b.append(']');
         return b.toString();
     }
-    
+
     public static String arrayToString(String[] a) {
         if(a == null) {
             return null;
         }
         return arrayToString(a, 0, a.length);
     }
-    
+
     public static String arrayToString(String[] a, int s, int e) {
         if(a == null) {
             return null;
         }
-        
+
         StringBuilder b = new StringBuilder();
         b.append('[');
         for(int i = s; i < e; i++) {
@@ -446,19 +448,19 @@ public class Util {
         b.append(']');
         return b.toString();
     }
-    
+
     public static String arrayToString(Object[] a) {
         if(a == null) {
             return null;
         }
         return arrayToString(a, 0, a.length);
     }
-    
+
     public static String arrayToString(Object[] a, int s, int e) {
         if(a == null) {
             return null;
         }
-        
+
         StringBuilder b = new StringBuilder();
         b.append('[');
         for(int i = s; i < e; i++) {
@@ -470,11 +472,11 @@ public class Util {
         b.append(']');
         return b.toString();
     }
-    
+
     public static String arrayToString(double[] a) {
         return arrayToString(a, 0, a.length);
     }
-    
+
     /**
      * Generates a string containing the elements of the array.
      */
@@ -482,7 +484,7 @@ public class Util {
         if(a == null) {
             return "null";
         }
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append('[');
         for(int i = s; i < e; i++) {
             if(i > s) {
@@ -493,12 +495,12 @@ public class Util {
         b.append(']');
         return b.toString();
     }
-    
+
     /**
      * Generates a string containing the elements of the array.
      */
     public static final String arrayToString(long[] a, int s, int e) {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append('[');
         for(int i = s; i < e; i++) {
             if(i > s) {
@@ -509,7 +511,7 @@ public class Util {
         b.append(']');
         return b.toString();
     }
-    
+
     /**
      * Gets the extension from the given filename.
      *
@@ -521,25 +523,25 @@ public class Util {
         if(file == null) {
             return "";
         }
-        
+
         int pos = file.lastIndexOf('.');
         if(pos >= 0) {
-            return file.substring(pos+1);
+            return file.substring(pos + 1);
         } else {
             return "";
         }
     }
-    
+
     /**
      * Intersects two arrays of integers, returning another array.
      * Elements less than 0 are skipped.
      */
     public static int[] intersect(int[] a1, int[] a2) {
-        int 	i1 = 0;
-        int 	i2 = 0;
-        int[] ret  = new int[Math.min(a1.length, a2.length)];
-        int 	rp = 0;
-        
+        int i1 = 0;
+        int i2 = 0;
+        int[] ret = new int[Math.min(a1.length, a2.length)];
+        int rp = 0;
+
         while(i1 < a1.length && i2 < a2.length) {
             int d1 = a1[i1];
             if(d1 < 0) {
@@ -551,34 +553,34 @@ public class Util {
                 i2++;
                 continue;
             }
-            
+
             if(d1 < d2) {
                 i1++;
                 continue;
             }
-            
+
             if(d1 > d2) {
                 i2++;
                 continue;
             }
-            
+
             ret[rp++] = d1;
             i1++;
             i2++;
         }
         return ret;
     }
-    
+
     /**
      * Unions two arrays of integers, returning another array.  Elements
      * less than 0 are skipped.
      */
     public static int[] union(int[] a1, int[] a2) {
-        int 	i1 = 0;
-        int 	i2 = 0;
-        int[] ret  = new int[a1.length + a2.length];
-        int 	rp = 0;
-        
+        int i1 = 0;
+        int i2 = 0;
+        int[] ret = new int[a1.length + a2.length];
+        int rp = 0;
+
         while(i1 < a1.length && i2 < a2.length) {
             int d1 = a1[i1];
             if(d1 < 0) {
@@ -590,41 +592,41 @@ public class Util {
                 i2++;
                 continue;
             }
-            
+
             if(d1 < d2) {
                 ret[rp++] = d1;
                 i1++;
                 continue;
             }
-            
+
             if(d1 > d2) {
                 ret[rp++] = d2;
                 i2++;
                 continue;
             }
-            
+
             ret[rp++] = d1;
             i1++;
             i2++;
         }
-        
+
         if(i1 < a1.length) {
             System.arraycopy(a1, i1, ret, rp, a1.length - i1);
         }
-        
+
         if(i2 < a2.length) {
             System.arraycopy(a2, i2, ret, rp, a2.length - i2);
         }
-        
+
         return ret;
     }
-    
+
     /**
      * Maps the asian characters in a string into unicode escapes.  Returns
      * the mapped string, or null if there were no such characters.
      */
     public static String mapAsian(String s) {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         for(int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             if(UniversalTokenizer.isAsian(c)) {
@@ -646,17 +648,17 @@ public class Util {
                 b.append(c);
             }
         }
-        
+
         return b.toString();
     }
-    
+
     /**
      * Encodes <>"'& characters
      * @param s string to be html encoded
      * @param sb string buffer to hold results
      */
     public static StringBuffer htmlEncode(String s, StringBuffer sb) {
-        for (int i=0; i<s.length(); i++) {
+        for(int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             switch(c) {
                 case '<':
@@ -681,7 +683,7 @@ public class Util {
         }
         return sb;
     }
-    
+
     /**
      * Changes the characters in an array to lower case,
      * destructively.
@@ -691,7 +693,7 @@ public class Util {
     public static final char[] toLowerCase(char[] c) {
         return toLowerCase(c, 0, c.length);
     }
-    
+
     /**
      * Changes the characters in a region of an array to lower case,
      * destructively.
@@ -706,7 +708,7 @@ public class Util {
         }
         return c;
     }
-    
+
     /**
      * Changes the characters in an array to upper case, destructively.
      *
@@ -715,7 +717,7 @@ public class Util {
     public static final char[] toUpperCase(char[] c) {
         return toUpperCase(c, 0, c.length);
     }
-    
+
     /**
      * Changes the characters in a region of an array to upper case,
      * destructively.
@@ -730,7 +732,7 @@ public class Util {
         }
         return c;
     }
-    
+
     /**
      * Gets a string that does not share a common initial substring with
      * another string.
@@ -749,7 +751,7 @@ public class Util {
         }
         return s2.substring(i);
     }
-    
+
     /**
      * Finds the common prefix length between two arrays of characters.
      * Returns the number of characters that the two arrays share.
@@ -767,7 +769,7 @@ public class Util {
         }
         return end;
     }
-    
+
     /**
      * finds the common prefix length between two sections of two arrays of
      * characters.  Returns the number of characters in the initial shared
@@ -784,14 +786,14 @@ public class Util {
     public static final int findInitial(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2) {
         int end = Math.min(e1 - b1, e2 - b2);
-        for(int i = 0, i1=b1, i2=b2; i < end; i++, i1++, i2++) {
+        for(int i = 0, i1 = b1, i2 = b2; i < end; i++, i1++, i2++) {
             if(c1[i1] != c2[i2]) {
                 return i;
             }
         }
         return end;
     }
-    
+
     /**
      * Compares two arrays of characters, as in the <code>String</code>
      * compareTo function.
@@ -802,7 +804,7 @@ public class Util {
     public static final int compareArray(char[] c1, char[] c2) {
         return compareArray(c1, 0, c1.length, c2, 0, c2.length);
     }
-    
+
     /**
      * Compares two arrays of characters, as in the <code>String</code>
      * compareTo function.
@@ -819,18 +821,18 @@ public class Util {
      */
     public static final int compareArray(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2) {
-        
+
         int n = Math.min(e1 - b1, e2 - b2);
         for(int i = 0, i1 = b1, i2 = b2; i < n; i++, i1++, i2++) {
             char a = c1[i1];
             char b = c2[i2];
-            if (a != b) {
+            if(a != b) {
                 return a - b;
             }
         }
         return e1 - b1 - (e2 - b2);
     }
-    
+
     /**
      * Compares two arrays of characters in a case-insensitive manner.
      *
@@ -850,13 +852,13 @@ public class Util {
         for(int i = 0, i1 = b1, i2 = b2; i < n; i++, i1++, i2++) {
             char a = CharUtils.toLowerCase[c1[i1]];
             char b = CharUtils.toLowerCase[c2[i2]];
-            if (a != b) {
+            if(a != b) {
                 return a - b;
             }
         }
         return e1 - b1 - (e2 - b2);
     }
-    
+
     /**
      * Tests whether a given array of characters starts with another.
      * We're checking if <code>c1</code> starts with <code>c2</code>.
@@ -874,30 +876,30 @@ public class Util {
     public static final boolean startsWith(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             boolean ci) {
-        
+
         int l1 = e1 - b1;
         int l2 = e2 - b2;
-        
+
         //
         // If c2 is longer than c1, we're done.
         if(l2 > l1) {
             return false;
         }
-        
+
         char a, b;
-        
+
         //
         // Now walk the two arrays.
         for(int i = 0, i1 = b1, i2 = b2; i < l2; i++, i1++, i2++) {
             a = ci ? CharUtils.toLowerCase[c1[i1]] : c1[i1];
             b = ci ? CharUtils.toLowerCase[c2[i2]] : c2[i2];
-            if (a != b) {
+            if(a != b) {
                 return false;
             }
         }
         return true;
     }
-    
+
     /**
      * Tests whether a given array of characters ends with another.  We're
      * checking if <code>c1</code> ends with <code>c2</code>.
@@ -915,30 +917,30 @@ public class Util {
     public static final boolean endsWith(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             boolean ci) {
-        
+
         int l1 = e1 - b1;
         int l2 = e2 - b2;
-        
+
         //
         // If c2 is longer than c1, we're done.
         if(l2 > l1) {
             return false;
         }
-        
+
         char a, b;
-        
+
         //
         // Now walk the two arrays.
         for(int i = l2, i1 = e1 - 1, i2 = e2 - 1; i > 0; i--, i1--, i2--) {
             a = ci ? CharUtils.toLowerCase[c1[i1]] : c1[i1];
             b = ci ? CharUtils.toLowerCase[c2[i2]] : c2[i2];
-            if (a != b) {
+            if(a != b) {
                 return false;
             }
         }
         return true;
     }
-    
+
     /**
      * Tests whether a given array of characters is contained in another.
      * We're checking if <code>c1</code> contains <code>c2</code>.
@@ -956,28 +958,28 @@ public class Util {
     public static final int indexOf(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             boolean ci) {
-        
+
         int l1 = e1 - b1;
         int l2 = e2 - b2;
-        
+
         //
         // If c2 is longer than c1, we're done.
         if(l2 > l1) {
             return -1;
         }
-        
+
         //
         // We need the first character.
         char first = ci ? CharUtils.toLowerCase[c2[b2]] : c2[b2];
         char c;
-        
+
         //
         // Loop through c1 looking for the first character.  This is a bit
         // inefficient, but shouldn't be a lot worse than String's indexOf
         // method, and we don't incur the String creation overhead.
         for(int i = b1; i < e1; i++) {
             c = ci ? CharUtils.toLowerCase[c1[i]] : c1[i];
-            
+
             if(c == first) {
                 if(equalToN(c1, i, e1, c2, b2, e2, l2, ci)) {
                     return i - b1;
@@ -986,7 +988,7 @@ public class Util {
         }
         return -1;
     }
-    
+
     /**
      * Tests whether <em>n</em> characters of  two arrays are equal.
      *
@@ -1003,30 +1005,30 @@ public class Util {
     public static final boolean equalToN(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             int n, boolean ci) {
-        
+
         int l1 = e1 - b1;
         int l2 = e2 - b2;
-        
+
         //
         // If they're different lengths, we're done.
         if(n > l1 || n > l2) {
             return false;
         }
-        
+
         char a, b;
-        
+
         //
         // Now walk the two arrays.
         for(int i = 0, i1 = b1, i2 = b2; i < n; i++, i1++, i2++) {
             a = ci ? CharUtils.toLowerCase[c1[i1]] : c1[i1];
             b = ci ? CharUtils.toLowerCase[c2[i2]] : c2[i2];
-            if (a != b) {
+            if(a != b) {
                 return false;
             }
         }
         return true;
     }
-    
+
     /**
      * Tests whether a two arrays of characters are equal.
      *
@@ -1042,30 +1044,30 @@ public class Util {
     public static final boolean equalTo(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             boolean ci) {
-        
+
         int l1 = e1 - b1;
         int l2 = e2 - b2;
-        
+
         //
         // If they're different lengths, we're done.
         if(l2 != l1) {
             return false;
         }
-        
+
         char a, b;
-        
+
         //
         // Now walk the two arrays.
         for(int i = 0, i1 = b1, i2 = b2; i < l2; i++, i1++, i2++) {
             a = ci ? CharUtils.toLowerCase[c1[i1]] : c1[i1];
             b = ci ? CharUtils.toLowerCase[c2[i2]] : c2[i2];
-            if (a != b) {
+            if(a != b) {
                 return false;
             }
         }
         return true;
     }
-    
+
     /**
      * Compares two arrays of characters so that any cased variants of a
      * string come directly after the lowercase version of a string.  This
@@ -1085,7 +1087,7 @@ public class Util {
             char[] a2, int b2, int e2) {
         return caseCompareArray(a1, b1, e1, a2, b2, e2, false);
     }
-    
+
     /**
      * Compares two arrays of characters so that any cased variants of a
      * string come directly after the lowercase version of a string.  This
@@ -1107,7 +1109,7 @@ public class Util {
     public static final int caseCompareArray(char[] a1, int b1, int e1,
             char[] a2, int b2, int e2,
             boolean ignoreLength) {
-        
+
         //
         // Now compare the strings case-insensitively.
         int caseCmp = 0;
@@ -1116,25 +1118,25 @@ public class Util {
         int l2 = e2 - b2;
         int e = Math.min(l1, l2);
         int i, i1, i2;
-        
+
         //
         // Loop to the end of the shortest string.
-        for(i = 0, i1=b1, i2=b2; i < e; i++, i1++, i2++) {
-            
+        for(i = 0, i1 = b1, i2 = b2; i < e; i++, i1++, i2++) {
+
             c1 = a1[i1];
             c2 = a2[i2];
-            
+
             //
             // Catch a character difference...
             if(c1 != c2) {
-                
+
                 //
                 // ... which we ignore for now if it's only a case
                 // difference, and only if it's the first case difference
                 // that we've found.
                 lc1 = CharUtils.toLowerCase[c1];
                 lc2 = CharUtils.toLowerCase[c2];
-                
+
                 //
                 // The lower case versions are the same, and we haven't
                 // found a case difference so far.
@@ -1149,7 +1151,7 @@ public class Util {
                         }
                     }
                 } else {
-                    
+
                     //
                     // This really a different character, so return the
                     // difference.
@@ -1157,19 +1159,19 @@ public class Util {
                 }
             }
         }
-        
+
         //
         // If the lengths are the same, then we return the result due to
         // the first case difference that we found.
         if(l1 == l2 || (ignoreLength && i == e && e == l1)) {
             return caseCmp;
         }
-        
+
         //
         // The shortest is the earliest.
         return l1 - l2;
     }
-    
+
     /**
      * Sorts an array of <CODE>Object</CODE> using heap sort.
      * @param x The array to sort.
@@ -1177,7 +1179,7 @@ public class Util {
     public static final <T> T[] sort(T x[]) {
         return sort(x, 0, x.length);
     }
-    
+
     /**
      * Sorts the specified sub-array of <code>Object</code>s into ascending
      * order.  We're using a heap sort to avoing stack overflow for very large
@@ -1191,16 +1193,16 @@ public class Util {
         for(int i = off; i < len; i++) {
             pq.offer(x[i]);
         }
-        for(int i = off ; i < len; i++) {
+        for(int i = off; i < len; i++) {
             x[i] = pq.poll();
         }
         return x;
     }
-    
+
     public static final <T> T[] sort(T x[], Comparator<T> comp) {
         return sort(x, 0, x.length, comp);
     }
-    
+
     /**
      * Sorts the specified sub-array of <code>Object</code>s into ascending
      * order.  This is the tuned quicksort from
@@ -1214,12 +1216,12 @@ public class Util {
         for(int i = off; i < len; i++) {
             pq.offer(x[i]);
         }
-        for(int i = off ; i < len; i++) {
+        for(int i = off; i < len; i++) {
             x[i] = pq.poll();
         }
         return x;
     }
-        
+
     /**
      * Matches the provided wildcard pattern against the given term.
      * Wildcard patterns are made up of characters and the following
@@ -1238,7 +1240,7 @@ public class Util {
         return match(pattern.toCharArray(), term.toCharArray(),
                 term.length());
     }
-    
+
     /**
      * Matches the provided pattern against the given term.
      * @param pattern The wildcard pattern.
@@ -1250,7 +1252,7 @@ public class Util {
      */
     public static final boolean match(String pattern, String term,
             boolean caseSensitive) {
-        if (caseSensitive) {
+        if(caseSensitive) {
             return match(pattern.toCharArray(), term.toCharArray(),
                     term.length());
         } else {
@@ -1262,7 +1264,7 @@ public class Util {
                     term.length());
         }
     }
-    
+
     /**
      * Matches the provided pattern against the given term.
      * @param pattern The wildcard pattern.  If caseSensitive is false,
@@ -1275,7 +1277,7 @@ public class Util {
      */
     public static final boolean match(char[] pattern, String term,
             boolean caseSensitive) {
-        if (caseSensitive) {
+        if(caseSensitive) {
             return match(pattern,
                     term.toCharArray(),
                     term.length());
@@ -1284,7 +1286,7 @@ public class Util {
             return match(pattern, termArray, term.length());
         }
     }
-    
+
     /**
      * Matches the provided wildcard pattern against the given term.
      * Wildcard patterns are made up of characters and the following
@@ -1302,7 +1304,7 @@ public class Util {
     public static final boolean match(char[] pattern, char[] term) {
         return match(pattern, term, term.length);
     }
-    
+
     /**
      * Matches the provided pattern against the given term.
      * @param pattern The wildcard pattern.
@@ -1315,7 +1317,7 @@ public class Util {
     public static final boolean match(char[] pattern,
             char[] term,
             boolean caseSensitive) {
-        if (caseSensitive) {
+        if(caseSensitive) {
             return match(pattern, term, term.length);
         } else {
             char[] patternArray = pattern.clone();
@@ -1326,7 +1328,7 @@ public class Util {
                     term.length);
         }
     }
-    
+
     /**
      * Matches the provided pattern against the given term.
      * @param pattern The wildcard pattern.
@@ -1341,7 +1343,7 @@ public class Util {
             char[] term,
             boolean caseSensitive,
             int length) {
-        if (caseSensitive) {
+        if(caseSensitive) {
             return match(pattern, term, length);
         } else {
             char[] patternArray = pattern.clone();
@@ -1352,7 +1354,7 @@ public class Util {
                     length);
         }
     }
-    
+
     /**
      * Matches the provided pattern against the given term.
      * @param pattern The wildcard pattern.
@@ -1369,10 +1371,10 @@ public class Util {
             boolean caseSensitive,
             int begin,
             int end) {
-        int length = end-begin;
+        int length = end - begin;
         char[] termArray = new char[length];
         System.arraycopy(term, begin, termArray, 0, length);
-        if (caseSensitive) {
+        if(caseSensitive) {
             return match(pattern, termArray, length);
         } else {
             char[] patternArray = pattern.clone();
@@ -1381,7 +1383,7 @@ public class Util {
             return match(patternArray, termArray, length);
         }
     }
-    
+
     /**
      * Matches the provided pattern against the given term.
      * @param pattern The wildcard pattern.
@@ -1392,22 +1394,22 @@ public class Util {
     public static final boolean match(char[] pattern,
             char[] term,
             int length) {
-        int [] state 	   	   = null;
-        ArrayList<int[]> 	alts 	   = new ArrayList<int[]>();
-        HashMap<Long,Long> doneStates = new HashMap<Long,Long>();
-        Long 		stateCode;
-        int 		position   = length - 1;
-        int 		i 	   = pattern.length - 1;
-        boolean 	matched    = true;
-        
-        while ((matched && ((i > -1)) ||
+        int[] state = null;
+        ArrayList<int[]> alts = new ArrayList<int[]>();
+        HashMap<Long, Long> doneStates = new HashMap<Long, Long>();
+        Long stateCode;
+        int position = length - 1;
+        int i = pattern.length - 1;
+        boolean matched = true;
+
+        while((matched && ((i > -1)) ||
                 ((position > -1) && alts.size() > 0)) ||
                 (!matched && alts.size() > 0)) {
-            if ((i < 0) || !matched || (position < 0)) {
-                if ((position < 0) && matched && (i > -1) &&
+            if((i < 0) || !matched || (position < 0)) {
+                if((position < 0) && matched && (i > -1) &&
                         (pattern[i] == '*')) {
                     //go on and try these pattern cases
-                } else if (alts.size() > 0) {
+                } else if(alts.size() > 0) {
                     int last = alts.size() - 1;
                     state = alts.get(last);
                     alts.remove(last);
@@ -1421,71 +1423,71 @@ public class Util {
                     break;
                 }
             }
-            
+
             //
             // stateCodes are only constructed for position and i >= 0
-            if (position > -1) {
+            if(position > -1) {
                 stateCode = new Long(((long) position << 32) |
                         ((long) i));
-                if (doneStates.get(stateCode) == null) {
+                if(doneStates.get(stateCode) == null) {
                     //
                     // block alts for states already seen
                     doneStates.put(stateCode, stateCode);
                 }
             }
-            
+
             //try to match pattern element:
-            
+
             //check left end conditions
-            if (position < 0) {
-                if (pattern[i] == '*') {
+            if(position < 0) {
+                if(pattern[i] == '*') {
                     i--;
                 } else {
                     matched = false;
                 }
-            } else if (pattern[i] == '*') {
+            } else if(pattern[i] == '*') {
                 //
                 //"*" pattern can match any number of times (including zero)
-                
-                if (i == 0) {
+
+                if(i == 0) {
                     break;
                 } else {
-                    char prev = pattern[i-1];
-                    if (prev == '?') { //reorder this and match the ?
+                    char prev = pattern[i - 1];
+                    if(prev == '?') { //reorder this and match the ?
                         pattern[i] = prev;
-                        pattern[i-1] = '*';
+                        pattern[i - 1] = '*';
                         position--;
                         i--;
-                    } else if (prev == '*') {
+                    } else if(prev == '*') {
                         //
                         // Shouldn't get this, but deal with it
                         i--;
-                    } else if (prev == term[position]) {
+                    } else if(prev == term[position]) {
                         //save alt to skip anyway
-                        altState(position-1, i, alts, doneStates);
+                        altState(position - 1, i, alts, doneStates);
                         position--;
                         //we have already matched pattern[i-1]
-                        i = i-2;
+                        i = i - 2;
                     } else {
                         //move left in word and keep looking
                         position--;
                     }
                 }
-            } else if (pattern[i] == '?') {
-                
+            } else if(pattern[i] == '?') {
+
                 //"?" pattern matches any single character
                 position--;
                 i--;
-            } else if (pattern[i] != term[position]) {
+            } else if(pattern[i] != term[position]) {
                 //match pattern characters against input character
                 // doesn't match here
                 matched = false;
-            } else if ((i == 0) && (pattern[0] != '*') &&
+            } else if((i == 0) && (pattern[0] != '*') &&
                     (position > 0)) {
                 // otherwise, character matches pattern -- decide what to
                 // do next
                 matched = false;
-            } else if ((i == 0) && matched &&
+            } else if((i == 0) && matched &&
                     ((pattern[0] == '*') || (position <= 0))) {
                 break; //match is true
             } else {
@@ -1494,31 +1496,31 @@ public class Util {
                 position--;
             }
         }
-        if (matched && (pattern[0] != '*') &&
+        if(matched && (pattern[0] != '*') &&
                 ((position > 0) || (position > i))) {
             matched = false;
         }
         return matched;
     }
-    
+
     private static void altState(int position, int i,
             ArrayList<int[]> altStates,
-            HashMap<Long,Long> doneStates) {
+            HashMap<Long, Long> doneStates) {
         Long stateCode = new Long(((long) position << 32) |
                 ((long) i));
         //only need stateCodes for position and i >= 0
         //only add an altState if haven't already done
         //or already visited that state
-        if ((position > -1) && (i > -1) &&
+        if((position > -1) && (i > -1) &&
                 (doneStates.get(stateCode) == null)) {
             doneStates.put(stateCode, stateCode);
-            int[]  state = new int[2];
+            int[] state = new int[2];
             state[0] = position;
             state[1] = i;
             altStates.add(state);
         }
     }
-    
+
     /**
      * Matches a given word against a target stem and returns a stem match
      * score.  This score indicates the likelihood that the given word has
@@ -1536,7 +1538,7 @@ public class Util {
                 target.toCharArray(),
                 0, target.length());
     }
-    
+
     /**
      * Matches a given word against a target stem and returns a stem match
      * score.  This score indicates the likelihood that the given word has
@@ -1550,12 +1552,12 @@ public class Util {
      */
     public static final double matchStem(char[] wordString, int b1, int e1,
             char[] target, int b2, int e2) {
-        
+
         int initial = findInitial(wordString, b1, e1, target, b2, e2);
         int maxLength = Math.max(e1 - b1, e2 - b2);
-        return (double) initial/ (double) maxLength;
+        return (double) initial / (double) maxLength;
     }
-    
+
     /**
      * Calculate the Levenshtein edit distance between two strings.
      *
@@ -1564,40 +1566,40 @@ public class Util {
      * @return the number of edits required to change str1 into str2
      */
     public static int levenshteinDistance(String str1, String str2) {
-        int d[][] = new int[str1.length()+1][str2.length()+1];
-        
-        for(int i=0;i<=str1.length();i++) {
+        int d[][] = new int[str1.length() + 1][str2.length() + 1];
+
+        for(int i = 0; i <= str1.length(); i++) {
             d[i][0] = i;
         }
-        for(int j=0;j<=str2.length();j++) {
+        for(int j = 0; j <= str2.length(); j++) {
             d[0][j] = j;
         }
-        
+
         int cost;
-        for(int i=1;i<=str1.length();i++) {
-            for(int j=1;j<=str2.length();j++) {
-                if(str1.charAt(i-1) == str2.charAt(j-1)) {
+        for(int i = 1; i <= str1.length(); i++) {
+            for(int j = 1; j <= str2.length(); j++) {
+                if(str1.charAt(i - 1) == str2.charAt(j - 1)) {
                     cost = 0;
                 } else {
                     cost = 1;
                 }
-                
-                int a1 = d[i-1][j]+1;
-                int a2 = d[i][j-1]+1;
-                int a3 = d[i-1][j-1] + cost;
-                
-                d[i][j] = java.lang.Math.min(a1,java.lang.Math.min(a2,a3));
+
+                int a1 = d[i - 1][j] + 1;
+                int a2 = d[i][j - 1] + 1;
+                int a3 = d[i - 1][j - 1] + cost;
+
+                d[i][j] = java.lang.Math.min(a1, java.lang.Math.min(a2, a3));
             }
         }
-        
+
         return d[str1.length()][str2.length()];
     }
-    
+
     /**
      * Makes a string containing the list.
      */
     public static final String listToString(List l) {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
         b.append("[");
         synchronized(l) {
             boolean first = true;
@@ -1613,7 +1615,7 @@ public class Util {
         b.append("]");
         return b.toString();
     }
-    
+
     /**
      * Do a binary search on a region of an array.  A curious omission
      * from java.util.Arrays.
@@ -1632,88 +1634,88 @@ public class Util {
      *	       and only if the key is found.
      */
     public static int binarySearch(int[] a, int low, int high, int key) {
-        while (low <= high) {
-            int mid =(low + high)/2;
+        while(low <= high) {
+            int mid = (low + high) / 2;
             int midVal = a[mid];
-            if (midVal < key) {
+            if(midVal < key) {
                 low = mid + 1;
-            }
-            else if (midVal > key) {
+            } else if(midVal > key) {
                 high = mid - 1;
-            }
-            else {
+            } else {
                 return mid; // key found
             } // key found
         }
         return -(low + 1);  // key not found.
     }
-    
+
     /**
      * Does a tandem sort of two arrays:  one of <code>int</code> one of
      * <code>float</code>.
      */
     public static void sort(int x[], float y[], int off, int len) {
         // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++) {
-                for (int j = i; j > off && x[j - 1] > x[j];
+        if(len < 7) {
+            for(int i = off; i < len + off; i++) {
+                for(int j = i; j > off && x[j - 1] > x[j];
                         j--) {
                     swap(x, y, j, j - 1);
                 }
             }
             return;
         }
-        
+
         // Choose a partition element, v
-        int m = off + len/2;       // Small arrays, middle element
-        if (len > 7) {
+        int m = off + len / 2;       // Small arrays, middle element
+        if(len > 7) {
             int l = off;
             int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
+            if(len > 40) {        // Big arrays, pseudomedian of 9
+                int s = len / 8;
+                l = med3(x, l, l + s, l + 2 * s);
+                m = med3(x, m - s, m, m + s);
+                n = med3(x, n - 2 * s, n - s, n);
             }
             m = med3(x, l, m, n); // Mid-size, med of 3
         }
         int v = x[m];
-        
+
         // Establish Invariant: v* (<v)* (>v)* v*
         int a = off, b = a, c = off + len - 1, d = c;
         while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v) {
+            while(b <= c && x[b] <= v) {
+                if(x[b] == v) {
                     swap(x, y, a++, b);
                 }
                 b++;
             }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v) {
+            while(c >= b && x[c] >= v) {
+                if(x[c] == v) {
                     swap(x, y, c, d--);
                 }
                 c--;
             }
-            if (b > c) {
+            if(b > c) {
                 break;
             }
             swap(x, y, b++, c--);
         }
-        
+
         // Swap partition elements back to middle
         int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, y, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, y, b,   n-s, s);
-        
+        s = Math.min(a - off, b - a);
+        vecswap(x, y, off, b - s, s);
+        s = Math.min(d - c, n - d - 1);
+        vecswap(x, y, b, n - s, s);
+
         // Recursively sort non-partition-elements
-        if ((s = b-a) > 1) {
+        if((s = b - a) > 1) {
             sort(x, y, off, s);
         }
-        if ((s = d-c) > 1) {
+        if((s = d - c) > 1) {
             sort(x, y, n - s, s);
         }
     }
-    
+
     /**
      * Swaps x[a] with x[b] and y[a] with y[b].
      */
@@ -1721,104 +1723,105 @@ public class Util {
         int t = x[a];
         x[a] = x[b];
         x[b] = t;
-        
+
         float tf = y[a];
         y[a] = y[b];
         y[b] = tf;
     }
-    
+
     /**
      * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
      */
     private static void vecswap(int x[], float[] y, int a, int b, int n) {
         int t;
         float tf;
-        for (int i=0; i<n; i++, a++, b++) {
+        for(int i = 0; i < n; i++, a++, b++) {
             t = x[a];
             x[a] = x[b];
             x[b] = t;
-            
+
             tf = y[a];
             y[a] = y[b];
             y[b] = tf;
         }
     }
-    
+
     /**
      * Returns the index of the median of the three indexed integers.
      */
     public static int med3(int x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-            (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
+        return (x[a] < x[b] ? (x[b] < x[c] ? b : x[a] < x[c] ? c : a) : (x[b] >
+                x[c] ? b : x[a] > x[c] ? c : a));
     }
-    
+
     /**
      * Does a tandem sort of two arrays:  one of <code>int</code> one of
      * <code>float</code>.
      */
     public static void sort(int x[], int y[], int off, int len) {
         // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++) {
-                for (int j = i; j > off && x[j - 1] > x[j];
+        if(len < 7) {
+            for(int i = off; i < len + off; i++) {
+                for(int j = i; j > off && x[j - 1] > x[j];
                         j--) {
                     swap(x, y, j, j - 1);
                 }
             }
             return;
         }
-        
+
         // Choose a partition element, v
-        int m = off + len/2;       // Small arrays, middle element
-        if (len > 7) {
+        int m = off + len / 2;       // Small arrays, middle element
+        if(len > 7) {
             int l = off;
             int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
+            if(len > 40) {        // Big arrays, pseudomedian of 9
+                int s = len / 8;
+                l = med3(x, l, l + s, l + 2 * s);
+                m = med3(x, m - s, m, m + s);
+                n = med3(x, n - 2 * s, n - s, n);
             }
             m = med3(x, l, m, n); // Mid-size, med of 3
         }
         int v = x[m];
-        
+
         // Establish Invariant: v* (<v)* (>v)* v*
         int a = off, b = a, c = off + len - 1, d = c;
         while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v) {
+            while(b <= c && x[b] <= v) {
+                if(x[b] == v) {
                     swap(x, y, a++, b);
                 }
                 b++;
             }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v) {
+            while(c >= b && x[c] >= v) {
+                if(x[c] == v) {
                     swap(x, y, c, d--);
                 }
                 c--;
             }
-            if (b > c) {
+            if(b > c) {
                 break;
             }
             swap(x, y, b++, c--);
         }
-        
+
         // Swap partition elements back to middle
         int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, y, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, y, b,   n-s, s);
-        
+        s = Math.min(a - off, b - a);
+        vecswap(x, y, off, b - s, s);
+        s = Math.min(d - c, n - d - 1);
+        vecswap(x, y, b, n - s, s);
+
         // Recursively sort non-partition-elements
-        if ((s = b-a) > 1) {
+        if((s = b - a) > 1) {
             sort(x, y, off, s);
         }
-        if ((s = d-c) > 1) {
+        if((s = d - c) > 1) {
             sort(x, y, n - s, s);
         }
     }
-    
+
     /**
      * Swaps x[a] with x[b] and y[a] with y[b].
      */
@@ -1826,94 +1829,96 @@ public class Util {
         int t = x[a];
         x[a] = x[b];
         x[b] = t;
-        
+
         t = y[a];
         y[a] = y[b];
         y[b] = t;
     }
-    
+
     /**
      * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
      */
     private static void vecswap(int x[], int[] y, int a, int b, int n) {
         int t;
-        for (int i=0; i<n; i++, a++, b++) {
+        for(int i = 0; i < n; i++, a++, b++) {
             t = x[a];
             x[a] = x[b];
             x[b] = t;
-            
+
             t = y[a];
             y[a] = y[b];
             y[b] = t;
         }
     }
-    
+
     /**
      * Does a tandem sort of three arrays: one of <code>int</code> two of
      * <code>float</code>.
      */
     public static void sort(int x[], float y[], float z[], int off, int len) {
         // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++) {
-                for (int j = i; j > off && x[j - 1] > x[j];
+        if(len < 7) {
+            for(int i = off; i < len + off; i++) {
+                for(int j = i; j > off && x[j - 1] > x[j];
                         j--) {
                     swap(x, y, z, j, j - 1);
                 }
             }
             return;
         }
-        
+
         // Choose a partition element, v
-        int m = off + len/2;       // Small arrays, middle element
-        if (len > 7) {
+        int m = off + len / 2;       // Small arrays, middle element
+        if(len > 7) {
             int l = off;
             int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
+            if(len > 40) {        // Big arrays, pseudomedian of 9
+                int s = len / 8;
+                l = med3(x, l, l + s, l + 2 * s);
+                m = med3(x, m - s, m, m + s);
+                n = med3(x, n - 2 * s, n - s, n);
             }
             m = med3(x, l, m, n); // Mid-size, med of 3
         }
         int v = x[m];
-        
+
         // Establish Invariant: v* (<v)* (>v)* v*
         int a = off, b = a, c = off + len - 1, d = c;
         while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v) {
+            while(b <= c && x[b] <= v) {
+                if(x[b] == v) {
                     swap(x, y, z, a++, b);
                 }
                 b++;
             }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v) {
+            while(c >= b && x[c] >= v) {
+                if(x[c] == v) {
                     swap(x, y, z, c, d--);
                 }
                 c--;
             }
-            if (b > c) {
+            if(b > c) {
                 break;
             }
             swap(x, y, z, b++, c--);
         }
-        
+
         // Swap partition elements back to middle
         int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, y, z, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, y, z, b,   n-s, s);
-        
+        s = Math.min(a - off, b - a);
+        vecswap(x, y, z, off, b - s, s);
+        s = Math.min(d - c, n - d - 1);
+        vecswap(x, y, z, b, n - s, s);
+
         // Recursively sort non-partition-elements
-        if ((s = b-a) > 1) {
+        if((s = b - a) > 1) {
             sort(x, y, z, off, s);
         }
-        if ((s = d-c) > 1) {
+        if((s = d - c) > 1) {
             sort(x, y, z, n - s, s);
         }
     }
-    
+
     /**
      * Swaps x[a] with x[b] and y[a] with y[b].
      */
@@ -1921,16 +1926,16 @@ public class Util {
         int t = x[a];
         x[a] = x[b];
         x[b] = t;
-        
+
         float tf = y[a];
         y[a] = y[b];
         y[b] = tf;
-        
+
         tf = z[a];
         z[a] = z[b];
         z[b] = tf;
     }
-    
+
     /**
      * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
      */
@@ -1938,21 +1943,21 @@ public class Util {
             int a, int b, int n) {
         int t;
         float tf;
-        for (int i=0; i<n; i++, a++, b++) {
+        for(int i = 0; i < n; i++, a++, b++) {
             t = x[a];
             x[a] = x[b];
             x[b] = t;
-            
+
             tf = y[a];
             y[a] = y[b];
             y[b] = tf;
-            
+
             tf = z[a];
             z[a] = z[b];
             z[b] = tf;
         }
     }
-    
+
     /**
      * Does a tandem sort of two arrays:  one of <code>float</code> one of
      * <code>int</code>.  Comparison is made by considering the floats
@@ -1960,66 +1965,68 @@ public class Util {
      */
     public static void sort(float x[], int y[], int off, int len) {
         // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++) {
-                for (int j = i; j > off && x[j - 1] > x[j];
+        if(len < 7) {
+            for(int i = off; i < len + off; i++) {
+                for(int j = i; j > off && x[j - 1] > x[j];
                         j--) {
                     swap(x, y, j, j - 1);
                 }
             }
             return;
         }
-        
+
         // Choose a partition element, v
-        int m = off + len/2;       // Small arrays, middle element
-        if (len > 7) {
+        int m = off + len / 2;       // Small arrays, middle element
+        if(len > 7) {
             int l = off;
             int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
+            if(len > 40) {        // Big arrays, pseudomedian of 9
+                int s = len / 8;
+                l = med3(x, l, l + s, l + 2 * s);
+                m = med3(x, m - s, m, m + s);
+                n = med3(x, n - 2 * s, n - s, n);
             }
             m = med3(x, l, m, n); // Mid-size, med of 3
         }
         float v = x[m];
-        
+
         // Establish Invariant: v* (<v)* (>v)* v*
         int a = off, b = a, c = off + len - 1, d = c;
         while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v) {
+            while(b <= c && x[b] <= v) {
+                if(x[b] == v) {
                     swap(x, y, a++, b);
                 }
                 b++;
             }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v) {
+            while(c >= b && x[c] >= v) {
+                if(x[c] == v) {
                     swap(x, y, c, d--);
                 }
                 c--;
             }
-            if (b > c) {
+            if(b > c) {
                 break;
             }
             swap(x, y, b++, c--);
         }
-        
+
         // Swap partition elements back to middle
         int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, y, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, y, b,   n-s, s);
-        
+        s = Math.min(a - off, b - a);
+        vecswap(x, y, off, b - s, s);
+        s = Math.min(d - c, n - d - 1);
+        vecswap(x, y, b, n - s, s);
+
         // Recursively sort non-partition-elements
-        if ((s = b-a) > 1) {
+        if((s = b - a) > 1) {
             sort(x, y, off, s);
         }
-        if ((s = d-c) > 1) {
+        if((s = d - c) > 1) {
             sort(x, y, n - s, s);
         }
     }
-    
+
     /**
      * Swaps x[a] with x[b] and y[a] with y[b].
      */
@@ -2027,36 +2034,35 @@ public class Util {
         float t = x[a];
         x[a] = x[b];
         x[b] = t;
-        
+
         int tf = y[a];
         y[a] = y[b];
         y[b] = tf;
     }
-    
+
     /**
      * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
      */
     private static void vecswap(float x[], int y[], int a, int b, int n) {
-        for (int i=0; i<n; i++, a++, b++) {
+        for(int i = 0; i < n; i++, a++, b++) {
             float t = x[a];
             x[a] = x[b];
             x[b] = t;
-            
+
             int tf = y[a];
             y[a] = y[b];
             y[b] = tf;
         }
     }
-    
+
     /**
      * Returns the index of the median of the three indexed integers.
      */
     public static int med3(float x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-            (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
+        return (x[a] < x[b] ? (x[b] < x[c] ? b : x[a] < x[c] ? c : a) : (x[b] >
+                x[c] ? b : x[a] > x[c] ? c : a));
     }
-    
+
     /**
      * Does a tandem sort of two arrays:  one of <code>double</code> one of
      * <code>int</code>.  Comparison is made by considering the floats
@@ -2064,66 +2070,68 @@ public class Util {
      */
     public static void sort(double x[], int y[], int off, int len) {
         // Insertion sort on smallest arrays
-        if (len < 7) {
-            for (int i=off; i<len+off; i++) {
-                for (int j = i; j > off && x[j - 1] > x[j];
+        if(len < 7) {
+            for(int i = off; i < len + off; i++) {
+                for(int j = i; j > off && x[j - 1] > x[j];
                         j--) {
                     swap(x, y, j, j - 1);
                 }
             }
             return;
         }
-        
+
         // Choose a partition element, v
-        int m = off + len/2;       // Small arrays, middle element
-        if (len > 7) {
+        int m = off + len / 2;       // Small arrays, middle element
+        if(len > 7) {
             int l = off;
             int n = off + len - 1;
-            if (len > 40) {        // Big arrays, pseudomedian of 9
-                int s = len/8;
-                l = med3(x, l,     l+s, l+2*s);
-                m = med3(x, m-s,   m,   m+s);
-                n = med3(x, n-2*s, n-s, n);
+            if(len > 40) {        // Big arrays, pseudomedian of 9
+                int s = len / 8;
+                l = med3(x, l, l + s, l + 2 * s);
+                m = med3(x, m - s, m, m + s);
+                n = med3(x, n - 2 * s, n - s, n);
             }
             m = med3(x, l, m, n); // Mid-size, med of 3
         }
         double v = x[m];
-        
+
         // Establish Invariant: v* (<v)* (>v)* v*
         int a = off, b = a, c = off + len - 1, d = c;
         while(true) {
-            while (b <= c && x[b] <= v) {
-                if (x[b] == v) {
+            while(b <= c && x[b] <= v) {
+                if(x[b] == v) {
                     swap(x, y, a++, b);
                 }
                 b++;
             }
-            while (c >= b && x[c] >= v) {
-                if (x[c] == v) {
+            while(c >= b && x[c] >= v) {
+                if(x[c] == v) {
                     swap(x, y, c, d--);
                 }
                 c--;
             }
-            if (b > c) {
+            if(b > c) {
                 break;
             }
             swap(x, y, b++, c--);
         }
-        
+
         // Swap partition elements back to middle
         int s, n = off + len;
-        s = Math.min(a-off, b-a  );  vecswap(x, y, off, b-s, s);
-        s = Math.min(d-c,   n-d-1);  vecswap(x, y, b,   n-s, s);
-        
+        s = Math.min(a - off, b - a);
+        vecswap(x, y, off, b - s, s);
+        s = Math.min(d - c, n - d - 1);
+        vecswap(x, y, b, n - s, s);
+
         // Recursively sort non-partition-elements
-        if ((s = b-a) > 1) {
+        if((s = b - a) > 1) {
             sort(x, y, off, s);
         }
-        if ((s = d-c) > 1) {
+        if((s = d - c) > 1) {
             sort(x, y, n - s, s);
         }
     }
-    
+
     /**
      * Swaps x[a] with x[b] and y[a] with y[b].
      */
@@ -2131,34 +2139,32 @@ public class Util {
         double t = x[a];
         x[a] = x[b];
         x[b] = t;
-        
+
         int tf = y[a];
         y[a] = y[b];
         y[b] = tf;
     }
-    
+
     /**
      * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
      */
     private static void vecswap(double x[], int y[], int a, int b, int n) {
-        for (int i=0; i<n; i++, a++, b++) {
+        for(int i = 0; i < n; i++, a++, b++) {
             double t = x[a];
             x[a] = x[b];
             x[b] = t;
-            
+
             int tf = y[a];
             y[a] = y[b];
             y[b] = tf;
         }
     }
-    
+
     /**
      * Returns the index of the median of the three indexed integers.
      */
     public static int med3(double x[], int a, int b, int c) {
-        return (x[a] < x[b] ?
-            (x[b] < x[c] ? b : x[a] < x[c] ? c : a) :
-                (x[b] > x[c] ? b : x[a] > x[c] ? c : a));
+        return (x[a] < x[b] ? (x[b] < x[c] ? b : x[a] < x[c] ? c : a) : (x[b] >
+                x[c] ? b : x[a] > x[c] ? c : a));
     }
-    
 } // Util

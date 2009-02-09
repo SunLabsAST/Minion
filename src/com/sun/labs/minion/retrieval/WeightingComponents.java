@@ -21,14 +21,13 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A class that will hold all of the components necessary to implement any
@@ -162,7 +161,7 @@ public class WeightingComponents {
      */
     public float wt;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "WC";
 
@@ -189,12 +188,12 @@ public class WeightingComponents {
      * @return this set of weighting components.
      */
     public WeightingComponents setCollection(CollectionStats s) {
-        cs        = s;
-        N         = s.nDocs;
-        n         = s.nd;
-        nTokens   = s.nTokens;
-        maxfdt    = s.maxfdt;
-        maxft     = s.maxft;
+        cs = s;
+        N = s.nDocs;
+        n = s.nd;
+        nTokens = s.nTokens;
+        maxfdt = s.maxfdt;
+        maxft = s.maxft;
         avgDocLen = s.avgDocLen;
         return this;
     }
@@ -212,8 +211,8 @@ public class WeightingComponents {
      */
     public WeightingComponents setTerm(String name) {
         if(cs == null) {
-            log.warn(logTag, 3,
-                     "No collection stats to get term stats for: " + name);
+            logger.warning("No collection stats to get term stats for: " +
+                    name);
         } else {
             ts = cs.getTermStats(name);
             if(ts == null) {
@@ -223,7 +222,7 @@ public class WeightingComponents {
         }
         return this;
     }
-    
+
     /**
      * Initializes any document-level statistics that can be determined
      * from a set of term statistics.
@@ -237,15 +236,15 @@ public class WeightingComponents {
         ft = s.ft;
         return this;
     }
-    
+
     public TermStatsImpl getTermStats() {
         return ts;
     }
-    
+
     public TermStatsImpl getTermStats(String term) {
         return cs.getTermStats(term);
     }
-    
+
     public void setTermStats(String term, TermStatsImpl ts) {
         cs.setTermStats(term, ts);
     }
@@ -262,8 +261,8 @@ public class WeightingComponents {
     }
 
     public WeightingComponents setDocument(DocKeyEntry key, String field) {
-        nd  = key.getN();
-        ld  = key.getTotalOccurrences();
+        nd = key.getN();
+        ld = key.getTotalOccurrences();
         dvl = key.getDocumentVectorLength(field);
         return this;
     }
@@ -279,9 +278,8 @@ public class WeightingComponents {
         fdt = pi.getFreq();
         return this;
     }
-    
+
     public String toString() {
         return String.format("ts: %s N: %d ft: %d fdt: %d", ts, N, ft, fdt);
     }
-
 } // WeightingComponents

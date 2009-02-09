@@ -21,30 +21,28 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval.cache;
 
-import java.util.Map;
 import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  *
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class DocCacheElement {
-    
+
     protected DocumentVectorImpl dvi;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "DCE";
-    
+
     /**
      * Creates an element in a document term cache.
      */
@@ -54,11 +52,11 @@ public class DocCacheElement {
                 key,
                 field, wf, wc);
     }
-    
+
     public WeightedFeature[] getFeatures() {
         return dvi.getFeatures();
     }
-    
+
     public DocumentVectorImpl getDVI() {
         return dvi;
     }

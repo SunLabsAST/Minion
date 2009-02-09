@@ -21,20 +21,19 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.PorterStemmer;
+import java.util.logging.Logger;
 
 public class StemStage extends StageAdapter {
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "SS";
 
     protected PorterStemmer stemmer = new PorterStemmer();
-    
+
     public StemStage() {
     } // StemStage constructor
 
@@ -48,7 +47,9 @@ public class StemStage extends StageAdapter {
      * @param t The token to process.
      */
     public void token(Token t) {
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         String str = t.getToken();
         stemmer.add(str.toLowerCase().toCharArray(), str.length());
         stemmer.stem();
@@ -60,9 +61,7 @@ public class StemStage extends StageAdapter {
      * Processes text passed in from the upstream stage.  The text is simply 
      * processed as a token.
      */
-    public  void text(char[] t, int b, int e) {
+    public void text(char[] t, int b, int e) {
         token(new Token(new String(t, b, (e - b)), 1));
     }
-    
-    
 } // StemStage

@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.SearchEngine;
@@ -36,9 +35,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import com.sun.labs.minion.pipeline.Stage;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.NanoWatch;
 import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A class that will be used to dump partitions in an orderly fashion.  This
@@ -57,7 +57,7 @@ import java.util.Date;
 public class AsyncDumper implements Runnable, Dumper {
 
     private PartitionManager pm;
-    
+
     /**
      * Our configuration name.
      */
@@ -82,7 +82,7 @@ public class AsyncDumper implements Runnable, Dumper {
      * The thread that is running our dumping.
      */
     protected Thread t;
-    
+
     private int nDumps;
 
     /**
@@ -90,21 +90,23 @@ public class AsyncDumper implements Runnable, Dumper {
      */
     @ConfigInteger(defaultValue = 1)
     public static String PROP_QUEUE_LENGTH = "queue_length";
+
     private int queueLength;
 
     /**
      * The poll interval for the queue, in seconds.
-     */ 
+     */
     @ConfigInteger(defaultValue = 3)
     public static String PROP_POLL_INTERVAL = "poll_interval";
-    
-    @ConfigBoolean(defaultValue=true)
+
+    @ConfigBoolean(defaultValue = true)
     public static final String PROP_DO_GC = "do_gc";
+
     private boolean doGC;
 
     private NanoWatch nw;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "ADMP";
 
@@ -127,19 +129,19 @@ public class AsyncDumper implements Runnable, Dumper {
             nw.start();
             toDump.put(new StageHolder(s, new Date()));
             nw.stop();
-        } catch (InterruptedException ex) {
-            log.warn(logTag, 4, "Dumper interrupted during put");
+        } catch(InterruptedException ex) {
+            logger.warning("Dumper interrupted during put");
         }
     }
 
     public void run() {
-        while (!done) {
+        while(!done) {
             try {
                 //
                 // We'll poll for a defined interval so that we can catch when
                 // we're finished.
                 StageHolder sh = toDump.poll(pollInterval, TimeUnit.SECONDS);
-                if (sh != null && sh.time.after(pm.getLastPurgeTime())) {
+                if(sh != null && sh.time.after(pm.getLastPurgeTime())) {
                     try {
                         sh.stage.dump(null);
 
@@ -152,24 +154,26 @@ public class AsyncDumper implements Runnable, Dumper {
                             m.run();
                         }
                         nDumps++;
-                        
+
                         //
                         // Why 2 extra?  Those are for the one that we just 
                         // dumped and the one held by the indexing thread.
-                        if(doGC && nDumps % (queueLength+2) == 0) {
+                        if(doGC && nDumps % (queueLength + 2) == 0) {
                             System.gc();
                             nDumps = 0;
                         }
-                    } catch (Exception ex) {
-                        log.error(logTag, 1,
+                    } catch(Exception ex) {
+                        logger.log(Level.SEVERE,
                                 "Error dumping partition, continuing", ex);
                     }
                 }
-            } catch (InterruptedException ex) {
-                log.warn(logTag, 4, "Dumper interrupted during poll, exiting with " + toDump.size() + " partitions waiting");
+            } catch(InterruptedException ex) {
+                logger.log(Level.WARNING,
+                        "Dumper interrupted during poll, exiting with " +
+                        toDump.size() + " partitions waiting");
                 return;
             }
-            if (done) {
+            if(done) {
                 break;
             }
         }
@@ -178,8 +182,8 @@ public class AsyncDumper implements Runnable, Dumper {
         // Drain the list of partitions to dump and then dump them.
         List<StageHolder> l = new ArrayList<StageHolder>();
         toDump.drainTo(l);
-        for (StageHolder sh : l) {
-            if (sh.time.after(pm.getLastPurgeTime())) {
+        for(StageHolder sh : l) {
+            if(sh.time.after(pm.getLastPurgeTime())) {
                 sh.stage.dump(null);
             }
         }
@@ -193,8 +197,8 @@ public class AsyncDumper implements Runnable, Dumper {
         done = true;
         try {
             t.join();
-        } catch (InterruptedException ex) {
-        //
+        } catch(InterruptedException ex) {
+            //
             // We can't really do anything here...
         }
     }
@@ -206,7 +210,7 @@ public class AsyncDumper implements Runnable, Dumper {
         pollInterval = ps.getInt(PROP_POLL_INTERVAL);
         doGC = ps.getBoolean(PROP_DO_GC);
         nw = new NanoWatch();
-        
+
         //
         // Create our thread and start ourselves running.
         t = new Thread(this);
@@ -219,8 +223,11 @@ public class AsyncDumper implements Runnable, Dumper {
     }
 
     class StageHolder {
+
         public Stage stage;
+
         public Date time;
+
         public StageHolder(Stage s, Date t) {
             stage = s;
             time = t;

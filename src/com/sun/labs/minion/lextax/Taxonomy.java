@@ -21,10 +21,9 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.lextax;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * An abstract class that holds the information common to both Memory and
@@ -34,41 +33,61 @@ public abstract class Taxonomy {
 
     //
     // The relations between concepts. 
-    public static final int MORPH_OF           = 0;
-    public static final int INV_MORPH_OF       = 1;
-    public static final int KIND_OF            = 2;
-    public static final int INV_KIND_OF        = 3; 
-    public static final int INSTANCE_OF        = 4;
-    public static final int INV_INSTANCE_OF    = 5;
-    public static final int SENSE_OF           = 6;
-    public static final int INV_SENSE_OF       = 7;
-    public static final int ENTAILS            = 8;
-    public static final int INV_ENTAILS        = 9;
-    public static final int VARIANT_OF         = 10;
-    public static final int INV_VARIANT_OF     = 11;
-    public static final int ABBREVIATION_OF    = 12;
+    public static final int MORPH_OF = 0;
+
+    public static final int INV_MORPH_OF = 1;
+
+    public static final int KIND_OF = 2;
+
+    public static final int INV_KIND_OF = 3;
+
+    public static final int INSTANCE_OF = 4;
+
+    public static final int INV_INSTANCE_OF = 5;
+
+    public static final int SENSE_OF = 6;
+
+    public static final int INV_SENSE_OF = 7;
+
+    public static final int ENTAILS = 8;
+
+    public static final int INV_ENTAILS = 9;
+
+    public static final int VARIANT_OF = 10;
+
+    public static final int INV_VARIANT_OF = 11;
+
+    public static final int ABBREVIATION_OF = 12;
+
     public static final int INV_ABBREVIATION_OF = 13;
-    public static final int MISSPELLING_OF     = 14;
+
+    public static final int MISSPELLING_OF = 14;
+
     public static final int INV_MISSPELLING_OF = 15;
-    public static final int NICKNAME_OF        = 16;
-    public static final int INV_NICKNAME_OF    = 17;
+
+    public static final int NICKNAME_OF = 16;
+
+    public static final int INV_NICKNAME_OF = 17;
 
     /**
      * The number of links and link types.
      */
     public static final int NLINKS = 18;
-    public static final int NLINKTYPES = NLINKS/2;
+
+    public static final int NLINKTYPES = NLINKS / 2;
+
     public static final int PARENTS = 0;
+
     public static final int CHILDREN = 1;
-    
+
     /**
      * the characters used in the hourglass display to show
      * link type.  These are a String so that longer sequences could
      * be used if desired.
      */
-    public static final String[] LINKCHARS = {"m", "k", "i","s",
-					      "e", "v", "a", "x", "n"};
-    
+    public static final String[] LINKCHARS = {"m", "k", "i", "s",
+        "e", "v", "a", "x", "n"};
+
     /**
      * The ID for the root of the taxonomy.
      */
@@ -82,6 +101,6 @@ public abstract class Taxonomy {
     /**
      * The log to which we write messages.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
 } // Taxonomy

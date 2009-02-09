@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.classification;
 
 import java.io.File;
@@ -46,7 +45,6 @@ import com.sun.labs.minion.classification.FeaturePostings.Featurator;
 import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
 
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.ChannelUtil;
 import com.sun.labs.minion.util.StopWatch;
 
@@ -54,12 +52,12 @@ import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A disk partition that will hold classifier data.
  *
- * @author Jeff Alexander
- * @version $Revision: 1.1.2.41 $
  */
 public class ClassifierDiskPartition extends DiskPartition {
 
@@ -84,7 +82,7 @@ public class ClassifierDiskPartition extends DiskPartition {
      */
     protected long dataStart;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "CDP";
 
@@ -98,9 +96,9 @@ public class ClassifierDiskPartition extends DiskPartition {
      * @param manager the classifier manager for this partition
      */
     public ClassifierDiskPartition(Integer partNum,
-                                    ClassifierManager manager,
-                                    DictionaryFactory mainDictFactory,
-                                    DictionaryFactory documentDictFactory)
+            ClassifierManager manager,
+            DictionaryFactory mainDictFactory,
+            DictionaryFactory documentDictFactory)
             throws java.io.IOException {
         super(partNum, manager, mainDictFactory, documentDictFactory);
 
@@ -109,7 +107,7 @@ public class ClassifierDiskPartition extends DiskPartition {
         //
         // Open the model specific data file and read things in.
         msd = new RandomAccessFile(manager.makeModelSpecificFile(partNumber),
-                                   "r");
+                "r");
 
         nModels = msd.readInt();
         msdOff = new FileReadableBuffer(msd, 4, nModels * 8, 1024);
@@ -122,13 +120,13 @@ public class ClassifierDiskPartition extends DiskPartition {
             return modelMap.get(cname);
         }
         FeatureEntry fe = (FeatureEntry) docDict.get(cname);
-        if(fe != null  && !isDeleted(fe.getID())) {
+        if(fe != null && !isDeleted(fe.getID())) {
             return getClassifier(fe);
         }
         return null;
     }
-    
-    public void findSimilar(ClassifierModel cm, Map<String,Float> scores) {
+
+    public void findSimilar(ClassifierModel cm, Map<String, Float> scores) {
         invert();
         float[] sum = new float[allModels.length];
         FeatureClusterSet fcs = cm.getFeatures();
@@ -144,30 +142,29 @@ public class ClassifierDiskPartition extends DiskPartition {
             }
         }
     }
-    
     /**
      * Things to fix after the open house:  the main dictionary in the 
      * classifiers doesn't store the feature scores for the documents (i.e., the
      * classifiers.)  So we can't do bulk evaluation without inverting the 
      * document vectors.  We'll do that once and keep it here.
      */
-    protected Map<String,ClassificationFeature> features;
-    
+    protected Map<String, ClassificationFeature> features;
+
     protected ClassifierModel[] allModels;
-    
-    protected Map<String,ClassifierModel> modelMap;
-    
+
+    protected Map<String, ClassifierModel> modelMap;
+
     protected ClassifierModel[] getAllModels() {
         invert();
         return allModels;
     }
-    
+
     protected Map<String, ClassificationFeature> invert() {
         initDocDict();
         if(features == null) {
             features = new TreeMap<String, ClassificationFeature>();
             allModels = new ClassifierModel[getMaxDocumentID() + 1];
-            modelMap = new HashMap<String,ClassifierModel>();
+            modelMap = new HashMap<String, ClassifierModel>();
             for(QueryEntry qe : docDict) {
                 FeatureEntry entry = (FeatureEntry) qe;
                 ClassifierModel model = getClassifier(entry);
@@ -238,8 +235,8 @@ public class ClassifierDiskPartition extends DiskPartition {
                 model.setFromField(ff);
                 model.read(msd);
             } catch(java.io.IOException ioe) {
-                log.error(logTag, 1, "Error reading model " +
-                          "specific data for: " + fe.getName(), ioe);
+                logger.log(Level.SEVERE,"Error reading model " +
+                        "specific data for: " + fe.getName(), ioe);
             }
         }
 
@@ -267,16 +264,16 @@ public class ClassifierDiskPartition extends DiskPartition {
      * @param results a map to fill up with classification results
      */
     public void classify(DiskPartition sdp,
-                          ExtraClassification ec,
-                          Map<String, ClassificationResult> results) {
+            ExtraClassification ec,
+            Map<String, ClassificationResult> results) {
         initMainDict();
         initDocDict();
-        
+
         if(ec == null && modelInstance instanceof BulkClassifier) {
             StopWatch sw = new StopWatch();
             sw.start();
             invert();
-            
+
             //
             // Get a from field.  Bit of a hack here:  we could have trained
             // classifiers from different fields.  FIXME.
@@ -291,24 +288,27 @@ public class ClassifierDiskPartition extends DiskPartition {
                     }
                 }
             }
-            
-            float[][] scores = ((BulkClassifier) modelInstance).classify(fromField, this, sdp);
-            
+
+            float[][] scores = ((BulkClassifier) modelInstance).classify(
+                    fromField, this, sdp);
+
             int neval = 0;
-            for(int i = 0 ; i < scores.length; i++) {
+            for(int i = 0; i < scores.length; i++) {
                 if(allModels[i] != null) {
                 }
                 if(scores[i] != null) {
-                    int nInClass = assembleResults(scores[i], allModels[i].getModelName(), resultsField, results);
+                    int nInClass = assembleResults(scores[i], allModels[i].
+                            getModelName(), resultsField, results);
                     neval++;
                 }
             }
-            
+
             sw.stop();
-            log.log(logTag, 3, String.format("Evaluated %d classifiers in %dms", neval, sw.getTime()));
+            logger.info(String.format("Evaluated %d classifiers in %dms",
+                    neval, sw.getTime()));
             return;
         }
-        
+
         //
         // For each class in this partition, use the classifier model
         // to determine which of the docs in the dict are in which
@@ -323,7 +323,8 @@ public class ClassifierDiskPartition extends DiskPartition {
             // If we have a restriction to a particular classifier field, or
             // we're supposed to exclude this classifier, then check that now.
             if(ec != null &&
-                    (!model.getFromField().equals(ec.getClassifierFromField()) || ec.isExcluded(model.getModelName()))) {
+                    (!model.getFromField().equals(ec.getClassifierFromField()) ||
+                    ec.isExcluded(model.getModelName()))) {
                 continue;
             }
 
@@ -354,23 +355,24 @@ public class ClassifierDiskPartition extends DiskPartition {
                 //
                 // Perform the classification
                 float[] scores = model.classify(sdp);
-                
-                int nInClass = assembleResults(scores, model.getModelName(), resultField, results);
+
+                int nInClass = assembleResults(scores, model.getModelName(),
+                        resultField, results);
 
 
                 sw.stop();
-                log.log(logTag, 4, String.format("\"%s\" %dms, %d/%d",
-                                                 entry.getName(),
-                                                 sw.getTime(),
-                                                 nInClass, scores.length - 1));
+                logger.fine(String.format("\"%s\" %dms, %d/%d",
+                        entry.getName(),
+                        sw.getTime(),
+                        nInClass, scores.length - 1));
             }
         }
     }
-    
-    public int assembleResults(float[] scores, 
+
+    public int assembleResults(float[] scores,
             String modelName, String resultField,
             Map<String, ClassificationResult> results) {
-        
+
         //
         // Assemble the results
         ClassificationResult cr = results.get(resultField);
@@ -410,7 +412,7 @@ public class ClassifierDiskPartition extends DiskPartition {
         Featurator it =
                 (Featurator) entry.iterator(new PostingsIteratorFeatures());
         if(it == null) {
-            log.error(logTag, 1, "No feature iterator for: " + entry.getName());
+            logger.severe("No feature iterator for: " + entry.getName());
             return features;
         }
 
@@ -445,18 +447,19 @@ public class ClassifierDiskPartition extends DiskPartition {
      * Merges the model specific data for these classifiers.
      */
     protected void mergeCustom(int newPartNumber,
-                                DiskPartition[] sortedParts,
-                                int[][] idMaps,
-                                int newMaxDocID,
-                                int[] docIDStart,
-                                int[] nUndel,
-                                int[][] docIDMaps)
+            DiskPartition[] sortedParts,
+            int[][] idMaps,
+            int newMaxDocID,
+            int[] docIDStart,
+            int[] nUndel,
+            int[][] docIDMaps)
             throws Exception {
 
         //
         // Dump our model specific data to the classifier model file.
         File mmsdFile =
-                ((ClassifierManager) manager).makeModelSpecificFile(newPartNumber);
+                ((ClassifierManager) manager).makeModelSpecificFile(
+                newPartNumber);
         RandomAccessFile mmsd =
                 new RandomAccessFile(mmsdFile, "rw");
         WriteableBuffer b = new ArrayBuffer(newMaxDocID * 8);
@@ -486,9 +489,9 @@ public class ClassifierDiskPartition extends DiskPartition {
                 // If there are no deleted documents in the partition we're
                 // merging, do a straight channel transfer.
                 ChannelUtil.transferFully(cdp.msd.getChannel(),
-                                          cdp.dataStart,
-                                          cdp.msd.length() - cdp.dataStart,
-                                          mmsd.getChannel());
+                        cdp.dataStart,
+                        cdp.msd.length() - cdp.dataStart,
+                        mmsd.getChannel());
                 //
                 // Now, write new offsets from the ones in the buffer in
                 // the partition that we're merging.  We'll start by
@@ -497,7 +500,7 @@ public class ClassifierDiskPartition extends DiskPartition {
                 long origOff = cdp.msdOff.byteDecode(0, 8);
                 b.byteEncode(off, 8);
                 nOff++;
-                for(int j = 1,  k = 8; j < cdp.nModels; j++, k += 8) {
+                for(int j = 1, k = 8; j < cdp.nModels; j++, k += 8) {
                     long diff = cdp.msdOff.byteDecode(k, 8) - origOff;
                     b.byteEncode(off + diff, 8);
                     nOff++;
@@ -567,9 +570,9 @@ public class ClassifierDiskPartition extends DiskPartition {
                             //
                             // Copy the data.
                             ChannelUtil.transferFully(cdp.msd.getChannel(),
-                                                      prevOff,
-                                                      nb,
-                                                      mmsd.getChannel());
+                                    prevOff,
+                                    nb,
+                                    mmsd.getChannel());
                             prevOff = -1;
                         }
                     } else {
@@ -605,7 +608,7 @@ public class ClassifierDiskPartition extends DiskPartition {
             }
             msd.close();
         } catch(java.io.IOException ioe) {
-            log.error(logTag, 1, "Error closing classifier partition", ioe);
+            logger.log(Level.SEVERE, "Error closing classifier partition", ioe);
         }
         return true;
     }
@@ -617,8 +620,9 @@ public class ClassifierDiskPartition extends DiskPartition {
      * @param n The partition number to reap.
      */
     protected static void reap(PartitionManager m, int n) {
-        if (!((ClassifierManager) m).makeModelSpecificFile(n).delete()) {
-            log.error(logTag, 1, "Failed to reap classifier partition");
+        if(!((ClassifierManager) m).makeModelSpecificFile(n).delete()) {
+            Logger.getLogger(ClassifierDiskPartition.class.getName())
+                    .severe("Failed to reap classifier partition");
         }
         DiskPartition.reap(m, n);
     }

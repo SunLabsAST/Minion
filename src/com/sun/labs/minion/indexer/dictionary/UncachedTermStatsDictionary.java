@@ -33,13 +33,15 @@ import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  *
  * @author Stephen Green <stephen.green@sun.com>
  */
-public class UncachedTermStatsDictionary extends DiskDictionary implements TermStatsDictionary {
+public class UncachedTermStatsDictionary extends DiskDictionary implements
+        TermStatsDictionary {
 
     private File df;
 
@@ -52,7 +54,6 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements TermS
     public static final String logTag = "UTSD";
 
     public UncachedTermStatsDictionary() {
-
     }
 
     /**
@@ -87,8 +88,7 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements TermS
         try {
             closeFile.createNewFile();
         } catch(IOException ex) {
-            log.error(logTag, 1,
-                    "Error creating term stats remove file:" + closeFile);
+            logger.severe("Error creating term stats remove file:" + closeFile);
         }
     }
 
@@ -150,7 +150,7 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements TermS
             }
             dictFile.close();
         } catch(IOException ex) {
-            log.error(logTag, 1, "Error closing term stats dictionary:" + df);
+            logger.severe("Error closing term stats dictionary:" + df);
         }
         return true;
     }
@@ -163,7 +163,8 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements TermS
      */
     public static void create(String indexDir, File df) {
         try {
-            log.log(logTag, 3, "Making term stats dictionary: " + df);
+            Logger.getLogger(UncachedTermStatsDictionary.class.getName())
+                    .info("Making term stats dictionary: " + df);
             RandomAccessFile raf = new RandomAccessFile(df, "rw");
             MemoryDictionary tts =
                     new MemoryDictionary(TermStatsEntry.class);
@@ -173,7 +174,8 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements TermS
                     MemoryDictionary.IDMap.NONE, null);
             raf.close();
         } catch(java.io.IOException ioe) {
-            log.error(logTag, 1, "Error creating term stats dictionary", ioe);
+            Logger.getLogger(UncachedTermStatsDictionary.class.getName())
+                    .log(Level.SEVERE, "Error creating term stats dictionary", ioe);
         }
     }
 

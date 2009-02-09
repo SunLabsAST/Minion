@@ -27,7 +27,6 @@ package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.util.LRACache;
-import com.sun.labs.minion.util.MinionLog;
 
 /**
  * An LRA cache of terms and their associated postings.  This is partition specific.

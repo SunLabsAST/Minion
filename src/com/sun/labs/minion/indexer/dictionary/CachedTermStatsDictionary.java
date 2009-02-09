@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -83,8 +85,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
         try {
             closeFile.createNewFile();
         } catch(IOException ex) {
-            log.error(logTag, 1,
-                    "Error creating term stats remove file:" + closeFile);
+            logger.severe("Error creating term stats remove file:" + closeFile);
         }
     }
 
@@ -98,7 +99,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
             }
             dictFile.close();
         } catch(IOException ex) {
-            log.error(logTag, 1, "Error closing term stats dictionary:" + df);
+            logger.severe("Error closing term stats dictionary:" + df);
         }
         return true;
     }
@@ -111,7 +112,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
      */
     public static void create(String indexDir, File df) {
         try {
-            log.log(logTag, 3, "Making term stats dictionary: " + df);
+            Logger.getLogger(CachedTermStatsDictionary.class.getName()).info("Making term stats dictionary: " + df);
             RandomAccessFile raf = new RandomAccessFile(df, "rw");
             MemoryDictionary tts =
                     new MemoryDictionary(TermStatsEntry.class);
@@ -121,7 +122,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
                     MemoryDictionary.IDMap.NONE, null);
             raf.close();
         } catch(java.io.IOException ioe) {
-            log.error(logTag, 1, "Error creating term stats dictionary", ioe);
+            Logger.getLogger(CachedTermStatsDictionary.class.getName()).log(Level.SEVERE, "Error creating term stats dictionary", ioe);
         }
     }
 

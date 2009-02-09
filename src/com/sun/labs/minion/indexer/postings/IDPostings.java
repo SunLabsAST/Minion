@@ -21,19 +21,17 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.postings;
-
 
 import java.util.Arrays;
 
 
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.Buffer;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Logger;
 
 /**
  * A postings class for ID only postings.  These will be used for things
@@ -79,67 +77,67 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * </ol>
  */
 public class IDPostings implements Postings, MergeablePostings {
-    
+
     /**
      * The compressed postings.
      */
     protected Buffer post;
-    
+
     /**
      * The uncompressed postings.
      */
     protected int[] ids;
-    
+
     /**
      * The ID we're collecting the frequency for.
      */
     protected int curr;
-    
+
     /**
      * The previous ID encountered during indexing.
      */
     protected int prevID;
-    
+
     /**
      * The number of IDs in the postings.
      */
     protected int nIDs;
-    
+
     /**
      * The last ID in this postings list.
      */
     protected int lastID;
-    
+
     /**
      * The IDs in the skip table.
      */
     protected int[] skipID;
-    
+
     /**
      * The positions in the skip table.
      */
     protected int[] skipPos;
-    
+
     /**
      * The number of skips in the skip table.
      */
     protected int nSkips;
-    
+
     /**
      * The position in the compressed representation where the data
      * starts.
      */
     protected int dataStart;
-    
+
     /**
      * The number of documents in a skip.
      */
     protected int skipSize = 64;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "IDP";
-    
+
     /**
      * Makes a postings entry that is useful during indexing.
      *
@@ -147,7 +145,7 @@ public class IDPostings implements Postings, MergeablePostings {
     public IDPostings() {
         ids = new int[4];
     }
-    
+
     /**
      * Makes a postings entry that is useful during querying.
      *
@@ -156,7 +154,7 @@ public class IDPostings implements Postings, MergeablePostings {
     public IDPostings(ReadableBuffer b) {
         this(b, 0, 0);
     }
-    
+
     /**
      * Makes a postings entry that is useful during querying.
      *
@@ -167,26 +165,26 @@ public class IDPostings implements Postings, MergeablePostings {
      *
      */
     public IDPostings(ReadableBuffer b, int offset, int size) {
-        
+
         if(offset > 0) {
             post = b.slice(offset, size);
         } else {
             post = b;
         }
-        
+
         //
         // Get the initial data.
         nIDs = ((ReadableBuffer) post).byteDecode();
         lastID = ((ReadableBuffer) post).byteDecode();
-        
+
         //
         // Decode the skip table.
         nSkips = ((ReadableBuffer) post).byteDecode();
-        
+
         if(nSkips > 0) {
-            
-            skipID = new int[nSkips+1];
-            skipPos = new int[nSkips+1];
+
+            skipID = new int[nSkips + 1];
+            skipPos = new int[nSkips + 1];
             int currSkipDoc = 0;
             int currSkipPos = 0;
             for(int i = 1; i <= nSkips; i++) {
@@ -195,7 +193,7 @@ public class IDPostings implements Postings, MergeablePostings {
                 skipID[i] = currSkipDoc;
                 skipPos[i] = currSkipPos;
             }
-            
+
             //
             // Now, the values for the bit positions of the entries are
             // from the *end* of the skip table, and we want them to be
@@ -210,7 +208,7 @@ public class IDPostings implements Postings, MergeablePostings {
             dataStart = post.position();
         }
     }
-    
+
     /**
      * Adds a skip to the skip table.
      *
@@ -222,13 +220,13 @@ public class IDPostings implements Postings, MergeablePostings {
             skipID = new int[4];
             skipPos = new int[4];
         } else if(nSkips + 1 >= skipID.length) {
-            skipID = Util.expandInt(skipID, skipID.length*2);
+            skipID = Util.expandInt(skipID, skipID.length * 2);
             skipPos = Util.expandInt(skipPos, skipID.length);
         }
         skipID[nSkips] = id;
         skipPos[nSkips++] = pos;
     }
-    
+
     /**
      * Encodes the data for a single ID.
      *
@@ -237,38 +235,38 @@ public class IDPostings implements Postings, MergeablePostings {
     protected int encode(int id) {
         return ((WriteableBuffer) post).byteEncode(id - prevID);
     }
-    
+
     /**
      * Sets the skip size.
      */
     public void setSkipSize(int size) {
         skipSize = size;
     }
-    
+
     /**
      * Adds an occurrence to the postings list.
      *
      * @param o The occurrence.
      */
     public void add(Occurrence o) {
-        
+
         if(o.getID() != curr) {
-            if(nIDs+1 >= ids.length) {
-                ids = Util.expandInt(ids, ids.length*2);
+            if(nIDs + 1 >= ids.length) {
+                ids = Util.expandInt(ids, ids.length * 2);
             }
             ids[nIDs++] = o.getID();
             curr = o.getID();
         }
     }
-    
+
     public int getN() {
         return nIDs;
     }
-    
+
     public int getLastID() {
         return lastID;
     }
-    
+
     /**
      * Gets the maximum frequency in the postings associated with this
      * entry.  For ID only postings, this value is always 1.
@@ -278,7 +276,7 @@ public class IDPostings implements Postings, MergeablePostings {
     public int getMaxFDT() {
         return 1;
     }
-    
+
     /**
      * Gets the total number of occurrences in this postings list, which is
      * always the number of postings, since we don't encode any frequencies.
@@ -286,20 +284,20 @@ public class IDPostings implements Postings, MergeablePostings {
     public long getTotalOccurrences() {
         return nIDs;
     }
-    
+
     /**
      * Finishes off the encoding by adding any data that we collected for
      * the last document.
      */
     public void finish() {
-        
+
         if(post != null) {
             //
             // We were appending data.
             return;
         }
-        
-        WriteableBuffer temp = new ArrayBuffer(nIDs*2);
+
+        WriteableBuffer temp = new ArrayBuffer(nIDs * 2);
         for(int i = 0, prevID = 0; i < nIDs; i++) {
             if(i > 0 && i % skipSize == 0) {
                 addSkip(ids[i], temp.position());
@@ -307,17 +305,17 @@ public class IDPostings implements Postings, MergeablePostings {
             temp.byteEncode(ids[i] - prevID);
             prevID = ids[i];
         }
-        lastID = ids[nIDs-1];
+        lastID = ids[nIDs - 1];
         post = temp;
     }
-    
+
     /**
      * Gets the size of the postings, in bytes.
      */
     public int size() {
         return post.position();
     }
-    
+
     /**
      * Gets a number of <code>WriteableBuffer</code>s whose contents
      * represent the postings.  These buffers can then be written out.
@@ -329,16 +327,16 @@ public class IDPostings implements Postings, MergeablePostings {
      * data.
      */
     public WriteableBuffer[] getBuffers() {
-        
+
         //
         // We'll use an array backed buffer for the skips.
-        WriteableBuffer temp = new ArrayBuffer((nSkips+1)*4 + 16);
-        
+        WriteableBuffer temp = new ArrayBuffer((nSkips + 1) * 4 + 16);
+
         //
         // Encode the number of IDs and the last ID
         temp.byteEncode(nIDs);
         temp.byteEncode(lastID);
-        
+
         //
         // Encode the skip table.
         temp.byteEncode(nSkips);
@@ -350,15 +348,15 @@ public class IDPostings implements Postings, MergeablePostings {
             prevID = skipID[i];
             prevPos = skipPos[i];
         }
-        
+
         //
         // Return the buffers.
-        return new WriteableBuffer[] {
-            temp,
-            (WriteableBuffer) post
-        };
+        return new WriteableBuffer[]{
+                    temp,
+                    (WriteableBuffer) post
+                };
     }
-    
+
     /**
      * Remaps the IDs in this postings list according to the given
      * old-to-new ID map.
@@ -374,7 +372,7 @@ public class IDPostings implements Postings, MergeablePostings {
      */
     public void remap(int[] idMap) {
     }
-    
+
     /**
      * Appends another set of postings to this one.
      *
@@ -386,17 +384,17 @@ public class IDPostings implements Postings, MergeablePostings {
      */
     public void append(Postings p, int start) {
         IDPostings other = (IDPostings) p;
-        
+
         //
         // Check for empty postings on the other side.
         if(other.nIDs == 0) {
             return;
         }
-        
+
         //
         // We'll need to know where we started this entry.
         int index = post.position();
-        
+
         //
         // This is tricky, so pay attention: The skip positions for the
         // entry we're appending are based on the byte index from the
@@ -410,7 +408,7 @@ public class IDPostings implements Postings, MergeablePostings {
         int adj = other.post.position();
         int firstID = ((ReadableBuffer) other.post).byteDecode();
         adj = other.post.position() - adj;
-        
+
         //
         // Get the first document sequence number off the entry we're
         // appending and replace it with a document gap that
@@ -419,25 +417,25 @@ public class IDPostings implements Postings, MergeablePostings {
         // divide by 8 to get the number of bytes.
         int newID = firstID + start - 1;
         int nb = ((WriteableBuffer) post).byteEncode(newID - lastID);
-        adj =  nb - adj;
-        
+        adj = nb - adj;
+
         //
         // Get a buffer for the remaining postings, and make sure that it
         // looks like a buffer that was written and not read by slicing and
         // manipulating the position.
         ((WriteableBuffer) post).append((ReadableBuffer) other.post);
-        
+
         //
         // The last ID on this entry is now the last ID from the entry we
         // appended, suitably remapped.
-        lastID  = other.lastID + start - 1;
-        
+        lastID = other.lastID + start - 1;
+
         //
         // Increment the number of documents in this new entry.
         nIDs += other.nIDs;
-        
+
         if(other.nSkips > 0) {
-            
+
             //
             // Now we need to fix up the skip table.  The skip postions in
             // the other entry had the length of the initial part of the
@@ -445,7 +443,7 @@ public class IDPostings implements Postings, MergeablePostings {
             // that and replace the document IDs with something reasonable.
             // First we need to make the skip table big enough to hold all
             // this data.
-            if (skipID != null) {
+            if(skipID != null) {
                 skipID = Util.expandInt(skipID,
                         skipID.length +
                         other.nSkips + 1);
@@ -456,7 +454,7 @@ public class IDPostings implements Postings, MergeablePostings {
                 skipID = new int[other.nSkips + 1];
                 skipPos = new int[other.nSkips + 1];
             }
-            
+
             //
             // Now fix up the other skips.
             for(int i = 1; i <= other.nSkips; i++) {
@@ -466,7 +464,7 @@ public class IDPostings implements Postings, MergeablePostings {
             }
         }
     }
-    
+
     /**
      * Re-encodes the data from another postings onto this one.
      *
@@ -477,13 +475,13 @@ public class IDPostings implements Postings, MergeablePostings {
     protected void recodeID(int currID, int prevID, PostingsIterator pi) {
         ((WriteableBuffer) post).byteEncode(currID - prevID);
     }
-    
+
     /**
      * Skips a set of postings from another postings entry.
      */
     protected void skip(ReadableBuffer b) {
     }
-    
+
     /**
      * Appends another set of postings to this one, removing any data
      * associated with deleted documents.
@@ -498,52 +496,52 @@ public class IDPostings implements Postings, MergeablePostings {
      * no deleted documents.
      */
     public void append(Postings p, int start, int[] idMap) {
-        
+
         if(post == null) {
-            post = new ArrayBuffer(p.getN()*2);
+            post = new ArrayBuffer(p.getN() * 2);
         }
-        
+
         //
         // If there's no id mapping to be done, then do a simple append.
         if(idMap == null) {
             append(p, start);
             return;
         }
-        
+
         //
         // We'll iterate through the postings.
         PostingsIterator pi = p.iterator(null);
         while(pi.next()) {
             int origID = pi.getID();
             int mapID = idMap[origID];
-            
+
             //
             // Skip deleted documents.
             if(mapID < 0) {
                 continue;
             }
-            
+
             //
             // Get the document ID for this document in the new partition.
             int cID = mapID + start - 1;
-            
+
             //
             // Increment our ID count, and see if we need to add a skip.
             nIDs++;
             if(nIDs % skipSize == 0) {
                 addSkip(cID, post.position());
             }
-            
+
             recodeID(cID, lastID, pi);
-            
+
             //
             // Set the new last document for our entry.
             lastID = cID;
         }
     }
-    
+
     public void merge(MergeablePostings mp, int[] map) {
-        
+
         int n = ((Postings) mp).getN();
         int[] temp = new int[Math.max(n, nIDs)];
 
@@ -567,26 +565,27 @@ public class IDPostings implements Postings, MergeablePostings {
                 pi.next();
             }
         }
-        
+
         while(p1 < n) {
             temp = Util.addExpand(temp, np++, map[pi.getID()]);
             pi.next();
             p1++;
         }
-        
+
         if(p2 < nIDs) {
             int toadd = (nIDs - p2);
             if(np + toadd >= temp.length) {
-                temp = Util.expandInt(temp, Math.max(np+toadd, temp.length*2));
+                temp = Util.expandInt(temp,
+                        Math.max(np + toadd, temp.length * 2));
             }
             System.arraycopy(ids, p2, temp, np, toadd);
             np += toadd;
         }
-        
+
         nIDs = np;
         ids = temp;
     }
-    
+
     /**
      * Gets an iterator for the postings.
      *
@@ -597,7 +596,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * <code>null</code> will be returned.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
-        
+
         //
         // We only support the case where no features are set!
         if(features == null ||
@@ -607,36 +606,35 @@ public class IDPostings implements Postings, MergeablePostings {
                 !features.getPositions())) {
             return new IDIterator(features);
         } else {
-            log.warn(logTag, 3, "Requested unsupported features for " +
-                    "IDPostings");
+            logger.warning("Requested unsupported features for IDPostings");
             return null;
         }
     }
-    
+
     public class IDIterator implements PostingsIterator {
-        
+
         /**
          * A readable buffer for the postings.
          */
         protected ReadableBuffer rp;
-        
+
         /**
          * Whether we've finished the entry.
          */
         protected boolean done;
-        
+
         /**
          * The current ID.
          */
         protected int curr;
-        
+
         /**
          * The current block of postings that we've jumped into using findID.
          */
         protected int cb;
-        
+
         private PostingsIteratorFeatures features;
-        
+
         /**
          * Creates a postings iterator for this postings type.
          */
@@ -646,18 +644,18 @@ public class IDPostings implements Postings, MergeablePostings {
             rp.position(dataStart);
             done = nIDs == 0;
         }
-        
+
         /**
          * Gets the number of IDs in this postings list.
          */
         public int getN() {
             return nIDs;
         }
-        
+
         public PostingsIteratorFeatures getFeatures() {
             return features;
         }
-        
+
         /**
          * Moves to the next ID in this entry.  This method is different
          * than the <code>java.util.Iterator.next()</code> method in that
@@ -672,7 +670,7 @@ public class IDPostings implements Postings, MergeablePostings {
         public boolean next() {
             return next(-1, -1);
         }
-        
+
         /**
          * Finds the next document in the postings entry.
          *
@@ -686,12 +684,12 @@ public class IDPostings implements Postings, MergeablePostings {
             if(done) {
                 return false;
             }
-            
+
             //
             // If we were given a position, then we position there.
             if(pos > 0) {
                 rp.position(pos);
-                
+
                 if(id > -1) {
                     rp.byteDecode();
                     curr = id;
@@ -701,12 +699,12 @@ public class IDPostings implements Postings, MergeablePostings {
             } else {
                 curr += rp.byteDecode();
             }
-            
+
             done = curr == lastID;
-            
+
             return true;
         }
-        
+
         /**
          * Finds the given ID in the entry we're iterating through, if it
          * exists.  If the ID occurs in this entry, the iterator is left in
@@ -720,11 +718,11 @@ public class IDPostings implements Postings, MergeablePostings {
          * <code>false</code> otherwise.
          */
         public boolean findID(int id) {
-            
+
             if(nIDs == 0) {
                 return false;
             }
-            
+
             //
             // We're only done if we're looking for something past the
             // end.
@@ -733,7 +731,7 @@ public class IDPostings implements Postings, MergeablePostings {
                 return false;
             }
             done = false;
-            
+
             //
             // Set up.  Start at the beginning or skip to the right place.
             if(nSkips == 0) {
@@ -777,16 +775,16 @@ public class IDPostings implements Postings, MergeablePostings {
                     }
                 }
             }
-            
+
             while(curr < id) {
                 if(!next(-1, -1)) {
                     return false;
                 }
             }
-            
+
             return curr == id;
         }
-        
+
         /**
          * Resets the iterator to the beginning of the entry.  Data will not be
          * decoded until the <code>next</code> method is called.
@@ -796,7 +794,7 @@ public class IDPostings implements Postings, MergeablePostings {
             curr = 0;
             done = nIDs == 0;
         }
-        
+
         /**
          * Gets the ID that the iterator is currently pointing at.
          *
@@ -806,7 +804,7 @@ public class IDPostings implements Postings, MergeablePostings {
         public int getID() {
             return curr;
         }
-        
+
         /**
          * Gets the weight associated with the current ID, as generated by
          * some weighting function.
@@ -814,14 +812,14 @@ public class IDPostings implements Postings, MergeablePostings {
         public float getWeight() {
             return 1;
         }
-        
+
         /**
          * Gets the frequency associated with the current ID.
          */
         public int getFreq() {
             return 1;
         }
-        
+
         /**
          * Compares this postings iterator to another one.  The comparison
          * is based on the current ID that the iterator is pointing at.
@@ -834,7 +832,7 @@ public class IDPostings implements Postings, MergeablePostings {
         public int compareTo(Object o) {
             return getID() - ((PostingsIterator) o).getID();
         }
-        
+
         /**
          * Tests the equality of this postings iterator and another one.
          *
@@ -842,12 +840,12 @@ public class IDPostings implements Postings, MergeablePostings {
          * same ID, <code>false</code> otherwise.
          */
         public boolean equals(Object o) {
-            if (o instanceof PostingsIterator) {
+            if(o instanceof PostingsIterator) {
                 return getID() == ((PostingsIterator) o).getID();
             }
             return false;
         }
-        
+
         public int get(int[] ids) {
             int p;
             for(p = 0; p < ids.length && curr != lastID; p++) {
@@ -856,7 +854,7 @@ public class IDPostings implements Postings, MergeablePostings {
             }
             return p;
         }
-        
+
         public int get(int[] ids, int[] freq) {
             int p;
             for(p = 0; p < ids.length && curr != lastID; p++) {
@@ -865,7 +863,7 @@ public class IDPostings implements Postings, MergeablePostings {
             }
             return p;
         }
-        
+
         public int get(int[] ids, float[] weights) {
             int p;
             for(p = 0; p < ids.length && curr != lastID; p++) {
@@ -875,5 +873,4 @@ public class IDPostings implements Postings, MergeablePostings {
             return p;
         }
     }
-    
 } // IDPostings

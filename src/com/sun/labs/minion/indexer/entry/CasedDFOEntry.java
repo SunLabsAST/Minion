@@ -37,6 +37,7 @@ import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import com.sun.labs.minion.util.CharUtils;
+import java.util.logging.Level;
 
 public class CasedDFOEntry extends CasedEntry {
 
@@ -258,7 +259,7 @@ public class CasedDFOEntry extends CasedEntry {
             if(idMap == null) {
                 to[i] += cie.to[i];
                 if(to[i] < 0) {
-                    log.warn(logTag, 3, "Exceeded long on " + name + " clamping to max");
+                    logger.warning("Exceeded long on " + name + " clamping to max");
                     to[i] = Long.MAX_VALUE;
                 }
                 maxfdt[i] = Math.max(maxfdt[i], cie.maxfdt[i]);
@@ -266,7 +267,7 @@ public class CasedDFOEntry extends CasedEntry {
                 maxfdt[i] = p[i].getMaxFDT();
                 to[i] = p[i].getTotalOccurrences();
                 if(to[i] < 0) {
-                    log.warn(logTag, 3, "Exceeded long on " + name + " clamping to max");
+                    logger.warning("Exceeded long on " + name + " clamping to max");
                     to[i] = Long.MAX_VALUE;
                 }
             }
@@ -433,7 +434,7 @@ public class CasedDFOEntry extends CasedEntry {
                 return null;
             }
         } catch (java.io.IOException ioe) {
-            log.error(logTag, 1, "Error reading postings for " + name,
+            logger.log(Level.SEVERE, "Error reading postings for " + name,
                       ioe);
             return null;
         } finally {

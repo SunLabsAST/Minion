@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.partition;
 
 import java.io.BufferedOutputStream;
@@ -37,27 +36,25 @@ import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 
-import com.sun.labs.minion.util.MinionLog;
-import com.sun.labs.minion.util.StopWatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author ja151348
  */
 public class InvFilePartitionUtils {
-    
-    
+
     /**
      * The log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The tag for this module.
      */
     protected static String logTag = "IFUtil";
 
-    
     /** Creates a new instance of InvFilePartitionUtils */
     public InvFilePartitionUtils() {
     }
@@ -70,14 +67,13 @@ public class InvFilePartitionUtils {
      * remaining are for the postings files.
      */
     protected static File[] getFieldFiles(PartitionManager manager,
-                                          int partNumber) {
-        return new File[] {
-            manager.makeDictionaryFile(partNumber, "fs"),
-            manager.makePostingsFile(partNumber, "fs")
-        };
+            int partNumber) {
+        return new File[]{
+                    manager.makeDictionaryFile(partNumber, "fs"),
+                    manager.makePostingsFile(partNumber, "fs")
+                };
     }
 
-    
     /**
      * Gets the files associated with the bigram postings for a partition.
      *
@@ -86,13 +82,12 @@ public class InvFilePartitionUtils {
      * remaining are for the postings files.
      */
     protected static File[] getBigramFiles(PartitionManager manager,
-                                           int partNumber) {
-        return new File[] {
-            manager.makeDictionaryFile(partNumber, "bi"),
-            manager.makePostingsFile(partNumber, "bi"),
-        };
+            int partNumber) {
+        return new File[]{
+                    manager.makeDictionaryFile(partNumber, "bi"),
+                    manager.makePostingsFile(partNumber, "bi"),};
     }
-    
+
     /**
      * Gets the files associated with the taxonomy postings for a partition.
      *
@@ -101,20 +96,19 @@ public class InvFilePartitionUtils {
      * remaining are for the postings files.
      */
     protected static File[] getTaxonomyFiles(PartitionManager manager,
-                                           int partNumber) {
-        return new File[] {
-                manager.makeTaxonomyFile(partNumber),
-        };
+            int partNumber) {
+        return new File[]{
+                    manager.makeTaxonomyFile(partNumber),};
     }
-    
+
     protected static File[] getNGramFiles(PartitionManager manager,
-                                           int partNumber) {
-        return new File[] {
-            manager.makeDictionaryFile(partNumber, "ng"),
-            manager.makePostingsFile(partNumber, "ng"),
-            manager.makeDictionaryFile(partNumber, "sip"),
-            manager.makePostingsFile(partNumber, "sip")
-        };
+            int partNumber) {
+        return new File[]{
+                    manager.makeDictionaryFile(partNumber, "ng"),
+                    manager.makePostingsFile(partNumber, "ng"),
+                    manager.makeDictionaryFile(partNumber, "sip"),
+                    manager.makePostingsFile(partNumber, "sip")
+                };
     }
 
     /** 
@@ -124,31 +118,32 @@ public class InvFilePartitionUtils {
      * @return an array of files
      */
     protected static File[] getAllFiles(PartitionManager manager,
-                                        int partNumber) {
+            int partNumber) {
         File[] commonFiles = Partition.getAllFiles(manager, partNumber);
         File[] fieldFiles = getFieldFiles(manager, partNumber);
         File[] biFiles = getBigramFiles(manager, partNumber);
         File[] taxFiles = getTaxonomyFiles(manager, partNumber);
         File[] ngFiles = getNGramFiles(manager, partNumber);
-        
-        File[] result = new File[commonFiles.length + fieldFiles.length + biFiles.length + taxFiles.length + ngFiles.length];
+
+        File[] result = new File[commonFiles.length + fieldFiles.length +
+                biFiles.length + taxFiles.length + ngFiles.length];
         int insert = 0;
         System.arraycopy(commonFiles, 0, result, insert, commonFiles.length);
         insert += commonFiles.length;
-        
+
         System.arraycopy(fieldFiles, 0, result, insert, fieldFiles.length);
-        insert+= fieldFiles.length;
-        
+        insert += fieldFiles.length;
+
         System.arraycopy(biFiles, 0, result, insert, biFiles.length);
-        insert+= biFiles.length;
-        
+        insert += biFiles.length;
+
         System.arraycopy(taxFiles, 0, result, insert, taxFiles.length);
         insert += taxFiles.length;
-        
+
         System.arraycopy(ngFiles, 0, result, insert, ngFiles.length);
         return result;
     }
-    
+
     /**
      * Writes a bigram dictionary out to disk using the provided partition manager
      * and for the specified partition number
@@ -157,46 +152,45 @@ public class InvFilePartitionUtils {
      * @param partNumber the partition number that this dict is a part of
      */
     protected static void writeBigramDictionary(MemoryBiGramDictionary dict,
-                                                PartitionManager manager,
-                                                int partNumber) {
+            PartitionManager manager,
+            int partNumber) {
         try {
             //
             // Get the files that are used for the bigram dict.
             File[] files = getBigramFiles(manager, partNumber);
-            
+
             //
             // Get a channel for the bigram dictionaries.
             RandomAccessFile dictFile = new RandomAccessFile(files[0], "rw");
-            
+
             //
             // Get channels for the postings.
             OutputStream postStream =
-                new BufferedOutputStream(new FileOutputStream(files[1]),
-                                         8192);
+                    new BufferedOutputStream(new FileOutputStream(files[1]),
+                    8192);
             PostingsOutput postOut =
-                new StreamPostingsOutput(postStream);
-            
+                    new StreamPostingsOutput(postStream);
+
             //
             // Write the bigram dict out to the bigram files
             dict.dump(manager.getIndexDir(),
-                      new StringNameHandler(),
-                      dictFile,
-                      new PostingsOutput[] {
-                          postOut
-                      },
-                      MemoryDictionary.Renumber.RENUMBER,
-                      MemoryDictionary.IDMap.NONE,
-                      null);
-            
+                    new StringNameHandler(),
+                    dictFile,
+                    new PostingsOutput[]{
+                        postOut
+                    },
+                    MemoryDictionary.Renumber.RENUMBER,
+                    MemoryDictionary.IDMap.NONE,
+                    null);
+
             dict.clear();
 
             //
             // Close off those files.
             dictFile.close();
             postStream.close();
-        } catch (java.io.IOException ioe) {
-            log.error(logTag, 0,
-                    "Error dumping partition", ioe);
+        } catch(java.io.IOException ioe) {
+            Logger.getLogger(InvFilePartitionUtils.class.getName()).log(Level.SEVERE, "Error dumping partition", ioe);
         }
     }
 }

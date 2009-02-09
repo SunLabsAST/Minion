@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.util;
 
 import java.io.File;
@@ -58,9 +57,7 @@ import java.util.logging.Logger;
  */
 public class FileLock {
 
-    MinionLog log = MinionLog.getLog();
-    
-    Logger logger = Logger.getLogger("com.sun.labs.minion.util.FileLock");
+    Logger logger = Logger.getLogger(getClass().getName());
 
     public static final String logTag = "FL";
 
@@ -101,7 +98,7 @@ public class FileLock {
     public FileLock(File f, long timeout, TimeUnit units) {
         this(null, f, timeout, units);
     }
-    
+
     /**
      * Creates a lock for a file in a given directory.  
      * @param dir the directory where the lock file should be created.  If this
@@ -160,7 +157,7 @@ public class FileLock {
                 // We already have the lock.
                 return;
             }
-            
+
             state = new LockState(new RandomAccessFile(lockFile, "rw"));
 
             //
@@ -231,17 +228,20 @@ public class FileLock {
                 try {
                     state.lock.release();
                 } catch(IOException ex) {
-                    throw new FileLockException("Unable to release lock: " + state.lock, ex);
+                    throw new FileLockException("Unable to release lock: " +
+                            state.lock, ex);
                 }
                 try {
                     state.openChannel.close();
                 } catch(IOException ex) {
-                    throw new FileLockException("Unable to close lock file channel: " + lockFile, ex);
+                    throw new FileLockException("Unable to close lock file channel: " +
+                            lockFile, ex);
                 }
                 try {
                     state.openFile.close();
                 } catch(IOException ex) {
-                    throw new FileLockException("Unable to close lock file: " + lockFile, ex);
+                    throw new FileLockException("Unable to close lock file: " +
+                            lockFile, ex);
                 }
 
                 //
@@ -250,8 +250,9 @@ public class FileLock {
 
                 //
                 // We'll try to delete the lock file, but if it doesn't go, it's OK.
-                if (!lockFile.delete()) {
-                    log.debug(logTag, 4, "Couldn't delete lock file (this is OK): " + lockFile.getName());
+                if(!lockFile.delete()) {
+                    logger.fine("Couldn't delete lock file (this is OK): " +
+                            lockFile.getName());
                 }
 
 
@@ -355,7 +356,6 @@ public class FileLock {
             openChannel.close();
             openFile.close();
         }
-
         RandomAccessFile openFile;
 
         FileChannel openChannel;
@@ -363,7 +363,6 @@ public class FileLock {
         java.nio.channels.FileLock lock;
 
     }
-
     /**
      * The lock file for the file that we want to lock.
      */
@@ -373,7 +372,7 @@ public class FileLock {
      * The timeout for the lock.
      */
     private long timeout;
-    
+
     /**
      * The thread local data for the state of the locks.
      */

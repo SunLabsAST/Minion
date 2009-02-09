@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.Arrays;
@@ -31,8 +30,8 @@ import com.sun.labs.minion.PassageHighlighter;
 
 import com.sun.labs.minion.pipeline.Token;
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 public class PassageImpl implements Passage, Comparable {
 
@@ -73,7 +72,7 @@ public class PassageImpl implements Passage, Comparable {
      * passage
      */
     protected int[] tokenEnds;
-    
+
     /**
      * The amount of context to keep.
      */
@@ -137,7 +136,8 @@ public class PassageImpl implements Passage, Comparable {
      */
     protected String elidedUnHLValue;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "PI";
 
     /**
@@ -153,7 +153,7 @@ public class PassageImpl implements Passage, Comparable {
      * length.
      */
     public PassageImpl(int[] posns, float penalty, String[] qt, int context,
-                       int maxSize) {
+            int maxSize) {
 
         this.penalty = penalty;
         this.qt = qt;
@@ -201,11 +201,10 @@ public class PassageImpl implements Passage, Comparable {
                 start = 1;
             }
             end = max + context;
-            tokens = new Token[end-start+1];
+            tokens = new Token[end - start + 1];
         }
     } // PassageImpl constructor
 
-    
     /**
      * Gets the penalty score associated with this passage.
      */
@@ -226,14 +225,14 @@ public class PassageImpl implements Passage, Comparable {
         if(finished) {
             return false;
         }
-        
+
         int wn = t.getWordNum();
 
         //
         // See if this token falls into the range.
         if(start == -1 || (wn >= start && wn <= end)) {
             if(size >= tokens.length) {
-                Token[] temp = new Token[tokens.length*2];
+                Token[] temp = new Token[tokens.length * 2];
                 System.arraycopy(tokens, 0, temp, 0, tokens.length);
                 tokens = temp;
             }
@@ -264,9 +263,9 @@ public class PassageImpl implements Passage, Comparable {
         }
         return null;
     }
-    
+
     public String highlight(PassageHighlighter highlighter,
-                          boolean htmlEncode) {
+            boolean htmlEncode) {
         StringBuffer b = new StringBuffer();
 
         //
@@ -311,7 +310,7 @@ public class PassageImpl implements Passage, Comparable {
         tokenStarts = new int[tokenPosns.length];
         tokenEnds = new int[tokenPosns.length];
         int startEndCnt = 0;
-        
+
         StringBuffer uhl = new StringBuffer();
         b.append(highlighter.startContext());
         for(int i = 0; i < size; i++) {
@@ -322,18 +321,19 @@ public class PassageImpl implements Passage, Comparable {
 
             boolean found = false;
             int[] tokenPosnsSorted = new int[tokenPosns.length];
-            System.arraycopy(tokenPosns, 0, tokenPosnsSorted, 0, tokenPosns.length);
+            System.arraycopy(tokenPosns, 0, tokenPosnsSorted, 0,
+                    tokenPosns.length);
             Arrays.sort(tokenPosnsSorted);
             int prev = -1;
             for(int j = 0; j < tokenPosns.length; j++) {
-                if (tokenPosnsSorted[j] == prev) {
+                if(tokenPosnsSorted[j] == prev) {
                     continue;
                 }
                 if(i == tokenPosnsSorted[j]) {
                     highlighter.highlightMatching(tokens[i].getToken(),
-                                                  tokens[i].getStart(),
-                                                  b,
-                                                  htmlEncode);
+                            tokens[i].getStart(),
+                            b,
+                            htmlEncode);
                     tokenStarts[startEndCnt] = tokens[i].getStart();
                     tokenEnds[startEndCnt] = tokens[i].getEnd();
                     startEndCnt++;
@@ -343,9 +343,9 @@ public class PassageImpl implements Passage, Comparable {
             }
 
             if(!found) {
-                b.append(tokens[i].getToken());            
+                b.append(tokens[i].getToken());
             }
-            
+
 
             if(i == pEnd) {
                 b.append(highlighter.endPassage());
@@ -356,7 +356,7 @@ public class PassageImpl implements Passage, Comparable {
             uhl.append(tokens[i].getToken());
         }
         b.append(highlighter.endContext());
-        
+
         fullHLValue = b.toString();
         fullUnHLValue = uhl.toString();
 
@@ -373,7 +373,7 @@ public class PassageImpl implements Passage, Comparable {
     public String highlight(PassageHighlighter highlighter) {
         return highlight(highlighter, false);
     }
-    
+
     public String getHLValue() {
         return getHLValue(true);
     }
@@ -381,7 +381,7 @@ public class PassageImpl implements Passage, Comparable {
     public String getHLValue(boolean elided) {
         return elided ? elidedHLValue : fullHLValue;
     }
-	    
+
     public String getUnHLValue(boolean elided) {
         return elided ? elidedUnHLValue : fullUnHLValue;
     }
@@ -441,7 +441,7 @@ public class PassageImpl implements Passage, Comparable {
                     chunks[i].append(ph.startPassage());
                 }
                 ph.highlightMatching(t.getToken(), t.getStart(),
-                                     chunks[i], htmlEncode);
+                        chunks[i], htmlEncode);
                 if(i == sp.length - 1) {
                     chunks[i].append(ph.endPassage());
                 }
@@ -466,7 +466,7 @@ public class PassageImpl implements Passage, Comparable {
                 //
                 // Watch for places with no tokens, and watch for the
                 // overlap between words!
-                if(after[i] >= before[i+1]) {
+                if(after[i] >= before[i + 1]) {
                     continue;
                 }
 
@@ -480,12 +480,12 @@ public class PassageImpl implements Passage, Comparable {
                 chunks[i].append(a);
                 currSize += a.length();
 
-                String b = tokens[before[i+1]--].getToken();
+                String b = tokens[before[i + 1]--].getToken();
                 if(currSize + b.length() >= maxSize) {
                     break;
                 }
 
-                chunks[i+1].insert(0, b);
+                chunks[i + 1].insert(0, b);
                 currSize += b.length();
 
                 done = false;
@@ -508,12 +508,12 @@ public class PassageImpl implements Passage, Comparable {
                     currSize += s.length();
                     done = false;
                 }
-                if(after[after.length-1] < size) {
-                    String s = tokens[after[after.length-1]++].getToken();
+                if(after[after.length - 1] < size) {
+                    String s = tokens[after[after.length - 1]++].getToken();
                     if(currSize + s.length() >= maxSize) {
                         break;
                     }
-                    chunks[chunks.length-1].append(s);
+                    chunks[chunks.length - 1].append(s);
                     currSize += s.length();
                     done = false;
                 }
@@ -523,7 +523,7 @@ public class PassageImpl implements Passage, Comparable {
         //
         // Put together the chunks.
         for(int i = 1; i < chunks.length; i++) {
-            if(before[i] > after[i-1]) {
+            if(before[i] > after[i - 1]) {
                 if(ph != null) {
                     chunks[0].append(ph.ellipsis());
                 } else {
@@ -542,7 +542,7 @@ public class PassageImpl implements Passage, Comparable {
 
         return chunks[0].toString();
     }
-	    
+
     /**
      * Gets the character positions of the passage words in the higlighted
      * passage string that was returned earlier.  This really only makes
@@ -550,9 +550,9 @@ public class PassageImpl implements Passage, Comparable {
      */
     public int[] getWordPositions() {
         return posns;
-        // 	return pass.getPassageWordPositions();
+    // 	return pass.getPassageWordPositions();
     }
-    
+
     /**
      * Gets the terms from the passage that match the terms in the query.
      *
@@ -576,7 +576,7 @@ public class PassageImpl implements Passage, Comparable {
      * the actual document for display.
      */
     public int[] getMatchStart() {
-        if (tokenStarts != null) {
+        if(tokenStarts != null) {
             return tokenStarts;
         } else {
             return new int[0];
@@ -594,7 +594,7 @@ public class PassageImpl implements Passage, Comparable {
      * necessary to highlight the actual document for display.
      */
     public int[] getMatchEnd() {
-        if (tokenEnds != null) {
+        if(tokenEnds != null) {
             return tokenEnds;
         } else {
             return new int[0];
@@ -615,7 +615,7 @@ public class PassageImpl implements Passage, Comparable {
     }
 
     public String toString() {
-        return Util.arrayToString(tokenStarts) + " " + Util.arrayToString(tokenEnds);
+        return Util.arrayToString(tokenStarts) + " " + Util.arrayToString(
+                tokenEnds);
     }
-
 } // PassageImpl

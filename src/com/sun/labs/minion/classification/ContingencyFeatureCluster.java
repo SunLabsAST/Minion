@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.classification;
 
 /*
@@ -32,7 +31,6 @@ package com.sun.labs.minion.classification;
  * Desc: 
  *
  */
-
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.HashSet;
@@ -44,14 +42,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A cluster of contingency features
  */
-
-public class ContingencyFeatureCluster implements FeatureCluster
-{
+public class ContingencyFeatureCluster implements FeatureCluster {
 
     /** 
      * A set to hold the contents of this cluster 
@@ -63,11 +59,10 @@ public class ContingencyFeatureCluster implements FeatureCluster
      */
     protected String name;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "CFC";
 
-    
     /** 
      * A counter for adding up the a,b,c,d values and 
      * calculating the final weight
@@ -77,17 +72,18 @@ public class ContingencyFeatureCluster implements FeatureCluster
     //
     // Used only to speed up lookups, not in any structural
     // kind of way.
-    protected Map<Integer,Feature> quickIDMap = new HashMap<Integer,Feature>();
-    protected Map<String,Feature> quickNameMap = new HashMap<String,Feature>();
+    protected Map<Integer, Feature> quickIDMap = new HashMap<Integer, Feature>();
+
+    protected Map<String, Feature> quickNameMap = new HashMap<String, Feature>();
 
     //
     // The IDs of the docs that have features that are in this cluster
     protected Set<Integer> docIDs;
-    
+
     public ContingencyFeatureCluster() {
         this.counter = new ContingencyFeature();
     }
-    
+
     public ContingencyFeatureCluster(String name) {
         this.name = name;
         this.counter = new ContingencyFeature();
@@ -101,19 +97,19 @@ public class ContingencyFeatureCluster implements FeatureCluster
      */
     public FeatureCluster copy() {
         ContingencyFeatureCluster ret =
-            new ContingencyFeatureCluster(this.name);
+                new ContingencyFeatureCluster(this.name);
 
-        for (Feature f : contents) {
+        for(Feature f : contents) {
             ret.innerAdd(new ContingencyFeature((ContingencyFeature) f));
         }
 
         ret.counter = new ContingencyFeature(counter);
-        if (docIDs != null) {
+        if(docIDs != null) {
             ret.docIDs = new HashSet<Integer>(docIDs);
         }
         return ret;
     }
-    
+
     /** 
      * Add another feature to this cluster, incrementing the counts associated
      * with it.
@@ -121,13 +117,13 @@ public class ContingencyFeatureCluster implements FeatureCluster
      * @param f the feature to add
      */
     public void add(Feature f) {
-        ContingencyFeature cf = (ContingencyFeature)f;
+        ContingencyFeature cf = (ContingencyFeature) f;
         //
         // Add the feature to the list of contents, and add the values
         // to this cluster.  Don't allow duplicates in the clusters
         //counter.sum(cf);
-        if (cf.getDocs() != null) {
-            if (docIDs == null) {
+        if(cf.getDocs() != null) {
+            if(docIDs == null) {
                 docIDs = new HashSet<Integer>();
             }
             docIDs.addAll(cf.getDocs());
@@ -137,8 +133,8 @@ public class ContingencyFeatureCluster implements FeatureCluster
             counter.a += cf.a;
         }
         int pos = contents.indexOf(cf);
-        if (pos >= 0) {
-            ContingencyFeature existing = (ContingencyFeature)contents.get(pos);
+        if(pos >= 0) {
+            ContingencyFeature existing = (ContingencyFeature) contents.get(pos);
             existing.sum(cf);
         } else {
             innerAdd(cf);
@@ -150,9 +146,9 @@ public class ContingencyFeatureCluster implements FeatureCluster
         quickNameMap.put(f.getName(), f);
         contents.add(f);
     }
-    
+
     public void merge(FeatureCluster other) {
-        ContingencyFeatureCluster cfc = (ContingencyFeatureCluster)other;
+        ContingencyFeatureCluster cfc = (ContingencyFeatureCluster) other;
 
         //
         // Get the contents of the other cluster, and combine with this one
@@ -161,7 +157,7 @@ public class ContingencyFeatureCluster implements FeatureCluster
         }
         counter.sum(cfc.counter);
     }
-    
+
     /** 
      * Gets the contents of the feature cluster. 
      * 
@@ -169,7 +165,8 @@ public class ContingencyFeatureCluster implements FeatureCluster
      */
     public SortedSet<Feature> getContents() {
         return new TreeSet<Feature>(contents);
-    };
+    }
+    ;
 
 
     //
@@ -192,7 +189,7 @@ public class ContingencyFeatureCluster implements FeatureCluster
     public Iterator<Feature> iterator() {
         return contents.iterator();
     }
-    
+
     /** 
      * Compares to feature clusters on the basis of their names 
      */
@@ -208,7 +205,7 @@ public class ContingencyFeatureCluster implements FeatureCluster
     public String getName() {
         return name;
     }
-    
+
     public String getHumanReadableName() {
         String hr = null;
         for(Feature f : contents) {
@@ -218,7 +215,7 @@ public class ContingencyFeatureCluster implements FeatureCluster
         }
         return hr;
     }
-    
+
     /** 
      * Sets the name of this feature cluster.
      * 
@@ -228,7 +225,7 @@ public class ContingencyFeatureCluster implements FeatureCluster
         this.name = name;
         counter.name = name;
     }
-    
+
     /** 
      * Gets the weight of this feature cluster.
      * 
@@ -237,7 +234,7 @@ public class ContingencyFeatureCluster implements FeatureCluster
     public float getWeight() {
         return counter.getWeight();
     }
-    
+
     public ContingencyFeature getCounter() {
         return counter;
     }
@@ -257,8 +254,10 @@ public class ContingencyFeatureCluster implements FeatureCluster
             cn.add(((ContingencyFeature) o).getName());
         }
         Collections.sort(cn);
-        return String.format("%-15s %d a: %4d b: %4d c: %4d N: %4d weight: %7.3f", 
-                getName(), counter.type, counter.a, counter.b, counter.c, counter.N,
+        return String.format(
+                "%-15s %d a: %4d b: %4d c: %4d N: %4d weight: %7.3f",
+                getName(), counter.type, counter.a, counter.b, counter.c,
+                counter.N,
                 getWeight()) + " contents: " +
                 cn.toString();
     }

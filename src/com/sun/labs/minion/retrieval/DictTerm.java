@@ -40,8 +40,8 @@ import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.lextax.ConceptEntry;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.retrieval.cache.TermCacheElement;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * A concrete subclass of <code>QueryTerm</code> that represents a term
@@ -89,7 +89,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      */
     protected int[][] posns;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "DT";
 
@@ -111,8 +111,6 @@ public class DictTerm extends QueryTerm implements Comparator {
      * @param part The partition that we will be evaluating against.
      */
     public void setPartition(DiskPartition part) {
-
-//        log.debug(logTag, 0, String.format(part + " " + matchCase));
 
         //
         // If this isn't a term in an inverted file then we stop

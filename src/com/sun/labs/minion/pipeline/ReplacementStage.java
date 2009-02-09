@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.util.props.ConfigString;
@@ -33,7 +32,7 @@ import java.io.FileReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A stage that replaces some words with others.
@@ -41,20 +40,20 @@ import com.sun.labs.minion.util.MinionLog;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class ReplacementStage extends StageAdapter implements Configurable {
-    
-    private Map<String,String> replace;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    private Map<String, String> replace;
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "RS";
-    
+
     /**
      * Creates a ReplacementStage
      */
     public ReplacementStage() {
-        replace = new HashMap<String,String>();
+        replace = new HashMap<String, String>();
     }
-    
+
     /**
      * Processes a token from further up the pipeline.
      *
@@ -74,20 +73,20 @@ public class ReplacementStage extends StageAdapter implements Configurable {
             try {
                 FileReader reader = new FileReader(replacementFile);
                 BufferedReader buffReader = new BufferedReader(reader);
-                for (String curr = buffReader.readLine(); curr != null; curr = buffReader
-                        .readLine()) {
+                for(String curr = buffReader.readLine(); curr != null; curr =
+                                buffReader.readLine()) {
                     StringTokenizer tok = new StringTokenizer(curr);
                     replace.put(tok.nextToken(), tok.nextToken());
                 }
                 reader.close();
-            } catch (Exception stopE) {
-                log.warn(logTag, 3, "Error reading stop words: "
-                        + stopE.getMessage());
+            } catch(Exception stopE) {
+                logger.warning("Error reading stop words: " +
+                        stopE.getMessage());
             }
         }
-        
+
     }
-    
     @ConfigString
     public static final String PROP_REPLACEMENT_FILE = "replacement_file";
+
 }

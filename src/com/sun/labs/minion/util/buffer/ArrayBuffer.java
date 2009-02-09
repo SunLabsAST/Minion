@@ -31,9 +31,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
 import com.sun.labs.minion.util.ChannelUtil;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * A buffer class for reading and writing that is backed by a growable
@@ -85,7 +85,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
     /**
      * The log for this buffer.
      */
-    protected static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * A tag to use in logging.

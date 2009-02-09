@@ -34,8 +34,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
+import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.*;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -350,8 +350,7 @@ public class DiskFieldStore extends FieldStore {
         }
         
         if(f.getField().getType() != FieldInfo.Type.STRING) {
-            log.warn(logTag, 3,
-                    "MATCHES is an invalid operator for a " +
+            logger.warning("MATCHES is an invalid operator for a " +
                     "non-character field: " + name);
             return null;
         }
@@ -393,8 +392,7 @@ public class DiskFieldStore extends FieldStore {
         }
         
         if(f.getField().getType() != FieldInfo.Type.STRING) {
-            log.warn(logTag, 3,
-                    "MATCHES is an invalid operator for a " +
+            logger.warning("MATCHES is an invalid operator for a " +
                     "non-character field: " + name);
             return null;
         }

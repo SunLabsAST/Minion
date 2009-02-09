@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.document.tokenizer;
 
 import com.sun.labs.minion.IndexConfig;
@@ -34,10 +33,11 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.minion.pipeline.StageAdapter;
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
-public abstract class Tokenizer extends StageAdapter implements com.sun.labs.util.props.Configurable {
+public abstract class Tokenizer extends StageAdapter implements
+        com.sun.labs.util.props.Configurable {
 
     /**
      * The character position in the file we're tokenizing.
@@ -78,7 +78,7 @@ public abstract class Tokenizer extends StageAdapter implements com.sun.labs.uti
      * Whether we should save data.
      */
     protected boolean saveData;
-    
+
     /**
      * Whether we have saved data.
      */
@@ -95,10 +95,10 @@ public abstract class Tokenizer extends StageAdapter implements com.sun.labs.uti
      */
     protected int maxTokLen = 256;
 
-    protected static MinionLog log = MinionLog.getLog();
+    protected Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "TOK";
-    
+
     public Tokenizer() {
     }
 
@@ -174,11 +174,11 @@ public abstract class Tokenizer extends StageAdapter implements com.sun.labs.uti
         if(saveData) {
 
             int len = e - b;
-	    
+
             if(savedLen + len >= savedData.length) {
-                savedData = Util.expandChar(savedData, (savedLen + len)*2);
+                savedData = Util.expandChar(savedData, (savedLen + len) * 2);
             }
-	    
+
             System.arraycopy(text, b, savedData, savedLen, len);
             savedLen += len;
             dataSaved = true;
@@ -196,14 +196,13 @@ public abstract class Tokenizer extends StageAdapter implements com.sun.labs.uti
         if(saveData && dataSaved) {
 
             String saveString = new String(savedData,
-                                           0, savedLen);
-            downstream.savedData(trimSpaces ?
-                                 saveString.trim() : saveString);
+                    0, savedLen);
+            downstream.savedData(trimSpaces ? saveString.trim() : saveString);
             savedLen = 0;
         }
         makeTokens = true;
-        indexed    = true;
-        saveData   = false;
+        indexed = true;
+        saveData = false;
         dataSaved = false;
         trimSpaces = false;
         downstream.endField(fi);
@@ -226,7 +225,9 @@ public abstract class Tokenizer extends StageAdapter implements com.sun.labs.uti
      */
     public void dump(IndexConfig iC) {
         flush();
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         downstream.dump(iC);
     }
 
@@ -239,7 +240,9 @@ public abstract class Tokenizer extends StageAdapter implements com.sun.labs.uti
      */
     public void shutdown(IndexConfig iC) {
         flush();
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         downstream.shutdown(iC);
     }
 
@@ -262,7 +265,7 @@ public abstract class Tokenizer extends StageAdapter implements com.sun.labs.uti
         makeTokens = true;
         indexed = true;
         savedLen = 0;
-        saveData   = false;
+        saveData = false;
         trimSpaces = false;
         this.sendPunct = sendPunct;
     }
@@ -279,12 +282,12 @@ public abstract class Tokenizer extends StageAdapter implements com.sun.labs.uti
         sendPunct = ps.getBoolean(PROP_SEND_PUNCT);
         sendWhite = ps.getBoolean(PROP_SEND_WHITE);
     }
-
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_SEND_PUNCT = "send_punct";
 
-    @ConfigBoolean(defaultValue=false)
+    @ConfigBoolean(defaultValue = false)
     public static final String PROP_SEND_WHITE = "send_white";
 
     protected boolean sendWhite;
+
 } // Tokenizer

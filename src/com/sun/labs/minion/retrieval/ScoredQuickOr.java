@@ -21,18 +21,14 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
-
-import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.FieldedPostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
 import com.sun.labs.minion.util.Util;
-import com.sun.labs.minion.util.MinionLog;
-
+import java.util.logging.Logger;
 
 /**
  * A class that will allow us to quickly or together a number of terms.
@@ -41,25 +37,26 @@ import com.sun.labs.minion.util.MinionLog;
  * array.
  */
 public class ScoredQuickOr extends QuickOr {
-    
+
     /**
      * The weights associated with the documents.
      */
     float[] weights;
-    
+
     /**
      * The sum of the squared query weights
      */
     float sqw = 0;
-    
+
     /**
      * A particular field in which we're interested.
      */
     int fieldID = -1;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "SQO";
-    
+
     /**
      * Creates a quick or for a given partition.  The estimated size of the
      * result set is used for our initial calculation.
@@ -72,7 +69,7 @@ public class ScoredQuickOr extends QuickOr {
             weights = new float[estSize];
         }
     } // ScoredQuickOr constructor
-    
+
     public void setField(int fieldID) {
         this.fieldID = fieldID;
     }
@@ -85,52 +82,56 @@ public class ScoredQuickOr extends QuickOr {
     public void add(PostingsIterator pi) {
         add(pi, 1);
     }
-    
+
     public void add(PostingsIterator pi, float qw) {
         if(pi == null) {
             return;
         }
 
         added++;
-        sqw += (qw*qw);
-        
+        sqw += (qw * qw);
+
         qs.piW.start();
         qs.unionW.start();
         if(storeAll) {
             while(pi.next()) {
                 int d = pi.getID();
-                
+
                 //
                 // We need to figure out whether the weight is coming from a particular
                 // field or from the whole document.
                 float w;
                 if(fieldID != -1) {
-                    w = ((FieldedPostingsIterator) pi).getFieldWeights()[fieldID] * qw;
+                    w =
+                            ((FieldedPostingsIterator) pi).getFieldWeights()[fieldID] *
+                            qw;
                 } else {
                     w = pi.getWeight() * qw;
                 }
-                
+
                 weights[d] += w;
             }
         } else {
             int s = pi.getN() + p;
             if(s >= docs.length) {
-                docs = Util.expandInt(docs, s*2);
-                weights = Util.expandFloat(weights, s*2);
+                docs = Util.expandInt(docs, s * 2);
+                weights = Util.expandFloat(weights, s * 2);
             }
-            
+
             while(pi.next()) {
-                
+
                 //
                 // We need to figure out whether the weight is coming from a particular
                 // field or from the whole document.
                 float w;
                 if(fieldID != -1) {
-                    w = ((FieldedPostingsIterator) pi).getFieldWeights()[fieldID] * qw;
+                    w =
+                            ((FieldedPostingsIterator) pi).getFieldWeights()[fieldID] *
+                            qw;
                 } else {
                     w = pi.getWeight() * qw;
                 }
-                
+
                 docs[p] = pi.getID();
                 weights[p++] = w;
             }
@@ -138,15 +139,15 @@ public class ScoredQuickOr extends QuickOr {
         qs.piW.stop();
         qs.unionW.stop();
     }
-    
+
     public void add(PostingsIterator pi, float dw, float qw) {
         if(pi == null) {
             return;
         }
 
         added++;
-        sqw += (qw*qw);
-        
+        sqw += (qw * qw);
+
         qs.piW.start();
         qs.unionW.start();
         if(storeAll) {
@@ -157,10 +158,10 @@ public class ScoredQuickOr extends QuickOr {
         } else {
             int s = pi.getN() + p;
             if(s >= docs.length) {
-                docs = Util.expandInt(docs, s*2);
-                weights = Util.expandFloat(weights, s*2);
+                docs = Util.expandInt(docs, s * 2);
+                weights = Util.expandFloat(weights, s * 2);
             }
-            
+
             while(pi.next()) {
                 docs[p] = pi.getID();
                 weights[p++] = dw * qw;
@@ -169,7 +170,7 @@ public class ScoredQuickOr extends QuickOr {
         qs.piW.stop();
         qs.unionW.stop();
     }
-    
+
     /**
      * Adds an explicit set of documents and weights to this quick or.
      *
@@ -186,13 +187,13 @@ public class ScoredQuickOr extends QuickOr {
                 weights[d[i]] += w[i] * qw;
             }
         } else {
-            
+
             int s = p + d.length;
             if(s >= docs.length) {
-                docs = Util.expandInt(docs, s*2);
-                weights = Util.expandFloat(weights, s*2);
+                docs = Util.expandInt(docs, s * 2);
+                weights = Util.expandFloat(weights, s * 2);
             }
-            
+
             System.arraycopy(d, 0, docs, p, d.length);
             if(qw == 1) {
                 System.arraycopy(w, 0, weights, p, w.length);
@@ -205,7 +206,7 @@ public class ScoredQuickOr extends QuickOr {
             }
         }
     }
-    
+
     /**
      * Adds only a weight to this QuickOr.  This allows for document
      * representations where not all terms from a document appear
@@ -217,7 +218,7 @@ public class ScoredQuickOr extends QuickOr {
     public void addWeightOnly(float qw) {
         sqw += qw * qw;
     }
-    
+
     public ArrayGroup getGroup() {
 
         if(storeAll) {
@@ -230,15 +231,15 @@ public class ScoredQuickOr extends QuickOr {
             }
         } else {
 
-            if (added > 1) {
+            if(added > 1) {
                 qs.postSortW.start();
                 Util.sort(docs, weights, 0, p);
                 qs.postSortW.stop();
                 int s = -1;
                 int prev = -1;
 
-                for (int i = 0; i < p; i++) {
-                    if (docs[i] != prev) {
+                for(int i = 0; i < p; i++) {
+                    if(docs[i] != prev) {
                         docs[++s] = docs[i];
                         weights[s] = weights[i];
                     } else {
@@ -252,5 +253,4 @@ public class ScoredQuickOr extends QuickOr {
         }
         return new ScoredGroup(part, docs, weights, p, sqw);
     }
-    
 } // ScoredQuickOr

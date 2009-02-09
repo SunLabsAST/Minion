@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test.regression;
 
 import java.io.File;
@@ -44,7 +43,6 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.util.Getopt;
 
 import com.sun.labs.minion.IndexConfig;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 
@@ -57,17 +55,19 @@ import com.sun.labs.minion.SearchEngineFactory;
  *
  */
 public class IndexInverter {
+
     /**
      * The inner class DocumentPartition is an in-memory lightweight simulation of
      * a DiskPartition. It provides the ability to maintain a collection of documents.
      *
      */
     public class DocumentPartition {
+
         /**
          * The documents maintained by this partition
          */
         private Document[] documents;
-        
+
         /**
          * Create the empty collection of documents to be maintained by this DocumentPartition
          * @param partition a DiskPartition, which can be asked for the documents it contains
@@ -77,19 +77,19 @@ public class IndexInverter {
             //Document ids start at 1
             documents = new Document[partition.getMaxDocumentID() + 1];
             Iterator di = partition.getDocumentIterator();
-            while (di.hasNext()) {
+            while(di.hasNext()) {
                 /* get the first document in the partition */
                 DocKeyEntry dke = (DocKeyEntry) di.next();
                 int id = dke.getID();
-                if (!partition.isDeleted(dke.getID())) {
+                if(!partition.isDeleted(dke.getID())) {
                     Document document = new Document(dke.getName());
                     //message("Created document: " + document + " with id: " + id);
                     documents[id] = document;
                 }
-                
+
             }
         }
-        
+
         /**
          * Returns the document whose identifier is documentId
          * @param documentId the integer identifier for the document (starts at 1)
@@ -98,43 +98,46 @@ public class IndexInverter {
         public Document getDocument(int documentId) {
             return documents[documentId];
         }
-        
+
         /**
          * Write out the documents into the output directory
          * @param outputDir a String identifying the directory into which the recreated documents should be
          * written
          */
         public void outputDocuments(String outputDir) {
-            for (int i = 0; i < documents.length; i++) {
+            for(int i = 0; i < documents.length; i++) {
                 Document d = documents[i];
-                if (d != null) {
+                if(d != null) {
                     d.outputContents(outputDir);
                 }
             }
-            
+
         }
     }
-    
+
     /**
      * A Document has a name and maintains a collection of ordered words.
      *
      */
     class Document {
+
         /**
          * Simple record-srtle structure that represents a word and its position in
          * a document
          *
          */
         class WordPosition implements Comparable<WordPosition> {
+
             /**
              * The word whose position I manage
              */
             private Object word;
+
             /**
              * The position of the word in the containing document
              */
             private int position;
-            
+
             /**
              * Creata a new instance of WordPasition, recording the word and its position
              * @param word the word in a document
@@ -144,14 +147,14 @@ public class IndexInverter {
                 this.word = word;
                 this.position = position;
             }
-            
+
             /* (non-Javadoc)
              * @see java.lang.Comparable#compareTo(<T>)
              */
             public int compareTo(WordPosition w) {
                 return position - w.position;
             }
-            
+
             /**
              * Gets the word from the word position
              * @return the word
@@ -164,20 +167,21 @@ public class IndexInverter {
          * An ordered set of words, ordered by position
          */
         private SortedSet<WordPosition> entries = new TreeSet<WordPosition>();
+
         /**
          * The name of the document
          */
         private Object name;
-        
+
         /**
          * Creates a new instance of Document with a specified name
          * @param name an Object that identifies this Document
          */
         public Document(Object name) {
             this.name = name;
-            //message("Creating " + this);
+        //message("Creating " + this);
         }
-        
+
         /**
          * Sets the position of an entry's name in this document
          * @param entry a BaseEntry that encapsulates an ID and a name
@@ -187,18 +191,19 @@ public class IndexInverter {
             //message(this + " setPosition(" + entry + ", " + position + ")");
             entries.add(new WordPosition(entry.getName(), position));
         }
-        
+
         /**
          * Output the contents of this Document into a specified directory
          * @param outputDir the directory into which this document should be written
          */
         public void outputContents(String outputDir) {
             message("Outputting: " + this + " to " + outputDir);
-            FileWriter writer = null;;
+            FileWriter writer = null;
+            ;
             try {
                 writer = createFileWriter(outputDir);
-                
-                for (Iterator iter = entries.iterator(); iter.hasNext();) {
+
+                for(Iterator iter = entries.iterator(); iter.hasNext();) {
                     WordPosition wp = (WordPosition) iter.next();
                     writer.write((String) wp.getWord());
                     writer.write('\n');
@@ -206,21 +211,21 @@ public class IndexInverter {
                 writer.write('\n');
                 writer.flush();
                 writer.close();
-            } catch (IOException e) {
+            } catch(IOException e) {
                 System.err.println(e);
                 try {
-                    if (writer != null) {
+                    if(writer != null) {
                         writer.close();
                     }
-                } catch (IOException e1) {
+                } catch(IOException e1) {
                     System.err.println("Failed to close writer!");
                     e1.printStackTrace();
-                    
+
                 }
             }
-            
+
         }
-        
+
         /**
          * Create a FileWriter for this document in the specified directory
          * @param outputDir the directory into which the document is to be written
@@ -230,57 +235,57 @@ public class IndexInverter {
         private FileWriter createFileWriter(String outputDir) throws IOException {
             String filename = (String) name;
             File file = new File(filename);
-            if (file.isAbsolute()) {
+            if(file.isAbsolute()) {
                 filename = file.getName();
             }
             file = new File(outputDir + File.separatorChar + filename);
-            if (file.exists()) {
-            	throw new RuntimeException("File already exists: " + file.getAbsolutePath());
+            if(file.exists()) {
+                throw new RuntimeException("File already exists: " + file.
+                        getAbsolutePath());
             }
             //message("Created: " + file);
             return new FileWriter(file);
-            
-            
+
+
         }
-        
+
         /* (non-Javadoc)
          * @see java.lang.Object#toString()
          */
         public String toString() {
             return super.toString() + " name: " + name;
         }
-        
     }
-    
     /**
      * For tracing
      */
     public static boolean DEBUG = true;
+
     /**
      * Tag for the log
      */
     protected static final String logTag = "IndexInverter";
+
     /**
      * The configuration for the IndexInverter
      */
     public static IndexConfig indexConfig = new IndexConfig();
-    /**
-     * The log onto which messages <b>should</b> be written
-     */
-    protected static Log log;
+
     /**
      * A SearchEngine
      */
     private SearchEngineImpl engine;
+
     /**
      * The name of the directory into which the contents of the recreated documents should be written
      */
     private File outputDir;
+
     /**
      * The DocumentPartitions that represent the partitions in the index
      */
     private DocumentPartition[] partitions;
-    
+
     /**
      * This method recreates the documents from the index
      * @param activePartitions the list of active partitions in the index
@@ -292,29 +297,29 @@ public class IndexInverter {
         PostingsIteratorFeatures features = new PostingsIteratorFeatures();
         features.setPositions(true);
         features.setCaseSensitive(true);
-        
+
         Iterator partitionIterator = activePartitions.iterator();
         int partitionNumber = 0;
-        while (partitionIterator.hasNext()) {
+        while(partitionIterator.hasNext()) {
             DiskPartition partition = (DiskPartition) partitionIterator.next();
             // message("partition: " + partition);
             DocumentPartition documentPartition = partitions[partitionNumber++];
-            DictionaryIterator mainDictionaryIterator = (DictionaryIterator) partition
-                    .getMainDictionaryIterator();
-            while (mainDictionaryIterator.hasNext()) {
-                CasedDFOEntry entry = (CasedDFOEntry) mainDictionaryIterator
-                        .next();
-                PosPostingsIterator pIterator = (PosPostingsIterator) entry
-                        .iterator(features);
-                if (pIterator == null) {
+            DictionaryIterator mainDictionaryIterator =
+                    (DictionaryIterator) partition.getMainDictionaryIterator();
+            while(mainDictionaryIterator.hasNext()) {
+                CasedDFOEntry entry = (CasedDFOEntry) mainDictionaryIterator.
+                        next();
+                PosPostingsIterator pIterator = (PosPostingsIterator) entry.
+                        iterator(features);
+                if(pIterator == null) {
                     continue;
                 }
-                while (pIterator.next()) {
+                while(pIterator.next()) {
                     //
                     // The id identifies the document, per partition
                     int documentId = pIterator.getID();
-                    if (!partition.isDeleted(documentId)) {
-                        
+                    if(!partition.isDeleted(documentId)) {
+
                         //
                         // Positions encapsulates an array of positions for this
                         // entry, in the document identified by id
@@ -325,14 +330,14 @@ public class IndexInverter {
                         /**
                          * {@link com.sun.labs.minion.indexer.postings.PosPostingsIterator#getPositions()}
                          */
-                        Document document = documentPartition
-                                .getDocument(documentId);
+                        Document document = documentPartition.getDocument(
+                                documentId);
                         //
                         // The zeroth element idenfies the count of following
                         // elements
                         int count = positions[0][0];
                         int position = 1;
-                        for (int i = 0; i < count; i++) {
+                        for(int i = 0; i < count; i++) {
                             document.setPosition(entry,
                                     positions[0][position++]);
                         }
@@ -341,7 +346,7 @@ public class IndexInverter {
             }
         }
     }
-    
+
     /**
      * Create a list of documents that will be used to represent the recreated
      * documents
@@ -354,35 +359,37 @@ public class IndexInverter {
         Iterator partitionIterator = activePartitions.iterator();
         int p = 0;
         /* iterate through all the partitions */
-        while (partitionIterator.hasNext()) {
-            DiskPartition diskPartition = (DiskPartition) partitionIterator.next();
+        while(partitionIterator.hasNext()) {
+            DiskPartition diskPartition =
+                    (DiskPartition) partitionIterator.next();
             createDocumentPartition(diskPartition, p++);
         }
-        
+
     }
-    
+
     /**
      * Create a DocumentPartition to mirror the partition on the disk, and in turn create its documents
      * @param diskPartition a partition managed by the partition manager
      */
-    private void createDocumentPartition(DiskPartition diskPartition, int partitionNumber) {
+    private void createDocumentPartition(DiskPartition diskPartition,
+            int partitionNumber) {
         DocumentPartition documentPartition = new DocumentPartition();
         partitions[partitionNumber] = documentPartition;
         documentPartition.createDocuments(diskPartition);
-        
+
     }
-    
+
     /**
      * DEBUG information
      * @param string string to be output
      */
     void message(String string) {
-        if (DEBUG) {
+        if(DEBUG) {
             System.out.println(string);
         }
-        
+
     }
-    
+
     /**
      * Create the list of documents, recreate their contents then write them into an output directory
      */
@@ -393,28 +400,28 @@ public class IndexInverter {
         recreateDocuments(activePartitions);
         outputDocuments();
     }
-    
+
     /**
      * Output the recreated documents into the output directory
      */
     private void outputDocuments() {
-        for (int i = 0; i < partitions.length; i++) {
+        for(int i = 0; i < partitions.length; i++) {
             DocumentPartition dp = partitions[i];
-            if (dp != null) {
+            if(dp != null) {
                 dp.outputDocuments(outputDir.getAbsolutePath());
             }
         }
-        
+
     }
-    
+
     /**
      * Help!
      */
     public static void usage() {
-        System.out
-                .println("Usage: java com.sun.labs.minion.test.regression.IndexInverter -d <index_dir> -o <output_dir> -x <config_file>");
+        System.out.println(
+                "Usage: java com.sun.labs.minion.test.regression.IndexInverter -d <index_dir> -o <output_dir> -x <config_file>");
     }
-    
+
     /**
      * Main method to kick off the indexinverter
      * @param args
@@ -424,12 +431,12 @@ public class IndexInverter {
      */
     public static void main(String[] args) throws java.io.IOException,
             NumberFormatException, SearchEngineException {
-        
-        if (args.length == 0) {
+
+        if(args.length == 0) {
             usage();
             return;
         }
-        
+
         String flags = "d:o:x:";
         Getopt gopt = new Getopt(args, flags);
         int logLevel = 3;
@@ -437,49 +444,45 @@ public class IndexInverter {
         String indexDir = null;
         String cmFile = null;
         String outputDir = "/tmp";
-        
-        
-        if (args.length == 0) {
+
+
+        if(args.length == 0) {
             usage();
             return;
         }
-        
+
         Thread.currentThread().setName("IndexInverter");
-        
+
         //
         // Handle the options.
-        while ((c = gopt.getopt()) != -1) {
-            switch (c) {
-                
+        while((c = gopt.getopt()) != -1) {
+            switch(c) {
+
                 case 'd':
                     indexDir = gopt.optArg;
                     break;
-                    
+
                 case 'o':
                     outputDir = gopt.optArg;
                     break;
-                    
+
                 case 'x':
                     cmFile = gopt.optArg;
                     break;
             }
         }
-        
+
         //
         // Setup logging.
-        log = Log.getLog();
-        log.setStream(System.out);
-        log.setLevel(logLevel);
-        
         IndexInverter inverter = new IndexInverter(cmFile, indexDir, outputDir);
         inverter.outputInvertedIndex();
         inverter.close();
         System.out.println("Completed inversion");
-        
-        
+
+
     }
-    
-     public void close() throws SearchEngineException {
+
+    public void close() throws SearchEngineException {
         engine.close();
     }
 
@@ -489,18 +492,20 @@ public class IndexInverter {
      */
     public IndexInverter(String cmFile, String indexDir, File outputDirectory) {
         this.outputDir = outputDirectory;
-        if (!outputDir.exists()) {
-            System.err.println("Output directory (" + outputDirectory.getAbsolutePath() + ") does not exist, please create it");
+        if(!outputDir.exists()) {
+            System.err.println("Output directory (" + outputDirectory.
+                    getAbsolutePath() + ") does not exist, please create it");
             System.exit(0);
         }
         //
         // Open our engine for use.  We give it the properties that we read
         // and no query properties.
         try {
-            engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(cmFile, indexDir);
-            
-        } catch (SearchEngineException se) {
-            log.error("Indexer", 1, "Error opening collection", se);
+            engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                    cmFile, indexDir);
+
+        } catch(SearchEngineException se) {
+            System.err.println("Error opening collection: " + se);
             System.exit(0);
         }
     }
@@ -508,5 +513,4 @@ public class IndexInverter {
     public IndexInverter(String cmFile, String indexDir, String outputDirectory) {
         this(cmFile, indexDir, new File(outputDirectory));
     }
-    
 }

@@ -157,12 +157,12 @@ public class FieldedDocKeyEntry extends DocKeyEntry {
             try {
                 readPostings();
             } catch(IOException ex) {
-                log.error(logTag, 0, "Error reading postings for document " + name);
+                logger.severe("Error reading postings for document " + name);
                 return new WeightedFeature[0];
             }
         }
         if(p == null) {
-            log.warn(logTag, 0, "Empty postings for " + name + " " + size);
+            logger.warning("Empty postings for " + name + " " + size);
             return new WeightedFeature[0];
         }
         return ((FieldedDocumentVectorPostings) p).getWeightedFeatures(

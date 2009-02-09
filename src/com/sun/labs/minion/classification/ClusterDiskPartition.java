@@ -33,7 +33,7 @@ import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.IDEntry;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A disk partition that will hold classifier data.
@@ -45,7 +45,7 @@ import com.sun.labs.minion.util.MinionLog;
 public class ClusterDiskPartition extends DiskPartition
 {
 
-    protected static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "ClustDP";
 
@@ -104,7 +104,7 @@ public class ClusterDiskPartition extends DiskPartition
             ent.iterator(new PostingsIteratorFeatures());
 
         if (it == null) {
-            log.error(logTag, 1, "No postings iterator for: " + ent.getName());
+            logger.severe("No postings iterator for: " + ent.getName());
             return fcs;
         }
 
@@ -127,7 +127,7 @@ public class ClusterDiskPartition extends DiskPartition
         // for each id
         PostingsIterator it = docEntry.iterator(new PostingsIteratorFeatures());
         if(it == null) {
-            log.error(logTag, 1, "No feature iterator for: " + docEntry.getName());
+            logger.severe("No feature iterator for: " + docEntry.getName());
             return cluster;
         }
 

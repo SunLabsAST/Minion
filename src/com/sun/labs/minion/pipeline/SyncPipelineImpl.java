@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.minion.Document;
@@ -37,33 +36,35 @@ import com.sun.labs.minion.IndexableString;
 import java.util.Collection;
 import java.util.Date;
 import com.sun.labs.minion.indexer.partition.Dumper;
+import java.util.logging.Level;
 
 /**
  *
  * @author Stephen Green <stephen.green@sun.com>
  */
-public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleIndexer {
-    
+public class SyncPipelineImpl extends AbstractPipelineImpl implements
+        SimpleIndexer {
+
     /**
      * Whether we're currently in a document.
      */
     protected boolean inDoc;
-    
+
     /**
      * Whether we're finished as a <code>SimpleIndexer</code>.
      */
     protected boolean simpleIndexingFinished;
-    
+
     /**
      * The current active field for indexing.
      */
     private FieldInfo currField;
-    
+
     /**
      * The current array of active fields.
      */
     private int[] fields = new int[32];
-    
+
     /**
      * Creates a synchronous indexing pipeline
      * 
@@ -79,15 +80,15 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
             Dumper dumper) {
         super(factory, engine, pipeline, dumper);
     }
-    
+
     public void index(Indexable doc) throws SearchEngineException {
         indexDoc(doc.getKey(), doc.getMap());
     }
-    
+
     public void flush() {
         realDump();
     }
-    
+
     public void dump() {
         realDump();
     }
@@ -100,11 +101,11 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
     public void purge() {
         realPurge();
     }
-    
+
     public void shutdown() {
         realDump();
     }
-    
+
     /**
      * Indexes a whole document at once.  You must not do this in the middle of
      * another document!
@@ -119,11 +120,11 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
         }
         try {
             index(doc);
-        } catch (SearchEngineException ex) {
-            log.error(logTag, 0, "Error indexing: " + doc.getKey());
+        } catch(SearchEngineException ex) {
+            logger.severe("Error indexing: " + doc.getKey());
         }
     }
-    
+
     /**
      * Indexes a whole document at once.  You must not do this in the middle of
      * another document!
@@ -138,7 +139,7 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
         }
         ((DocumentImpl) doc).index(this);
     }
-    
+
     /**
      * Starts the indexing of a document.
      *
@@ -158,7 +159,7 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
         super.startDocument(key);
         inDoc = true;
     }
-    
+
     /**
      * Adds a field value to the current document.  The named field should
      * have been defined by the index configuration used to configure the
@@ -175,68 +176,67 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
         stateCheck();
         inDocCheck();
         FieldInfo fi = null;
-        
+
         //
         // If we have a field name, then get the info for the field, which may
         // require us to generate a new field info based on the defined defaults.
         if(name != null) {
             fi = engine.getManager().getMetaFile().getFieldInfo(name);
             if(fi == null) {
-                
+
                 //
                 // We're creating a default field.
                 fi = addImpliedField(name);
             }
         }
-        
+
         try {
             handleField(fi, value);
-        } catch (java.io.IOException ioe) {
-            log.error(logTag, 0, "Error simple indexing field: " + name,
-                    ioe);
+        } catch(java.io.IOException ioe) {
+            logger.log(Level.SEVERE, "Error simple indexing field: " + name, ioe);
         }
     }
-    
+
     public void addField(String name, Collection<Object> value) {
         for(Object o : value) {
             addFieldInternal(name, o);
         }
     }
-    
+
     public void addField(String name, Object[] value) {
         for(Object o : value) {
             addFieldInternal(name, o);
         }
     }
-    
+
     public void addField(String name, Double value) {
         addFieldInternal(name, value);
     }
-    
+
     public void addField(String name, Float value) {
         addFieldInternal(name, value);
     }
-    
+
     public void addField(String name, Long value) {
         addFieldInternal(name, value);
     }
-    
+
     public void addField(String name, Integer value) {
         addFieldInternal(name, value);
     }
-    
+
     public void addField(String name, Date value) {
         addFieldInternal(name, value);
     }
-    
+
     public void addField(String name, String value) {
         addFieldInternal(name, value);
     }
-    
+
     public void addField(String name, IndexableString value) {
         addFieldInternal(name, value);
     }
-    
+
     /**
      * Adds a term to the current document.
      *
@@ -245,7 +245,7 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
     public void addTerm(String term) {
         addTerm(null, term, 1);
     }
-    
+
     /**
      * Adds a term to the current document.
      *
@@ -256,61 +256,61 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
     public void addTerm(String term, int count) {
         addTerm(null, term, count);
     }
-    
+
     public void addTerm(String field, String term, int count) {
         stateCheck();
         inDocCheck();
-        
+
         //
         // Check whether we changed fields and deal witht he change.
         //
         // If this field is null, then we're putting things in the no-field field.
         if(field == null) {
-            
+
             if(currField != null) {
                 fields[currField.getID()] = 0;
             }
             fields[0] = 1;
             currField = null;
         } else {
-            
+
             //
             // Unset the current field, if there is one.
             if(currField != null) {
                 fields[currField.getID()] = 0;
             }
-            
+
             //
             // Get the info for the new field and deal with bad cases.
             currField = engine.getManager().getMetaFile().getFieldInfo(field);
-            
+
             if(currField == null) {
                 currField = engine.getIndexConfig().getDefaultFieldInfo(field);
             }
-            
+
             //
             // If this field isn't indexed, then throw an exception.
             if(!currField.isIndexed()) {
                 throw new IllegalArgumentException("Trying to add terms to " +
                         field + " which is not an indexed field");
             }
-            
+
             if(currField.getID() >= fields.length) {
                 fields = new int[currField.getID() * 2 + 1];
             }
             fields[currField.getID()] = 1;
         }
-        
-        Token t = new Token(term,count);
+
+        Token t = new Token(term, count);
         t.setFields(fields);
         head.token(t);
     }
-    
+
     public void endDocument() {
         stateCheck();
         inDocCheck();
         super.endDocument();
-        
+
         //
         // Check if we need to dump data based on our memory usage.
         if(((SearchEngineImpl) engine).checkLowMemory()) {
@@ -318,7 +318,7 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
         }
         inDoc = false;
     }
-    
+
     /**
      * Finishes indexing.
      */
@@ -330,7 +330,7 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
         flush();
         simpleIndexingFinished = true;
     }
-    
+
     /**
      * Checks to see if we're in a document.  If we're not, then we'll
      * throw an exception.
@@ -339,13 +339,12 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
      */
     protected void inDocCheck() throws IllegalStateException {
         if(!inDoc) {
-            throw new
-                    IllegalStateException("startDocument has not been called, " +
+            throw new IllegalStateException("startDocument has not been called, " +
                     "so no indexing " +
                     "activity is possible");
         }
     }
-    
+
     /**
      * Checks to see if we're in a good state to index data.
      *
@@ -354,8 +353,7 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements SimpleInde
      */
     protected void stateCheck() throws IllegalStateException {
         if(simpleIndexingFinished) {
-            throw new
-                    IllegalStateException("SimpleIndexer has had finish " +
+            throw new IllegalStateException("SimpleIndexer has had finish " +
                     "called.  No more indexing " +
                     "activity is possible");
         }

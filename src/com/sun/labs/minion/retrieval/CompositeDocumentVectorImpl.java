@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.ArrayList;
@@ -53,9 +52,8 @@ import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
 import com.sun.labs.minion.indexer.postings.FieldedPostingsIterator;
 import com.sun.labs.minion.pipeline.StopWords;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.StopWatch;
-import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * An implementation of document vector that provides for a composite document
@@ -76,7 +74,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
      * The document key for this entry.
      */
     private transient DocKeyEntry key;
-    
+
     /**
      * The name of the key, which will survive transport.
      */
@@ -133,12 +131,12 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
      */
     protected boolean normalized = false;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "CDVI";
 
     protected transient StopWords ignoreWords;
-    
+
     protected CompositeDocumentVectorImpl() {
     }
 
@@ -199,7 +197,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
         setFields(fields);
         initFeatures();
     }
-    
+
     public CompositeDocumentVectorImpl(SearchEngine e,
             WeightedFeature[] wf, WeightedField[] fields) {
         this.e = e;
@@ -213,7 +211,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
         }
         initialized = true;
     }
-    
+
     public DocumentVector copy() {
         CompositeDocumentVectorImpl ret = new CompositeDocumentVectorImpl();
         ret.e = e;
@@ -235,7 +233,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
         }
         return ret;
     }
-    
+
     private void setFields(WeightedField[] fields) {
 
         //
@@ -267,7 +265,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
             fieldLengths[fid] = key.getDocumentVectorLength(fid);
         }
     }
-    
+
     private void remapFields() {
         MetaFile mf = ((SearchEngineImpl) e).getManager().getMetaFile();
         int nf = mf.size();
@@ -311,7 +309,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
         fieldFeatures = tff;
         fields = tf;
     }
-    
+
     private int getFieldID(WeightedField field, MetaFile mf) {
         int fid;
         if(field.getFieldName() == null) {
@@ -319,7 +317,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
         } else {
             FieldInfo fi = mf.getFieldInfo(field.getFieldName());
             if(!fi.isVectored()) {
-                log.warn(logTag, 4, "Non vectored field: " + fi.getName() +
+                logger.warning("Non vectored field: " + fi.getName() +
                         " for composite document vector");
             }
             fid = fi.getID();
@@ -334,7 +332,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
     public SearchEngine getEngine() {
         return e;
     }
-    
+
     public void setEngine(SearchEngine e) {
         this.e = e;
         QueryConfig qc = e.getQueryConfig();
@@ -475,7 +473,8 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
      * @param dvi the document to compare this one to
      * @return a sorted set of WeightedFeature that occurred in both documents
      */
-    public SortedSet<WeightedFeature> getSimilarityTerms(CompositeDocumentVectorImpl dvi) {
+    public SortedSet<WeightedFeature> getSimilarityTerms(
+            CompositeDocumentVectorImpl dvi) {
 
         //
         // OK, first up, get the contribution from each of the fields that we're 
@@ -490,7 +489,8 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
 
         WeightedFeature[] comb = combine(comp);
         SortedSet<WeightedFeature> ret =
-                new TreeSet<WeightedFeature>(WeightedFeature.getInverseWeightComparator());
+                new TreeSet<WeightedFeature>(WeightedFeature.
+                getInverseWeightComparator());
         for(WeightedFeature f : comb) {
             ret.add(f);
         }
@@ -717,7 +717,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
             // We're doing everything.
             fname = getTerms();
         }
-        
+
         //
         // Step through each partition and look up the terms
         // from the weighted feature vectors.  Add the postings for each

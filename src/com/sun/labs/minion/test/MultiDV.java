@@ -38,7 +38,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
-import com.sun.labs.minion.util.MinionLog;
 
 /**
  *
@@ -82,10 +81,6 @@ public class MultiDV implements Callable<List<Result>> {
         for(Handler h : logger.getHandlers()) {
             h.setFormatter(new SimpleLabsLogFormatter());
         }
-
-        MinionLog.setLogger(logger);
-        MinionLog.setLevel(3);
-
 
         MultiDV[] mdvs = new MultiDV[args.length];
         for(int i = 0; i < args.length; i++) {

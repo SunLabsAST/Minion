@@ -53,8 +53,8 @@ import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 
-import com.sun.labs.minion.util.MinionLog;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * An implementation of the Balanced Winnow classification
@@ -66,7 +66,7 @@ public class BalancedWinnow implements ClassifierModel {
 
     private static final String logTag = "WINN";
 
-    private static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
 
     private float theta = 0;
 
@@ -159,7 +159,7 @@ public class BalancedWinnow implements ClassifierModel {
             Map<String, TermStatsImpl> termStats,
             Map<DiskPartition, TermCache> termCaches,
             Progress progress) throws SearchEngineException {
-        //log.debug(logTag, 0, "training based on " + training.size() + " docs");
+logger.info("training based on " + training.size() + " docs");
         this.fieldName = fieldName;
         this.selectedFeatures = selectedFeatures;
 
@@ -269,8 +269,8 @@ public class BalancedWinnow implements ClassifierModel {
 
         float defUpperWeight = 2f * (theta / avgActiveFeatures);
         float defLowerWeight = 1f * (theta / avgActiveFeatures);
-        //log.debug(logTag, 0, "avgActiveFeatures: " + avgActiveFeatures + " and theta: " + theta);
-        //log.debug(logTag, 0, "defUp: " + defUpperWeight + " defLo: " + defLowerWeight);
+logger.info("avgActiveFeatures: " + avgActiveFeatures + " and theta: " + theta);
+logger.info("defUp: " + defUpperWeight + " defLo: " + defLowerWeight);
 
         float[] upperWeights = new float[selectedFeatures.size()];
         float[] lowerWeights = new float[selectedFeatures.size()];
@@ -286,7 +286,7 @@ public class BalancedWinnow implements ClassifierModel {
         // our weight vectors until either we get everything right,
         // or we've run out of iterations.
         nextStep(progress, "Calculating optimal Winnow vector");
-        //log.debug(logTag, 0, "numPos: " + posDocArrays.size() + " numNeg: " + negDocArrays.size());
+logger.info("numPos: " + posDocArrays.size() + " numNeg: " + negDocArrays.size());
         int count = 0;
         boolean cont = true;
         while(cont && count < numWinnows) {
@@ -454,8 +454,8 @@ public class BalancedWinnow implements ClassifierModel {
                 maxUp = Math.max(upperWeight[i], maxUp);
                 minDown = Math.min(lowerWeight[i], minDown);
             }
-        //log.debug(logTag, 0, "Winnow got " + numCorrect + " docs right and " + numWrong + " docs wrong.");
-        //log.debug(logTag, 0, " and maxUpper: " + maxUp + " and minLower: " + minDown);
+logger.info("Winnow got " + numCorrect + " docs right and " + numWrong + " docs wrong.");
+logger.info(" and maxUpper: " + maxUp + " and minLower: " + minDown);
         }
         return ret;
     }
@@ -508,7 +508,7 @@ public class BalancedWinnow implements ClassifierModel {
     }
 
     public float[] classify(DiskPartition sdp) {
-        //log.debug(logTag, 0, "theta is " + theta);
+logger.info("theta is " + theta);
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
 
         float[] result = new float[sdp.getMaxDocumentID() + 1];
@@ -540,7 +540,7 @@ public class BalancedWinnow implements ClassifierModel {
 
         for(int i = 0; i < result.length; i++) {
             if(result[i] != 0) {
-                //log.debug(logTag, 0, "score is " + result[i]);
+logger.info("score is " + result[i]);
                 if(result[i] < theta) {
                     result[i] = 0 - Math.abs(result[i]);
                 }

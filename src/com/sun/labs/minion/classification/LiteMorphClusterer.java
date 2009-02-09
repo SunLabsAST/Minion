@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.classification;
 
 import java.util.HashMap;
@@ -32,7 +31,7 @@ import java.util.Set;
 import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * Provides an implementation of a feature clusterer built around the light
@@ -42,14 +41,12 @@ import com.sun.labs.minion.util.MinionLog;
  * @author Jeff Alexander
  * @version $Revision: 1.1.2.7 $
  */
-
-public class LiteMorphClusterer extends ContingencyFeatureClusterer
-{
+public class LiteMorphClusterer extends ContingencyFeatureClusterer {
 
     /** 
      * The log 
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /** 
      * The log tag 
@@ -61,10 +58,10 @@ public class LiteMorphClusterer extends ContingencyFeatureClusterer
      */
     public LiteMorph morpher = LiteMorph_en.getMorph();
 
-    protected HashMap<String, FeatureCluster> clusterMap = new HashMap<String, FeatureCluster>();
-   
-    public LiteMorphClusterer() {
+    protected HashMap<String, FeatureCluster> clusterMap =
+            new HashMap<String, FeatureCluster>();
 
+    public LiteMorphClusterer() {
     }
 
     public LiteMorphClusterer(int type) {
@@ -79,8 +76,8 @@ public class LiteMorphClusterer extends ContingencyFeatureClusterer
         String name = feat.getName().toLowerCase();
 
         Set<String> morphs = morpher.variantsOf(name);
-        
-        if (morphs.size() == 0) {
+
+        if(morphs.size() == 0) {
             morphs = new HashSet<String>();
             morphs.add(name);
         }
@@ -91,22 +88,24 @@ public class LiteMorphClusterer extends ContingencyFeatureClusterer
         // If it is in, then all the morphs will be.  Otherwise,
         // add a new cluster with all the morphs
         String shortest = name;
-        for (Iterator<String> morphIterator = morphs.iterator(); morphIterator.hasNext();) {
+        for(Iterator<String> morphIterator = morphs.iterator(); morphIterator.
+                hasNext();) {
             String morph = morphIterator.next();
-            if (morph.length() < shortest.length()) {
-                if (morph.compareTo(shortest) < 0) {
+            if(morph.length() < shortest.length()) {
+                if(morph.compareTo(shortest) < 0) {
                     shortest = morph;
                 }
             }
         }
-        
+
         ContingencyFeatureCluster clust =
-            (ContingencyFeatureCluster) clusterMap.get(shortest);
-        if (clust == null) {
+                (ContingencyFeatureCluster) clusterMap.get(shortest);
+        if(clust == null) {
             clust = new ContingencyFeatureCluster(shortest);
-            for (Iterator<String> morphIterator = morphs.iterator(); morphIterator.hasNext();) {
+            for(Iterator<String> morphIterator = morphs.iterator(); morphIterator.
+                    hasNext();) {
                 String morph = morphIterator.next();
-                if (morph.equalsIgnoreCase(feat.getName())) {
+                if(morph.equalsIgnoreCase(feat.getName())) {
                     continue;
                 }
                 ContingencyFeature curr = new ContingencyFeature(feat);
@@ -117,7 +116,7 @@ public class LiteMorphClusterer extends ContingencyFeatureClusterer
             clust.docIDs = null;
             clusterMap.put(shortest, clust);
         }
-        
+
     }
 
     protected FeatureClusterSet getClusters() {

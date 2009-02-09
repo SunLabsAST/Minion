@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.StringTokenizer;
@@ -29,7 +28,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.BasicField;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A class to contain a sorting specification for a results set.  Results
@@ -37,27 +36,27 @@ import com.sun.labs.minion.util.MinionLog;
  * to the document.
  */
 public class SortSpec {
-    
+
     /**
      * The original specification.
      */
     protected String spec;
-    
+
     /**
      * The size of the specification, in terms of the number of fields.
      */
     protected int size;
-    
+
     /**
      * The fields upon which to sort.
      */
     protected FieldInfo[] fields;
-    
+
     /**
      * Fetchers for any saved fields in the sorting spec.
      */
     protected BasicField.Fetcher[] fetchers;
-    
+
     /**
      * The directions in which to sort each of the fields.
      * <code>true</code> indicates that the sort is in an increasing
@@ -65,11 +64,11 @@ public class SortSpec {
      * decreasing direction.
      */
     protected boolean[] directions;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "SSPEC";
-    
+
     /**
      * Creates a sorting specification from the given string description.
      *
@@ -87,7 +86,7 @@ public class SortSpec {
      * information for each of the named fields.
      */
     public SortSpec(PartitionManager manager, String spec) {
-        if (spec != null) {
+        if(spec != null) {
             this.spec = spec;
         } else {
             this.spec = "";
@@ -113,16 +112,16 @@ public class SortSpec {
             } else {
                 fields[i] = manager.getFieldInfo(fn);
                 if(fields[i] == null) {
-                    log.warn(logTag, 3, "Unknown field in sort spec: " + fn);
+                    logger.warning("Unknown field in sort spec: " + fn);
                 }
             }
         }
     } // SortSpec constructor
-    
+
     /**
      * Constructs a partition specific sorting specification that includes fetchers
      * for the saved fields appearing in the sorting specification.
-     */ 
+     */
     public SortSpec(SortSpec ss, InvFileDiskPartition part) {
         spec = ss.spec;
         size = ss.size;
@@ -135,13 +134,12 @@ public class SortSpec {
             }
         }
     }
-    
+
     public boolean getDirection(int i) {
         return directions[i];
     }
-    
+
     public String toString() {
         return spec;
     }
-    
 } // SortSpec

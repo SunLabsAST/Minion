@@ -2,10 +2,8 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package com.sun.labs.minion.test;
 
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
@@ -15,7 +13,6 @@ import com.sun.labs.minion.query.Term;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.EnumSet;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,8 +49,6 @@ public class Terms {
             }
         }
 
-        Log.setLogger(rl);
-        Log.setLevel(3);
         SearchEngine e = SearchEngineFactory.getSearchEngine(args[0]);
         BufferedReader r = new BufferedReader(new InputStreamReader(System.in));
         String t;
@@ -66,5 +61,4 @@ public class Terms {
         }
         e.close();
     }
-
 }

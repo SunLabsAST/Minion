@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.QueryStats;
@@ -54,10 +53,11 @@ import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsInput;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.LRACache;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A base class for all classes that implement dictionaries for use during
@@ -149,7 +149,7 @@ public class DiskDictionary implements Dictionary {
     /**
      * The log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The tag for this module.
@@ -414,13 +414,14 @@ public class DiskDictionary implements Dictionary {
         if(lus == null) {
             lus = new LookupState();
         }
-        
+
         lus.qs.dictLookups++;
         lus.qs.dictLookupW.start();
 
         //
         // Check our cache first.
-        QueryEntry ret = null;;
+        QueryEntry ret = null;
+
         synchronized(cacheLock) {
             ret = nameCache.get(name);
         }
@@ -431,7 +432,7 @@ public class DiskDictionary implements Dictionary {
         }
 
         lus.qs.dictCacheMisses++;
-        
+
         //
         // Finding a entry by name is a two-step process.  First, the
         // position of the entry is determined by performing a binary
@@ -442,15 +443,15 @@ public class DiskDictionary implements Dictionary {
         //
         // Find the position (if any) of this entry:
         int pos = findPos(name, lus);
-        if ((pos >= 0) || (pos < dh.size)) {
+        if((pos >= 0) || (pos < dh.size)) {
             //
             // The entry exists in the dictionary.  Look it up by position.
             ret = find(pos, lus);
 
             //
             // Cache the entry.
-            if (ret != null) {
-                synchronized (cacheLock) {
+            if(ret != null) {
+                synchronized(cacheLock) {
                     posnCache.put(new Integer(pos), ret);
                     nameCache.put(name, ret);
                 }
@@ -489,7 +490,8 @@ public class DiskDictionary implements Dictionary {
         // ID.
         int posn;
         if(lus.localIDToPosn != null) {
-            posn = lus.localIDToPosn.byteDecode(id * dh.idToPosnBytes, dh.idToPosnBytes);
+            posn = lus.localIDToPosn.byteDecode(id * dh.idToPosnBytes,
+                    dh.idToPosnBytes);
         } else {
             posn = id - 1;
         }
@@ -590,7 +592,8 @@ public class DiskDictionary implements Dictionary {
                 //
                 // Get the offset of the uncompressed entry.
                 int offset =
-                        lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes * mid,
+                        lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes *
+                        mid,
                         dh.nameOffsetsBytes);
 
                 //
@@ -669,7 +672,7 @@ public class DiskDictionary implements Dictionary {
         //
         // The name of the previous entry.
         Object prev = null;
-        for(int i = 0,  index = mid * 4 + i; i < 4 && index < dh.size; i++, index++) {
+        for(int i = 0, index = mid * 4 + i; i < 4 && index < dh.size; i++, index++) {
 
             Object compare = decoder.decodeName(prev, lus.localNames);
 
@@ -776,7 +779,8 @@ public class DiskDictionary implements Dictionary {
         //
         // Get the offset in the entry information buffer where we can
         // find the information for this entry.
-        int offset = lus.localInfoOffsets.byteDecode(posn * dh.entryInfoOffsetsBytes,
+        int offset = lus.localInfoOffsets.byteDecode(posn *
+                dh.entryInfoOffsetsBytes,
                 dh.entryInfoOffsetsBytes);
         ret.decodePostingsInfo(lus.localInfo, offset);
         return ret;
@@ -1006,7 +1010,7 @@ public class DiskDictionary implements Dictionary {
         if(!caseSensitive) {
             word = word.toLowerCase();
         }
-        //log.debug(logTag, 0, "Num entries matched: " + entryIds.length);
+        logger.info("Num entries matched: " + entryIds.length);
         //
         // Now pile up the potential matches and get the edit distances
         // for them.
@@ -1112,7 +1116,7 @@ public class DiskDictionary implements Dictionary {
 
         if(qtt.timedOut) {
             // Operation timed out
-            log.warn(logTag, 3, "Lookup timed out");
+            logger.warning("Lookup timed out");
             return new QueryEntry[0];
         }
 
@@ -1182,7 +1186,7 @@ public class DiskDictionary implements Dictionary {
             qe.setName(name);
             return qe;
         } catch(Exception e) {
-            log.error(logTag, 1, "Error instantiating entry.", e);
+            logger.log(Level.SEVERE, "Error instantiating entry.", e);
             return null;
         }
     }
@@ -1234,8 +1238,10 @@ public class DiskDictionary implements Dictionary {
                 // all of the postings into memory.  This will save us
                 // reads in some cases.
                 if(entryClass == com.sun.labs.minion.indexer.entry.IDEntry.class ||
-                        entryClass == com.sun.labs.minion.indexer.entry.IDFreqEntry.class ||
-                        entryClass == com.sun.labs.minion.indexer.entry.DocKeyEntry.class) {
+                        entryClass ==
+                        com.sun.labs.minion.indexer.entry.IDFreqEntry.class ||
+                        entryClass ==
+                        com.sun.labs.minion.indexer.entry.DocKeyEntry.class) {
                     buffChans[i] =
                             new FileBackedPostingsInput(postFiles[i],
                             dh.postStart[i], buffSize);
@@ -1245,8 +1251,7 @@ public class DiskDictionary implements Dictionary {
                             dh.postStart[i], buffSize);
                 }
             } catch(java.io.IOException ioe) {
-                log.error(logTag, 1,
-                        "Error creating postings stream for iterator", ioe);
+                logger.log(Level.SEVERE, "Error creating postings stream for iterator", ioe);
                 buffChans[i] = postIn[i];
             }
         }
@@ -1441,7 +1446,7 @@ public class DiskDictionary implements Dictionary {
                 : MemoryDictionary.Renumber.RENUMBER);
 
         int[] mapped = new int[idMaps.length];
-        
+
         //
         // The number of entries in the new dictionary.
         while(h.size() > 0) {
@@ -1452,7 +1457,7 @@ public class DiskDictionary implements Dictionary {
             // Make a new entry for the merged data.
             IndexEntry me =
                     (IndexEntry) entryFactory.getEntry(top.curr.getName());
-            
+
             //
             // If we have entry mappers, then get the ID from the entry at
             // the top of the heap, which will have been remapped.
@@ -1467,7 +1472,7 @@ public class DiskDictionary implements Dictionary {
             // before we knew this with -1, indicating that the given entry 
             // doesn't map to anything.
             Arrays.fill(mapped, 0);
-            
+
             //
             // Get all the equal entries, merging the postings as we go.
             while(top != null && top.curr.getName().equals(me.getName())) {
@@ -1530,10 +1535,11 @@ public class DiskDictionary implements Dictionary {
                 //
                 // Add the new entry to the dictionary that we're building.
                 try {
-                dw.write(me);
-                } catch (java.lang.ArithmeticException ame) {
-                    log.error(logTag, 1, "Arithmetic exception encoding postings for entry: " + me.getName());
-                    throw(ame);
+                    dw.write(me);
+                } catch(java.lang.ArithmeticException ame) {
+                    logger.severe("Arithmetic exception encoding postings for entry: " +
+                            me.getName());
+                    throw (ame);
                 }
             } else {
                 //
@@ -1550,7 +1556,7 @@ public class DiskDictionary implements Dictionary {
             }
 
             if(dw.dh.size % 10000 == 0) {
-                log.debug(logTag, 4, " Merged " + dw.dh.size + " entries");
+                logger.fine(" Merged " + dw.dh.size + " entries");
             }
         }
 
@@ -1565,7 +1571,7 @@ public class DiskDictionary implements Dictionary {
         // Finish of the writing of the entries to the merged dictionary.
         dw.finish(mDictFile);
 
-        log.log(logTag, 5, "Merged dictionary has: " + dw.dh.size + " entries.");
+        logger.fine("Merged dictionary has: " + dw.dh.size + " entries.");
 
         //
         // Return the maps from old to new IDs.
@@ -1686,7 +1692,7 @@ public class DiskDictionary implements Dictionary {
         // Tell the writer to finish up
         dw.finish(dictFile);
 
-        log.log(logTag, 5, "Remapped postings");
+        logger.info("Remapped postings");
     }
 
     /**
@@ -1793,11 +1799,17 @@ public class DiskDictionary implements Dictionary {
      * multiple lookups during querying.
      */
     public class LookupState {
+
         ReadableBuffer localNames;
+
         ReadableBuffer localNameOffsets;
+
         ReadableBuffer localInfo;
+
         ReadableBuffer localInfoOffsets;
+
         ReadableBuffer localIDToPosn;
+
         QueryStats qs;
 
         public LookupState() {
@@ -2022,7 +2034,7 @@ public class DiskDictionary implements Dictionary {
                     prevName = name;
                     pos++;
                 } catch(StringIndexOutOfBoundsException sib) {
-                    log.debug(logTag, 0, part + " " + pos + " " + prevName);
+                    logger.info(part + " " + pos + " " + prevName);
                     throw sib;
                 }
 
@@ -2082,7 +2094,8 @@ public class DiskDictionary implements Dictionary {
             estSize = 0;
             lus.localInfoOffsets.position(startPos * dh.entryInfoOffsetsBytes);
             for(int i = startPos; i < stopPos; i++) {
-                lus.localInfo.position(lus.localInfoOffsets.byteDecode(dh.entryInfoOffsetsBytes));
+                lus.localInfo.position(lus.localInfoOffsets.byteDecode(
+                        dh.entryInfoOffsetsBytes));
                 estSize += lus.localInfo.byteDecode();
             }
             return estSize;
@@ -2139,7 +2152,8 @@ public class DiskDictionary implements Dictionary {
 
         public int getN() {
             lus.localInfoOffsets.position(posn * dh.entryInfoOffsetsBytes);
-            lus.localInfo.position(lus.localInfoOffsets.byteDecode(dh.entryInfoOffsetsBytes));
+            lus.localInfo.position(lus.localInfoOffsets.byteDecode(
+                    dh.entryInfoOffsetsBytes));
             return lus.localInfo.byteDecode();
         }
 

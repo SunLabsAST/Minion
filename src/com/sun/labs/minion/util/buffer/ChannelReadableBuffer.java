@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.util.buffer;
 
 import java.io.RandomAccessFile;
@@ -29,13 +28,14 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A readable buffer that's backed by a channel and an in-memory buffer.
  */
 public class ChannelReadableBuffer extends StdReadableImpl {
-    
+
     /**
      * The channel containing the buffer.
      */
@@ -66,7 +66,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * representing.
      */
     protected long pos;
-    
+
     /**
      * The in-memory buffer.
      */
@@ -75,7 +75,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
     /**
      * A log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * A tag for our log entries.
@@ -94,11 +94,11 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * @param limit The number of bytes in our buffer.
      */
     public ChannelReadableBuffer(RandomAccessFile raf,
-                                 long offset,
-                                 int limit) {
+            long offset,
+            int limit) {
         this(raf.getChannel(), offset, limit, DEFAULT_BUFF_SIZE);
     }
-    
+
     /**
      * Creates a buffer backed by a channel.
      * @param buffSize The size of the in-memory buffer to use.
@@ -107,9 +107,9 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * @param limit The number of bytes in our buffer.
      */
     public ChannelReadableBuffer(RandomAccessFile raf,
-                                 long offset,
-                                 int limit,
-                                 int buffSize) {
+            long offset,
+            int limit,
+            int buffSize) {
         this(raf.getChannel(), offset, limit, buffSize);
     }
 
@@ -121,15 +121,15 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * @param limit The number of bytes in our buffer.
      */
     public ChannelReadableBuffer(FileChannel chan,
-                                 long offset,
-                                 int limit,
-                                 int buffSize) {
+            long offset,
+            int limit,
+            int buffSize) {
         this.chan = chan;
-        bs        = offset;
-        be        = offset + limit;
-        pos       = bs;
-        ms        = -1;
-        
+        bs = offset;
+        be = offset + limit;
+        pos = bs;
+        ms = -1;
+
 
         //
         // Fill the buffer if the size of the data is smaller than the size
@@ -137,8 +137,8 @@ public class ChannelReadableBuffer extends StdReadableImpl {
         if(limit > 0 && limit <= buffSize) {
             buff = ByteBuffer.allocateDirect(limit);
             int n = read(bs);
-            ms  = bs;
-            me  = bs + n;
+            ms = bs;
+            me = bs + n;
         } else {
             buff = ByteBuffer.allocateDirect(buffSize);
         }
@@ -156,8 +156,8 @@ public class ChannelReadableBuffer extends StdReadableImpl {
         try {
             buff.clear();
             return chan.read(buff, off);
-        } catch (java.io.IOException ioe) {
-            log.error(logTag, 1, "Error reading from channel", ioe);
+        } catch(java.io.IOException ioe) {
+            logger.log(Level.SEVERE, "Error reading from channel", ioe);
             return -1;
         }
     }
@@ -181,7 +181,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
         me = p + n;
         return 0;
     }
-    
+
     /**
      * Gets the number of bytes remaining to be read.
      * @return The number of bytes remaining to be read.
@@ -199,7 +199,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      */
     public ReadableBuffer duplicate() {
         return new ChannelReadableBuffer(chan, bs,
-                                         (int) (be - bs), buff.capacity());
+                (int) (be - bs), buff.capacity());
     }
 
     /**
@@ -214,8 +214,8 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * of bytes.
      */
     public ReadableBuffer slice(int p, int s) {
-        return new ChannelReadableBuffer(chan, bs+p,
-                                         s, buff.capacity());
+        return new ChannelReadableBuffer(chan, bs + p,
+                s, buff.capacity());
     }
 
     /**
@@ -231,7 +231,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * @param l The limit to set.
      */
     public void limit(int l) {
-        be  = bs + l;
+        be = bs + l;
     }
 
     /**
@@ -240,7 +240,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * @return The byte at the given position.
      */
     public byte get(int i) {
-        return buff.get(checkBounds(i+bs));
+        return buff.get(checkBounds(i + bs));
     }
 
     /**
@@ -266,14 +266,13 @@ public class ChannelReadableBuffer extends StdReadableImpl {
     public void position(int i) {
         this.pos = bs + i;
     }
-        
+
     /**
      * Gets a string representation of the buffer.
      * @return A string representation of the buffer.
      */
     public String toString() {
         return "buff: (" + bs + "," + be + ")" +
-            " mem: (" + ms + "," + me + ") " + buff.capacity();
+                " mem: (" + ms + "," + me + ") " + buff.capacity();
     }
-            
 } // ChannelReadableBuffer

@@ -24,7 +24,6 @@
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.DocumentVector;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultAccessor;
 import com.sun.labs.minion.ResultSet;
@@ -147,8 +146,6 @@ public class CrossIndexDV {
             }
         }
 
-        Log.setLogger(rl);
-        Log.setLevel(3);
         CrossIndexDV cid = new CrossIndexDV(
                 SearchEngineFactory.getSearchEngine(args[0]),
                 SearchEngineFactory.getSearchEngine(args[1]));

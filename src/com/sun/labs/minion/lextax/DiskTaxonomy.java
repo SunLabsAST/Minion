@@ -533,7 +533,7 @@ public class DiskTaxonomy extends Taxonomy {
 
         memoryTaxonomy.dump(indexDir, f);
 
-        log.log(logTag, 4, "Write merged taxonomy dictionary");
+        logger.info("Write merged taxonomy dictionary");
     }
 
     protected class HE implements Comparable<HE> {

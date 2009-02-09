@@ -21,10 +21,8 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test;
 
-import com.sun.labs.minion.Log;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.io.DataInputStream;
 import java.io.File;
@@ -55,8 +53,8 @@ import java.io.IOException;
 public class Recover {
 
     protected static void move(File od, File nd, String fn) throws IOException {
-        if (!(new File(od, fn)).renameTo(new File(nd, fn))) {
-            throw new IOException ("Failed to move file " + fn +
+        if(!(new File(od, fn)).renameTo(new File(nd, fn))) {
+            throw new IOException("Failed to move file " + fn +
                     " from " + od + " to " + nd);
         }
     }
@@ -71,9 +69,6 @@ public class Recover {
         for(Handler h : logger.getHandlers()) {
             h.setFormatter(new SimpleLabsLogFormatter());
         }
-
-        Log.setLogger(logger);
-        Log.setLevel(3);
 
         Thread.currentThread().setName("Recover");
 

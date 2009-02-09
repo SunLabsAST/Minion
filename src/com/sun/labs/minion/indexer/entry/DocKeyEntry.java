@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.entry;
 
 import java.io.IOException;
@@ -46,7 +45,7 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * dictionary, since that information cannot be recovered any other way.
  */
 public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
-    
+
     /**
      * The length of the document, in words.
      */
@@ -57,18 +56,18 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
      * got a duplicate key during a merge.
      */
     protected DocKeyEntry prevEntry;
-    
+
     /**
      * The original document ID before remapping.
      */
     protected int origID;
 
     protected static String logTag = "DKE";
-    
+
     public DocKeyEntry() {
         super(null);
     } // DocKeyEntry constructor
-    
+
     public DocKeyEntry(Object name) {
         super(name);
     } // DocKeyEntry constructor
@@ -76,7 +75,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
     public Entry getEntry(Object name) {
         return new DocKeyEntry(name);
     }
-    
+
     /**
      * Gets a new entry that contains a copy of the data in this entry.
      *
@@ -89,7 +88,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
         dke.docLen = docLen;
         return dke;
     }
-    
+
     public int getOrigID() {
         return origID;
     }
@@ -98,7 +97,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
      * Appends, with a check for a duplicate key, which is bad.
      */
     public void append(QueryEntry qe, int start, int[] idMap) {
-        
+
         //
         // Some partition types merge their documents (e.g., cluster partitions),
         // in which case we don't want to check for duplicate keys.
@@ -110,7 +109,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
         }
         super.append(qe, start, idMap);
     }
-    
+
     /**
      * Merges the entries in the postings underlying the other document key with 
      * the entries in the postings for this key.  During indexing, we may want to 
@@ -123,9 +122,10 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
         if(p == null) {
             p = getPostings();
         }
-        ((DocumentVectorPostings) p).merge((MergeablePostings) ((DocKeyEntry) qe).p, map);
+        ((DocumentVectorPostings) p).merge(
+                (MergeablePostings) ((DocKeyEntry) qe).p, map);
     }
-    
+
     /**
      * Gets an array of weighted features associated with this document key.
      * This can be used to generate a document vector for a document that was
@@ -144,7 +144,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
             try {
                 readPostings();
             } catch(IOException ex) {
-                log.error(logTag, 0, "Error reading postings for: " + name);
+                logger.severe("Error reading postings for: " + name);
                 return new WeightedFeature[0];
             }
         }
@@ -154,7 +154,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
                 dict,
                 wf, wc);
     }
-    
+
     /**
      * Gets the appropriate postings type for the class.  These postings
      * should be useable for indexing.
@@ -190,12 +190,12 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
      * postings.
      */
     public boolean writePostings(PostingsOutput[] out,
-                              int[] idMap)
-        throws java.io.IOException {
+            int[] idMap)
+            throws java.io.IOException {
 
         //
         // Do the standard writing stuff.
-        if (super.writePostings(out, idMap) == true) {
+        if(super.writePostings(out, idMap) == true) {
 
             if(p == null) {
                 return true;
@@ -208,7 +208,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
         }
         return true;
     }
-    
+
     /**
      * Encodes any information associated with the postings onto the given
      * buffer.  We override the parent's method because we need to encode
@@ -234,7 +234,7 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
     public void decodePostingsInfo(ReadableBuffer b, int pos) {
         super.decodePostingsInfo(b, pos);
         docLen = b.byteDecode();
-        id     = b.byteDecode();
+        id = b.byteDecode();
         origID = id;
     }
 
@@ -259,13 +259,14 @@ public class DocKeyEntry extends SinglePostingsEntry implements MergeableEntry {
     public float getDocumentVectorLength() {
         return getDocumentVectorLength(null);
     }
-    
+
     public float getDocumentVectorLength(String field) {
-        return ((DiskPartition) dict.getPartition()).getDocumentVectorLength(id, field);
+        return ((DiskPartition) dict.getPartition()).getDocumentVectorLength(id,
+                field);
     }
-    
+
     public float getDocumentVectorLength(int fieldID) {
-        return ((DiskPartition) dict.getPartition()).getDocumentVectorLength(id, fieldID);
+        return ((DiskPartition) dict.getPartition()).getDocumentVectorLength(id,
+                fieldID);
     }
-    
 } // DocKeyEntry

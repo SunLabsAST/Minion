@@ -21,14 +21,12 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.classification;
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.PorterStemmer;
 
 import java.util.HashMap;
-
+import java.util.logging.Logger;
 
 /**
  * Provides a clusterer that groups features that have the same stems.
@@ -36,13 +34,12 @@ import java.util.HashMap;
  * @author Jeff Alexander
  * @version $Revision: 1.1.2.7 $
  */
+public class StemmingClusterer extends ContingencyFeatureClusterer {
 
-public class StemmingClusterer extends ContingencyFeatureClusterer
-{
-    /** 
+    /**
      * The log 
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /** 
      * The log tag 
@@ -52,9 +49,8 @@ public class StemmingClusterer extends ContingencyFeatureClusterer
     protected PorterStemmer stemmer = new PorterStemmer();
 
     protected HashMap clusterMap = new HashMap();
-    
-    public StemmingClusterer() {
 
+    public StemmingClusterer() {
     }
 
     public StemmingClusterer(int type) {
@@ -64,18 +60,18 @@ public class StemmingClusterer extends ContingencyFeatureClusterer
     public FeatureClusterer newInstance() {
         return new StemmingClusterer();
     }
-    
+
     protected void addFeature(ContingencyFeature feat) {
         String name = feat.getName().toLowerCase();
         stemmer.add(name.toCharArray(), name.length());
         stemmer.stem();
         String stem = stemmer.toString();
-        
+
         //
         // See if we have already encountered this feature stem
         ContingencyFeatureCluster clust =
-            (ContingencyFeatureCluster)clusterMap.get(stem);
-        if (clust != null) {
+                (ContingencyFeatureCluster) clusterMap.get(stem);
+        if(clust != null) {
             clust.add(feat);
         } else {
             clust = new ContingencyFeatureCluster(stem);
@@ -84,7 +80,6 @@ public class StemmingClusterer extends ContingencyFeatureClusterer
         }
     }
 
-    
     protected FeatureClusterSet getClusters() {
         //
         // Now sort the feature clusters and return it
@@ -92,5 +87,4 @@ public class StemmingClusterer extends ContingencyFeatureClusterer
         clusterMap = new HashMap();
         return fcs;
     }
-    
 }

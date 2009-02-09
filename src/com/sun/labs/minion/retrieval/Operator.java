@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.Collections;
@@ -35,7 +34,7 @@ import com.sun.labs.minion.QueryConfig;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 public abstract class Operator extends QueryElement {
 
@@ -45,10 +44,10 @@ public abstract class Operator extends QueryElement {
      */
     protected List<QueryElement> operands;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "OP";
-    
+
     public Operator() {
     }
 
@@ -67,7 +66,7 @@ public abstract class Operator extends QueryElement {
             qe.setQueryStats(qs);
             qe.setPartition(part);
         }
-        
+
         //
         // Sort the elements by their estimated result set size.
         Collections.sort(operands);
@@ -82,7 +81,7 @@ public abstract class Operator extends QueryElement {
      */
     public void setQueryConfig(QueryConfig qc) {
         super.setQueryConfig(qc);
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
+        for(Iterator i = operands.iterator(); i.hasNext();) {
             ((QueryElement) i.next()).setQueryConfig(qc);
         }
     }
@@ -104,14 +103,13 @@ public abstract class Operator extends QueryElement {
         this.operands = operands;
     }
 
-    
     /**
      * Sets the current weighting function.  This should be propagated to
      * any components of the query element.
      */
     protected void setWeightingFunction(WeightingFunction wf) {
         super.setWeightingFunction(wf);
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
+        for(Iterator i = operands.iterator(); i.hasNext();) {
             ((QueryElement) i.next()).setWeightingFunction(wf);
         }
     }
@@ -122,7 +120,7 @@ public abstract class Operator extends QueryElement {
      */
     protected void setWeightingComponents(WeightingComponents wc) {
         super.setWeightingComponents(wc);
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
+        for(Iterator i = operands.iterator(); i.hasNext();) {
             ((QueryElement) i.next()).setWeightingComponents(wc);
         }
     }
@@ -134,7 +132,7 @@ public abstract class Operator extends QueryElement {
      */
     public void addSearchFieldName(String fieldName) {
         super.addSearchFieldName(fieldName);
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
+        for(Iterator i = operands.iterator(); i.hasNext();) {
             ((QueryElement) i.next()).addSearchFieldName(fieldName);
         }
     }
@@ -142,7 +140,7 @@ public abstract class Operator extends QueryElement {
     public List getQueryTerms(Comparator c) {
         List terms = new ArrayList();
         List subs = new ArrayList();
-        for(Iterator it = operands.iterator(); it.hasNext(); ) {
+        for(Iterator it = operands.iterator(); it.hasNext();) {
             QueryElement op = (QueryElement) it.next();
             if(op instanceof DictTerm) {
                 terms.add(op);
@@ -162,12 +160,13 @@ public abstract class Operator extends QueryElement {
 
     public String toString(String prefix) {
         StringBuffer mine = new StringBuffer();
-        mine.append(super.toString(prefix) + toStringMod() + " estSize: " + estSize + "\n");
-        if (operands != null) {
+        mine.append(super.toString(prefix) + toStringMod() + " estSize: " +
+                estSize + "\n");
+        if(operands != null) {
             ListIterator it = operands.listIterator();
-            while (it.hasNext()) {
-                QueryElement n = (QueryElement)it.next();
-                if (n != null) {
+            while(it.hasNext()) {
+                QueryElement n = (QueryElement) it.next();
+                if(n != null) {
                     mine.append(n.toString(prefix + " ") + "\n");
                 }
             }
@@ -179,5 +178,4 @@ public abstract class Operator extends QueryElement {
         // Get any modifier to print next to this string
         return "";
     }
-    
 } // Operator

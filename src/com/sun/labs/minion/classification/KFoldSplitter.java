@@ -29,9 +29,9 @@ import java.util.Iterator;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 
-import com.sun.labs.minion.util.MinionLog;
 
 import com.sun.labs.minion.IndexConfig;
+import java.util.logging.Logger;
 
 /**
  * Provides a K-fold splitter.  The results are divided up into
@@ -88,7 +88,7 @@ public class KFoldSplitter implements ResultSplitter
     /**
      * The log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The tag for this module.

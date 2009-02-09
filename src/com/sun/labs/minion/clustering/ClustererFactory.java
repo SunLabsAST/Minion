@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.clustering;
 
 import com.sun.labs.util.props.ConfigComponent;
@@ -32,7 +31,8 @@ import com.sun.labs.util.props.PropertySheet;
 import com.sun.labs.minion.classification.FeatureClusterer;
 import com.sun.labs.minion.classification.FeatureSelector;
 import com.sun.labs.minion.pipeline.StopWords;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A factory for results clusterers.
@@ -49,7 +49,7 @@ public class ClustererFactory implements com.sun.labs.util.props.Configurable {
 
     private Class<AbstractClusterer> resultsClustererClass;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     public static final String logTag = "RCF";
 
@@ -63,25 +63,27 @@ public class ClustererFactory implements com.sun.labs.util.props.Configurable {
         return getResultsClusterer(resultsClustererClass, numFeatures);
     }
 
-    public AbstractClusterer getResultsClusterer(Class<AbstractClusterer> clustererClass) {
+    public AbstractClusterer getResultsClusterer(
+            Class<AbstractClusterer> clustererClass) {
         return getResultsClusterer(clustererClass, numFeatures);
     }
 
-    public AbstractClusterer getResultsClusterer(Class<AbstractClusterer> clustererClass,
+    public AbstractClusterer getResultsClusterer(
+            Class<AbstractClusterer> clustererClass,
             int nFeatures) {
         AbstractClusterer ret = null;
         try {
             ret = clustererClass.newInstance();
             FeatureClusterer fc = getFeatureClusterer();
             FeatureSelector fs = getFeatureSelector();
-            if (fc != null && fs != null) {
+            if(fc != null && fs != null) {
                 ret.setFeatureInfo(fc, fs, nFeatures);
             }
-        } catch (InstantiationException ex) {
-            log.error(logTag, 1, "Error instantiating results clusterer:" +
+        } catch(InstantiationException ex) {
+            logger.log(Level.SEVERE, "Error instantiating results clusterer:" +
                     clustererClass + ", " + ex);
-        } catch (IllegalAccessException ex) {
-            log.error(logTag, 1, "Error instantiating results clusterer:" +
+        } catch(IllegalAccessException ex) {
+            logger.log(Level.SEVERE, "Error instantiating results clusterer:" +
                     clustererClass + ", " + ex);
         } finally {
             return ret;
@@ -93,11 +95,11 @@ public class ClustererFactory implements com.sun.labs.util.props.Configurable {
         try {
             ret = featureSelectorClass.newInstance();
             ret.setStopWords(stopWords);
-        } catch (IllegalAccessException ex) {
-            log.error(logTag, 1, "Error instantiating feature selector:" +
+        } catch(IllegalAccessException ex) {
+            logger.log(Level.SEVERE, "Error instantiating feature selector:" +
                     featureSelectorClass + ", " + ex);
-        } catch (InstantiationException ex) {
-            log.error(logTag, 1, "Error instantiating feature selector:" +
+        } catch(InstantiationException ex) {
+            logger.log(Level.SEVERE, "Error instantiating feature selector:" +
                     featureSelectorClass + ", " + ex);
         } finally {
             return ret;
@@ -108,11 +110,11 @@ public class ClustererFactory implements com.sun.labs.util.props.Configurable {
         FeatureClusterer ret = null;
         try {
             ret = featureClustererClass.newInstance();
-        } catch (InstantiationException ex) {
-            log.error(logTag, 1, "Error instantiating feature clusterer:" +
+        } catch(InstantiationException ex) {
+            logger.log(Level.SEVERE, "Error instantiating feature clusterer:" +
                     featureClustererClass + ", " + ex);
-        } catch (IllegalAccessException ex) {
-            log.error(logTag, 1, "Error instantiating feature clusterer:" +
+        } catch(IllegalAccessException ex) {
+            logger.log(Level.SEVERE, "Error instantiating feature clusterer:" +
                     featureClustererClass + ", " + ex);
         } finally {
             return ret;
@@ -132,24 +134,27 @@ public class ClustererFactory implements com.sun.labs.util.props.Configurable {
         // Get the actual classes for the names.
         try {
             featureSelectorClass =
-                    (Class<FeatureSelector>) Class.forName(featureSelectorClassName);
-        } catch (ClassNotFoundException ex) {
+                    (Class<FeatureSelector>) Class.forName(
+                    featureSelectorClassName);
+        } catch(ClassNotFoundException ex) {
             throw new PropertyException(ps.getInstanceName(),
                     PROP_FEATURE_SELECTOR_CLASS_NAME, "Unknown feature selector class: " +
                     featureSelectorClassName);
         }
         try {
             featureClustererClass =
-                    (Class<FeatureClusterer>) Class.forName(featureClustererClassName);
-        } catch (ClassNotFoundException ex) {
+                    (Class<FeatureClusterer>) Class.forName(
+                    featureClustererClassName);
+        } catch(ClassNotFoundException ex) {
             throw new PropertyException(ps.getInstanceName(),
                     PROP_FEATURE_CLUSTERER_CLASS_NAME, "Unknown feature clusterer class: " +
                     featureClustererClassName);
         }
         try {
             resultsClustererClass =
-                    (Class<AbstractClusterer>) Class.forName(resultsClustererClassName);
-        } catch (ClassNotFoundException ex) {
+                    (Class<AbstractClusterer>) Class.forName(
+                    resultsClustererClassName);
+        } catch(ClassNotFoundException ex) {
             throw new PropertyException(ps.getInstanceName(),
                     PROP_RESULTS_CLUSTERER_CLASS_NAME, "Unknown results clusterer class: " +
                     resultsClustererClassName);
@@ -168,14 +173,15 @@ public class ClustererFactory implements com.sun.labs.util.props.Configurable {
     public void setNumFeatures(int numFeatures) {
         this.numFeatures = numFeatures;
     }
-
-    @ConfigString(defaultValue = "com.sun.labs.minion.classification.MIFeatureSelector")
+    @ConfigString(defaultValue =
+    "com.sun.labs.minion.classification.MIFeatureSelector")
     public static final String PROP_FEATURE_SELECTOR_CLASS_NAME =
             "feature_selector_class_name";
 
     private String featureSelectorClassName;
 
-    @ConfigString(defaultValue = "com.sun.labs.minion.classification.StemmingClusterer")
+    @ConfigString(defaultValue =
+    "com.sun.labs.minion.classification.StemmingClusterer")
     public static final String PROP_FEATURE_CLUSTERER_CLASS_NAME =
             "feature_clusterer_class_name";
 

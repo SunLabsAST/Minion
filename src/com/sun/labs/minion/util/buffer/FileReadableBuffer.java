@@ -21,12 +21,12 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.util.buffer;
 
 import java.io.RandomAccessFile;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A buffer that can be used to read data from a file, keeping minimal
@@ -71,7 +71,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * representing.
      */
     protected long pos;
-    
+
     /**
      * The in-memory buffer.
      */
@@ -80,7 +80,7 @@ public class FileReadableBuffer extends StdReadableImpl {
     /**
      * A log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * A tag for our log entries.
@@ -102,11 +102,11 @@ public class FileReadableBuffer extends StdReadableImpl {
      * @param limit The number of bytes of data in our buffer.
      */
     public FileReadableBuffer(RandomAccessFile raf,
-                              long offset,
-                              int limit) {
+            long offset,
+            int limit) {
         this(raf, offset, limit, DEFAULT_BUFF_SIZE);
     }
-    
+
     /**
      * Creates a readable buffer that is backed by the given file.  The
      * buffer starts at the given offset in the file and extends for the
@@ -119,23 +119,23 @@ public class FileReadableBuffer extends StdReadableImpl {
      * @param buffSize The size of the in-memory buffer to use.
      */
     public FileReadableBuffer(RandomAccessFile raf,
-                              long offset,
-                              int limit,
-                              int buffSize) {
+            long offset,
+            int limit,
+            int buffSize) {
         this.raf = raf;
-        bs       = offset;
-        be       = offset + limit;
-        pos      = bs;
-        ms       = -1;
-        
+        bs = offset;
+        be = offset + limit;
+        pos = bs;
+        ms = -1;
+
         //
         // Fill the buffer if the size of the data is smaller than the size
         // of the buffer.
         if(limit > 0 && limit <= buffSize) {
             buff = new byte[limit];
             int n = read(bs);
-            ms  = bs;
-            me  = bs + n;
+            ms = bs;
+            me = bs + n;
         } else {
             buff = new byte[buffSize];
         }
@@ -153,8 +153,8 @@ public class FileReadableBuffer extends StdReadableImpl {
             try {
                 raf.seek(off);
                 return raf.read(buff);
-            } catch (java.io.IOException ioe) {
-                log.error(logTag, 1, "Error reading from file", ioe);
+            } catch(java.io.IOException ioe) {
+                logger.log(Level.SEVERE, "Error reading from file", ioe);
                 return -1;
             }
         }
@@ -179,7 +179,7 @@ public class FileReadableBuffer extends StdReadableImpl {
         me = p + n;
         return 0;
     }
-    
+
     /**
      * Returns the number of bytes remaining to be read in the buffer.
      * @return The number of bytes remaining in the buffer.
@@ -213,7 +213,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * position, and the limit on the sliced buffer is the given size.
      */
     public ReadableBuffer slice(int p, int s) {
-        return new FileReadableBuffer(raf, bs+p, s, buff.length);
+        return new FileReadableBuffer(raf, bs + p, s, buff.length);
     }
 
     /**
@@ -229,7 +229,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * @param l The limit that we wish to set for the buffer.
      */
     public void limit(int l) {
-        be  = bs + l;
+        be = bs + l;
     }
 
     /**
@@ -238,7 +238,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * @return The byte at the given position.
      */
     public byte get(int i) {
-        return buff[checkBounds(i+bs)];
+        return buff[checkBounds(i + bs)];
     }
 
     /**
@@ -265,14 +265,13 @@ public class FileReadableBuffer extends StdReadableImpl {
     public void position(int i) {
         this.pos = bs + i;
     }
-        
+
     /**
      * Gets a string representation of the buffer.
      * @return A string representation of the buffer.
      */
     public String toString() {
         return "buff: (" + bs + "," + be + ")" +
-            " mem: (" + ms + "," + me + ") " + buff.length;
+                " mem: (" + ms + "," + me + ") " + buff.length;
     }
-            
 } // FileBackedBuffer

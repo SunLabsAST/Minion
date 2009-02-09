@@ -21,11 +21,9 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.IndexConfig;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
@@ -50,31 +48,34 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A main program that selects high frequency terms from an index.
  */
 public class HighFreq {
-    
+
     Map counts;
+
     private static IndexConfig indexConfig;
-    
+
     public HighFreq(SearchEngine engine, boolean total) {
         counts = new HashMap();
         PartitionManager manager = ((SearchEngineImpl) engine).getManager();
-        
-        for(Iterator i = manager.getActivePartitions().iterator(); i.hasNext(); ) {
+
+        for(Iterator i = manager.getActivePartitions().iterator(); i.hasNext();) {
             DiskPartition p = (DiskPartition) i.next();
-            for(Iterator d = p.getMainDictionaryIterator(); d.hasNext(); ) {
+            for(Iterator d = p.getMainDictionaryIterator(); d.hasNext();) {
                 Entry e = (Entry) d.next();
                 String t = (String) e.getName();
-                
+
                 //
                 // We only want all lower case terms.
                 if(!t.equals(t.toLowerCase())) {
                     continue;
                 }
-                
+
                 Count c = (Count) counts.get(t);
                 if(c == null) {
                     c = new Count(t);
@@ -88,10 +89,10 @@ public class HighFreq {
             }
         }
     }
-    
+
     public List select(int n) {
         PriorityQueue<Count> h = new PriorityQueue<Count>();
-        for(Iterator i = counts.values().iterator(); i.hasNext(); ) {
+        for(Iterator i = counts.values().iterator(); i.hasNext();) {
             Count c = (Count) i.next();
             if(h.size() < n) {
                 h.offer(c);
@@ -102,16 +103,16 @@ public class HighFreq {
                 }
             }
         }
-        
+
         List<Count> ret = new ArrayList<Count>();
-        
+
         while(h.size() > 0) {
             ret.add(h.poll());
         }
         Collections.reverse(ret);
         return ret;
     }
-    
+
     /**
      * Load the configuration from the file.
      * @param cmFile the filename of the XML file containing my configuration
@@ -122,43 +123,43 @@ public class HighFreq {
             URL url = new File(cmFile).toURI().toURL();
             cm = new ConfigurationManager(url);
             indexConfig = (IndexConfig) cm.lookup("indexConfig");
-        } catch (IOException ioe) {
+        } catch(IOException ioe) {
             System.err.println("I/O error during initialization: \n   " + ioe);
             return;
-        } catch (PropertyException e) {
+        } catch(PropertyException e) {
             System.err.println("Error during initialization: \n  " + e);
             return;
         }
-        if (indexConfig == null) {
+        if(indexConfig == null) {
             System.err.println("Can't find indexConfig in " + cmFile);
             return;
         }
         ConfigurationManagerUtils.toXML(cm);
     }
-    
+
     class Count implements Comparable {
-        
+
         public String name;
-        
+
         public long count;
-        
+
         public Count(String name) {
             this.name = name;
         }
-        
+
         public void add(long c) {
             count += c;
         }
-        
+
         public int compareTo(Object o) {
             return (int) (count - ((Count) o).count);
         }
-        
+
         public String toString() {
             return name + " " + count;
         }
     }
-    
+
     public static void usage() {
         System.out.println(
                 "Usage: java HighFreq [options]\n" +
@@ -167,50 +168,47 @@ public class HighFreq {
                 " -n <num>         " +
                 "The number of terms to show\n" +
                 " -t               " +
-                "Use total frequency, rather than doc frequency."
-                );
+                "Use total frequency, rather than doc frequency.");
         return;
     }
-    
+
     public static void main(String[] args) throws Exception {
-        
+
         if(args.length == 0) {
             usage();
             return;
         }
-        
-        String     logTag 	= "Indexer";
-        String     flags 	= "d:n:tx:";
-        Getopt     gopt 	= new Getopt(args, flags);
-        String     indexDir = null;
+
+        String logTag = "Indexer";
+        String flags = "d:n:tx:";
+        Getopt gopt = new Getopt(args, flags);
+        String indexDir = null;
         String cmFile = null;
-        boolean    total    = false;
-        int        n        = 1000;
-        int        c;
-        
-        
+        boolean total = false;
+        int n = 1000;
+        int c;
+
+
         //
         // Set up the logging for the search engine.  We'll send everything
         // to the standard output, except for errors, which will go to
         // standard error.  We'll set the level at 3, which is pretty
         // verbose.
-        Log log = Log.getLog();
-        log.setStream(System.err);
-        log.setLevel(3);
-        
+        Logger logger = Logger.getLogger(HighFreq.class.getName());
+
         //
         // Handle the options.
-        while ((c = gopt.getopt()) != -1) {
-            switch (c) {
-                
+        while((c = gopt.getopt()) != -1) {
+            switch(c) {
+
                 case 'd':
                     indexDir = gopt.optArg;
                     break;
-                    
+
                 case 'n':
                     n = Integer.parseInt(gopt.optArg);
                     break;
-                    
+
                 case 't':
                     total = true;
                     break;
@@ -219,34 +217,32 @@ public class HighFreq {
                     break;
             }
         }
-        
+
         if(indexDir == null && cmFile == null) {
-            log.warn("HighFreq", 0,
-                    "You must specify an index directory or configuration file.");
+            logger.warning("You must specify an index directory or configuration file.");
             usage();
             return;
         }
-        
+
         //
         // Open our engine for use.  We give it the properties that we read
         // and no query properties.
         SearchEngine engine;
         try {
             engine = SearchEngineFactory.getSearchEngine(cmFile, indexDir);
-        } catch (SearchEngineException se) {
-            log.error("Indexer", 1, "Error opening collection", se);
+        } catch(SearchEngineException se) {
+            logger.log(Level.SEVERE, "Error opening collection", se);
             return;
         }
-        
+
         HighFreq hf = new HighFreq(engine, total);
-        
+
         List l = hf.select(n);
-        
-        for(Iterator i = l.iterator(); i.hasNext(); ) {
+
+        for(Iterator i = l.iterator(); i.hasNext();) {
             System.out.println(i.next());
         }
-        
+
         engine.close();
     }
-    
 } // HighFreq

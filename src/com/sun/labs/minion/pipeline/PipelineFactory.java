@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.minion.HLPipeline;
@@ -39,7 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import com.sun.labs.minion.indexer.partition.Dumper;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  *
@@ -49,35 +48,35 @@ import com.sun.labs.minion.util.MinionLog;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class PipelineFactory implements Configurable {
-    
+
     /**
      * The name of the factory.
      */
     private String name;
-    
+
     /**
      * The manager that configured this factory.
      */
     ConfigurationManager cm;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "PF";
-    
+
     /**
      * Creates a pipeline factory.  This class should be configured using the configuration
      * manager for the indexer.
      */
     public PipelineFactory() {
     }
-    
+
     /**
      * Gets a synchronous pipeline configured according to the configuration of the indexer.
      */
     public Pipeline getSynchronousPipeline(SearchEngine engine) {
         return new SyncPipelineImpl(this, engine, getPipeline(stages), dumper);
     }
-    
+
     /**
      * Gets an asynchronous pipeline configured according to the configuration of the indexer.
      *
@@ -86,9 +85,10 @@ public class PipelineFactory implements Configurable {
      */
     public Pipeline getAsynchronousPipeline(SearchEngine engine,
             BlockingQueue<Indexable> indexingQueue) {
-        return new AsyncPipelineImpl(this, engine, getPipeline(stages), dumper, indexingQueue);
+        return new AsyncPipelineImpl(this, engine, getPipeline(stages), dumper,
+                indexingQueue);
     }
-    
+
     /**
      * Gets a highlighting pipeline configured according to the configuration.
      *
@@ -96,7 +96,7 @@ public class PipelineFactory implements Configurable {
     public HLPipeline getHLPipeline(SearchEngine engine) {
         return new HLPipelineImpl(this, engine, getPipeline(hlStages));
     }
-    
+
     /**
      * Gets a set of new instances for the configured stages.  The stages will
      * be connected together into a pipeline.
@@ -106,10 +106,10 @@ public class PipelineFactory implements Configurable {
     private List<Stage> getPipeline(List p) {
         List<Stage> ret = new ArrayList<Stage>();
         Stage prev = null;
-        for(Iterator i = p.iterator(); i.hasNext(); ) {
+        for(Iterator i = p.iterator(); i.hasNext();) {
             Stage s = (Stage) i.next();
             try {
-                
+
                 //
                 // Get a new instance of this stage and configure it.
                 Stage next = s.getClass().newInstance();
@@ -119,64 +119,62 @@ public class PipelineFactory implements Configurable {
                 }
                 ret.add(next);
                 prev = next;
-            } catch (IllegalAccessException ex) {
-                log.error(logTag, 1, "Error instantiating: " + s);
-            } catch (InstantiationException ex) {
-                log.error(logTag, 1, "Error instantiating: " + s);
-            } catch (PropertyException pe) {
-                log.error(logTag, 1, "Error configuring: " + s);
+            } catch(IllegalAccessException ex) {
+                logger.severe("Error instantiating: " + s);
+            } catch(InstantiationException ex) {
+                logger.severe("Error instantiating: " + s);
+            } catch(PropertyException pe) {
+                logger.severe("Error configuring: " + s);
             }
         }
-        
+
         return ret;
     }
-    
+
     /**
      * Gets a new indexing stage, so that such stages can be handed off to
      * someone else for dumping while indexing proceeds.
      */
     public Stage getIndexingStage() {
-        
-        Stage s = (Stage) stages.get(stages.size() -1);
+
+        Stage s = (Stage) stages.get(stages.size() - 1);
         try {
             Stage ret = s.getClass().newInstance();
             ret.newProperties(cm.getPropertySheet(s.getName()));
             return ret;
-        } catch (IllegalAccessException ex) {
-            log.error(logTag, 1, "Error instantiating: " + s);
-        } catch (InstantiationException ex) {
-            log.error(logTag, 1, "Error instantiating: " + s);
-        } catch (PropertyException pe) {
-            log.error(logTag, 1, "Error configuring: " + s);
+        } catch(IllegalAccessException ex) {
+            logger.severe("Error instantiating: " + s);
+        } catch(InstantiationException ex) {
+            logger.severe("Error instantiating: " + s);
+        } catch(PropertyException pe) {
+            logger.severe("Error configuring: " + s);
         }
         return null;
     }
-    
-    
-     public void newProperties(PropertySheet ps) throws PropertyException {        
+
+    public void newProperties(PropertySheet ps) throws PropertyException {
         cm = ps.getConfigurationManager();
         stages = ps.getComponentList(PROP_STAGES);
         hlStages = ps.getComponentList(PROP_HL_STAGES);
         dumper = (Dumper) ps.getComponent(PROP_DUMPER);
     }
-    
+
     public String getName() {
         return name;
     }
-    
-    @ConfigComponentList(type=com.sun.labs.minion.pipeline.Stage.class)
+    @ConfigComponentList(type = com.sun.labs.minion.pipeline.Stage.class)
     public static final String PROP_STAGES = "stages";
-    
+
     private List stages;
-    
-    @ConfigComponentList(type=com.sun.labs.minion.pipeline.Stage.class)
+
+    @ConfigComponentList(type = com.sun.labs.minion.pipeline.Stage.class)
     public static final String PROP_HL_STAGES = "hl_stages";
-    
+
     private List hlStages;
 
-    @ConfigComponent(type=com.sun.labs.minion.indexer.partition.Dumper.class)
+    @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Dumper.class)
     public static final String PROP_DUMPER = "dumper";
 
     private Dumper dumper;
-    
+
 }

@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.lexmorph.disambiguation;
 
 import java.util.HashMap;
@@ -32,7 +31,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A context in which a word occurs, used for sense disambiguation.
@@ -40,20 +39,20 @@ import com.sun.labs.minion.util.MinionLog;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class Context {
-    
+
     private DocKeyEntry key;
-    
+
     /**
      * A map from terms in the context to the number of occurrences.
      */
-    private Map<String,TermFreq> terms;
-    
+    private Map<String, TermFreq> terms;
+
     protected int[] counts;
-    
-    private static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     public static final String logTag = "CON";
-    
+
     /**
      * Creates a context for use in disambiguating a term
      * @param disTerm the term to disambiguate
@@ -65,11 +64,11 @@ public class Context {
     public Context(String disTerm, String field, DocKeyEntry key, int maxFeat) {
         this.key = key;
         DiskPartition part = (DiskPartition) key.getPartition();
-        terms = new HashMap<String,TermFreq>();
+        terms = new HashMap<String, TermFreq>();
         PostingsIteratorFeatures feat = null;
         if(field != null) {
             feat = new PostingsIteratorFeatures();
-            feat.setFields(new String[] {field}, (InvFileDiskPartition) part);
+            feat.setFields(new String[]{field}, (InvFileDiskPartition) part);
         }
         PostingsIterator pi = key.iterator(feat);
         if(pi == null) {
@@ -85,7 +84,7 @@ public class Context {
             terms.put(term, new TermFreq(term, pi.getFreq()));
         }
     }
-    
+
     /**
      * Sets the counts for the features in an array.
      * 
@@ -101,14 +100,13 @@ public class Context {
             counts[i] = tf.freq;
         }
     }
-    
+
     /**
      * Gets the term to frequency map.
      * @return a map from terms in the context to the frequencies
      */
-    public Map<String,TermFreq> getTerms() {
+    public Map<String, TermFreq> getTerms() {
         return terms;
     }
-    
 }
 

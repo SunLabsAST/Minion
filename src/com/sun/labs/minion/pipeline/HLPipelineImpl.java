@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.minion.HLPipeline;
@@ -34,42 +33,43 @@ import java.util.Map;
 
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.HighlightStage;
+import java.util.logging.Level;
 
 /**
  * A pipeline that can be used for highlighting documents.
  */
 public class HLPipelineImpl extends SyncPipelineImpl implements HLPipeline {
-    
+
     private HighlightStage hlStage;
-    
-    public HLPipelineImpl(PipelineFactory factory, SearchEngine engine, List<Stage> pipeline) {
+
+    public HLPipelineImpl(PipelineFactory factory, SearchEngine engine,
+            List<Stage> pipeline) {
         super(factory, engine, pipeline, null);
         hlStage = (HighlightStage) pipeline.get(pipeline.size() - 1);
-        
+
     } // HLPipeline constructor
-    
+
     // Implementation of com.sun.labs.minion.PassageBuilder
-    
     /**
      * Sets up for processing a new document.
      */
     public void reset(ArrayGroup ag, int doc, String[] qt) {
         hlStage.reset(ag, doc, qt);
     }
-    
+
     public void addPassageField(String fieldName) {
-        addPassageField(fieldName, com.sun.labs.minion.Passage.Type.JOIN, 
+        addPassageField(fieldName, com.sun.labs.minion.Passage.Type.JOIN,
                 -1, -1, false);
     }
-    
-    public void addPassageField(String fieldName, 
+
+    public void addPassageField(String fieldName,
             com.sun.labs.minion.Passage.Type type,
             int context, int maxSize,
             boolean doSort) {
         hlStage.addField(fieldName, type, context,
                 maxSize, doSort);
     }
-    
+
     /**
      * Gets the highlighted passages that were specified using
      * <code>addPassageField</code>.
@@ -87,7 +87,7 @@ public class HLPipelineImpl extends SyncPipelineImpl implements HLPipeline {
     public Map getPassages(Map document) {
         return getPassages(document, false, -1, -1, false);
     }
-    
+
     /**
      * Gets the highlighted passages that were specified using
      * <code>addPassageField</code>.
@@ -114,7 +114,7 @@ public class HLPipelineImpl extends SyncPipelineImpl implements HLPipeline {
             int context, int maxSize, boolean doSort) {
         return getPassages(document, true, context, maxSize, doSort);
     }
-    
+
     /**
      * Gets the highlighted passages that were specified using
      * <code>addPassageField</code>.
@@ -146,18 +146,18 @@ public class HLPipelineImpl extends SyncPipelineImpl implements HLPipeline {
             int context, int maxSize, boolean doSort) {
         try {
             if(addRemaining) {
-                hlStage.addRemaining(context, maxSize,doSort);
+                hlStage.addRemaining(context, maxSize, doSort);
             }
             indexDoc("", document);
             return hlStage.getPassages();
-        } catch (SearchEngineException se) {
-            log.error(logTag, 1,
+        } catch(SearchEngineException se) {
+            logger.log(Level.SEVERE,
                     "Error processing document for highlighting",
                     se);
             return new HashMap();
         }
     }
-    
+
     /**
      * Gets all of the passages in the document as a list.
      *

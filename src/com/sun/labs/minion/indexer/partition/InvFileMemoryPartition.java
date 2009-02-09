@@ -53,6 +53,7 @@ import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.classification.ClassifierManager;
 import com.sun.labs.minion.classification.Profiler;
 import com.sun.labs.minion.util.StopWatch;
+import java.util.logging.Level;
 
 /**
  *
@@ -140,8 +141,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
         // If there's already a term, get rid of it!
         if(old != null) {
 
-            log.warn(logTag, 4,
-                    "Duplicate dockey in partition: " + key +
+            logger.warning("Duplicate dockey in partition: " + key +
                     " deleting old version: " + old.getID());
 
             //
@@ -344,12 +344,13 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
         // See if we need to perform classification, then proceed
         // to dump as usual.
         if(manager == null) {
-            log.debug(logTag, 0, "Null manager?");
+            logger.info("Null manager?");
         }
 
         if(manager != null && manager.getEngine() == null) {
-            log.debug(logTag, 0, "Null engine?");
+            logger.info("Null engine?");
         }
+        
         ClassifierManager classManager =
                 ((SearchEngineImpl) manager.getEngine()).getClassifierManager();
         if((mainDict.size() > 0) && (classManager != null) &&
@@ -375,7 +376,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
                                 EnumSet.of(FieldInfo.Attribute.SAVED),
                                 FieldInfo.Type.STRING));
                     } catch(SearchEngineException see) {
-                        log.error(logTag, 1, "Unable to define classification field " + fieldName, see);
+                        logger.log(Level.SEVERE, "Unable to define classification field " + fieldName, see);
                         continue;
                     }
 
@@ -390,7 +391,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
                                     EnumSet.of(FieldInfo.Attribute.SAVED),
                                     FieldInfo.Type.FLOAT));
                         } catch(SearchEngineException see) {
-                            log.error(logTag, 1, "Unable to define classification score field " + fieldName, see);
+                            logger.log(Level.SEVERE, "Unable to define classification score field " + fieldName, see);
                             continue;
                         }
                     }
@@ -407,7 +408,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
 							     EnumSet.of(FieldInfo.Attribute.SAVED),
 							     FieldInfo.Type.FLOAT));
 		    } catch(SearchEngineException see) {
-			log.error(logTag, 1, "Unable to define classification score field " + fieldName, see);
+			logger.log(Level.SEVERE, "Unable to define classification score field " + fieldName, see);
 			continue;
 		    }
 		}
@@ -442,7 +443,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
             sw.start();
             InvFilePartitionUtils.writeBigramDictionary(bi, manager, partNumber);
             sw.stop();
-            log.log(logTag, 4, "main bigram dump: " + sw.getTime());
+            logger.fine("main bigram dump: " + sw.getTime());
 
             partDocs = 0;
 
@@ -459,7 +460,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
             sw.start();
             dumpFields();
             sw.stop();
-            log.log(logTag, 4, "field store dump: " + sw.getTime());
+            logger.fine("field store dump: " + sw.getTime());
 
             //
             // Run any profilers that are defined.  This is a bit of a hack.  The
@@ -494,7 +495,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
             // Now we need to clear out the in-memory saved field data.
             fields.clear();
         } catch(java.io.IOException ioe) {
-            log.error(logTag, 0, "Error during custom dump", ioe);
+            logger.log(Level.SEVERE, "Error during custom dump", ioe);
             throw ioe;
         }
     }

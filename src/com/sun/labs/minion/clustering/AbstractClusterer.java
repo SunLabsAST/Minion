@@ -53,8 +53,8 @@ import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.retrieval.cache.DocCache;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.StopWatch;
+import java.util.logging.Logger;
 
 /**
  * An abstract base class for clustering algorithms.
@@ -95,7 +95,7 @@ public abstract class AbstractClusterer implements Configurable {
     
     protected static double[] one = {1};
     
-    public static final MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
     
     public static final String logTag = "ACL";
     
@@ -160,7 +160,7 @@ public abstract class AbstractClusterer implements Configurable {
         fc.setDocCache(dc);
         FeatureClusterSet clusters = fc.cluster(rs);
         sw.stop();
-        log.debug(logTag, 0, "feature clustering took: " + sw.getTime());
+        logger.info("feature clustering took: " + sw.getTime());
         
         //
         // Now select the clusters that will be used for training
@@ -171,7 +171,7 @@ public abstract class AbstractClusterer implements Configurable {
                 dc.getWeightingComponents(),
                 rs.size(), nFeat, rs.getEngine());
         sw.stop();
-        log.debug(logTag, 0, "feature selection took: " + sw.getTime());
+        logger.info("feature selection took: " + sw.getTime());
         sw.reset();
         
         TermStatsImpl[] featStats = new TermStatsImpl[selectedClusters.size()];
@@ -249,7 +249,7 @@ public abstract class AbstractClusterer implements Configurable {
             }
         }
         sw.stop();
-        log.debug(logTag, 0, "getting features took: " + sw.getTime());
+        logger.info("getting features took: " + sw.getTime());
         
         els = te.toArray(new ClusterElement[0]);
     }

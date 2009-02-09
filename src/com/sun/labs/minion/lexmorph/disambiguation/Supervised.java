@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.lexmorph.disambiguation;
 
 import com.sun.labs.minion.Result;
@@ -38,10 +37,9 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.retrieval.ResultImpl;
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A class to do supervised word sense disambiguation using a Naive Bayes approach.
@@ -52,32 +50,31 @@ import com.sun.labs.minion.util.MinionLog;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class Supervised implements Serializable {
-    
+
     /**
      * The term we're disambiguating.
      */
     private String term;
-    
+
     private String field;
-    
+
     /**
      * The senses making up this disambiguator.
      */
     private List<Sense> senses;
-    
+
     /**
      * The total set of terms across all senses.
      */
     private Set<String> vocab;
-    
-    private static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     private static String logTag = "SUPD";
-    
+
     public Supervised() {
-        
     }
-    
+
     /**
      * Creates a supervised disambiguator.
      */
@@ -86,39 +83,43 @@ public class Supervised implements Serializable {
         this.field = field;
         this.senses = senses;
     }
-    
-    public Supervised(String term, String field, Set<ResultsCluster> clusters, int totalCount, int maxFeat)
-    throws SearchEngineException {
-        Map<String,List<Result>> cll = new HashMap<String,List<Result>>();
+
+    public Supervised(String term, String field, Set<ResultsCluster> clusters,
+            int totalCount, int maxFeat)
+            throws SearchEngineException {
+        Map<String, List<Result>> cll = new HashMap<String, List<Result>>();
         for(ResultsCluster cl : clusters) {
             cll.put(cl.getName(), cl.getResults().getAllResults(false));
         }
         init(term, field, cll, totalCount, maxFeat);
     }
-    
-    public Supervised(String term, String field, Map<String,List<Result>> clusters, int totalCount, int maxFeat)
-    throws SearchEngineException {
+
+    public Supervised(String term, String field,
+            Map<String, List<Result>> clusters, int totalCount, int maxFeat)
+            throws SearchEngineException {
         init(term, field, clusters, totalCount, maxFeat);
     }
-       
-    public void init(String term, String field, Map<String,List<Result>> clusters, int totalCount, int maxFeat)
-    throws SearchEngineException {
+
+    public void init(String term, String field,
+            Map<String, List<Result>> clusters, int totalCount, int maxFeat)
+            throws SearchEngineException {
         this.term = term;
         this.field = field;
-        
+
         //
         // Figure out the vocabulary.  We'll start by collecting the term counts
         // across all the contexts for all the senses.  Then we'll choose the top
         // maxFeat of those.  We'll keep the list of contexts per sense around, 
         // since we'll need those in a bit.
-        Map<String,TermFreq> counts = new HashMap<String,TermFreq>();
+        Map<String, TermFreq> counts = new HashMap<String, TermFreq>();
         List<List<Context>> ac = new ArrayList<List<Context>>();
         int sum = 0;
-        for(Map.Entry<String,List<Result>> ce : clusters.entrySet()) {
+        for(Map.Entry<String, List<Result>> ce : clusters.entrySet()) {
             List<Context> cs = new ArrayList<Context>();
             for(Result r : ce.getValue()) {
-                Context c = new Context(term, field, ((ResultImpl) r).getKeyEntry(), maxFeat);
-                for(Map.Entry<String,TermFreq> tfe : c.getTerms().entrySet()) {
+                Context c = new Context(term, field, ((ResultImpl) r).
+                        getKeyEntry(), maxFeat);
+                for(Map.Entry<String, TermFreq> tfe : c.getTerms().entrySet()) {
                     TermFreq tf = counts.get(tfe.getKey());
                     if(tf == null) {
                         tf = new TermFreq(tfe.getKey());
@@ -131,12 +132,12 @@ public class Supervised implements Serializable {
             }
             ac.add(cs);
         }
-        
+
         //
         // The probability of a term that's not in a sense's contexts.  We want
         // this to be the same for all senses.
         double missingP = 1.0 / sum;
-        
+
         //
         // Choose the maxFeat most frequent terms.
         PriorityQueue<TermFreq> h = new PriorityQueue<TermFreq>();
@@ -150,7 +151,7 @@ public class Supervised implements Serializable {
                 }
             }
         }
-        
+
         //
         // Store the vocabulary, which we'll pass into the senses.
         vocab = new HashSet<String>();
@@ -158,32 +159,32 @@ public class Supervised implements Serializable {
             TermFreq tf = h.poll();
             vocab.add(tf.getTerm());
         }
-        
+
         //
         // Compute the senses.
         senses = new ArrayList<Sense>();
-        Iterator<Map.Entry<String,List<Result>>> ci = clusters.entrySet().iterator();
+        Iterator<Map.Entry<String, List<Result>>> ci = clusters.entrySet().
+                iterator();
         Iterator<List<Context>> li = ac.iterator();
         while(ci.hasNext()) {
-            Map.Entry<String,List<Result>> me = ci.next();
+            Map.Entry<String, List<Result>> me = ci.next();
             List<Context> cs = li.next();
-            Sense s = new Sense(term, vocab, missingP, me.getKey(), totalCount, cs);
+            Sense s = new Sense(term, vocab, missingP, me.getKey(), totalCount,
+                    cs);
             senses.add(s);
         }
     }
-    
+
     /**
      * Disambiguates a particular context using these senses.
      * @param r the result containing the context to disambiguate.
      * @return the most probable sense for the term in this result
      */
-        
     /**
      * Disambiguates a particular context using these senses.
      * @param r the result containing the context to disambiguate.
      * @return the most probable sense for the term in this result
      */
-        
     /**
      * Disambiguates a particular context using these senses.
      * @param r the result containing the context to disambiguate.
@@ -192,7 +193,7 @@ public class Supervised implements Serializable {
     public Sense disambiguate(Result r) {
         return disambiguate(((ResultImpl) r).getKeyEntry());
     }
-    
+
     /**
      * Disambiguates a particular context using these senses.
      * 
@@ -209,14 +210,14 @@ public class Supervised implements Serializable {
         while(pi.next()) {
             String t = dp.getTerm(pi.getID()).getName().toString();
             if(t.equals(term)) {
-                
+
                 //
                 // We won't include the term itself!
                 continue;
             }
             context.add(t);
         }
-        
+
         double max = 0;
         Sense maxSense = null;
         for(Sense s : senses) {
@@ -228,11 +229,11 @@ public class Supervised implements Serializable {
         }
         return maxSense;
     }
-    
+
     public String getTerm() {
         return term;
     }
-    
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Supervised disambiguator for: " + term);
@@ -241,9 +242,8 @@ public class Supervised implements Serializable {
         }
         return sb.toString();
     }
-    
+
     public List<Sense> getSenses() {
         return senses;
     }
-    
 }

@@ -40,7 +40,6 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.MinionLog;
 
 /**
  *
@@ -124,9 +123,6 @@ public class Deleter {
         for (Handler h : logger.getHandlers()) {
             h.setFormatter(new SimpleLabsLogFormatter());
         }
-
-        MinionLog.setLogger(logger);
-        MinionLog.setLevel(3);
 
         while ((c = gopt.getopt()) != -1) {
             switch (c) {

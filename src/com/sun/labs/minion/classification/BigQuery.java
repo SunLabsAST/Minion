@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.classification;
 
 import java.util.HashSet;
@@ -39,7 +38,7 @@ import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A helper class for running a big query during classification
@@ -93,16 +92,16 @@ public class BigQuery {
 
     int p;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "BQ";
-    
+
     /**
      * The postings iterators that can be used to fetch weights for each 
      * of the features making up this big query.
      */
     protected PostingsIterator[] featureIterators;
-    
+
     protected FeatureCluster[] features;
 
     /**
@@ -124,10 +123,11 @@ public class BigQuery {
         // Set the values that we'll need.
         this.tc = tc;
         this.part = tg.getPartition();
-        
+
         //
         // Figure out the ID of the field of interest.
-        fromFieldID = part.getManager().getMetaFile().getVectoredFieldID(fromField);
+        fromFieldID = part.getManager().getMetaFile().getVectoredFieldID(
+                fromField);
 
         this.wf = wf;
         this.wc = wc;
@@ -187,7 +187,7 @@ public class BigQuery {
         TermCacheElement e = tc.get(cluster.getName());
         PostingsIterator pi = e.iterator(wc, wf);
         while(pi.next()) {
-           scores[pi.getID()] += pi.getWeight() * cluster.getWeight();
+            scores[pi.getID()] += pi.getWeight() * cluster.getWeight();
         }
         features[p] = cluster;
         featureIterators[p++] = pi;
@@ -202,7 +202,8 @@ public class BigQuery {
             sg = new ScoredGroup(2048);
             for(int i = 0; i < scores.length; i++) {
                 if(scores[i] > 0) {
-                    sg.addDoc(i, scores[i] / part.getDocumentVectorLength(i, fromFieldID));
+                    sg.addDoc(i, scores[i] / part.getDocumentVectorLength(i,
+                            fromFieldID));
                 }
             }
             sg.setPartition(part);

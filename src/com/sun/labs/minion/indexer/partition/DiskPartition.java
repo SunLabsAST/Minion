@@ -51,10 +51,11 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.retrieval.cache.TermCache;
-import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A partition of the index which is resident on the disk and suitable for
@@ -83,75 +84,91 @@ public class DiskPartition extends Partition implements Closeable {
      * The files containing the main data.
      */
     protected File[] mainFiles;
+
     /**
      * A factory for the document dictionary.
      */
     protected DictionaryFactory documentDictFactory;
+
     /**
      * The main dictionary.
      */
     protected DiskDictionary mainDict;
+
     /**
      * The document dictionary.
      */
     protected DiskDictionary docDict;
+
     /**
      * The stream for the document dictionary.
      */
     protected RandomAccessFile docDictFile;
+
     /**
      * The postings stream for the document dictionary.
      */
     protected RandomAccessFile docPostFile;
+
     /**
      * The deleted documents file.
      */
     protected File delFile;
+
     /**
      * A lock for the deleted documents file.
      */
     protected FileLock delFileLock;
+
     /**
      * A <code>File</code> indicating that this partition is no longer
      * active.
      */
     protected File removedFile;
+
     /**
      * The deletion map for this partition.
      */
     protected DelMap deletions;
+
     /**
      * The lengths of the document vectors for this partition.
      */
     protected DocumentVectorLengths dvl;
+
     private boolean cacheVectorLengths;
 
     /**
      * A cache of uncompressed postings data.
      */
     protected TermCache termCache;
-    
+
     /**
      * Whether this partition was ignored during a merge, due to it being
      * empty.
      */
     protected boolean ignored;
+
     /**
      * The time at which it is safe to close this partition.
      */
     private long closeTime;
+
     /**
      * The tag for this module.
      */
     protected static String logTag = "DP";
+
     /**
      * Buffer size for merging.
      */
     protected static int BUFF_SIZE = 1024 * 1024;
+
     /**
      * Minimum length of a stem.
      */
     protected static int MIN_LEN = 3;
+
     /**
      * The limit for variant entries relationship to a stemmed entry.
      */
@@ -255,7 +272,7 @@ public class DiskPartition extends Partition implements Closeable {
     protected void initMainFiles()
             throws java.io.IOException {
 
-        if (mainDictFile != null) {
+        if(mainDictFile != null) {
             return;
         }
 
@@ -268,12 +285,13 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // Get channels for the postings.
             mainPostFiles = new RandomAccessFile[mainFiles.length - 1];
-            for (int i = 1; i < mainFiles.length;
+            for(int i = 1; i < mainFiles.length;
                     i++) {
                 mainPostFiles[i - 1] = new RandomAccessFile(mainFiles[i], "r");
             }
-        } catch (java.io.IOException ioe) {
-            log.error(logTag, 1, "Error opening partition " + partNumber, ioe);
+        } catch(java.io.IOException ioe) {
+            logger.log(Level.SEVERE, "Error opening partition " + partNumber,
+                    ioe);
             mainDictFile = null;
             mainPostFiles = null;
             throw ioe;
@@ -285,7 +303,7 @@ public class DiskPartition extends Partition implements Closeable {
      */
     protected synchronized void initMainDict() {
 
-        if (mainDict != null) {
+        if(mainDict != null) {
             return;
         }
 
@@ -297,9 +315,9 @@ public class DiskPartition extends Partition implements Closeable {
             mainDict = mainDictFactory.getDiskDictionary(new StringNameHandler(),
                     mainDictFile,
                     mainPostFiles, this);
-        } catch (java.io.IOException ioe) {
-            log.error(logTag, 1,
-                    "Error opening main dictionary for " + partNumber, ioe);
+        } catch(java.io.IOException ioe) {
+            logger.log(Level.SEVERE, "Error opening main dictionary for " +
+                    partNumber, ioe);
             mainDict = null;
         }
     }
@@ -309,7 +327,7 @@ public class DiskPartition extends Partition implements Closeable {
      */
     protected synchronized void initDocDict() {
 
-        if (docDict != null) {
+        if(docDict != null) {
             return;
         }
 
@@ -326,13 +344,13 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // Instantiate the dictionary.
             docDict =
-                    documentDictFactory.getDiskDictionary(new StringNameHandler(),
+                    documentDictFactory.getDiskDictionary(
+                    new StringNameHandler(),
                     docDictFile,
                     new RandomAccessFile[]{docPostFile},
                     this);
-        } catch (java.io.IOException ioe) {
-            log.error(logTag, 1,
-                    "Error opening document dictionary for " + partNumber);
+        } catch(java.io.IOException ioe) {
+            logger.severe("Error opening document dictionary for " + partNumber);
             docDict = null;
         }
     }
@@ -343,18 +361,17 @@ public class DiskPartition extends Partition implements Closeable {
      * should we adjust the term statistics while we're at it?
      */
     protected synchronized void initDVL(boolean adjustStats) {
-        if (dvl != null) {
+        if(dvl != null) {
             return;
         }
         try {
-            if (cacheVectorLengths) {
+            if(cacheVectorLengths) {
                 dvl = new CachedDocumentVectorLengths(this, adjustStats);
             } else {
                 dvl = new DocumentVectorLengths(this, adjustStats);
             }
-        } catch (java.io.IOException ioe) {
-            log.error(logTag, 1,
-                    "Error reading document vector lengths for " + this, ioe);
+        } catch(java.io.IOException ioe) {
+            logger.log(Level.SEVERE, "Error reading document vector lengths for " + this, ioe);
         }
     }
 
@@ -429,7 +446,7 @@ public class DiskPartition extends Partition implements Closeable {
     public DocKeyEntry getDocumentTerm(String key) {
         initDocDict();
         DocKeyEntry dke = (DocKeyEntry) docDict.get(key);
-        if (dke != null && isDeleted(dke.getID())) {
+        if(dke != null && isDeleted(dke.getID())) {
             return null;
         }
         return dke;
@@ -478,7 +495,8 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public float getDocumentVectorLength(int docID, String field) {
         initDVL(false);
-        return dvl.getVectorLength(docID, manager.getMetaFile().getVectoredFieldID(field));
+        return dvl.getVectorLength(docID, manager.getMetaFile().
+                getVectoredFieldID(field));
     }
 
     /**
@@ -497,7 +515,7 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public float getDocumentVectorLength(int docID, int fieldID) {
         initDVL(false);
-        if (fieldID == -1) {
+        if(fieldID == -1) {
             return dvl.getVectorLength(docID);
         }
         return dvl.getVectorLength(docID, fieldID);
@@ -535,7 +553,7 @@ public class DiskPartition extends Partition implements Closeable {
         //
         // Check if enough time has passed for this close
         // to succeed.
-        if (closeTime > currTime) {
+        if(closeTime > currTime) {
             return false;
         }
         try {
@@ -544,24 +562,24 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Close the main dictionary and postings.
-            if (mainDictFile != null) {
+            if(mainDictFile != null) {
                 mainDictFile.close();
-                for (int i = 0; i < mainPostFiles.length;
+                for(int i = 0; i < mainPostFiles.length;
                         i++) {
                     mainPostFiles[i].close();
                 }
             }
 
-            if (docDict != null) {
+            if(docDict != null) {
                 docDictFile.close();
                 docPostFile.close();
             }
 
-            if (dvl != null) {
+            if(dvl != null) {
                 dvl.close();
             }
-        } catch (java.io.IOException ioe) {
-            log.error(logTag, 1, "Error closing partition", ioe);
+        } catch(java.io.IOException ioe) {
+            logger.log(Level.SEVERE, "Error closing partition", ioe);
         }
         return true;
     }
@@ -574,25 +592,23 @@ public class DiskPartition extends Partition implements Closeable {
 
         File[] files = getAllFiles();
         boolean fail = false;
-        for (int i = 0; i < files.length;
+        for(int i = 0; i < files.length;
                 i++) {
-            if (!files[i].delete()) {
+            if(!files[i].delete()) {
                 fail = true;
             }
         }
 
-        if (fail) {
-            log.warn(logTag, 2,
-                    "Unable to remove all files for partition " + partNumber);
+        if(fail) {
+            logger.warning("Unable to remove all files for partition " + partNumber);
         }
 
         File remFile = manager.makeRemovedPartitionFile(partNumber);
-        if (remFile.exists() && !remFile.delete()) {
+        if(remFile.exists() && !remFile.delete()) {
 
             //
             // NON-FATAL ERROR:
-            log.error(logTag, 1,
-                    "Unable to remove deleted partition file: " + remFile);
+            logger.warning("Unable to remove deleted partition file: " + remFile);
         }
     }
 
@@ -605,23 +621,25 @@ public class DiskPartition extends Partition implements Closeable {
      */
     protected static void reap(PartitionManager m, int n) {
 
+        Logger sl = Logger.getLogger(DiskPartition.class.getName());
+
         //
         // Remove the data files.
         File[] files = getAllFiles(m, n);
-        for (int i = 0; i < files.length;
+        for(int i = 0; i < files.length;
                 i++) {
-            if ((!files[i].delete()) && (files[i].exists())) {
-                log.warn(logTag, 4, "Failed to delete: " + files[i]);
+            if((!files[i].delete()) && (files[i].exists())) {
+                sl.warning("Failed to delete: " + files[i]);
             }
         }
 
         //
         // Remove the deletion bitmap and the removed partition files.
-        if (!m.makeDeletedDocsFile(n).delete()) {
-            log.error(logTag, 2, "Failed to reap partition " + n);
+        if(!m.makeDeletedDocsFile(n).delete()) {
+            sl.severe("Failed to reap partition " + n);
         }
-        if (!m.makeRemovedPartitionFile(n).delete()) {
-            log.error(logTag, 2, "Failed to reap partition " + n);
+        if(!m.makeRemovedPartitionFile(n).delete()) {
+            sl.severe("Failed to reap partition " + n);
         }
     }
 
@@ -681,10 +699,11 @@ public class DiskPartition extends Partition implements Closeable {
      * @return the entry from the main dicitionary associated with the given
      * name.
      */
-    public QueryEntry getTerm(String name, boolean caseSensitive, LookupState lus) {
+    public QueryEntry getTerm(String name, boolean caseSensitive,
+            LookupState lus) {
         initMainDict();
 
-        if (caseSensitive) {
+        if(caseSensitive) {
             return mainDict.get(name, lus);
         }
 
@@ -715,7 +734,7 @@ public class DiskPartition extends Partition implements Closeable {
     public boolean deleteDocument(int docID) {
         initDocDict();
 
-        if (docID < 1 || docID > docDict.getMaxID()) {
+        if(docID < 1 || docID > docDict.getMaxID()) {
             return false;
         }
         return deletions.delete(docID);
@@ -734,7 +753,7 @@ public class DiskPartition extends Partition implements Closeable {
         initDocDict();
         Entry d = docDict.get(key);
 
-        if (d != null) {
+        if(d != null) {
             return deleteDocument(d.getID());
         }
         return false;
@@ -769,12 +788,12 @@ public class DiskPartition extends Partition implements Closeable {
         // Now, loop through the keys, deleting any that are from this
         // partition.
         boolean someDeleted = false;
-        for (Object key : keys) {
-            if (deleteDocument((String) key)) {
+        for(Object key : keys) {
+            if(deleteDocument((String) key)) {
                 someDeleted = true;
             }
         }
-        if (someDeleted) {
+        if(someDeleted) {
             syncDeletedMap();
         }
         return someDeleted;
@@ -821,7 +840,7 @@ public class DiskPartition extends Partition implements Closeable {
     public int getDocumentLength(int docID) {
         initDocDict();
         QueryEntry de = getDocumentTerm(docID);
-        if (de == null || !(de instanceof DocKeyEntry)) {
+        if(de == null || !(de instanceof DocKeyEntry)) {
             return 0;
         }
 
@@ -880,7 +899,7 @@ public class DiskPartition extends Partition implements Closeable {
      * @see DelMap#getDelMap
      */
     protected int[] getDocIDMap(ReadableBuffer del) {
-        if (del == null) {
+        if(del == null) {
             return null;
         }
 
@@ -890,8 +909,8 @@ public class DiskPartition extends Partition implements Closeable {
         //
         // Make the map from old to new document IDs.
         int nd = 1;
-        for (int od = 1; od <= maxDocID; od++) {
-            if (del.test(od)) {
+        for(int od = 1; od <= maxDocID; od++) {
+            if(del.test(od)) {
                 map[od] = -1;
             } else {
                 map[od] = nd++;
@@ -920,7 +939,7 @@ public class DiskPartition extends Partition implements Closeable {
      */
     protected ByteBuffer[] getInputBuffers(int size) {
         ByteBuffer[] ret = new ByteBuffer[mainPostFiles.length];
-        for (int i = 0; i < ret.length;
+        for(int i = 0; i < ret.length;
                 i++) {
             ret[i] = ByteBuffer.allocateDirect(size);
         }
@@ -996,7 +1015,8 @@ public class DiskPartition extends Partition implements Closeable {
         // A quick sanity check:  Any partitions whose documents have all
         // been deleted can be removed from the list.
         Iterator<DelMap> dmi = delMaps.iterator();
-        for (Iterator<DiskPartition> i = partCopy.iterator(); i.hasNext() && dmi.hasNext();) {
+        for(Iterator<DiskPartition> i = partCopy.iterator(); i.hasNext() && dmi.
+                hasNext();) {
             DiskPartition p = i.next();
             p.initDocDict();
 
@@ -1005,8 +1025,7 @@ public class DiskPartition extends Partition implements Closeable {
             // people dicking with it before we're ready to use it.
             DelMap d = dmi.next();
             p.ignored = false;
-            if (p.stats.nDocs == d.nDeleted) {
-                log.debug(logTag, 10, "Ignoring: " + p);
+            if(p.stats.nDocs == d.nDeleted) {
                 p.ignored = true;
                 i.remove();
                 dmi.remove();
@@ -1015,7 +1034,7 @@ public class DiskPartition extends Partition implements Closeable {
 
         //
         // If we're left with no partitions, we're done.
-        if (partCopy.size() == 0) {
+        if(partCopy.size() == 0) {
             return null;
         }
 
@@ -1027,8 +1046,7 @@ public class DiskPartition extends Partition implements Closeable {
         // A honkin' big try, so that we can get rid of any failed merges.
         try {
             long start = System.currentTimeMillis();
-            log.log(logTag, 2,
-                    "Merging: " + partCopy + " into DP: " + newPartNumber);
+            logger.info("Merging: " + partCopy + " into DP: " + newPartNumber);
 
             //
             // Get an array of partitions, and a similar sized array of
@@ -1068,7 +1086,7 @@ public class DiskPartition extends Partition implements Closeable {
             // We'll quickly build some stats that we need for pretty much
             // everything.
             int newMaxDocID = 0;
-            for (int i = 0; i < sortedParts.length; i++) {
+            for(int i = 0; i < sortedParts.length; i++) {
 
                 DiskPartition d = sortedParts[i];
                 d.initDocDict();
@@ -1087,7 +1105,8 @@ public class DiskPartition extends Partition implements Closeable {
                 // interface or something similar.
                 docIDMaps[i] =
                         d.getDocIDMap((ReadableBuffer) delMaps.get(i).delMap);
-                nUndel[i] = docIDMaps[i] == null ? d.stats.nDocs : docIDMaps[i][0];
+                nUndel[i] =
+                        docIDMaps[i] == null ? d.stats.nDocs : docIDMaps[i][0];
                 fakeStart[i] = 1;
 
                 mStats.nDocs += nUndel[i];
@@ -1096,7 +1115,7 @@ public class DiskPartition extends Partition implements Closeable {
                 //
                 // We need to figure out the new starting sequence numbers for
                 // each partition.
-                if (i > 0) {
+                if(i > 0) {
                     docIDStart[i] = docIDStart[i - 1] + nUndel[i - 1];
                 }
                 newMaxDocID += nUndel[i];
@@ -1115,16 +1134,16 @@ public class DiskPartition extends Partition implements Closeable {
             // Get channels for the postings.
             OutputStream[] mPostStreams = new OutputStream[files.length - 1];
             PostingsOutput[] mPostOut = new PostingsOutput[files.length - 1];
-            for (int i = 1; i < files.length; i++) {
+            for(int i = 1; i < files.length; i++) {
                 mPostStreams[i - 1] =
                         new BufferedOutputStream(new FileOutputStream(files[i]),
                         8192);
                 mPostOut[i - 1] = new StreamPostingsOutput(mPostStreams[i - 1]);
             }
 
-            log.log(logTag, 4, "Merge main dictionary");
+            logger.fine("Merge main dictionary");
 
-            for (int i = 0; i < sortedParts.length; i++) {
+            for(int i = 0; i < sortedParts.length; i++) {
                 sortedParts[i].initMainDict();
                 dicts[i] = sortedParts[i].mainDict;
             }
@@ -1134,9 +1153,8 @@ public class DiskPartition extends Partition implements Closeable {
             IndexEntry mde;
             try {
                 mde = (IndexEntry) mainDictFactory.getEntryClass().newInstance();
-            } catch (Exception e) {
-                log.error(logTag, 1,
-                        "Error instantiating main dictionary entry before merge",
+            } catch(Exception e) {
+                logger.log(Level.SEVERE, "Error instantiating main dictionary entry before merge",
                         e);
                 throw new java.io.IOException("Error merging main dictionary");
             }
@@ -1148,7 +1166,7 @@ public class DiskPartition extends Partition implements Closeable {
                     null, docIDStart, docIDMaps, mDictFile,
                     mPostOut, true);
 
-            log.log(logTag, 4, "Write merged bigram dictionary");
+            logger.fine("Write merged bigram dictionary");
 
             //
             // We need some of the information from the merge of the main
@@ -1168,7 +1186,7 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Pick up the document dictionaries for the merge.
-            for (int i = 0; i < dicts.length;
+            for(int i = 0; i < dicts.length;
                     i++) {
                 dicts[i] = sortedParts[i].docDict;
                 mappers[i] = new DocEntryMapper(docIDStart[i], docIDMaps[i]);
@@ -1182,10 +1200,10 @@ public class DiskPartition extends Partition implements Closeable {
             // Get an instance of the document dictionary class to pass in.
             IndexEntry dde;
             try {
-                dde = (IndexEntry) documentDictFactory.getEntryClass().newInstance();
-            } catch (Exception e) {
-                log.error(logTag, 1,
-                        "Error instantiating document dictionary " +
+                dde = (IndexEntry) documentDictFactory.getEntryClass().
+                        newInstance();
+            } catch(Exception e) {
+                logger.log(Level.SEVERE, "Error instantiating document dictionary " +
                         "entry before merge", e);
                 throw new java.io.IOException("Error merging " +
                         "document dictionary");
@@ -1194,7 +1212,7 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Merge the document dictionaries.  We'll need to remap the
-            log.log(logTag, 4, "Merge document dictionary");
+            logger.fine("Merge document dictionary");
             int[][] mergedDocIDMap =
                     dicts[0].merge(dde,
                     new StringNameHandler(),
@@ -1204,7 +1222,7 @@ public class DiskPartition extends Partition implements Closeable {
                     true);
             mDocDictFile.close();
             mDocDictPost.close();
-            if (docsAreMerged()) {
+            if(docsAreMerged()) {
                 //
                 // If docs may have been merged, we need to re-write
                 // the main dict with new doc IDs.  This means opening
@@ -1221,13 +1239,14 @@ public class DiskPartition extends Partition implements Closeable {
                 mDictFile.seek(0);
                 RandomAccessFile[] postIn =
                         new RandomAccessFile[files.length - 1];
-                for (int i = 1; i < files.length;
+                for(int i = 1; i < files.length;
                         i++) {
                     postIn[i - 1] = new RandomAccessFile(files[i], "rw");
                 }
 
                 DiskDictionary mergedMainDict =
-                        mainDictFactory.getDiskDictionary(new StringNameHandler(),
+                        mainDictFactory.getDiskDictionary(
+                        new StringNameHandler(),
                         mDictFile, postIn,
                         this);
 
@@ -1241,7 +1260,7 @@ public class DiskPartition extends Partition implements Closeable {
 
                 //
                 // Get channels for the postings
-                for (int i = 1; i < files.length;
+                for(int i = 1; i < files.length;
                         i++) {
                     OutputStream outStr =
                             new BufferedOutputStream(new FileOutputStream(files[i].getAbsolutePath() +
@@ -1250,35 +1269,37 @@ public class DiskPartition extends Partition implements Closeable {
                     mappedPostOut[i - 1] = new StreamPostingsOutput(outStr);
                 }
 
-                log.log(logTag, 4, "Remap main dictionary");
+                logger.fine("Remap main dictionary");
                 mergedMainDict.remapPostings(mde, new StringNameHandler(), stats,
                         mergedDocIDMap[0], mappedDictFile,
                         mappedPostOut);
 
                 //
                 // Close up
-                for (int i = 0; i < postIn.length;
+                for(int i = 0; i < postIn.length;
                         i++) {
                     postIn[i].close();
                 }
 
                 mappedDictFile.close();
-                for (int i = 0; i < mappedPostOut.length;
+                for(int i = 0; i < mappedPostOut.length;
                         i++) {
                     mappedPostOut[i].close();
                 }
 
                 //
                 // Rename the files that were remapped
-                for (int i = 0; i < files.length;
+                for(int i = 0; i < files.length;
                         i++) {
-                    if (!files[i].delete()) {
-                        throw new IOException("Failed to delete pre-remap file " + files[i].getName());
+                    if(!files[i].delete()) {
+                        throw new IOException("Failed to delete pre-remap file " +
+                                files[i].getName());
                     }
                     File mappedFile =
                             new File(files[i].getAbsolutePath() + ".remap");
-                    if (!mappedFile.renameTo(files[i])) {
-                        throw new IOException("Failed to rename remapped file " + files[i].getName() + ".remap");
+                    if(!mappedFile.renameTo(files[i])) {
+                        throw new IOException("Failed to rename remapped file " +
+                                files[i].getName() + ".remap");
                     }
                 }
             }
@@ -1286,7 +1307,7 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // Close off the main dict files
             mDictFile.close();
-            for (int i = 0; i < mPostStreams.length; i++) {
+            for(int i = 0; i < mPostStreams.length; i++) {
                 mPostStreams[i].close();
             }
 
@@ -1295,18 +1316,17 @@ public class DiskPartition extends Partition implements Closeable {
 
             DiskPartition ndp =
                     manager.newDiskPartition(newPartNumber, manager);
-            if (calculateDVL && manager.getCalculateDVL() &&
+            if(calculateDVL && manager.getCalculateDVL() &&
                     !((SearchEngineImpl) manager.getEngine()).getLongIndexingRun()) {
                 //
                 // Calculate the document vectors for the merged partition.
                 ndp.initDVL(false);
             }
 
-            log.log(logTag, 3,
-                    "Merge took: " + (System.currentTimeMillis() - start) + "ms");
+            logger.info("Merge took: " + (System.currentTimeMillis() - start) + "ms");
 
             return ndp;
-        } catch (DuplicateKeyException dke) {
+        } catch(DuplicateKeyException dke) {
             //
             // What's going on here?  Well, if we hit a duplicate document
             // key during the merge, then the partition that we're merging is
@@ -1319,20 +1339,20 @@ public class DiskPartition extends Partition implements Closeable {
             // of how many times we've pulled this trick, so that we don't
             // keep trying forever.  This should be configurable, but then 
             // again we should be able to find the bug too.
-            if (depth > 5) {
+            if(depth > 5) {
                 throw (dke);
             }
             DiskPartition p = (DiskPartition) dke.getEntry().getPartition();
             int origID = dke.getEntry().getOrigID();
 
-            log.warn(logTag, 1, dke.getMessage() +
+            logger.warning(dke.getMessage() +
                     " when merging. Deleting old document " +
                     p + " " + origID);
             //
             // OK, just delete the key in our delmaps and go on, right?
             Iterator<DiskPartition> dpi = partitions.iterator();
             dmi = delMaps.iterator();
-            while (dpi.hasNext()) {
+            while(dpi.hasNext()) {
                 DiskPartition dp = dpi.next();
 
                 //
@@ -1342,7 +1362,7 @@ public class DiskPartition extends Partition implements Closeable {
                 // due to the depth limitation above.
                 dp.deleteDocument(origID);
                 DelMap dm = dmi.next();
-                if (dp == p) {
+                if(dp == p) {
                     dm.delete(origID);
                     break;
                 }
@@ -1352,9 +1372,9 @@ public class DiskPartition extends Partition implements Closeable {
             DiskPartition.reap(manager, newPartNumber);
             return merge(partitions, delMaps, calculateDVL, depth + 1);
 
-        } catch (Exception e) {
+        } catch(Exception e) {
 
-            log.error(logTag, 1, "Exception merging partitions", e);
+            logger.log(Level.SEVERE, "Exception merging partitions", e);
 
 
             //
@@ -1414,8 +1434,8 @@ public class DiskPartition extends Partition implements Closeable {
     public void createRemoveFile() {
         try {
             removedFile.createNewFile();
-        } catch (IOException ex) {
-            log.error(logTag, 1, "Error creating remove file: " + removedFile,
+        } catch(IOException ex) {
+            logger.log(Level.SEVERE, "Error creating remove file: " + removedFile,
                     ex);
         }
     }

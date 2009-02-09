@@ -30,7 +30,6 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.text.DecimalFormat;
 import com.sun.labs.minion.pipeline.StageAdapter;
-import com.sun.labs.minion.util.MinionLog;
 
 /**
  * Test indexing rate.
@@ -57,19 +56,12 @@ public class RateTest {
         float secs = (float) (System.currentTimeMillis() - start) / 1000;
         float MB = docsize / (1024 * 1024);
         
-        com.sun.labs.minion.util.MinionLog.log("RateTest", 3, n + " documents, " +
-                form.format(MB) + " MB, " +
-                form.format(secs) + " s, " +
-                form.format(MB / (secs / 3600)) + " MB/h " +
-                toMB(Runtime.getRuntime().totalMemory()) + "MB");
     }
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
-        MinionLog.setStream(System.out);
-        MinionLog.setLevel(4);
         
         Class c = Class.forName(args[0]);
         Tokenizer tok = (Tokenizer) c.newInstance();

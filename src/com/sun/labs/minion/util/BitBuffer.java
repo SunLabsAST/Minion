@@ -28,6 +28,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 /**
  * The BitBuffer class is used to represent a string of bits.  We're not
@@ -121,6 +122,8 @@ public class BitBuffer implements Cloneable, IntEncoder {
     protected final static int 	BITS_PER_UNIT 	      = 1 << ADDRESS_BITS_PER_UNIT;
     protected final static int 	BIT_INDEX_MASK 	      = BITS_PER_UNIT - 1;
     protected final static int  FULL_UNIT 	      = 0xffffffff;
+
+    private Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * The bits in this BitSet.  The ith bit is stored in bits[i/64] at
@@ -1090,8 +1093,7 @@ public class BitBuffer implements Cloneable, IntEncoder {
 	}
 
 	if(n > maxIntPerBits[nBits]) {
-	    MinionLog.error("BB", 1, "Unable to encode " + n + " in " +
-			  nBits);
+        logger.severe("Unable to encode " + n + " in " + nBits);
 	    throw new ArithmeticException("Attempt to encode " + n + " in " +
 					  nBits + " bits");
 	}

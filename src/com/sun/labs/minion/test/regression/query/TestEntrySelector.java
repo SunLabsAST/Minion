@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test.regression.query;
 
 import java.io.IOException;
@@ -42,10 +41,10 @@ import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.PosPostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
-import com.sun.labs.minion.util.MinionLog;
 
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
+import java.util.logging.Logger;
 
 /**
  * Selects entries in an index which will be used to create queries
@@ -63,10 +62,10 @@ import com.sun.labs.minion.SearchEngineFactory;
 public class TestEntrySelector {
 
     private SearchEngineImpl searchEngine;
-    private PartitionManager partitionManager;
-    private List<EntrySelector> selectors;
 
-    
+    private PartitionManager partitionManager;
+
+    private List<EntrySelector> selectors;
 
     /**
      * Creates a TestEntrySelector based on the given properties.
@@ -75,9 +74,10 @@ public class TestEntrySelector {
      *
      * @param indexDir the index directory
      */
-    public TestEntrySelector(String indexDir, String cmFile) 
-        throws IOException, SearchEngineException {
-        searchEngine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(cmFile, indexDir);
+    public TestEntrySelector(String indexDir, String cmFile)
+            throws IOException, SearchEngineException {
+        searchEngine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                cmFile, indexDir);
         partitionManager = searchEngine.getManager();
         selectors = new LinkedList<EntrySelector>();
 
@@ -92,7 +92,8 @@ public class TestEntrySelector {
 
         // creates a map from the name of entrys to the number of documents
         // the entry occurs in
-        Map<String, EntryFreq> entryFreqMap = SelectorUtil.getEntryFreqMap(partitionManager);
+        Map<String, EntryFreq> entryFreqMap = SelectorUtil.getEntryFreqMap(
+                partitionManager);
 
         // selects all the entries that appear in 5-10% of all documents
         selectors.add(new FreqEntrySelector(0.05f, 0.1f, entryFreqMap));
@@ -104,7 +105,6 @@ public class TestEntrySelector {
         selectors.add(new FreqEntrySelector(0.95f, 1.0f, entryFreqMap));
     }
 
-
     /**
      * Returns the PartitionManager used by this TestEntrySelector.
      *
@@ -114,7 +114,6 @@ public class TestEntrySelector {
         return partitionManager;
     }
 
-
     /**
      * Selects entrys.
      *
@@ -122,7 +121,7 @@ public class TestEntrySelector {
      */
     public List<Entry> select() {
         List<Entry> entrys = new LinkedList<Entry>();
-        for (Iterator<EntrySelector> i = selectors.iterator(); i.hasNext();) {
+        for(Iterator<EntrySelector> i = selectors.iterator(); i.hasNext();) {
             EntrySelector ts = i.next();
             List<Entry> list = ts.selectEntries(partitionManager);
             System.out.println(ts.toString());
@@ -133,25 +132,23 @@ public class TestEntrySelector {
         return entrys;
     }
 
-
     /**
      * Prints information about the underlying partitions.
      */
     private void printPartitionInfo() {
-        System.out.println("Num. of Partitions: " + 
-                           partitionManager.getNActive());
+        System.out.println("Num. of Partitions: " +
+                partitionManager.getNActive());
         Iterator i = partitionManager.getActivePartitions().iterator();
         int n = 0;
-        while (i.hasNext()) {
+        while(i.hasNext()) {
             n++;
             DiskPartition p = (DiskPartition) i.next();
             System.out.println(" Partition " + n);
             System.out.println("  Dictionary: " +
-                               p.getMainDictionaryIterator().getNEntries() +
-                               " entries");
+                    p.getMainDictionaryIterator().getNEntries() +
+                    " entries");
         }
     }
-
 
     /**
      * Prints a list of entries.
@@ -159,12 +156,11 @@ public class TestEntrySelector {
      * @param entryList the list of entries to print
      */
     private void printEntries(List<Entry> entryList) {
-        for (Iterator<Entry> i = entryList.iterator(); i.hasNext();) {
+        for(Iterator<Entry> i = entryList.iterator(); i.hasNext();) {
             Entry entry = i.next();
             System.out.println(SelectorUtil.getFirstToken(entry.toString()));
         }
     }
-
 
     /**
      * A test program that selects entries from an index.
@@ -179,18 +175,18 @@ public class TestEntrySelector {
         String cmFile = argv[1];
 
         try {
-            TestEntrySelector selector = new TestEntrySelector(cmFile, indexDirectory);
+            TestEntrySelector selector = new TestEntrySelector(cmFile,
+                    indexDirectory);
             selector.printPartitionInfo();
             System.out.println();
             selector.select();
-        } catch (Exception e) {
+        } catch(Exception e) {
             e.printStackTrace();
         }
 
         System.exit(0);
     }
 }
-
 
 class SelectorUtil {
 
@@ -203,23 +199,21 @@ class SelectorUtil {
      */
     public static List<Entry> getFirstLastEntries(DictionaryIterator di) {
         List<Entry> entries = new LinkedList<Entry>();
-        if (di.hasNext()) {
+        if(di.hasNext()) {
             entries.add((Entry) di.next()); // first entry
-            if (di.hasNext()) {
+            if(di.hasNext()) {
                 /* iterate to the last entry */
                 Entry lastEntry = (Entry) di.next();
-                while (di.hasNext()) {
+                while(di.hasNext()) {
                     lastEntry = (Entry) di.next();
                 }
                 entries.add(lastEntry);
             } else {
-                System.out.println
-                    ("Partition only has 1 entry.");
+                System.out.println("Partition only has 1 entry.");
             }
         }
         return entries;
     }
-
 
     /**
      * Returns the first token of a string, which is all the characters
@@ -232,13 +226,12 @@ class SelectorUtil {
      */
     public static String getFirstToken(String entry) {
         int space = entry.indexOf(" ");
-        if (space > -1) {
+        if(space > -1) {
             return entry.substring(0, space);
         } else {
             return entry;
         }
     }
-
 
     /**
      * Returns a map that maps the name of entries to the total number of 
@@ -250,20 +243,21 @@ class SelectorUtil {
      * @return a map that maps the name of entries to the number of documents
      *         they occur in
      */
-    public static Map<String, EntryFreq> getEntryFreqMap(PartitionManager manager) {
+    public static Map<String, EntryFreq> getEntryFreqMap(
+            PartitionManager manager) {
         Map<String, EntryFreq> map = new HashMap<String, EntryFreq>();
         Iterator i = manager.getActivePartitions().iterator();
 
         /* iterate through all partitions */
-        while (i.hasNext()) {
+        while(i.hasNext()) {
             DiskPartition partition = (DiskPartition) i.next();
             DictionaryIterator di = partition.getMainDictionaryIterator();
 
             /* iterate through each entry in the partition */
-            while (di.hasNext()) {
+            while(di.hasNext()) {
                 Entry entry = (Entry) di.next();
-                String key = SelectorUtil.getFirstToken
-                    ((String) entry.getName());
+                String key =
+                        SelectorUtil.getFirstToken((String) entry.getName());
                 EntryFreq tf = map.get(key);
 
                 /* 
@@ -271,34 +265,34 @@ class SelectorUtil {
                  * which contains the entry itself and the number of documents
                  * the entry has occurred in so far
                  */
-                if (tf == null) {
+                if(tf == null) {
                     map.put(key, new EntryFreq(entry, new Integer(entry.getN())));
                 } else {
                     tf.freq = new Integer(tf.freq.intValue() + entry.getN());
                 }
             }
         }
-        
+
         return map;
     }
 }
 
 class EntryFreq {
+
     Entry entry;
+
     Integer freq;
-    
+
     EntryFreq(Entry t, Integer f) {
         entry = t;
         freq = f;
     }
 }
 
-
 /**
  * Selects the first and last entries of each partition.
  */
 class PartitionEntrySelector implements EntrySelector {
-
 
     /**
      * Selects the first and last entries of each partition.
@@ -312,21 +306,19 @@ class PartitionEntrySelector implements EntrySelector {
         Iterator i = manager.getActivePartitions().iterator();
 
         /* iterate through all the partitions */
-        while (i.hasNext()) {
+        while(i.hasNext()) {
             DiskPartition partition = (DiskPartition) i.next();
             int numEntries = partition.getNEntries();
-            if (numEntries > 0) {
+            if(numEntries > 0) {
                 DictionaryIterator di = partition.getMainDictionaryIterator();
                 entries.addAll(SelectorUtil.getFirstLastEntries(di));
             } else {
-                System.out.println
-                    ("Partition " + partition.getPartitionNumber() + 
-                     " has no entries.");
+                System.out.println("Partition " + partition.getPartitionNumber() +
+                        " has no entries.");
             }
         }
         return entries;
     }
-
 
     /**
      * Returns the name of this EntrySelector.
@@ -338,14 +330,12 @@ class PartitionEntrySelector implements EntrySelector {
     }
 }
 
-
 /**
  * Selects a set of entries that has a certain number of postings.
  * This implementation returns a set of entries with 1, 2, 9, 10, 11 and 20
  * postings.
  */
 class NPostingsEntrySelector implements EntrySelector {
-
 
     /**
      * Selects entries that have exactly 1, 2, 9, 10, 11 and 20 IDPostings
@@ -366,7 +356,6 @@ class NPostingsEntrySelector implements EntrySelector {
         return entries;
     }
 
-
     /**
      * Returns the first entry in the index that contains the specified
      * number of IDPostings.
@@ -381,19 +370,18 @@ class NPostingsEntrySelector implements EntrySelector {
         Iterator i = manager.getActivePartitions().iterator();
 
         /* iterate through all the partitions */
-        while (i.hasNext()) {
+        while(i.hasNext()) {
             DiskPartition partition = (DiskPartition) i.next();
             DictionaryIterator di = partition.getMainDictionaryIterator();
-            while (di.hasNext()) {
+            while(di.hasNext()) {
                 Entry t = (Entry) di.next();
-                if (t.getN() == n) {
+                if(t.getN() == n) {
                     return t;
                 }
             }
         }
         return null;
     }
-
 
     /**
      * Returns the name of this EntrySelector.
@@ -405,14 +393,13 @@ class NPostingsEntrySelector implements EntrySelector {
     }
 }
 
-
 /**
  * Selects the first entry in the first field of the first and last document
  * of each document dictionary.
  */
 class FirstLastDocEntrySelector implements EntrySelector {
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "FLDES";
 
@@ -428,40 +415,39 @@ class FirstLastDocEntrySelector implements EntrySelector {
     public List<Entry> selectEntries(PartitionManager manager) {
         List<Entry> entries = new LinkedList<Entry>();
         Iterator i = manager.getActivePartitions().iterator();
-        
+
         /* iterate through all the partitions */
-        while (i.hasNext()) {
+        while(i.hasNext()) {
             DiskPartition partition = (DiskPartition) i.next();
             Iterator di = partition.getDocumentIterator();
-            if (di.hasNext()) {
+            if(di.hasNext()) {
 
                 /* get the first document in the partition */
                 DocKeyEntry firstDocEntry = (DocKeyEntry) di.next();
-                
+
                 /* get the first entry in the first document of the partition */
                 entries.add(getFirstEntry(firstDocEntry, partition));
 
                 /* get the last document in the partition */
                 DocKeyEntry lastDocEntry = null;
-                if (di.hasNext()) {
+                if(di.hasNext()) {
                     lastDocEntry = (DocKeyEntry) di.next();
-                    while (di.hasNext()) {
+                    while(di.hasNext()) {
                         lastDocEntry = (DocKeyEntry) di.next();
                     }
                 }
 
                 /* get the first entry in the last document of the partition */
-                if (lastDocEntry != null) {
+                if(lastDocEntry != null) {
                     Entry e = getFirstEntry(lastDocEntry, partition);
                     if(e != null) {
-                    entries.add(e);
+                        entries.add(e);
                     }
                 }
             }
         }
         return entries;
     }
-
 
     /**
      * Returns the first entry of the given document.
@@ -472,25 +458,25 @@ class FirstLastDocEntrySelector implements EntrySelector {
      */
     public Entry getFirstEntry(DocKeyEntry docEntry, DiskPartition partition) {
         PostingsIterator pi =
-            docEntry.iterator(new PostingsIteratorFeatures());
-        
+                docEntry.iterator(new PostingsIteratorFeatures());
+
 
         PostingsIteratorFeatures features = new PostingsIteratorFeatures();
         features.setPositions(true);
         features.setCaseSensitive(false);
 
-        if (!pi.next()) {
+        if(!pi.next()) {
             System.out.println("Postings iterator has nothing");
         }
 
         /* iterate through all the postings */
-        while (pi.next()) {
-            
+        while(pi.next()) {
+
             /* get the entry with the given ID */
             QueryEntry entry = partition.getTerm(pi.getID());
-            PosPostingsIterator ppi = 
-                (PosPostingsIterator) entry.iterator(features);
-            
+            PosPostingsIterator ppi =
+                    (PosPostingsIterator) entry.iterator(features);
+
             //
             // We may hit an entry with no postings.  We'll just continue in such a case.
             if(ppi == null) {
@@ -502,10 +488,10 @@ class FirstLastDocEntrySelector implements EntrySelector {
 
             int[][] positions = ppi.getPositions();
 
-            for (int i = 0; i < positions.length; i++) {
+            for(int i = 0; i < positions.length; i++) {
                 int[] field = positions[i];
-                for (int j = 1; j < field.length; j++) {
-                    if (field[j] == 1) {
+                for(int j = 1; j < field.length; j++) {
+                    if(field[j] == 1) {
                         // found the first entry in the document, return it
                         return entry;
                     }
@@ -517,7 +503,6 @@ class FirstLastDocEntrySelector implements EntrySelector {
         throw new Error("First entry not found: " + docEntry.getName());
     }
 
-
     /**
      * Returns a description of the selected entry
      *
@@ -528,7 +513,6 @@ class FirstLastDocEntrySelector implements EntrySelector {
     }
 }
 
-
 /**
  * Selects all the entries that appear in a certain frequency range 
  * of the all the documents.
@@ -536,9 +520,10 @@ class FirstLastDocEntrySelector implements EntrySelector {
 class FreqEntrySelector implements EntrySelector {
 
     private float lowerFreqBound;  // the lower bound for document frequency %
+
     private float upperFreqBound;  // the upper bound for document frequency %
+
     private Map<String, EntryFreq> entryFreqMap; // maps entry names to the # of docs they occur in
-    
 
     /**
      * Constructs a FreqEntrySelector with the specified lower and upper
@@ -550,12 +535,11 @@ class FreqEntrySelector implements EntrySelector {
      *                   the entry appears in, a value between 0.0 and 1.0
      */
     public FreqEntrySelector(float lowerBound, float upperBound,
-                            Map<String, EntryFreq> entryFreqMap) {
+            Map<String, EntryFreq> entryFreqMap) {
         this.lowerFreqBound = lowerBound;
         this.upperFreqBound = upperBound;
         this.entryFreqMap = entryFreqMap;
     }
-
 
     /**
      * Returns all the entries that appear the specified frequency range
@@ -573,10 +557,10 @@ class FreqEntrySelector implements EntrySelector {
 
         Iterator<EntryFreq> i = entryFreqMap.values().iterator();
 
-        while (i.hasNext()) {
+        while(i.hasNext()) {
             EntryFreq tf = i.next();
-            if (minDocs <= tf.freq.intValue() &&
-                tf.freq.intValue() <= maxDocs) {
+            if(minDocs <= tf.freq.intValue() &&
+                    tf.freq.intValue() <= maxDocs) {
                 entries.add(tf.entry);
             }
         }
@@ -584,15 +568,14 @@ class FreqEntrySelector implements EntrySelector {
         return entries;
     }
 
-
     /**
      * Returns a description of this EntrySelector
      *
      * @return a description of this EntrySelector
      */
     public String toString() {
-        return "Entries that appear in " + ((int)(lowerFreqBound * 100)) + "-" +
-            ((int)(upperFreqBound * 100)) + "% of all the documents";
+        return "Entries that appear in " + ((int) (lowerFreqBound * 100)) + "-" +
+                ((int) (upperFreqBound * 100)) + "% of all the documents";
     }
 }
 

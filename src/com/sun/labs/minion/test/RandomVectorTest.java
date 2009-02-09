@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.*;
@@ -39,46 +38,49 @@ import com.sun.labs.minion.retrieval.ResultImpl;
 
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.StopWatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class RandomVectorTest {
-    
+
     protected static DecimalFormat form = new DecimalFormat("###0.0000");
-    
+
     /** Creates a new instance of VectorTest */
     public RandomVectorTest() {
     }
-    
+
     public static int[] getPairs(int n) {
         Random rand = new Random();
-        int[] pairs = new int[n*2];
+        int[] pairs = new int[n * 2];
         String[] keys = new String[pairs.length];
         for(int i = 0; i < pairs.length; i++) {
             pairs[i] = rand.nextInt(n) + 1;
         }
         return pairs;
     }
-    
+
     public static void runKeyPairs(int n, PartitionManager manager) {
         StopWatch sw = new StopWatch();
         sw.start();
         int[] pairs = getPairs(n);
         for(int i = 0; i < n; i += 2) {
             double x = manager.getDistance("document-" + pairs[i],
-                    "document-"+pairs[i+1],
+                    "document-" + pairs[i + 1],
                     "features");
         }
         sw.stop();
-        System.out.println(form.format(sw.getTime() * 1000.0 / n) + "us per paired distance calc");
+        System.out.println(form.format(sw.getTime() * 1000.0 / n) +
+                "us per paired distance calc");
     }
-    
+
     public static void runResultPairs(int n, PartitionManager manager) throws SearchEngineException {
         StopWatch sw = new StopWatch();
         int[] pairs = getPairs(n);
-        
+
         //
         // Get a result set containing all documents.
         StopWatch simw = new StopWatch();
@@ -86,26 +88,28 @@ public class RandomVectorTest {
         ResultSet rs = manager.getSimilar("document-1", "features");
         List l = rs.getAllResults(false);
         simw.stop();
-        
+
         System.out.println("Sim took: " + simw.getTime());
-        
+
         //
         // Random pair distance computation.
         sw.start();
         for(int i = 0; i < n; i += 2) {
-            double x = ((Result) l.get(pairs[i]-1)).getDistance((Result) l.get(pairs[i+1]-1), "features");
+            double x = ((Result) l.get(pairs[i] - 1)).getDistance(
+                    (Result) l.get(pairs[i + 1] - 1), "features");
         }
         sw.stop();
-        System.out.println(form.format(sw.getTime() * 1000.0 / n) + "us per paired distance calc");
+        System.out.println(form.format(sw.getTime() * 1000.0 / n) +
+                "us per paired distance calc");
     }
-    
+
     public static void runResultLists(int n, PartitionManager manager) throws SearchEngineException {
-        int[] lists = new int[(n+1)*11];
+        int[] lists = new int[(n + 1) * 11];
         Random rand = new Random();
         for(int i = 0; i < lists.length; i++) {
             lists[i] = rand.nextInt(n);
         }
-        
+
         //
         // Get a result set containing all documents.
         StopWatch simw = new StopWatch();
@@ -113,9 +117,9 @@ public class RandomVectorTest {
         ResultSet rs = manager.getSimilar("document-1", "features");
         List l = rs.getAllResults(false);
         simw.stop();
-        
+
         System.out.println("Sim took: " + simw.getTime());
-        
+
         //
         // Random pair distance computation.
         StopWatch sw = new StopWatch();
@@ -125,33 +129,32 @@ public class RandomVectorTest {
         for(int i = 0; i < lists.length; i += 11) {
             s.clear();
             for(int j = 0; j < 10; j++) {
-                s.add(l.get(lists[i+1+j]));
+                s.add(l.get(lists[i + 1 + j]));
             }
-            double[] x = ((ResultImpl) l.get(lists[i])).getDistance(s, "features");
+            double[] x = ((ResultImpl) l.get(lists[i])).getDistance(s,
+                    "features");
             calcs += s.size();
         }
         sw.stop();
-        System.out.println(form.format(sw.getTime() * 1000.0 / calcs) + "us per paired distance calc");
+        System.out.println(form.format(sw.getTime() * 1000.0 / calcs) +
+                "us per paired distance calc");
     }
-    
+
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
-        
+
         //
         // Set up the logging for the search engine.  We'll send everything
         // to the standard output, except for errors, which will go to
         // standard error.  We'll set the level at 3, which is pretty
         // verbose.
-        Log log = Log.getLog();
-        log.setStream(System.out);
-        log.setLevel(3);
-        String logTag = "RVT";
-        
+        Logger logger = Logger.getLogger(RandomVectorTest.class.getName());
+
         //
         // Handle the options.
-        int    c;
+        int c;
         int vecLen = 10;
         int nDocs = 100;
         boolean doIndex = false;
@@ -161,13 +164,12 @@ public class RandomVectorTest {
         boolean doKeys = false;
         String indexDir = null;
         String cmFile = null;
-        IndexConfig indexConfig = null;
-        
-        Getopt gopt  = new Getopt(args, "d:f:kin:pstx:");
-        
-        while ((c = gopt.getopt()) != -1) {
-            switch (c) {
-                
+
+        Getopt gopt = new Getopt(args, "d:f:kin:pstx:");
+
+        while((c = gopt.getopt()) != -1) {
+            switch(c) {
+
                 case 'd':
                     indexDir = gopt.optArg;
                     break;
@@ -197,28 +199,29 @@ public class RandomVectorTest {
                     break;
             }
         }
-        
+
         //
         // Open our engine for use.  We give it the properties that we read
         // and no query properties.
         SearchEngineImpl engine;
         try {
-            engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(cmFile, indexDir);
-        } catch (SearchEngineException se) {
-            log.error("Indexer", 1, "Error opening collection", se);
+            engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                    cmFile, indexDir);
+        } catch(SearchEngineException se) {
+            logger.log(Level.SEVERE, "Error opening collection", se);
             return;
         }
-        
+
         if(doIndex) {
             //
             // Index nDocs random documents with feature vectors.
             SimpleIndexer si = engine.getSimpleIndexer();
             Random rand = new Random();
             for(int i = 1; i <= nDocs; i++) {
-                si.startDocument("document-"+i);
+                si.startDocument("document-" + i);
                 si.addField("dn", new Integer(i));
                 si.addField("title", "This is document number " + i);
-                
+
                 //
                 // Generate a random feature vector.
                 double[] v = new double[vecLen];
@@ -227,19 +230,19 @@ public class RandomVectorTest {
                 }
                 ((SyncPipelineImpl) si).addFieldInternal("features", v);
                 si.endDocument();
-                
+
                 if(i % 1000 == 0) {
                     System.out.println("Indexed " + i + " docs");
                 }
             }
             si.finish();
         }
-        
+
         //
         // The number of documents indexed in the engine.
         int n = engine.getNDocs();
         int p = n / 1000;
-        
+
         if(doPairs) {
             if(doKeys) {
                 runKeyPairs(n, engine.getManager());
@@ -249,31 +252,35 @@ public class RandomVectorTest {
                 runResultPairs(n, engine.getManager());
             }
         }
-        
+
         if(doTest) {
-            
+
             StopWatch sw = new StopWatch();
             sw.start();
             int x = 0;
-            for(Iterator i = engine.getManager().getActivePartitions().iterator(); i.hasNext();) {
+            for(Iterator i =
+                    engine.getManager().getActivePartitions().iterator(); i.
+                    hasNext();) {
                 DiskPartition dp = (DiskPartition) i.next();
-                for(Iterator d = dp.getDocumentIterator(); d.hasNext(); ) {
+                for(Iterator d = dp.getDocumentIterator(); d.hasNext();) {
                     DocKeyEntry dke = (DocKeyEntry) d.next();
-                    
+
                     //
                     // Get the feature vector for this document.
                     double[] feat = (double[]) engine.getFieldValue("features",
                             dke.getName().toString());
-                    int dn = (int) ((Long) engine.getFieldValue("dn", dke.getName().toString())).longValue();
-                    
+                    int dn = (int) ((Long) engine.getFieldValue("dn", dke.
+                            getName().toString())).longValue();
+
                     //
                     // We'll check for null, no matter what.
                     if(feat == null) {
-                        System.out.println("null features for: " + dke.getName() + " " +
+                        System.out.println("null features for: " + dke.getName() +
+                                " " +
                                 dn);
                         continue;
                     }
-                    
+
                     //
                     // Run the similarity computation for this document.
                     ResultSet rs = engine.getSimilar((String) dke.getName(),
@@ -285,13 +292,15 @@ public class RandomVectorTest {
                     }
                 }
             }
-            
+
             sw.stop();
             System.out.println("Calc took: " + sw.getTime());
-            System.out.println(form.format((double) sw.getTime() / x) + "ms per similarity calc");
-            System.out.println(form.format((n*n) / (double) sw.getTime()) + " calcs per ms");
+            System.out.println(form.format((double) sw.getTime() / x) +
+                    "ms per similarity calc");
+            System.out.println(form.format((n * n) / (double) sw.getTime()) +
+                    " calcs per ms");
         }
-        
+
         engine.close();
     }
 }

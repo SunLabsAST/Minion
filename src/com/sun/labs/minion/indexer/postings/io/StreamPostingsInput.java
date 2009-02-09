@@ -21,15 +21,14 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.postings.io;
 
 import java.io.RandomAccessFile;
 
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.logging.Logger;
 
 /**
  * A postings input that can be used when streaming through a lot of
@@ -58,7 +57,7 @@ public class StreamPostingsInput implements PostingsInput {
      */
     protected byte[] b;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "SPI";
 
@@ -69,8 +68,8 @@ public class StreamPostingsInput implements PostingsInput {
      * @throws java.io.IOException If there is any error reading the postings.
      */
     public StreamPostingsInput(RandomAccessFile postFile,
-                               int buffSize)
-        throws java.io.IOException {
+            int buffSize)
+            throws java.io.IOException {
         this(postFile, 0, buffSize);
     } // StreamPostingsInput constructor
 
@@ -82,9 +81,9 @@ public class StreamPostingsInput implements PostingsInput {
      * @throws java.io.IOException If there is any error reading the postings.
      */
     public StreamPostingsInput(RandomAccessFile postFile,
-                               long offset,
-                               int buffSize)
-        throws java.io.IOException {
+            long offset,
+            int buffSize)
+            throws java.io.IOException {
         raf = postFile;
         b = new byte[buffSize];
         read(offset);
@@ -117,14 +116,14 @@ public class StreamPostingsInput implements PostingsInput {
      * @return A readable buffer containing the postings.
      */
     public ReadableBuffer read(long offset, int size)
-        throws java.io.IOException{
+            throws java.io.IOException {
 
         ArrayBuffer ret = new ArrayBuffer(size);
-        
+
         //
         // The number of bytes that we can pull out of our current buffer.
         int ib = 0;
-        
+
         //
         // We may have skipped some postings in the stream due to (for example)
         // their lack of uncased terms.  We need to make sure that this offset 
@@ -148,7 +147,7 @@ public class StreamPostingsInput implements PostingsInput {
         //
         // The number of bytes left to transfer.
         int left = size;
-        
+
         //
         // We can get some.
         if(ib > 0) {
@@ -170,5 +169,4 @@ public class StreamPostingsInput implements PostingsInput {
         ret.limit(size);
         return ret;
     }
-    
 } // StreamPostingsInput

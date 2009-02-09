@@ -44,9 +44,10 @@ import org.xml.sax.helpers.XMLReaderFactory;
 
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableFile;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.util.props.PropertyException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * MergeTestReplayer replays the log from MergeTest and recreates the run of
@@ -527,10 +528,7 @@ public class MergeTestReplayer extends MergeTest {
         // to the standard output, except for errors, which will go to
         // standard error. We'll set the level at 3, which is pretty
         // verbose.
-        Log log = Log.getLog();
-        log.setStream(System.out);
-        log.setStream(Log.ERROR, System.err);
-        log.setLevel(logLevel);
+        Logger logger = Logger.getLogger(MergeTestReplayer.class.getName());
 
         //
         // Handle the options.
@@ -587,18 +585,14 @@ public class MergeTestReplayer extends MergeTest {
             }
         }
 
-        //
-        // We may have gotten a larger log level.
-        log.setLevel(logLevel);
-
         if (indexDir == null && cmFile == null) {
-            log.warn("logTag", 0, "You must specify an index directory.");
+            logger.warning("You must specify an index directory.");
             usage();
             return;
         }
 
         if (docDirectory == null) {
-            log.warn("logTag", 0, "You must specify a document directory.");
+            logger.warning("You must specify a document directory.");
             usage();
             return;
         } else {
@@ -641,7 +635,7 @@ public class MergeTestReplayer extends MergeTest {
                     long len = f.length();
                     boolean longFile = len > 400000;
                     if (longFile) {
-                        log.debug(logTag, 0, "Long: " + f.length());
+                        logger.info("Long: " + f.length());
                         engine.flush();
                     }
                     engine.index(document);
@@ -654,14 +648,14 @@ public class MergeTestReplayer extends MergeTest {
                     totalLen += len;
 
                     if (nDocs % 10 == 0) {
-                        IndexTest.reportProgress(start, totalLen, nDocs);
+                        IndexTest.reportProgress(logger, start, totalLen, nDocs);
                     }
 
                 } catch (SearchEngineException se) {
-                    log.error("Indexer", 1, "Error indexing document " + f, se);
+                    logger.log(Level.SEVERE, "Error indexing document " + f, se);
                     reporter.index(file, false == fileTable.get(file));
                 } catch (Exception e) {
-                    log.error(logTag, 0, "Error indexing", e);
+                    logger.log(Level.SEVERE, "Error indexing", e);
                     reporter.index(file, false == fileTable.get(file));
                 }
             }

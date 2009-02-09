@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.pipeline.StageAdapter;
 import com.sun.labs.minion.pipeline.Token;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A pipeline stage that can be used to collect tokens from a defined set
@@ -84,15 +83,15 @@ public class HighlightStage extends StageAdapter {
      */
     protected String[] qt;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "HS";
-    
+
     public HighlightStage() {
         hPass = new HashMap();
         fields = new HashSet();
         bodyFields = new HashSet();
     } // HighlightStage constructor
-
 
     /**
      * Resets the stage so that we can use it for a different document.
@@ -137,14 +136,14 @@ public class HighlightStage extends StageAdapter {
      * will be sorted by score before being returned.
      */
     public void addField(String fieldName, com.sun.labs.minion.Passage.Type type,
-                         int context, int maxSize, boolean doSort) {
+            int context, int maxSize, boolean doSort) {
 
         if(fieldName != null) {
             fieldName = fieldName.toLowerCase();
         }
-        
+
         PassageStore ps = (PassageStore) pass.get(fieldName);
-        
+
         //
         // If there are no passages defined for the given field, we'll only
         // handle it if there was a request for the whole field.
@@ -163,10 +162,10 @@ public class HighlightStage extends StageAdapter {
         if(type == com.sun.labs.minion.Passage.Type.JOIN) {
             List l = new ArrayList();
             l.add(new PassageImpl(ps.getAllPassages(doc),
-                                  ps.getPenalty(doc),
-                                  qt,
-                                  context,
-                                  maxSize));
+                    ps.getPenalty(doc),
+                    qt,
+                    context,
+                    maxSize));
             hPass.put(fieldName, l);
         } else if(type == com.sun.labs.minion.Passage.Type.UNIQUE) {
             int[][] p = ps.getUniquePassages(doc);
@@ -174,7 +173,7 @@ public class HighlightStage extends StageAdapter {
             List l = new ArrayList();
             for(int i = 0; i < p.length; i++) {
                 l.add(new PassageImpl(p[i], pen[i],
-                                      qt, context, maxSize));
+                        qt, context, maxSize));
             }
             if(doSort) {
                 Collections.sort(l);
@@ -192,7 +191,7 @@ public class HighlightStage extends StageAdapter {
         //
         // Loop through the defined passages, looking for ones that we
         // haven't added.
-        for(Iterator i = pass.entrySet().iterator(); i.hasNext(); ) {
+        for(Iterator i = pass.entrySet().iterator(); i.hasNext();) {
             Map.Entry me = (Map.Entry) i.next();
             String key = (String) me.getKey();
             if(hPass.get(key) != null) {
@@ -203,7 +202,7 @@ public class HighlightStage extends StageAdapter {
             // Note that this is a body field.
             bodyFields.add(key);
             addField(key, com.sun.labs.minion.Passage.Type.UNIQUE,
-                     context, maxSize, doSort);
+                    context, maxSize, doSort);
         }
         sortBody = doSort;
     }
@@ -218,7 +217,7 @@ public class HighlightStage extends StageAdapter {
             if(old == null) {
                 old = new ArrayList();
             }
-            for(Iterator i = bodyFields.iterator(); i.hasNext(); ) {
+            for(Iterator i = bodyFields.iterator(); i.hasNext();) {
                 Object k = i.next();
                 List l = (List) hPass.remove(k);
                 if(l != null) {
@@ -236,7 +235,7 @@ public class HighlightStage extends StageAdapter {
         //
         // If there are any passages that don't have any tokens, then we
         // will remove them now.
-        for(Iterator i = hPass.entrySet().iterator(); i.hasNext(); ) {
+        for(Iterator i = hPass.entrySet().iterator(); i.hasNext();) {
             Map.Entry me = (Map.Entry) i.next();
             List l = (List) me.getValue();
             for(int j = 0; j < l.size(); j++) {
@@ -290,11 +289,10 @@ public class HighlightStage extends StageAdapter {
         if(o == null) {
             return;
         }
-        for(Iterator i = ((List) o).iterator(); i.hasNext(); ) {
+        for(Iterator i = ((List) o).iterator(); i.hasNext();) {
             ((PassageImpl) i.next()).add(t);
         }
     }
-            
 
     /**
      * Processes some punctuation from further up the pipeline.
@@ -322,9 +320,9 @@ public class HighlightStage extends StageAdapter {
             //
             // Iterate through the list, telling the passages that they're
             // done, collecting any new ones offered.
-            for(Iterator i = l.iterator(); i.hasNext(); ) {
+            for(Iterator i = l.iterator(); i.hasNext();) {
                 PassageImpl np =
-                    ((PassageImpl) i.next()).endField();
+                        ((PassageImpl) i.next()).endField();
                 if(np != null) {
                     added.add(np);
                 }
@@ -334,8 +332,7 @@ public class HighlightStage extends StageAdapter {
             // Put any newly added passages here.
             l.addAll(added);
         }
-        
+
         fields.remove(fi.getName());
     }
-
 } // HighlightStage

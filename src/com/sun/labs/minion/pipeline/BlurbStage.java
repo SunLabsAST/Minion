@@ -21,14 +21,13 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import java.util.HashSet;
 
 import com.sun.labs.minion.FieldInfo;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * This stages removes certain stop-like words from the review portion
@@ -42,18 +41,17 @@ public class BlurbStage extends StageAdapter {
 
     protected HashSet stopWords;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "BS";
 
     protected static boolean inReview = false;
-    
+
     public BlurbStage(Stage d, HashSet stopWords) {
         downstream = d;
         this.stopWords = stopWords;
     } // BlurbStage constructor
 
-    
     public void setDownstream(Stage s) {
         downstream = s;
     }
@@ -69,9 +67,11 @@ public class BlurbStage extends StageAdapter {
      * the field that is starting.
      */
     public void startField(FieldInfo fi) {
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         downstream.startField(fi);
-        if (fi.getName().equals("review")) {
+        if(fi.getName().equals("review")) {
             inReview = true;
         }
     }
@@ -82,13 +82,15 @@ public class BlurbStage extends StageAdapter {
      * @param t The token to process.
      */
     public void token(Token t) {
-        if (inReview == true) {
+        if(inReview == true) {
             String val = t.getToken().toLowerCase();
-            if (stopWords.contains(val)) {
+            if(stopWords.contains(val)) {
                 return;
             }
         }
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         downstream.token(t);
     }
 
@@ -99,9 +101,10 @@ public class BlurbStage extends StageAdapter {
      * the field that is ending.
      */
     public void endField(FieldInfo fi) {
-        if(downstream == null) return;
+        if(downstream == null) {
+            return;
+        }
         downstream.endField(fi);
         inReview = false;
     }
-
 } // BlurbStage

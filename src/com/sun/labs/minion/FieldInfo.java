@@ -31,9 +31,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.EnumSet;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.util.props.ConfigEnum;
 import java.util.Date;
+import java.util.logging.Logger;
 
 /**
  * A class that can be used to tell the indexer what to do with the data
@@ -209,7 +209,7 @@ public class FieldInfo implements Cloneable,
     @ConfigBoolean(defaultValue = false)
     public static final String PROP_TRIMMED = "trimmed";
 
-    private static final MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     public static final String logTag = "FI";
 
@@ -430,7 +430,7 @@ public class FieldInfo implements Cloneable,
             case FEATURE_VECTOR:
                 return new double[0];
             default:
-                log.warn(logTag, 2, "Field: " + name + " " +
+                logger.warning("Field: " + name + " " +
                         "has unknown SAVED type: " + type +
                         ", using STRING.");
                 return "";
@@ -558,8 +558,7 @@ public class FieldInfo implements Cloneable,
         try {
             type = Enum.valueOf(Type.class, typeString.toUpperCase());
         } catch(IllegalArgumentException iae) {
-            com.sun.labs.minion.util.MinionLog.error("FI", 1,
-                    "Unknown type for field " + this.name +
+            logger.severe("Unknown type for field " + this.name +
                     ": " + typeString +
                     ", defaulting to String");
             type = Type.STRING;

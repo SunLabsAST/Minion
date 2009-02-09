@@ -21,65 +21,67 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.lexmorph;
 
 import java.util.Collection;
 import java.util.Vector;
-
+import java.util.logging.Logger;
 
 class List implements Value {
 
     /**
-	 * 
-	 */
-	private final Lexicon lexicon;
-	public Value[] contents;
+     *
+     */
+    private final Lexicon lexicon;
 
-    public List (Lexicon lexicon) {
+    public Value[] contents;
+
+    private Logger logger = Logger.getLogger(getClass().getName());
+
+    public List(Lexicon lexicon) {
         this.lexicon = lexicon;
-		contents = new Value[10]; // pmartin made public 01aug01
+        contents = new Value[10]; // pmartin made public 01aug01
     }
 
-    public List (Lexicon lexicon, int siz) {
+    public List(Lexicon lexicon, int siz) {
         this.lexicon = lexicon;
-		contents = new Value[siz]; // pmartin 18apr02
+        contents = new Value[siz]; // pmartin 18apr02
     }
 
-    public List (Lexicon lexicon, Value[] inputArray) { // pmartin 18apr02
-      this.lexicon = lexicon;
-	contents = inputArray;
-    }
-
-    public List (Lexicon lexicon, Value newval) {
-      this.lexicon = lexicon;
-	contents = new Value[]{newval};
-    }
-
-    public List (Lexicon lexicon, Vector inputVector) {  //pmartin 27Sept99
-     this.lexicon = lexicon;
-	int iSize = inputVector.size();
-     contents = new Value[iSize];
-     inputVector.copyInto(contents);
-    }
-
-    public List (Lexicon lexicon, Collection inColl) {  //pmartin 5dec01
+    public List(Lexicon lexicon, Value[] inputArray) { // pmartin 18apr02
         this.lexicon = lexicon;
-		Value[] va = new Value[inColl.size()];
-        contents = (Value[])inColl.toArray(va);
+        contents = inputArray;
     }
 
-    public List (Lexicon lexicon, Value v1, Value v2) { // pmartin 21dec00
-      this.lexicon = lexicon;
-	Value[] newArray = new Value[2];
-      newArray[0] = v1;
-      newArray[1] = v2;
-      contents = newArray;
-    }
-
-    public List (Lexicon lexicon, List oldL) { //pmartin 11mar04 == clone
+    public List(Lexicon lexicon, Value newval) {
         this.lexicon = lexicon;
-		Value[] oldva = oldL.contents;
+        contents = new Value[]{newval};
+    }
+
+    public List(Lexicon lexicon, Vector inputVector) {  //pmartin 27Sept99
+        this.lexicon = lexicon;
+        int iSize = inputVector.size();
+        contents = new Value[iSize];
+        inputVector.copyInto(contents);
+    }
+
+    public List(Lexicon lexicon, Collection inColl) {  //pmartin 5dec01
+        this.lexicon = lexicon;
+        Value[] va = new Value[inColl.size()];
+        contents = (Value[]) inColl.toArray(va);
+    }
+
+    public List(Lexicon lexicon, Value v1, Value v2) { // pmartin 21dec00
+        this.lexicon = lexicon;
+        Value[] newArray = new Value[2];
+        newArray[0] = v1;
+        newArray[1] = v2;
+        contents = newArray;
+    }
+
+    public List(Lexicon lexicon, List oldL) { //pmartin 11mar04 == clone
+        this.lexicon = lexicon;
+        Value[] oldva = oldL.contents;
         int olen = oldva.length;
         Value[] nva = new Value[olen];
         System.arraycopy(oldva, 0, nva, 0, olen);
@@ -87,177 +89,240 @@ class List implements Value {
     }
 
     public boolean listp() {
-      return true; //tells whether this value is a list
+        return true; //tells whether this value is a list
     }
 
-    public boolean phrasep() {return false;}
+    public boolean phrasep() {
+        return false;
+    }
 
-    public boolean wordp() {return false;}
+    public boolean wordp() {
+        return false;
+    }
 
-    public boolean categoryp() {return false;}
+    public boolean categoryp() {
+        return false;
+    }
 
-      //    public Number numericalValue() {
-      //      return null; //no numerical value for lists
-      //   }
+    //    public Number numericalValue() {
+    //      return null; //no numerical value for lists
+    //   }
+    public boolean numeralp() {
+        return false;
+    }
 
-    public  boolean numeralp(){return false;}
-
-    public Number numericalValue(){ // for recursion mostly .. pmartin 17may01
-        if ((contents == null) || (contents.length < 1))
+    public Number numericalValue() { // for recursion mostly .. pmartin 17may01
+        if((contents == null) || (contents.length < 1)) {
             return null;
-        else return contents[0].numericalValue();
-    }
-
-    public boolean isInArray (Value[] array) { //tests if this node is in an array
-      return LexiconUtil.isMembOfArray(this, array);
-    }
-
-    public Lexicon lexicon() {return this.lexicon;}
-
-    public int length() {return contents.length;}
-
-    public Value elementAt(int i) {return contents[i];}
-
-    public boolean hasMemb (Value obj) { //memb does eq checks in lists
-      int i = 0;
-      while (i < contents.length) {
-        if (contents[i] == obj) { // found member
-          return true;
+        } else {
+            return contents[0].numericalValue();
         }
-        i++;
-      }
-      return false;
     }
 
-    public boolean hasMember (Value obj) { //member does equal checks in lists
-      int i = 0;
-      while (i < contents.length) {
-        if (contents[i] == obj) { // found member
-          return true;
+    public boolean isInArray(Value[] array) { //tests if this node is in an array
+        return LexiconUtil.isMembOfArray(this, array);
+    }
+
+    public Lexicon lexicon() {
+        return this.lexicon;
+    }
+
+    public int length() {
+        return contents.length;
+    }
+
+    public Value elementAt(int i) {
+        return contents[i];
+    }
+
+    public boolean hasMemb(Value obj) { //memb does eq checks in lists
+        int i = 0;
+        while(i < contents.length) {
+            if(contents[i] == obj) { // found member
+                return true;
+            }
+            i++;
         }
-        else if (obj.listp() && contents[i].listp() &&
-                 ((List)contents[i]).equal(obj))
-          return true;
-        i++;
-      }
-      return false;
+        return false;
     }
 
-    public boolean eq (Value obj) { //tells whether this value is eq another
-      return (this == obj);}
-
-    public boolean equal (Value obj) {
-      if ((obj == null) || (! obj.listp()))
-        return false; //lists can only equal lists
-      if (((List)obj).length() != contents.length) return false;
-      Value[] objContents = ((List)obj).contents;
-      int i = 0;
-      while (i < contents.length) {
-        if (contents[i].listp()) {
-          if (! objContents[i].listp()) return false;
-          if (! ((List)contents[i]).equal(objContents[i])) return false;
+    public boolean hasMember(Value obj) { //member does equal checks in lists
+        int i = 0;
+        while(i < contents.length) {
+            if(contents[i] == obj) { // found member
+                return true;
+            } else if(obj.listp() && contents[i].listp() &&
+                    ((List) contents[i]).equal(obj)) {
+                return true;
+            }
+            i++;
         }
-        else if (objContents[i].listp()) return false;
-        else if (contents[i] != objContents[i]) return false;
-        i++;
-      }
-      return true;
+        return false;
     }
 
-    public Word[] wordsIn(){
+    public boolean eq(Value obj) { //tells whether this value is eq another
+        return (this == obj);
+    }
+
+    public boolean equal(Value obj) {
+        if((obj == null) || (!obj.listp())) {
+            return false; //lists can only equal lists
+        }
+        if(((List) obj).length() != contents.length) {
+            return false;
+        }
+        Value[] objContents = ((List) obj).contents;
+        int i = 0;
+        while(i < contents.length) {
+            if(contents[i].listp()) {
+                if(!objContents[i].listp()) {
+                    return false;
+                }
+                if(!((List) contents[i]).equal(objContents[i])) {
+                    return false;
+                }
+            } else if(objContents[i].listp()) {
+                return false;
+            } else if(contents[i] != objContents[i]) {
+                return false;
+            }
+            i++;
+        }
+        return true;
+    }
+
+    public Word[] wordsIn() {
         /** returns the words in a list or complains
          */
-        if (contents == null || contents.length == 0)
+        if(contents == null || contents.length == 0) {
             return null;
+        }
         int siz = contents.length;
         int j = 0;
         Value temp;
         Word[] out = new Word[siz];
-        for (int i=0; i < siz; i++){
+        for(int i = 0; i < siz; i++) {
             temp = contents[i];
-            if (temp instanceof Word)
-                out[j++] = (Word)temp;
-            else
-                Lexicon.log.debug(Lexicon.logTag, 10, "can't make a word of element " + i +
-                                   " in List " + this);
+            if(temp instanceof Word) {
+                out[j++] = (Word) temp;
+            } else {
+                logger.finest("can't make a word of element " + i +
+                        " in List " + this);
+            }
         }
-        if (j == siz) return out;
+        if(j == siz) {
+            return out;
+        }
         Word[] oops = new Word[j];
-        for (int i=0; i < j; i++) oops[i] = out[i];
+        for(int i = 0; i < j; i++) {
+            oops[i] = out[i];
+        }
         return oops;
     }
 
-    public synchronized String toString () {
-      if (contents == null) return "List:null";
-      String val = "LIST:(";
-      Value elt;
-      int i = 0;
-      while (i < contents.length) {
-        elt = contents[i];
-        if (i > 0) val = val + " ";
-        if (elt == null) val = val + "null";
-        else val = val + elt.toString();
-        i++;
-      }
-      return val + ")";
+    public synchronized String toString() {
+        if(contents == null) {
+            return "List:null";
+        }
+        String val = "LIST:(";
+        Value elt;
+        int i = 0;
+        while(i < contents.length) {
+            elt = contents[i];
+            if(i > 0) {
+                val = val + " ";
+            }
+            if(elt == null) {
+                val = val + "null";
+            } else {
+                val = val + elt.toString();
+            }
+            i++;
+        }
+        return val + ")";
     }
 
-    public synchronized String printString () {
-      if (contents == null) return "null";
-      String val = "(";
-      Value elt;
-      int i = 0;
-      while (i < contents.length) {
-        elt = contents[i];
-        if (i > 0) val = val + " ";
-        if (elt == null) val = val + "null";
-        else val = val + elt.printString();
-        i++;
-      }
-      return val + ")";
+    public synchronized String printString() {
+        if(contents == null) {
+            return "null";
+        }
+        String val = "(";
+        Value elt;
+        int i = 0;
+        while(i < contents.length) {
+            elt = contents[i];
+            if(i > 0) {
+                val = val + " ";
+            }
+            if(elt == null) {
+                val = val + "null";
+            } else {
+                val = val + elt.printString();
+            }
+            i++;
+        }
+        return val + ")";
     }
 
-    public synchronized String getWordString () {
-      if ((contents == null) || (contents.length == 0)) return "";
-      String val = "(" + contents[0].getWordString();
-      Value elt;
-      for (int i=1; i < contents.length; i++) {
-        elt = contents[i];
-        if (elt != null) val = val + "_" + elt.printString();
-      }
-      return val + ")";
+    public synchronized String getWordString() {
+        if((contents == null) || (contents.length == 0)) {
+            return "";
+        }
+        String val = "(" + contents[0].getWordString();
+        Value elt;
+        for(int i = 1; i < contents.length; i++) {
+            elt = contents[i];
+            if(elt != null) {
+                val = val + "_" + elt.printString();
+            }
+        }
+        return val + ")";
     }
 
-    public  String phraseNameString () {
-      return getWordString();
+    public String phraseNameString() {
+        return getWordString();
     }
 
-    public synchronized String safePrintString () {
-      if (contents == null) return "null";
-      String val = "(";
-      Value elt;
-      int i = 0;
-      while (i < contents.length) {
-        elt = contents[i];
-        if (i > 0) val = val + " ";
-        if (elt == null) val = val + "null";
-        else val = val + elt.safePrintString();
-        i++;
-      }
-      return val + ")";
+    public synchronized String safePrintString() {
+        if(contents == null) {
+            return "null";
+        }
+        String val = "(";
+        Value elt;
+        int i = 0;
+        while(i < contents.length) {
+            elt = contents[i];
+            if(i > 0) {
+                val = val + " ";
+            }
+            if(elt == null) {
+                val = val + "null";
+            } else {
+                val = val + elt.safePrintString();
+            }
+            i++;
+        }
+        return val + ")";
     }
 
     public List append(List lmore) { //pmartin 11mar04
-       int mylen = contents.length;
-       int morlen = lmore.length();
-       if (mylen == 0) return new List(this.lexicon, lmore);
-       if (morlen == 0) return new List(this.lexicon, this);
-       Value[] newva = new Value[mylen + morlen];
-       for (int ii=0; ii < mylen; ii++) newva[ii] = contents[ii];
-       for (int ii=0; ii < morlen; ii++) newva[mylen+ii] = lmore.contents[ii];
-       return new List(this.lexicon, newva);
+        int mylen = contents.length;
+        int morlen = lmore.length();
+        if(mylen == 0) {
+            return new List(this.lexicon, lmore);
+        }
+        if(morlen == 0) {
+            return new List(this.lexicon, this);
+        }
+        Value[] newva = new Value[mylen + morlen];
+        for(int ii = 0; ii < mylen; ii++) {
+            newva[ii] = contents[ii];
+        }
+        for(int ii = 0; ii < morlen; ii++) {
+            newva[mylen + ii] = lmore.contents[ii];
+        }
+        return new List(this.lexicon, newva);
     }
 
     /// end List methods //////
-
-  }
+}

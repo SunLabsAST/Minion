@@ -26,6 +26,7 @@ package com.sun.labs.minion.lexmorph;
 
 import com.sun.labs.minion.util.BitBuffer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 class Atom implements Value, Comparable {
     /**
@@ -128,7 +129,7 @@ class Atom implements Value, Comparable {
          }
          this.lexicon.highAtomIndex++;
          this.lexicon.valueIndexTable[newIdx] = this;
-         Lexicon.log.debug(Lexicon.logTag, 10, "assignAtomIndex " + newIdx + " for " +
+         Logger.getLogger(getClass().getName()).finest("assignAtomIndex " + newIdx + " for " +
                    printEntryString());
          index = newIdx;
          return newIdx;

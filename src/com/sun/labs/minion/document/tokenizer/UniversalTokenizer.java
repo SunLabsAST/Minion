@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.document.tokenizer;
 
 import java.io.BufferedReader;
@@ -31,8 +30,8 @@ import com.sun.labs.minion.pipeline.PrintTokenStage;
 import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.pipeline.Token;
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * A class for tokenizing text in any language and mixed language material.
@@ -84,10 +83,11 @@ import com.sun.labs.minion.util.Util;
  * last character of the event. (?? Should this convention be changed?)
  */
 public class UniversalTokenizer extends Tokenizer {
-    
+
     public UniversalTokenizer() {
         this(null);
     }
+
     /**
      * Create a tokenizer that will send its output to the given
      * <code>Stage</code>.
@@ -95,24 +95,24 @@ public class UniversalTokenizer extends Tokenizer {
      */
     public UniversalTokenizer(Stage s) {
         super(s);
-        token       = new char[32];
-        tokLen      = 0;
-        lengths     = new int[32];
-        state       = INITIAL;
+        token = new char[32];
+        tokLen = 0;
+        lengths = new int[32];
+        state = INITIAL;
         breakCharFlag = false;
-        makeTokens    = true;
-        
+        makeTokens = true;
+
         // pc is null char to start, otherwise pc carries across handleText
         // and handleEvent.
         pc = 0;
         pcl = 0;
         ngramLength = 2;
         nullString = new char[ngramLength];
-        for (int i = 0; i < ngramLength; i++) {
-            nullString[i] = (char)0;
+        for(int i = 0; i < ngramLength; i++) {
+            nullString[i] = (char) 0;
         }
     }
-    
+
     /**
      * Create a tokenizer that will send its output to the given
      * <code>Stage</code> and generate tokens for punctuation
@@ -122,24 +122,24 @@ public class UniversalTokenizer extends Tokenizer {
      */
     public UniversalTokenizer(Stage s, boolean sp) {
         super(s, sp);
-        token       = new char[32];
-        tokLen      = 0;
-        lengths     = new int[32];
-        state       = INITIAL;
+        token = new char[32];
+        tokLen = 0;
+        lengths = new int[32];
+        state = INITIAL;
         breakCharFlag = false;
-        makeTokens    = true;
-        
+        makeTokens = true;
+
         // pc is null char to start, otherwise pc carries across handleText
         // and handleEvent.
         pc = 0;
         pcl = 0;
         ngramLength = 2;
         nullString = new char[ngramLength];
-        for (int i = 0; i < ngramLength; i++) {
-            nullString[i] = (char)0;
+        for(int i = 0; i < ngramLength; i++) {
+            nullString[i] = (char) 0;
         }
     }
-    
+
     /**
      * Create a tokenizer that will send its output to the given
      * <code>Stage</code> and generate tokens for punctuation
@@ -150,25 +150,25 @@ public class UniversalTokenizer extends Tokenizer {
      */
     public UniversalTokenizer(Stage s, boolean sp, boolean nuf) {
         super(s, sp);
-        token       = new char[32];
-        tokLen      = 0;
-        lengths     = new int[32];
-        state       = INITIAL;
+        token = new char[32];
+        tokLen = 0;
+        lengths = new int[32];
+        state = INITIAL;
         breakCharFlag = false;
-        makeTokens    = true;
+        makeTokens = true;
         noUnigramsFlag = nuf;
-        
+
         // pc is null char to start, otherwise pc carries across handleText
         // and handleEvent.
         pc = 0;
         pcl = 0;
         ngramLength = 2;
         nullString = new char[ngramLength];
-        for (int i = 0; i < ngramLength; i++) {
-            nullString[i] = (char)0;
+        for(int i = 0; i < ngramLength; i++) {
+            nullString[i] = (char) 0;
         }
     }
-    
+
     /**
      * Create a tokenizer that will send its output to the given
      * <code>Stage</code> and generate tokens for punctuation
@@ -182,53 +182,51 @@ public class UniversalTokenizer extends Tokenizer {
     public UniversalTokenizer(Stage s, boolean sp, boolean nuf,
             boolean sendWhite) {
         super(s, sp);
-        token       = new char[32];
-        tokLen      = 0;
-        lengths     = new int[32];
-        state       = INITIAL;
+        token = new char[32];
+        tokLen = 0;
+        lengths = new int[32];
+        state = INITIAL;
         breakCharFlag = false;
-        makeTokens    = true;
+        makeTokens = true;
         noUnigramsFlag = nuf;
         this.sendWhite = sendWhite;
-        
+
         // pc is null char to start, otherwise pc carries across handleText
         // and handleEvent.
         pc = 0;
         pcl = 0;
         ngramLength = 2;
         nullString = new char[ngramLength];
-        for (int i = 0; i < ngramLength; i++) {
-            nullString[i] = (char)0;
+        for(int i = 0; i < ngramLength; i++) {
+            nullString[i] = (char) 0;
         }
     }
-    
-    
+
     /**
      * A factory method to get a tokenizer.
      */
     public Tokenizer getTokenizer(Stage s, boolean sp) {
         return new UniversalTokenizer(s, sp);
     }
-    
     /**
      * Blocks generation of unigram characters in between
      * character bigrams in runs of Asian characters.
      */
     public boolean noUnigramsFlag = true;
-    
+
     /**
      * Blocks generation of transition events from and to null at the
      * beginning and ending of runs of Asian characters.
      */
     private static final boolean noEndFlag = true;
-    
+
     /**
      * Causes all punctuation to cause breaks -- unlike SmartTokenizer,
      * which decides based on context when to treat some punctuation as
      * breaks.
      */
     private static final boolean simpleFlag = true;
-    
+
     /**
      * Characters that should not cause breaks when simpleFlag is true,
      * even though they may be punctuation characters.  Note: You can't
@@ -236,14 +234,14 @@ public class UniversalTokenizer extends Tokenizer {
      * in this list.  This variable is public so that it can be changed.
      */
     public String noBreakCharacters = "";
-    
+
     /**
      * Causes each break char to generate its own punctuation event, rather
      * than generating a single punctuation event for a sequence of
      * punctuation chars.
      */
     private static final boolean separateBreakFlag = false;
-    
+
     /**
      * Handle text passed to us by the markup analyzer.  Specifically,
      * handle the text that occurs from index b to index e in the text
@@ -263,28 +261,28 @@ public class UniversalTokenizer extends Tokenizer {
         // should include removing p and the character position pos.
         int p = 0;
         if(authorFlag && traceFlag) { // debug
-            System.out.println("handleText: "+b+"-"+e);
+            System.out.println("handleText: " + b + "-" + e);
         }
-        
+
         //
         // Handle the text as field data.
         handleFieldData(text, b, e);
-        
+
         //
         // If we're not supposed to make tokens, then just add all of
         // this text to the current token.
         if(!makeTokens) {
             int newLen = tokLen + e - b;
             if(newLen >= token.length) {
-                token = Util.expandChar(token, newLen+32);
-                lengths = Util.expandInt(lengths, newLen+32);
+                token = Util.expandChar(token, newLen + 32);
+                lengths = Util.expandInt(lengths, newLen + 32);
             }
             // Add new characters into the token buffer.
             System.arraycopy(text, b, token, tokLen, e - b);
             tokLen = newLen;
             return;
         }
-        
+
         //
         // If we're collecting, adjust the end position of the current
         // token to be the position just before this text.
@@ -292,7 +290,7 @@ public class UniversalTokenizer extends Tokenizer {
             end = p - 1;
         }
         pos = p;
-        
+
         // Character length is 1 for all chars in a text block.
         cl = 1;
         for(int i = b; i < e; i++) {
@@ -301,7 +299,7 @@ public class UniversalTokenizer extends Tokenizer {
             pos++;
         }
     }
-    
+
     /**
      * Handles a character that takes up more than one character in a
      * file.  For example, a character entity in an HTML file.
@@ -311,39 +309,40 @@ public class UniversalTokenizer extends Tokenizer {
      * @param l The length of the character in the document.
      */
     public void handleLongChar(char c, int b, int l) {
-        
+
         this.c = c;
         cl = l;
         pos = b;
-        
+
         // Now, handle the character as if it were in text.
         handleChar();
         return;
     }
-    
+
     /**
      * Handle a character to add to the token buffer.
      */
     protected void handleChar() {
-        
+
         if(!makeTokens) {
-            if(tokLen+1 > token.length) {
-                token = Util.expandChar(token, tokLen+32);
-                lengths = Util.expandInt(lengths, tokLen+32);
+            if(tokLen + 1 > token.length) {
+                token = Util.expandChar(token, tokLen + 32);
+                lengths = Util.expandInt(lengths, tokLen + 32);
             }
             token[tokLen] = c;
             lengths[tokLen++] = cl;
             return;
         }
-        
+
         //
         // Break words at the maximum token length.
         if(tokLen >= maxTokLen) {
             if(state == ASIAN) {
                 continueAsianFlag = true;
-                if (ngramLength > 0) {
+                if(ngramLength > 0) {
                     transitionString =
-                            new String(token, 1+tokLen-ngramLength, ngramLength-1);
+                            new String(token, 1 + tokLen - ngramLength,
+                            ngramLength - 1);
                 }
             }
             mkToken();
@@ -355,9 +354,9 @@ public class UniversalTokenizer extends Tokenizer {
                 state = INITIAL;
             }
             start = pos;
-            end   = start+cl-1;
+            end = start + cl - 1;
         }
-        
+
         // The most common case not to break is lowercase alphabetic
         // characters: lowercase a...z.
         if(c <= 122 && c >= 97) {
@@ -367,20 +366,22 @@ public class UniversalTokenizer extends Tokenizer {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     break;
                 case ASIAN:
                     mkToken();
                     start = pos;
-                    end   = start+cl-1;
+                    end = start + cl - 1;
                     break;
-                    // Default case includes COLLECTING and DOLLAR
-                    // If it was DOLLAR, we want to change to COLLECTING, since
-                    // DOLLAR state is used to indicate that the previous char
-                    // was a single dollar sign.
+                // Default case includes COLLECTING and DOLLAR
+                // If it was DOLLAR, we want to change to COLLECTING, since
+                // DOLLAR state is used to indicate that the previous char
+                // was a single dollar sign.
                 default:
                     end += cl;
                     break;
@@ -390,19 +391,19 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // Space is the most common case to break.
+        } // Space is the most common case to break.
         else if(c == 32) { //the next most frequent case, a single space
             switch(state) {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (this.sendWhite) {
-                        if (whiteCount <= 0) {
+                    if(this.sendWhite) {
+                        if(whiteCount <= 0) {
                             start = pos;
-                            end   = pos+cl-1;
-                        } else end += cl;
+                            end = pos + cl - 1;
+                        } else {
+                            end += cl;
+                        }
                     }
                     break;
                 case COLLECTING:
@@ -414,10 +415,10 @@ public class UniversalTokenizer extends Tokenizer {
                     break;
             }
             breakCharFlag = false;
-            if (this.sendWhite) {
-                if (whiteCount <= 0) {
+            if(this.sendWhite) {
+                if(whiteCount <= 0) {
                     start = pos;
-                    end   = pos+cl-1;
+                    end = pos + cl - 1;
                 }
                 addChar();
                 whiteCount = tokLen;
@@ -426,24 +427,24 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // The next most common cases not to break are uppercase
+        } // The next most common cases not to break are uppercase
         // alphabetic characters: uppercase A...Z.
         else if(c <= 90 && c >= 65) {
             switch(state) {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     break;
                 case ASIAN:
                     mkToken();
                     start = pos;
-                    end   = start+cl-1;
+                    end = start + cl - 1;
                     break;
                 default:
                     end += cl;
@@ -454,9 +455,7 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // CJK characters (Chinese, Japanese, Korean)
+        } // CJK characters (Chinese, Japanese, Korean)
         // to be tokenized with bigram tokens.
         // (Put this test here so these languages will tokenize
         // more efficiently and it doesn't cost much for the non CJK
@@ -466,17 +465,19 @@ public class UniversalTokenizer extends Tokenizer {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     state = ASIAN;
                     break;
                 case COLLECTING:
                 case DOLLAR:
                     mkToken();
                     start = pos;
-                    end   = start+cl-1;
+                    end = start + cl - 1;
                     state = ASIAN;
                     break;
                 case ASIAN:
@@ -487,24 +488,19 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // Special treatment for some whitespace characters for Asian
+        } // Special treatment for some whitespace characters for Asian
         // languages and for null:
         else if(c == 0 ||
                 (state == ASIAN &&
                 (c <= 13 && c >= 10)) // Linefeed, PageUp, Page, Return
                 ) {
             // Do nothing, treat it as if the character wasn't even there.
-        }
-        
-        // The rest of the white space characters for break:
-        else if((c == 13) ||             // Return
-                (c <= 12 && c >= 9)  ||  // Tab, Linefeed, PageUp, Page
-                (c == 160 || c <= 4) ||  // nbsp, STX, SOT, Enter, EOT
-                (c > 255 &&              // any higher unicode whitespace
-                Character.isWhitespace(c))
-                ) {
+        } // The rest of the white space characters for break:
+        else if((c == 13) || // Return
+                (c <= 12 && c >= 9) || // Tab, Linefeed, PageUp, Page
+                (c == 160 || c <= 4) || // nbsp, STX, SOT, Enter, EOT
+                (c > 255 && // any higher unicode whitespace
+                Character.isWhitespace(c))) {
             // ASCII character 160 (nbsp) is nonbreak whitespace.
             // Java treats it as nonwhite and nonletter, but
             // we need to treat it as white, since it's used for
@@ -513,11 +509,13 @@ public class UniversalTokenizer extends Tokenizer {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (this.sendWhite) {
-                        if (whiteCount <= 0) {
+                    if(this.sendWhite) {
+                        if(whiteCount <= 0) {
                             start = pos;
-                            end   = pos+cl-1;
-                        } else end += cl;
+                            end = pos + cl - 1;
+                        } else {
+                            end += cl;
+                        }
                     }
                     break;
                 case COLLECTING:
@@ -529,10 +527,10 @@ public class UniversalTokenizer extends Tokenizer {
                     break;
             }
             breakCharFlag = false;
-            if (this.sendWhite) {
-                if (whiteCount <= 0) {
+            if(this.sendWhite) {
+                if(whiteCount <= 0) {
                     start = pos;
-                    end   = pos+cl-1;
+                    end = pos + cl - 1;
                 }
                 addChar();
                 whiteCount = tokLen;
@@ -541,9 +539,7 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // If simpleFlag is true, then don't break for letter or digit
+        } // If simpleFlag is true, then don't break for letter or digit
         // or specifically listed noBreakCharacters.
         else if(simpleFlag &&
                 (isLetterOrDigit(c) ||
@@ -552,15 +548,17 @@ public class UniversalTokenizer extends Tokenizer {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     break;
                 case ASIAN:
                     mkToken();
                     start = pos;
-                    end   = start+cl-1;
+                    end = start + cl - 1;
                     break;
                 default:
                     end += cl;
@@ -571,18 +569,18 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // Otherwise, if simpleFlag is true, then it's punct, so break.
+        } // Otherwise, if simpleFlag is true, then it's punct, so break.
         else if(simpleFlag) {
             switch(state) {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     break;
                 case COLLECTING:
                 case DOLLAR:
@@ -600,9 +598,7 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // The next most common cases not to break are the digits:
+        } // The next most common cases not to break are the digits:
         // numbers 0...9
         else if((c <= 57 && c >= 48) ||
                 (c > 255 && Character.isDigit(c))) {
@@ -610,32 +606,34 @@ public class UniversalTokenizer extends Tokenizer {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     state = COLLECTING;
                     break;
                 case DOLLAR:
-                    
+
                     // If c is '$' and it's followed by a number or
                     // preceded by a number, then break it out from
                     // whatever precedes and follows it.  The following
                     // handles the case when followed by a number.
-                    
+
                     // What if we're at the end of a text block and
                     // the next char is a digit, but comes in as a
                     // long char or in the next handleText?
                     // Answer: use DOLLAR state to remember this
                     // condition across calls to handleText and
                     // handleEvent.
-                    
+
                     // Since char c is a digit, don't include the prev
                     // dollar sign with it.  This breaks "$10-$20" into $
                     // 10 - $ 20, but leaves $foo, foo$, and foo$fie
                     // unsplit.  Note: mkToken will only allow a single
                     // $ at the ends of a word.
-                    
+
                     // Pull off last char in token (the $), force mkToken,
                     // then put the $ back in and call mkToken again.
                     if(tokLen > 1) { // There's more than just the $ in token
@@ -649,7 +647,7 @@ public class UniversalTokenizer extends Tokenizer {
                         mkToken();
                         // Start a new token with just pc in it, and continue.
                         start = pos;
-                        end   = start+pcl-1;
+                        end = start + pcl - 1;
                         addChar();
                         pos += pcl;
                     }
@@ -657,13 +655,13 @@ public class UniversalTokenizer extends Tokenizer {
                     breakCharFlag = true;
                     mkToken();
                     start = pos;
-                    end   = start+cl-1;
+                    end = start + cl - 1;
                     state = COLLECTING;
                     break;
                 case ASIAN:
                     mkToken();
                     start = pos;
-                    end   = start+cl-1;
+                    end = start + cl - 1;
                     state = COLLECTING;
                     break;
                 default:
@@ -674,44 +672,49 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // More cases not to break, some of which are conditional breaks:
-        else if((c == 46 || c == 45)   ||  // .-
-                (c == 39 || c == 95)   ||  // '_
-                (c <= 44 && c >= 42)   ||  // *+,
-                (c == 58 || c == 47)   ||  // :/
-                (c == 64 || c == 38)   ||  // @&
-                (c == 35 || c == 92)   ||  // #\
-                (c == 36)
-                ) {
+        } // More cases not to break, some of which are conditional breaks:
+        else if((c == 46 || c == 45) || // .-
+                (c == 39 || c == 95) || // '_
+                (c <= 44 && c >= 42) || // *+,
+                (c == 58 || c == 47) || // :/
+                (c == 64 || c == 38) || // @&
+                (c == 35 || c == 92) || // #\
+                (c == 36)) {
             switch(state) {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     addChar();
-                    if(c == '$') state = DOLLAR;
-                    else state = COLLECTING;
+                    if(c == '$') {
+                        state = DOLLAR;
+                    } else {
+                        state = COLLECTING;
+                    }
                     breakCharFlag = true;
                     break;
                 case ASIAN:
                     mkToken();
                     start = pos;
-                    end   = start+cl-1;
+                    end = start + cl - 1;
                     addChar();
-                    if(c == '$') state = DOLLAR;
-                    else state = COLLECTING;
+                    if(c == '$') {
+                        state = DOLLAR;
+                    } else {
+                        state = COLLECTING;
+                    }
                     breakCharFlag = true;
                     break;
                 default:
-                    
+
                     // Break on two or more of these chars (-.'_*), but not on
                     // just one.
-                    
+
                     if(c == pc && ("-.'_*".indexOf(c) > -1)) {
                         // If it's a run of the same char, keep going; don't
                         // break it.  The first time we encounter p == pc, we
@@ -723,11 +726,11 @@ public class UniversalTokenizer extends Tokenizer {
                         // Note: tokLen points to the next unused slot in token.
                         // Note: if pc is the only char in token, no need to do
                         // this adjustment.
-                        if(tokLen > 1 && c != token[tokLen-2] &&
+                        if(tokLen > 1 && c != token[tokLen - 2] &&
                                 // The last character in token must already be equal to pc or else
                                 // something is wrong with pc tracking, in which
                                 // case, don't do this.
-                                pc == token[tokLen-1]) {
+                                pc == token[tokLen - 1]) {
                             // Back up one character.
                             tokLen--;
                             pos -= pcl;
@@ -739,7 +742,7 @@ public class UniversalTokenizer extends Tokenizer {
                             mkToken();
                             // Start a new token with just pc in it, and continue.
                             start = pos;
-                            end   = start+pcl-1;
+                            end = start + pcl - 1;
                             addChar();
                             pos += pcl;
                         }
@@ -747,17 +750,14 @@ public class UniversalTokenizer extends Tokenizer {
                         addChar();
                         breakCharFlag = true;
                         state = COLLECTING;
-                    }
-                    
-                    // If c is '$' and it's followed by a number or preceded
+                    } // If c is '$' and it's followed by a number or preceded
                     // by a number, then break it out from whatever precedes
                     // and follows it.  The following handles the case when
                     // preceded by a number.
-                    
                     else if(c == '$' && isDigit(pc)) {
                         mkToken();
                         start = pos;
-                        end   = start+cl-1;
+                        end = start + cl - 1;
                         addChar();
                         breakCharFlag = true;
                         // Since prev char is a digit, don't include this dollar sign with it.
@@ -767,9 +767,7 @@ public class UniversalTokenizer extends Tokenizer {
                         // of a word.
                         mkToken();
                         state = WHITESPACE;
-                    }
-                    
-                    else {
+                    } else {
                         end += cl;
                         addChar();
                         breakCharFlag = true;
@@ -786,29 +784,28 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // More cases to break, but don't lose the character.
-        else if((c <= 96 && c >= 0)    ||  // everything below 97(a) not already covered
-                (c == 210 || c == 211) ||  // (smart quotes) ('"' is included in <= 96)
-                (c >= 123 && c <= 125)     // {|}
+        } // More cases to break, but don't lose the character.
+        else if((c <= 96 && c >= 0) || // everything below 97(a) not already covered
+                (c == 210 || c == 211) || // (smart quotes) ('"' is included in <= 96)
+                (c >= 123 && c <= 125) // {|}
                 ) {
             switch(state) {
                 case INITIAL:
                 case WHITESPACE:
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     break;
                 case COLLECTING:
                 case DOLLAR:
                 case ASIAN:
                     if(separateBreakFlag ||
-                            isLetterOrDigit(pc)    ||
+                            isLetterOrDigit(pc) ||
                             ("-:*+,./'_ @&#\\".indexOf(pc) > -1) ||
-                            (state == ASIAN)
-                            ) {
+                            (state == ASIAN)) {
                         // If the static final flag separateBreakFlag is set,
                         // or if making a transition from alphanum or ASIAN,
                         // or if preceded by the specified internal chars,
@@ -826,23 +823,23 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // More cases not to break -- any other cases of letter or digit.
+        } // More cases not to break -- any other cases of letter or digit.
         else if(isLetterOrDigit(c)) {
             switch(state) {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     break;
                 case ASIAN:
                     mkToken();
                     start = pos;
-                    end   = start+cl-1;
+                    end = start + cl - 1;
                     break;
                 default:
                     end += cl;
@@ -853,28 +850,27 @@ public class UniversalTokenizer extends Tokenizer {
             // Save c as the previous character for next character.
             pc = c;
             pcl = cl;
-        }
-        
-        // Anything other than the above cases, we collect as break
+        } // Anything other than the above cases, we collect as break
         // chars for possible later separation.
         else {
             switch(state) {
                 case INITIAL:
                 case WHITESPACE:
                     // We need to set the start and end positions.
-                    if (whiteCount <= 0) {
+                    if(whiteCount <= 0) {
                         start = pos;
-                        end   = pos+cl-1;
-                    } else end += cl;
+                        end = pos + cl - 1;
+                    } else {
+                        end += cl;
+                    }
                     break;
                 case COLLECTING:
                 case DOLLAR:
                 case ASIAN:
                     if(separateBreakFlag ||
-                            isLetterOrDigit(pc)    ||
+                            isLetterOrDigit(pc) ||
                             ("-:*+,./'_ @&#\\".indexOf(pc) > -1) ||
-                            (state == ASIAN)
-                            ) {
+                            (state == ASIAN)) {
                         // If the static final flag separateBreakFlag is set,
                         // or if making a transition from alphanum or ASIAN,
                         // or if preceded by the specified internal chars,
@@ -894,36 +890,36 @@ public class UniversalTokenizer extends Tokenizer {
             pcl = cl;
         }
     }
-    
+
     /**
      * Add a character to the buffer that we're building for a token.
      */
     protected void addChar() {
-        
+
         //
         // First see if token buffer needs to be expanded.
         // Note: tokLen points to the next unused slot in token.
         if(token.length <= tokLen) {
-            token = Util.expandChar(token, tokLen+32);
-            lengths = Util.expandInt(lengths, tokLen+32);
+            token = Util.expandChar(token, tokLen + 32);
+            lengths = Util.expandInt(lengths, tokLen + 32);
         }
-        
+
         lengths[tokLen] = cl;
         token[tokLen++] = c;
     }
-    
+
     /**
      * Finish any final token left in the buffer.
      */
     public void flush() {
         mkToken();
         state = INITIAL;
-        
+
         // Set pc to start as null character after a breaking event.
         pc = 0;
         pcl = 0;
     }
-    
+
     /**
      * Reset state of tokenizer to clean slate.
      */
@@ -935,20 +931,20 @@ public class UniversalTokenizer extends Tokenizer {
         resumeAsianFlag = false;
         state = INITIAL;
         breakCharFlag = false;
-        makeTokens    = true;
+        makeTokens = true;
         pc = 0;
         pcl = 0;
         ngramLength = 2;
         wordNum = 1;
     }
-    
+
     /**
      * Will the given event break a token?
      */
     protected boolean isBreakingEvent(int type, int subType) {
         return true;
     }
-    
+
     /**
      * Break our collected text into as many as three pieces.  The three
      * pieces are the preToken, the token, and the postToken.  The preToken
@@ -957,35 +953,34 @@ public class UniversalTokenizer extends Tokenizer {
      * that is removed from the token.
      */
     protected void mkToken() {
-        
+
         //
         // Don't produce tokens if we're not supposed to!
         if(!makeTokens) {
-            
+
             //
             // If we're supposed to index, then pass down the whole thing
             // as a token.
             if(indexed && tokLen > 0) {
                 downstream.token(new Token(new String(token, 0, tokLen),
                         wordNum++,
-                        state == ASIAN ?
-                            Token.BIGRAM : Token.NORMAL,
-                        start, end+1));
+                        state == ASIAN ? Token.BIGRAM : Token.NORMAL,
+                        start, end + 1));
             }
             tokLen = 0;
             whiteCount = 0;
         }
-        
+
         //
         // Don't generate empty tokens.
         if(tokLen <= 0) {
             whiteCount = 0;
             return;
         }
-        
-        int     i         = 0;
-        int     j         = tokLen - 1;
-        
+
+        int i = 0;
+        int j = tokLen - 1;
+
         //
         // If whiteCount > 0 and sendWhiteFlag is true, then there's
         // whitespace to send as a punctuation event.
@@ -995,44 +990,46 @@ public class UniversalTokenizer extends Tokenizer {
                         whiteCount),
                         wordNum,
                         Token.PUNCT,
-                        start, start+whiteCount));
+                        start, start + whiteCount));
             }
             if(authorFlag && traceFlag) {
-                System.out.println("pwcomment: whiteCount is "+whiteCount+
-                        " and tokLen is "+tokLen);//debugging
+                System.out.println("pwcomment: whiteCount is " + whiteCount +
+                        " and tokLen is " + tokLen);//debugging
                 String sentNote = "";
-                if(!sendPunct) sentNote = " not sent";
+                if(!sendPunct) {
+                    sentNote = " not sent";
+                }
                 String prefixString = new String(token, 0, whiteCount);
-                System.out.println("pw: "+start+"-"+(start+whiteCount)+":"
-                        +prefixString
-                        +" "+showCodes(prefixString)+sentNote);
+                System.out.println("pw: " + start + "-" + (start + whiteCount) +
+                        ":" + prefixString + " " + showCodes(prefixString) +
+                        sentNote);
             }
         }
-        
-        for (int k = 0; k < whiteCount ; k++) {
+
+        for(int k = 0; k < whiteCount; k++) {
             start += lengths[k];
         }
-        
+
         i = whiteCount;
-        
+
         //
         // The initial positions for the pre and postToken.
-        int     preStart  = start;
-        int     preEnd    = start;
-        int     postStart = end;
-        int     postEnd   = end;
-        int     increment;
-        
+        int preStart = start;
+        int preEnd = start;
+        int postStart = end;
+        int postEnd = end;
+        int increment;
+
         // Only try to build preTokens and postTokens if there were some break
         // chars.
         if(breakCharFlag) {
-            
+
             //
             // Build the preToken.
             while(i < tokLen && !(isLetterOrDigit(token[i]) ||
                     (simpleFlag &&
                     noBreakCharacters.indexOf(token[i]) > -1))) {
-                
+
                 //
                 // Check whether this is an allowable initial punctuation
                 // character, and if so, if the next character is a letter or
@@ -1044,53 +1041,53 @@ public class UniversalTokenizer extends Tokenizer {
                 // However, if simpleFlag is true, make a preToken anyway.
                 if((i == whiteCount) && (i < j) && !simpleFlag &&
                         checkInitialPunc(token[i]) &&
-                        isLetterOrDigit(token[i+1])) {
+                        isLetterOrDigit(token[i + 1])) {
                     break;
                 }
-                
+
                 //
                 // Adjust the start position of the word and the end position
                 // of the preToken.
                 increment = lengths[i];
                 start += increment;
                 preEnd += increment;
-                
+
                 i++;
             }
-            
+
             //
             // If there's anything left, try to get the post token.
             if(i < tokLen) {
-                
+
                 //
                 // Work backwards from the end of the token, picking off
                 // terminal punctuation.
                 while(j >= i && !(isLetterOrDigit(token[j]) ||
                         (simpleFlag &&
                         noBreakCharacters.indexOf(token[j]) > -1))) {
-                    
+
                     //
                     // See whether this is an acceptable trailing punctuation
                     // character coming after a letter or digit.  If it is, we
                     // won't strip it (if it is the last character of token).
                     if((j == tokLen - 1) && (j > i) &&
                             checkTrailingPunc(token[j]) &&
-                            isLetterOrDigit(token[j-1])) {
+                            isLetterOrDigit(token[j - 1])) {
                         break;
                     }
-                    
+
                     //
                     // Adjust the positions for the token and the postToken.
                     increment = lengths[j];
                     end -= increment;
                     postStart -= increment;
-                    
+
                     j--;
                 }
             }
-            
+
         } // end of preToken and postToken processing
-        
+
         //
         // At this point we want to fix up the cases where a period should
         // be included with the token, rather than the postToken.  We only
@@ -1098,9 +1095,9 @@ public class UniversalTokenizer extends Tokenizer {
         // exists and is a period.  E.g., "U.S." includes the final period.
         // Note: j points to the last char of the word, not the first char
         // of the postToken.
-        if((j + 1 < tokLen) && (j > 1) && (token[j+1] == '.') &&
-                (token[j-1] == '.')) {
-            
+        if((j + 1 < tokLen) && (j > 1) && (token[j + 1] == '.') &&
+                (token[j - 1] == '.')) {
+
             //
             // If the last character of the token is upper case, and the next
             // to last character is a period, and there are other characters,
@@ -1108,57 +1105,57 @@ public class UniversalTokenizer extends Tokenizer {
             // final period is part of it, so we want to add the period back
             // to the word.  We'll also adjust the start and end positions.
             if(Character.isUpperCase(token[j])) {
-                increment = lengths[j+1];
+                increment = lengths[j + 1];
                 end += increment;
                 postStart += increment;
                 j++;
             }
         }
-        
+
         //
         // If i points past the start of the string, then there's a
         // preToken.
         if(i > whiteCount) {
             if(sendPunct) {
                 downstream.punctuation(new Token(new String(token, whiteCount,
-                        i-whiteCount),
+                        i - whiteCount),
                         wordNum,
                         Token.PUNCT,
                         preStart, preEnd));
             }
             if(authorFlag && traceFlag) {
                 String sentNote = "";
-                if(!sendPunct) sentNote = " not sent";
+                if(!sendPunct) {
+                    sentNote = " not sent";
+                }
                 String prefixString = new String(token, whiteCount,
-                        i-whiteCount);
-                System.out.println("pr: "+preStart+"-"+preEnd+":"
-                        +prefixString
-                        +" "+showCodes(prefixString)+sentNote);
+                        i - whiteCount);
+                System.out.println("pr: " + preStart + "-" + preEnd + ":" +
+                        prefixString + " " + showCodes(prefixString) + sentNote);
             }
         }
-        
+
         //
         // If there's stuff between i and j, then there's a word token.
         // Note: j points to the last char of the word, not the first char
         // of the postToken.
         if(i < tokLen && j >= i) {
-            
+
             tokenLength = (j + 1) - i;
             tokenString = new String(token, i, tokenLength);
             if(state != ASIAN ||
                     (tokenLength == 1 && !resumeAsianFlag && noUnigramsFlag)) {
-                
+
                 //
                 // Only generate the token if we're either not ignoring long
                 // tokens or if the token is short enough.
                 if(!ignoreLongTokens || tokenLength < ignoreableTokenLength) {
                     downstream.token(new Token(tokenString,
                             wordNum++,
-                            start, end+1));
+                            start, end + 1));
                     if(authorFlag && traceFlag) {
-                        System.out.println("tk: "+start+"-"+(end+1)+":"
-                                +tokenString
-                                //+" "+showCodes(tokenString)
+                        System.out.println("tk: " + start + "-" + (end + 1) +
+                                ":" + tokenString //+" "+showCodes(tokenString)
                                 );
                     }
                 }
@@ -1170,19 +1167,19 @@ public class UniversalTokenizer extends Tokenizer {
                 int lp; // left position
                 int rp; // right position
                 String ngramString;
-                for (int k = 0; k <= tokenLength; k++) {
+                for(int k = 0; k <= tokenLength; k++) {
                     if(k < tokenLength) { // for chars in the tokenString
-                        charLength = lengths[k+whiteCount];
+                        charLength = lengths[k + whiteCount];
                     } else {
                         charLength = 0; // for transition events beyond tokenString
                     }
                     if(k > 0) { // for chars in the tokenString
-                        prevLength = lengths[k+whiteCount-1];
+                        prevLength = lengths[k + whiteCount - 1];
                     } else {
                         prevLength = 0; // for transition events before tokenString
                     }
-                    for (int even = 1 ; even >= 0; even--) {
-                        for (int n = even; n < ngramLength; n+=2) {
+                    for(int even = 1; even >= 0; even--) {
+                        for(int n = even; n < ngramLength; n += 2) {
                             // Int n is one less than the size of the ngram to make;
                             // The boolean even keeps track of whether the ngram size
                             // is odd (even == 0).  For odd sized ngrams, generate
@@ -1191,20 +1188,24 @@ public class UniversalTokenizer extends Tokenizer {
                             lp = position;
                             if(even == 0) {
                                 // This is an odd-length ngram.
-                                left = k - n/2; // for k == 0 and n == 0, this is  0
+                                left = k - n / 2; // for k == 0 and n == 0, this is  0
                                 right = left + n + 1;
                                 ngramString = tokenSubstring(left, right);
                                 if(n > 1) {
                                     // Give contextual variants zero length
                                     rp = position;
-                                } else rp = position + charLength;
+                                } else {
+                                    rp = position + charLength;
+                                }
                             } else {
                                 // This is an even-length ngram.
-                                left = k - (n+1)/2; // for k == 0 and n == 0, this is  0
+                                left = k - (n + 1) / 2; // for k == 0 and n == 0, this is  0
                                 right = left + n + 1;
                                 ngramString = tokenSubstring(left, right);
                                 rp = position;
-                                if(noUnigramsFlag) lp = position - prevLength;
+                                if(noUnigramsFlag) {
+                                    lp = position - prevLength;
+                                }
                             }
                             // When beyond the end of tokenString, only generate
                             // transition events, and don't duplicate one that is
@@ -1215,9 +1216,9 @@ public class UniversalTokenizer extends Tokenizer {
                                         wordNum++,
                                         lp, rp));
                                 if(authorFlag && traceFlag) {
-                                    System.out.println("ng: "+lp+"-"+rp+":"
-                                            +ngramString
-                                            +" "+showCodes(ngramString));
+                                    System.out.println("ng: " + lp + "-" + rp +
+                                            ":" + ngramString + " " + showCodes(
+                                            ngramString));
                                 }
                             }
                         }
@@ -1226,41 +1227,42 @@ public class UniversalTokenizer extends Tokenizer {
                 }
             }
         }
-        
+
         //
         // If we moved j, then there's a postToken.
         // Note: j points to the last char of the word, not the first char
         // of the postToken.
         if(j + 1 < tokLen && sendPunct) {
-            
-            downstream.punctuation(new Token(new String(token, j+1,
-                    tokLen - (j+1)),
+
+            downstream.punctuation(new Token(new String(token, j + 1,
+                    tokLen - (j + 1)),
                     wordNum, Token.PUNCT,
-                    postStart+1, postEnd+1));
+                    postStart + 1, postEnd + 1));
             if(authorFlag && traceFlag) {
-                String suffixString = new String(token, j+1, tokLen - (j+1));
-                System.out.println("po: "+(postStart+1)+"-"+(postEnd+1)+":"
-                        +suffixString
-                        +" "+showCodes(suffixString));
+                String suffixString = new String(token, j + 1, tokLen - (j + 1));
+                System.out.println("po: " + (postStart + 1) + "-" +
+                        (postEnd + 1) + ":" + suffixString + " " + showCodes(
+                        suffixString));
             }
         }
         continueAsianFlag = false;
         resumeAsianFlag = false;
-        
+
         // Reset variables for next token.
         tokLen = 0;
         whiteCount = 0;
         breakCharFlag = false;
     }
-    
     // Used to maintin continuity of ngrams in long runs of Asian chars.
     protected boolean continueAsianFlag = false;
+
     protected boolean resumeAsianFlag = false;
+
     protected String transitionString = "";
-    
+
     // Used to keep track of redundant ngrams.
     protected boolean redundant = false;
-    
+
     /**
      * Determine token substring to generate for ngram from left to right,
      * where left and right are not yet clamped by the ends of tokenString.
@@ -1278,7 +1280,7 @@ public class UniversalTokenizer extends Tokenizer {
         if(left < 0) {
             lp = 0;
             ls = new String(nullString, 0, -left);
-            if (resumeAsianFlag) {
+            if(resumeAsianFlag) {
                 // Generate left string ls from transitionString
                 ls = transitionString;
             } else if(noEndFlag) {
@@ -1287,7 +1289,7 @@ public class UniversalTokenizer extends Tokenizer {
         }
         if(right > tokenLength) {
             rp = tokenLength;
-            rs = new String(nullString, 0, right-tokenLength);
+            rs = new String(nullString, 0, right - tokenLength);
             if(continueAsianFlag || tokenLength == 1 || !noUnigramsFlag) {
                 redundant = true; // Don't want to generate this one.
             } else if((left < -1) && (right > tokenLength + 1)) {
@@ -1302,19 +1304,20 @@ public class UniversalTokenizer extends Tokenizer {
         }
         return substring;
     }
-    
+
     /**
      * Determine whether char is acceptable as a final char of a token.
      *
      * @param c The char to be tested.
      */
     protected boolean checkTrailingPunc(char c) {
-        if(c == '/' || c == '$')
+        if(c == '/' || c == '$') {
             return true;
-        else
+        } else {
             return false;
+        }
     }
-    
+
     /**
      * Determine whether char is acceptable as an initial char of a token.
      *
@@ -1323,13 +1326,14 @@ public class UniversalTokenizer extends Tokenizer {
     protected boolean checkInitialPunc(char c) {
         if((c <= 47 && c >= 45) || // -./
                 (c == 64 || c == 33) || // ?!
-                (c == 36 || c == 63)    // $@
+                (c == 36 || c == 63) // $@
                 ) {
             return true;
-        } else
+        } else {
             return false;
+        }
     }
-    
+
     /**
      * A quick check for whether a character should be kept in a word or
      * should be removed from the word if it occurs at one of the ends.  An
@@ -1338,33 +1342,33 @@ public class UniversalTokenizer extends Tokenizer {
      * @param c The character to check.
      */
     public static final boolean isLetterOrDigit(char c) {
-        if((c <= 122 && c >= 97) ||  // most frequent: lowercase a...z
-                (c <= 90 && c >= 65)  ||  // frequent: uppercase A...Z
-                (c <= 57 && c >= 48)      // frequent: numbers 0...9
+        if((c <= 122 && c >= 97) || // most frequent: lowercase a...z
+                (c <= 90 && c >= 65) || // frequent: uppercase A...Z
+                (c <= 57 && c >= 48) // frequent: numbers 0...9
                 ) {
             return true;
-        } else if((c <= 96) ||               // includes whitespace
-                (c == 210 || c == 211) ||  // (smart quotes)
-                (c >= 123 && c <= 127)     // {|}~DEL
+        } else if((c <= 96) || // includes whitespace
+                (c == 210 || c == 211) || // (smart quotes)
+                (c >= 123 && c <= 127) // {|}~DEL
                 ) {
             return false;
-        } else if((c >= 3021 && c <= 3029) ||  // Hangzhou-style numerals
-                (c >= 65 && c <= 90)  ||     // frequent: uppercase A...Z
-                (c >= 48 && c <= 57)         // frequent: numbers 0...9
+        } else if((c >= 3021 && c <= 3029) || // Hangzhou-style numerals
+                (c >= 65 && c <= 90) || // frequent: uppercase A...Z
+                (c >= 48 && c <= 57) // frequent: numbers 0...9
                 ) {
             return true;
         } else {
             return Character.isLetterOrDigit(c);
         }
     }
-    
+
     /**
      * A quick check for whether a character is a digit.
      * @param c The character to check
      */
     public static final boolean isDigit(char c) {
-        if((c <= 57 && c >= 48)  // most frequent: ASCII numbers 0...9
-        ) {
+        if((c <= 57 && c >= 48) // most frequent: ASCII numbers 0...9
+                ) {
             return true;
         } else if(c <= 255) {
             return false;
@@ -1372,16 +1376,16 @@ public class UniversalTokenizer extends Tokenizer {
             return Character.isDigit(c);
         }
     }
-    
+
     /**
      * A quick check for whether a character is whitespace.
      * @param c The character to check
      */
     public static final boolean isWhitespace(char c) {
         //test for white space
-        if((c == 32)           ||       // Space
-                (c <= 13 && c >= 9) ||       // Tab, Linefeed, PageUp, Page, Return
-                (c <= 4 && c >= 1)           // STX, SOT, ETX (Enter), EOT
+        if((c == 32) || // Space
+                (c <= 13 && c >= 9) || // Tab, Linefeed, PageUp, Page, Return
+                (c <= 4 && c >= 1) // STX, SOT, ETX (Enter), EOT
                 ) {
             return true;
         } else if(c <= 255) {
@@ -1390,9 +1394,8 @@ public class UniversalTokenizer extends Tokenizer {
             return Character.isWhitespace(c);
         }
     }
-    
     public static final boolean excludeKanaFlag = false;
-    
+
     /**
      * A quick check for an Asian or a character in a language
      * that may not separate words with whitespace (includes Arabic,
@@ -1403,49 +1406,47 @@ public class UniversalTokenizer extends Tokenizer {
         // Test for characters that may not separate words with white
         // space and therefore require bigram treatment.
         // Uses Unicode Standard Version 2.0.
-        if( c > '\u3000' && c <= '\uD7FF' ) {           // (CJK Characters)
+        if(c > '\u3000' && c <= '\uD7FF') {           // (CJK Characters)
             if(!excludeKanaFlag) {
                 return true;
-            } else if( c <= '\u30FF' && c >= '\u3040') {   // - Hiragana and Katakana
+            } else if(c <= '\u30FF' && c >= '\u3040') {   // - Hiragana and Katakana
                 //                ( c >= '\u3040' && c <= '\u309F')      // - Hiragana
                 //                ( c >= '\u30A0' && c <= '\u30FF')      // - Katakana
                 return false;
             } else {
                 return true;
             }
-        } else if (
-                
-                ( c >= '\u0600' && c <= '\u06FF') || // (Arabic)
-                
-                ( c >= '\uF900' && c <= '\uFAFF') || // (CJK Compatibility Ideographs)
-                
-                ( c >= '\u1100' && c <= '\u11FF') || // (Hangul Jamo)
-                
-                ( c >= '\uFB50' && c <= '\uFE2F') || // (Arabic Presentation Forms-A)
-                ( c >= '\uFE30' && c <= '\uFE4F') || // (CJK Compatibility Forms)
-                
-                ( c >= '\uFE70' && c <= '\uFEFF') || // (Arabic Presentation Forms-B)
-                
-                ( c >= '\uFF60' && c <= '\uFFDF') || // (CJK Half Width Forms)
-                
-                ( c >= '\u0E00' && c <= '\u0E7F') || // (Thai)
-                ( c >= '\u0E80' && c <= '\u0EFF') || // (Lao)
-                ( c >= '\u0F00' && c <= '\u0FBF') || // (Tibetan)
-                
-                ( c >= '\u0B80' && c <= '\u0BFF') || // (Tamil)
-                ( c >= '\u0C00' && c <= '\u0C7F') || // (Telugu)
-                ( c >= '\u0C80' && c <= '\u0CFF') || // (Kannada)
-                ( c >= '\u0D00' && c <= '\u0D7F') || // (Malayalam)
-                
-                ( c >= '\u10A0' && c <= '\u10FF') || // (Georgian)
-                
+        } else if((c >= '\u0600' && c <= '\u06FF') || // (Arabic)
+
+                (c >= '\uF900' && c <= '\uFAFF') || // (CJK Compatibility Ideographs)
+
+                (c >= '\u1100' && c <= '\u11FF') || // (Hangul Jamo)
+
+                (c >= '\uFB50' && c <= '\uFE2F') || // (Arabic Presentation Forms-A)
+                (c >= '\uFE30' && c <= '\uFE4F') || // (CJK Compatibility Forms)
+
+                (c >= '\uFE70' && c <= '\uFEFF') || // (Arabic Presentation Forms-B)
+
+                (c >= '\uFF60' && c <= '\uFFDF') || // (CJK Half Width Forms)
+
+                (c >= '\u0E00' && c <= '\u0E7F') || // (Thai)
+                (c >= '\u0E80' && c <= '\u0EFF') || // (Lao)
+                (c >= '\u0F00' && c <= '\u0FBF') || // (Tibetan)
+
+                (c >= '\u0B80' && c <= '\u0BFF') || // (Tamil)
+                (c >= '\u0C00' && c <= '\u0C7F') || // (Telugu)
+                (c >= '\u0C80' && c <= '\u0CFF') || // (Kannada)
+                (c >= '\u0D00' && c <= '\u0D7F') || // (Malayalam)
+
+                (c >= '\u10A0' && c <= '\u10FF') || // (Georgian)
+
                 false) {
             return true;
         } else {
             return false;
         }
     }
-    
+
     /**
      * A function for viewing a string containing nonprintable
      * ascii and unicode characters.
@@ -1454,17 +1455,15 @@ public class UniversalTokenizer extends Tokenizer {
     public static final String showCodes(String charString) {
         String output = "";
         int code;
-        for (int i = 0; i < charString.length(); i++) {
-            code = (int)(charString.charAt(i));
-            output = output + "("+code+")"+Integer.toHexString(code);
+        for(int i = 0; i < charString.length(); i++) {
+            code = (int) (charString.charAt(i));
+            output = output + "(" + code + ")" + Integer.toHexString(code);
         }
         return output;
     }
-    
+
     static public void main(String[] args) throws java.io.IOException {
-        
-        log.setStream(System.out);
-        log.setLevel(3);
+
         PrintTokenStage pts = new PrintTokenStage();
         UniversalTokenizer tok = new UniversalTokenizer(pts);
         BufferedReader fr = new BufferedReader(new FileReader(args[0]));
@@ -1486,67 +1485,78 @@ public class UniversalTokenizer extends Tokenizer {
             }
         }
     }
-    
-    static final int    INITIAL    = 0;
-    static final int    COLLECTING = 1;
-    static final int    WHITESPACE = 2;
-    static final int    DOLLAR     = 3;
-    static final int    ASIAN      = 4;
-    
+    static final int INITIAL = 0;
+
+    static final int COLLECTING = 1;
+
+    static final int WHITESPACE = 2;
+
+    static final int DOLLAR = 3;
+
+    static final int ASIAN = 4;
+
     /**
      * The state of the tokenizer determined by previous history
      * (will be one of INITIAL, COLLECTING, WHITESPACE, DOLLAR, ASIAN).
      */
     int state;
-    
+
     /**
      * The start position for the current token.
      */
     int start = 0;
-    
+
     /**
      * The end position for the current token.
      */
     int end = 0;
-    
-    char[]              token;
-    int[]               lengths;
-    int                 tokLen;
-    
+
+    char[] token;
+
+    int[] lengths;
+
+    int tokLen;
+
     /**
      * The number of whitespace chars that precede the current token.
      */
     int whiteCount = 0;
-    
+
     /**
      * A boolean to record and signal the presence of a break char in token.
      */
-    boolean             breakCharFlag;
-    
+    boolean breakCharFlag;
+
     static final boolean ignoreLongTokens = false;
+
     static final int ignoreableTokenLength = 40;
-    
+
     /**
      * A flags to enable debugging traces.
      */
     static final boolean authorFlag = false;
+
     public boolean traceFlag = false;
-    
+
     /**
      * Variables to hold the current char (c) and previous char (pc) and their
      * lengths (cl, pcl) and the current file position (pos).  Note, pos is
      * used by checkSentenceEnd as well as handleText and handleChar.
      */
-    char                c, pc;
-    int                 cl, pcl, pos;
-    
-    protected int       tokenLength;
-    protected int       ngramLength;
-    protected char[]    nullString;
-    protected String    tokenString;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+    char c, pc;
+
+    int cl, pcl, pos;
+
+    protected int tokenLength;
+
+    protected int ngramLength;
+
+    protected char[] nullString;
+
+    protected String tokenString;
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "UTK";
-    
+
 } // UniversalTokenizer.java

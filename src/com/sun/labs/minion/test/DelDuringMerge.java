@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.SearchEngineException;
@@ -43,7 +42,6 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.MinionLog;
 
 /**
  * A class to test deletions in partitions while those partitions are
@@ -56,7 +54,7 @@ public class DelDuringMerge {
             dp.deleteDocument(doc);
         }
     }
-    
+
     /**
      * @param args the command line arguments
      */
@@ -67,7 +65,7 @@ public class DelDuringMerge {
         URL cmFile = null;
         Getopt gopt = new Getopt(args, flags);
         int c;
-        if (args.length == 0) {
+        if(args.length == 0) {
             usage();
             return;
         }
@@ -77,15 +75,12 @@ public class DelDuringMerge {
         //
         // Set up the log.
         Logger logger = Logger.getLogger("");
-        for (Handler h : logger.getHandlers()) {
+        for(Handler h : logger.getHandlers()) {
             h.setFormatter(new SimpleLabsLogFormatter());
         }
 
-        MinionLog.setLogger(logger);
-        MinionLog.setLevel(3);
-
-        while ((c = gopt.getopt()) != -1) {
-            switch (c) {
+        while((c = gopt.getopt()) != -1) {
+            switch(c) {
 
                 case 'd':
                     indexDir = gopt.optArg;
@@ -96,47 +91,52 @@ public class DelDuringMerge {
                 case 'x':
                     cmFile = (new File(gopt.optArg)).toURI().toURL();
                     break;
-                }
+            }
         }
 
-        if (indexDir == null || ddmFile == null) {
+        if(indexDir == null || ddmFile == null) {
             usage();
             return;
         }
-        
+
         //
         // Read the del-during merge file.
-        Map<Integer,List<Integer>> preMergeDels = new HashMap<Integer,List<Integer>>();
-        Map<Integer,List<Integer>> duringMergeDels = new HashMap<Integer,List<Integer>>();
-        List<Integer> parts =new ArrayList<Integer>();
-        
+        Map<Integer, List<Integer>> preMergeDels =
+                new HashMap<Integer, List<Integer>>();
+        Map<Integer, List<Integer>> duringMergeDels =
+                new HashMap<Integer, List<Integer>>();
+        List<Integer> parts = new ArrayList<Integer>();
+
         BufferedReader r = new BufferedReader(new FileReader(ddmFile));
         String l = r.readLine();
-        
+
         //
         // Get the partitions to merge.
         for(String p : l.split(" ")) {
             parts.add(new Integer(p));
         }
-        
+
         //
         // Write the active file.
-        WActive wa = new WActive(indexDir + File.separatorChar + "index" + File.separatorChar +
+        WActive wa = new WActive(indexDir + File.separatorChar + "index" +
+                File.separatorChar +
                 "AL.PM");
         wa.writeActiveFile(parts);
-        
+
         //
         // Remove the deleted docs files for these partitions.
         for(Integer p : parts) {
-            File f = PartitionManager.makeDeletedDocsFile(indexDir + File.separatorChar + "index", p);
+            File f = PartitionManager.makeDeletedDocsFile(indexDir +
+                    File.separatorChar + "index", p);
             logger.info("Deleting: " + f);
             if(f.exists()) {
-                if (!f.delete()) {
-                    logger.severe("Failed to delete deleted doc file " + f.getName());
+                if(!f.delete()) {
+                    logger.severe("Failed to delete deleted doc file " + f.
+                            getName());
                 }
             }
         }
-        
+
         //
         // Read the pre-merge deletions.
         for(Integer p : parts) {
@@ -147,7 +147,7 @@ public class DelDuringMerge {
             }
             preMergeDels.put(p, docs);
         }
-        
+
         //
         // Read the during-merge deletions.
         for(Integer p : parts) {
@@ -158,20 +158,21 @@ public class DelDuringMerge {
             }
             duringMergeDels.put(p, docs);
         }
-        
+
         r.close();
 
         //
         // Get our engine.
-        SearchEngineImpl engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(indexDir, cmFile);
+        SearchEngineImpl engine = (SearchEngineImpl) SearchEngineFactory.
+                getSearchEngine(indexDir, cmFile);
 
         //
         // Get the partitions.
         PartitionManager pm = engine.getPM();
         List<DiskPartition> active = pm.getActivePartitions();
-        
+
         logger.info("Partitions: " + active);
-        
+
         //
         // Do the pre-merge deletions.
         logger.info("Doing pre-merge deletions");
@@ -179,12 +180,12 @@ public class DelDuringMerge {
             logger.info("Pre-delete for " + dp);
             deleter(dp, preMergeDels.get(dp.getPartitionNumber()));
         }
-        
+
         //
         // Start the merge, which will store the pre-merge deletion state.
         PartitionManager.Merger merger = null;
         merger = pm.getMerger(active);
-        if (merger == null) {
+        if(merger == null) {
             logger.severe("Could not get merger for " + active);
             return;
         }
@@ -196,21 +197,22 @@ public class DelDuringMerge {
             logger.info("During merge delete for " + dp);
             deleter(dp, duringMergeDels.get(dp.getPartitionNumber()));
         }
-        
+
         //
         // Report the state of the deletion maps for the various partitions.
         DiskPartition mp = merger.merge();
-        
+
         for(DiskPartition dp : active) {
             logger.info(dp + " del: " + dp.getDelMap());
         }
-        
+
         logger.info(mp + " del: " + mp.getDelMap());
 
         engine.close();
     }
 
     private static void usage() {
-        System.err.println("Usage: DelDuringMerge -d <indexDir> -f <del-during-merge file>");
+        System.err.println(
+                "Usage: DelDuringMerge -d <indexDir> -f <del-during-merge file>");
     }
 }

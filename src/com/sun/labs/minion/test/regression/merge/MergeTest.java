@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test.regression.merge;
 
 import java.io.BufferedWriter;
@@ -43,7 +42,6 @@ import java.util.Set;
 
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.test.IndexTest;
 import com.sun.labs.minion.test.SEMain;
 import com.sun.labs.minion.test.regression.IndexInverter;
@@ -51,10 +49,11 @@ import com.sun.labs.minion.test.util.FileComparer;
 
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableFile;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import java.net.MalformedURLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class is responsible for testing the merging feature of the search
@@ -75,6 +74,7 @@ import java.net.MalformedURLException;
  * 
  */
 public class MergeTest {
+
     /**
      * Class MergeTestReporter is a simple inner class responsible for reporting the
      * results of the test.<br>
@@ -83,18 +83,19 @@ public class MergeTest {
      * 
      */
     class MergeTestReporter implements TestReporter {
-        
+
         /**
          * If true, report failures to syserr
          */
         private final boolean REPORT_FAILURES = true;
-        
+
         /**
          * Format for printing timestamps
          */
-        private final DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        private final DateFormat dateFormatter = new SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         //2001-07-04T12:08:56.235-0700
-               
+
         /**
          * The stream on which the results are written.
          */
@@ -113,7 +114,7 @@ public class MergeTest {
          */
         MergeTestReporter(String[] args) {
             out = new BufferedWriter(new PrintWriter(System.out));
-            this.args = args;           
+            this.args = args;
         }
 
         /**
@@ -128,25 +129,25 @@ public class MergeTest {
         private void reportMemory() throws IOException {
             out.write("<Memory>");
             out.write('\n');
-            
+
             out.write("<entry key=\"max\">");
             out.write(new Long(Runtime.getRuntime().maxMemory()).toString());
             out.write("</entry>");
             out.write('\n');
-            
+
             out.write("<entry key=\"total\">");
             out.write(new Long(Runtime.getRuntime().totalMemory()).toString());
             out.write("</entry>");
             out.write('\n');
-            
+
             out.write("<entry key=\"free\">");
             out.write(new Long(Runtime.getRuntime().freeMemory()).toString());
             out.write("</entry>");
             out.write('\n');
-            
+
             out.write("</Memory>");
             out.write('\n');
-            
+
         }
 
         private String printTimeStamp() {
@@ -194,10 +195,10 @@ public class MergeTest {
          */
         private void writeMap(Map aMap) throws IOException {
             Iterator keyIterator = aMap.keySet().iterator();
-            while (keyIterator.hasNext()) {
+            while(keyIterator.hasNext()) {
                 String key = (String) keyIterator.next();
                 out.write("<entry key=\"" + key + "\">");
-                out.write((String)aMap.get(key));
+                out.write((String) aMap.get(key));
                 out.write("</entry>");
                 out.write('\n');
             }
@@ -213,7 +214,7 @@ public class MergeTest {
             out.write('\n');
             try {
                 reportConfiguration();
-            } catch (IOException e) {
+            } catch(IOException e) {
                 System.err.println(e);
             }
         }
@@ -241,8 +242,6 @@ public class MergeTest {
             }
         }
 
-        
-
         /**
          * Report the command line arguments, each within an &lt;entry&gt; element.
          * @throws IOException
@@ -252,8 +251,8 @@ public class MergeTest {
             int c;
             out.write("<Arguments>");
             out.write('\n');
-            while ((c = gopt.getopt()) != -1) {
-                out.write("<entry key=\"-" + (char)c + "\">");
+            while((c = gopt.getopt()) != -1) {
+                out.write("<entry key=\"-" + (char) c + "\">");
                 out.write(gopt.optArg);
                 out.write("</entry>");
                 out.write('\n');
@@ -268,7 +267,7 @@ public class MergeTest {
         public void reportTestFiles(String[] testFiles) throws IOException {
             out.write("<Files timestamp=\"" + printTimeStamp() + "\">");
             out.write('\n');
-            for (int i = 0; i < testFiles.length; i++) {
+            for(int i = 0; i < testFiles.length; i++) {
                 String filename = testFiles[i];
                 out.write("<File name=\"");
                 out.write(filename);
@@ -295,7 +294,8 @@ public class MergeTest {
          * @see com.sun.labs.minion.test.regression.merge.TestReporter#startIteration(int)
          */
         public void startIteration(int i) throws IOException {
-            out.write("<Iteration timestamp=\"" + printTimeStamp() + "\" count=\"" + i + "\">");
+            out.write("<Iteration timestamp=\"" + printTimeStamp() +
+                    "\" count=\"" + i + "\">");
             out.write('\n');
         }
 
@@ -327,7 +327,7 @@ public class MergeTest {
          * @see com.sun.labs.minion.test.regression.merge.TestReporter#index(java.lang.String, boolean)
          */
         public void index(String file, boolean success) throws IOException {
-            if (REPORT_FAILURES && !success) {
+            if(REPORT_FAILURES && !success) {
                 System.err.println("Index of file " + file + " failed");
             }
             out.write("<Index timestamp=\"" + printTimeStamp() + "\" file=\"");
@@ -375,7 +375,8 @@ public class MergeTest {
          * @see com.sun.labs.minion.test.regression.merge.TestReporter#invertException(java.lang.Exception)
          */
         public void invertException(Exception e) throws IOException {
-            out.write("<InvertException timestamp=\"" + printTimeStamp() + "\" exception=\"" + e + "\">");
+            out.write("<InvertException timestamp=\"" + printTimeStamp() +
+                    "\" exception=\"" + e + "\">");
             out.write('\n');
             out.write("<![CDATA[");
             out.write('\n');
@@ -403,7 +404,7 @@ public class MergeTest {
          * @see com.sun.labs.minion.test.regression.merge.TestReporter#reportDiff(String, boolean)
          */
         public void reportDiff(String file, boolean success) throws IOException {
-            if (REPORT_FAILURES && !success) {
+            if(REPORT_FAILURES && !success) {
                 System.err.println("Diff of file " + file + " failed");
             }
             out.write("<Diff timestamp=\"" + printTimeStamp() + "\" file=\"");
@@ -411,15 +412,13 @@ public class MergeTest {
             out.write("\" success=\"" + success + "\"/>");
             out.write('\n');
         }
-        
 
         /**
          * Closes the &lt;Diffing&gt; element.<br>
          * @see com.sun.labs.minion.test.regression.merge.TestReporter#endDiff()
          */
-        
         public void endDiff() throws IOException {
-           out.write("</Diffing>");
+            out.write("</Diffing>");
             out.write('\n');
             out.flush();
         }
@@ -452,7 +451,8 @@ public class MergeTest {
          */
         public void optimizeException(SearchEngineException e)
                 throws IOException {
-            out.write("<Optimize timestamp=\"" + printTimeStamp() + "\" exception=\"" + e + "\">");
+            out.write("<Optimize timestamp=\"" + printTimeStamp() +
+                    "\" exception=\"" + e + "\">");
             out.write('\n');
         }
 
@@ -460,13 +460,13 @@ public class MergeTest {
          * @see com.sun.labs.minion.test.regression.merge.TestReporter#setReportFilename(java.lang.String)
          */
         public void setReportFilename(String reportFileName) {
-            if (reportFileName.length() == 0) {
+            if(reportFileName.length() == 0) {
                 return;
             }
             File outFile = new File(reportFileName);
             try {
                 out = new BufferedWriter(new FileWriter(outFile));
-            } catch (IOException e) {
+            } catch(IOException e) {
                 e.printStackTrace();
             }
         }
@@ -477,41 +477,35 @@ public class MergeTest {
         public void endReportMissingFiles() throws IOException {
             out.write("</MissingFiles>");
             out.write('\n');
-            
+
         }
 
         /* (non-Javadoc)
          * @see com.sun.labs.minion.test.regression.merge.TestReporter#missingFile(java.lang.String)
          */
         public void missingFile(String filename) throws IOException {
-            if (REPORT_FAILURES) {
+            if(REPORT_FAILURES) {
                 System.err.println("Missing file: " + filename);
             }
             out.write("<Missing timestamp=\"" + printTimeStamp() + "\"");
             out.write(" filename=\"" + filename + "\">");
             out.write('\n');
-            
+
         }
 
         /* (non-Javadoc)
          * @see com.sun.labs.minion.test.regression.merge.TestReporter#startReportMissingFiles(int)
          */
         public void startReportMissingFiles(int i) throws IOException {
-            if (REPORT_FAILURES && (i != 0)) {
+            if(REPORT_FAILURES && (i != 0)) {
                 System.err.println("Missing file count: " + i);
             }
             out.write("<MissingFiles timestamp=\"" + printTimeStamp() + "\"");
             out.write(" count=\"" + i + "\">");
             out.write('\n');
-            
+
         }
-
-        
-
-        
-
     }
-
     /**
      * Tag for the log
      */
@@ -525,8 +519,8 @@ public class MergeTest {
     /**
      * The log onto which messages <b>should</b> be written
      */
-    protected static Log log;
-    
+    protected Logger logger = Logger.getLogger(getClass().getName());
+
     /**
      * The number of documents to be indexed per iteration
      */
@@ -566,7 +560,7 @@ public class MergeTest {
      * The reporter for recording progress of the test
      */
     protected TestReporter reporter;
-    
+
     /**
      * Flags used to describe options permitted in the command line invocation
      */
@@ -588,21 +582,18 @@ public class MergeTest {
      */
     private final String CONFIG_FILE = "MergeTest-config.xml";
 
-
     /**
      * Help!
      */
     static void usage() {
-        System.out
-                .println("Usage: java com.sun.labs.minion.test.regression.merge.MergeTest -c <character_encoding> " +
-                        "-d <index_directory> -f <document_directory> " +
-                        "-i <number_of_iteratins> -l <log_level> " +
-                        "-o <output_directory> [-r <report_filename> ] " +
-                        "-s <number_of_documents_to_index_per_iteration> " +
-                        "[-x <config_file>]");
+        System.out.println("Usage: java com.sun.labs.minion.test.regression.merge.MergeTest -c <character_encoding> " +
+                "-d <index_directory> -f <document_directory> " +
+                "-i <number_of_iteratins> -l <log_level> " +
+                "-o <output_directory> [-r <report_filename> ] " +
+                "-s <number_of_documents_to_index_per_iteration> " +
+                "[-x <config_file>]");
     }
-    
-    
+
     /**
      * Main invocation of the test
      * @param args
@@ -619,7 +610,7 @@ public class MergeTest {
         int iterations = 5;
         int documentCount = 20;
 
-        if (args.length == 0) {
+        if(args.length == 0) {
             usage();
             return;
         }
@@ -633,91 +624,84 @@ public class MergeTest {
         // to the standard output, except for errors, which will go to
         // standard error. We'll set the level at 3, which is pretty
         // verbose.
-        Log log = Log.getLog();
-        log.setStream(System.out);
-        log.setStream(Log.ERROR, System.err);
-        log.setLevel(logLevel);
+        Logger logger = Logger.getLogger(MergeTest.class.getName());
 
         //
         // Handle the options.
-        while ((c = gopt.getopt()) != -1) {
-            switch (c) {
+        while((c = gopt.getopt()) != -1) {
+            switch(c) {
 
-            case 'c':
-                charEnc = gopt.optArg;
-                break;
+                case 'c':
+                    charEnc = gopt.optArg;
+                    break;
 
-            case 'd':
-                indexDir = gopt.optArg;
-                break;
+                case 'd':
+                    indexDir = gopt.optArg;
+                    break;
 
-            case 'f':
-                documentDir = gopt.optArg;
-                break;
+                case 'f':
+                    documentDir = gopt.optArg;
+                    break;
 
-            case 'i':
-                try {
-                    iterations = Integer.parseInt(gopt.optArg);
-                } catch (NumberFormatException nfe) {
-                }
-                break;
+                case 'i':
+                    try {
+                        iterations = Integer.parseInt(gopt.optArg);
+                    } catch(NumberFormatException nfe) {
+                    }
+                    break;
 
-            case 'l':
-                try {
-                    logLevel = Integer.parseInt(gopt.optArg);
-                } catch (NumberFormatException nfe) {
-                }
-                break;
+                case 'l':
+                    try {
+                        logLevel = Integer.parseInt(gopt.optArg);
+                    } catch(NumberFormatException nfe) {
+                    }
+                    break;
 
-            case 'o':
-                outputDir = gopt.optArg;
-                break;
+                case 'o':
+                    outputDir = gopt.optArg;
+                    break;
 
-            case 'r':
-                reportFileName = gopt.optArg;
-                break;       
-            
-            case 's':
-                try {
-                    documentCount = Integer.parseInt(gopt.optArg);
-                } catch (NumberFormatException nfe) {
-                }
-                break;
+                case 'r':
+                    reportFileName = gopt.optArg;
+                    break;
 
-            case 'x':
-                cmFile = gopt.optArg;
-                break;
+                case 's':
+                    try {
+                        documentCount = Integer.parseInt(gopt.optArg);
+                    } catch(NumberFormatException nfe) {
+                    }
+                    break;
+
+                case 'x':
+                    cmFile = gopt.optArg;
+                    break;
             }
         }
 
-        //
-        // We may have gotten a larger log level.
-        log.setLevel(logLevel);
-
-        if (indexDir == null && cmFile == null) {
-            log.warn("logTag", 0, "You must specify a configuration.");
+        if(indexDir == null && cmFile == null) {
+            logger.warning("You must specify a configuration.");
             usage();
             return;
         }
 
-        if (documentDir == null) {
-            log.warn("logTag", 0, "You must specify a document directory.");
+        if(documentDir == null) {
+            logger.warning("You must specify a document directory.");
             usage();
             return;
         }
-        
-        
-        
+
+
+
 
         MergeTest test = null;
         try {
-            test = new MergeTest(indexDir, 
+            test = new MergeTest(indexDir,
                     cmFile, documentCount, iterations, documentDir,
                     outputDir, args);
-            if (reportFileName != null) {
+            if(reportFileName != null) {
                 test.setReportFilename(reportFileName);
             }
-        } catch (FileNotFoundException e) {
+        } catch(FileNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
             System.exit(1);
@@ -732,7 +716,7 @@ public class MergeTest {
      */
     private void setReportFilename(String reportFileName) {
         reporter.setReportFilename(reportFileName);
-        
+
     }
 
     /**
@@ -753,16 +737,18 @@ public class MergeTest {
         iterations = i;
         documentDirectory = new File(dDir);
         if(!documentDirectory.exists()) {
-            throw new FileNotFoundException("Document directory " + dDir + " does not exist");
+            throw new FileNotFoundException("Document directory " + dDir +
+                    " does not exist");
         }
         outputDirectory = new File(oDir);
-        if (!outputDirectory.exists()) {
-            throw new FileNotFoundException("Output directory " + oDir + " does not exist");
+        if(!outputDirectory.exists()) {
+            throw new FileNotFoundException("Output directory " + oDir +
+                    " does not exist");
         }
         getFileList();
         createSearchEngine(cmFile, indexDir);
         openReporter(args);
-        
+
     }
 
     /**
@@ -778,22 +764,25 @@ public class MergeTest {
      * Creates a new instance of a search engines and assigns it to the field
      */
     protected void createSearchEngine(String cmFile, String indexDir) {
-        if (cmFile != null) {
+        if(cmFile != null) {
             try {
-                engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(cmFile, (new File(cmFile).toURI().toURL()));
-            } catch (SearchEngineException se) {
-                log.error("Indexer", 1, "Error opening collection", se);
+                engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                        cmFile, (new File(cmFile).toURI().toURL()));
+            } catch(SearchEngineException se) {
+                logger.log(Level.SEVERE, "Error opening collection", se);
                 return;
-            } catch (MalformedURLException murl) {
-                log.error("Indexer", 1, "Error reading configuration file", murl);
+            } catch(MalformedURLException murl) {
+                logger.log(Level.SEVERE, "Error reading configuration file",
+                        murl);
                 return;
             }
         } else {
             URL configURL = getClass().getResource(CONFIG_FILE);
             try {
-                engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(indexDir, configURL);
-            } catch (SearchEngineException se) {
-                log.error("Indexer", 1, "Error opening collection", se);
+                engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                        indexDir, configURL);
+            } catch(SearchEngineException se) {
+                logger.log(Level.SEVERE, "Error opening collection", se);
                 return;
             }
         }
@@ -814,7 +803,7 @@ public class MergeTest {
         String[] testFiles = new String[documentCount];
         Set randomIndices = getRandomIndices();
         int i = 0;
-        for (Iterator iter = randomIndices.iterator(); iter.hasNext();) {
+        for(Iterator iter = randomIndices.iterator(); iter.hasNext();) {
             Integer index = (Integer) iter.next();
             testFiles[i++] = files[index];
         }
@@ -828,7 +817,7 @@ public class MergeTest {
     private Set getRandomIndices() {
         Set<Integer> randomIndices = new HashSet<Integer>();
         Random numberGen = new Random();
-        while (randomIndices.size() < documentCount) {
+        while(randomIndices.size() < documentCount) {
             randomIndices.add(numberGen.nextInt(files.length));
         }
         return randomIndices;
@@ -849,9 +838,9 @@ public class MergeTest {
     private void test() {
         int i = 0;
         try {
-            
+
             reporter.startReport();
-            while (i < iterations) {
+            while(i < iterations) {
                 reporter.startIteration(i);
                 //
                 // Get the test files
@@ -876,16 +865,16 @@ public class MergeTest {
                 reporter.endIteration();
                 i++;
             }
-            
-        } catch (IOException e) {
+
+        } catch(IOException e) {
             System.err.println(e);
         } finally {
             try {
                 engine.close();
                 reporter.endReport();
-            } catch (IOException e) {
+            } catch(IOException e) {
                 System.err.println(e);
-            } catch (SearchEngineException e) {
+            } catch(SearchEngineException e) {
                 System.err.println(e);
             }
         }
@@ -905,31 +894,32 @@ public class MergeTest {
      * being deleted.
      * @throws IOException
      */
-    protected void invert() throws IOException  {
+    protected void invert() throws IOException {
         //
         // Delete the old files in the output directory
         File[] files = outputDirectory.listFiles();
-        for (int i = 0; i < files.length; i++) {
+        for(int i = 0; i < files.length; i++) {
             File file = files[i];
-            if (!file.delete()) {
-                log.error(logTag, 2, "Failed to delete old file " + file.getName());
+            if(!file.delete()) {
+                logger.severe("Failed to delete old file " + file.getName());
             }
         }
         //
         // Create a new index inverter and output the inverted documents into
         // the output directory
-        IndexInverter inverter = new IndexInverter(cmFile, indexDir, outputDirectory);
-        log.log(logTag, MinionLog.LOG, "Thread count: " + Thread.activeCount());
+        IndexInverter inverter = new IndexInverter(cmFile, indexDir,
+                outputDirectory);
+        logger.info("Thread count: " + Thread.activeCount());
         reporter.startInverting();
         try {
             inverter.outputInvertedIndex();
-        } catch (Exception e) {
+        } catch(Exception e) {
             System.err.println(e);
             reporter.invertException(e);
         }
         try {
             inverter.close();
-        } catch (SearchEngineException e) {
+        } catch(SearchEngineException e) {
             System.err.println(e);
             reporter.invertException(e);
         }
@@ -944,8 +934,8 @@ public class MergeTest {
         reporter.startOptimizing();
         try {
             engine.optimize();
-        } catch (SearchEngineException e) {
-            log.error(logTag, 0, "Error optimising", e);
+        } catch(SearchEngineException e) {
+            logger.log(Level.SEVERE, "Error optimising", e);
             reporter.optimizeException(e);
         }
         reporter.endOptimizing();
@@ -957,16 +947,15 @@ public class MergeTest {
      */
     protected void diff() throws IOException {
         reporter.startDiff();
-        
+
         String[] outputDocuments = outputDirectory.list();
-        for (int i = 0; i < outputDocuments.length; i++) {
+        for(int i = 0; i < outputDocuments.length; i++) {
             String filename = outputDocuments[i];
             boolean success = diff(filename);
             reporter.reportDiff(filename, success);
         }
         reporter.endDiff();
     }
-
 
     /**
      * Compare one file with another and return a result indicating if they are the same.
@@ -975,8 +964,10 @@ public class MergeTest {
      * @throws IOException
      */
     protected boolean diff(String filename) throws IOException {
-        String outputPathname = outputDirectory.getAbsolutePath() + File.separator + filename;
-        String originalPathname = documentDirectory.getAbsolutePath() + File.separator + filename;
+        String outputPathname = outputDirectory.getAbsolutePath() +
+                File.separator + filename;
+        String originalPathname = documentDirectory.getAbsolutePath() +
+                File.separator + filename;
         FileComparer differ = new FileComparer(outputPathname, originalPathname);
         return differ.areLinesEqual();
     }
@@ -991,7 +982,7 @@ public class MergeTest {
         int nDocs = 0;
         long start = System.currentTimeMillis();
         reporter.startIndexing();
-        for (int i = 0; i < testFiles.length; i++) {
+        for(int i = 0; i < testFiles.length; i++) {
             String file = documentDirectory + File.separator + testFiles[i];
 
             IndexableFile f = new IndexableFile(file, charEnc);
@@ -1000,40 +991,39 @@ public class MergeTest {
             try {
                 long len = f.length();
                 boolean longFile = len > 400000;
-                if (longFile) {
-                    log.debug(logTag, 0, "Long: " + f.length());
+                if(longFile) {
+                    logger.info("Long: " + f.length());
                     engine.flush();
                 }
                 engine.index(document);
                 reporter.index(file, true);
-                if (longFile) {
+                if(longFile) {
                     engine.flush();
                 }
 
                 nDocs++;
                 totalLen += len;
 
-                if (nDocs % 10 == 0) {
-                    IndexTest.reportProgress(start, totalLen, nDocs);
+                if(nDocs % 10 == 0) {
+                    IndexTest.reportProgress(logger, start, totalLen, nDocs);
                 }
 
-            } catch (SearchEngineException se) {
-                log.error("Indexer", 1, "Error indexing document " + f, se);
+            } catch(SearchEngineException se) {
+                logger.log(Level.SEVERE, "Error indexing document " + f, se);
                 reporter.index(file, false);
-            } catch (Exception e) {
-                log.error(logTag, 0, "Error indexing", e);
+            } catch(Exception e) {
+                logger.log(Level.SEVERE, "Error indexing", e);
                 reporter.index(file, false);
             }
         }
         try {
             engine.flush();
-        } catch (SearchEngineException e) {
+        } catch(SearchEngineException e) {
             e.printStackTrace();
         }
         reporter.endIndexing();
 
     }
-
 
     /**
      * Check to see that the files that were indexed are in the
@@ -1045,7 +1035,7 @@ public class MergeTest {
         Set<String> invertedSet = new HashSet<String>();
         //
         //Put the names of the test files into a set
-        for (int i = 0; i < testFiles.length; i++) {
+        for(int i = 0; i < testFiles.length; i++) {
             invertedSet.add(testFiles[i]);
         }
         //
@@ -1054,10 +1044,10 @@ public class MergeTest {
         //
         //Remove the name of every file in the output directory from the
         //set of files that have been indexed. This should result in an empty set
-        for (int i = 0; i < invertedFiles.length; i++) {
+        for(int i = 0; i < invertedFiles.length; i++) {
             invertedSet.remove(invertedFiles[i]);
         }
-        if (invertedSet.isEmpty()) {
+        if(invertedSet.isEmpty()) {
             reporter.startReportMissingFiles(0);
             reporter.endReportMissingFiles();
         } else {
@@ -1065,14 +1055,11 @@ public class MergeTest {
             //There are some files that have been indexed that are  
             //missing from the output directory
             reporter.startReportMissingFiles(invertedSet.size());
-            for (Iterator iter = invertedSet.iterator(); iter.hasNext();) {
+            for(Iterator iter = invertedSet.iterator(); iter.hasNext();) {
                 String filename = (String) iter.next();
                 reporter.missingFile(filename);
             }
-           reporter.endReportMissingFiles();
+            reporter.endReportMissingFiles();
         }
     }
-
-    
-
 }

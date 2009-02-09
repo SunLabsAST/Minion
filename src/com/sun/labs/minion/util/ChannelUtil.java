@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.util;
 
 import java.nio.ByteBuffer;
@@ -30,10 +29,11 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import java.util.logging.Logger;
 
 public class ChannelUtil {
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "CU";
 
@@ -51,13 +51,13 @@ public class ChannelUtil {
      * @throws java.io.IOException If there is any error during writing.
      */
     public static void writeFully(WritableByteChannel c, ByteBuffer b)
-        throws java.io.IOException {
+            throws java.io.IOException {
 
         if(b.isDirect()) {
             writeFullyInternal(c, b);
             return;
         }
-        
+
         int limit = b.limit();
         if(limit < BLOCK_SIZE) {
             writeFullyInternal(c, b);
@@ -86,8 +86,8 @@ public class ChannelUtil {
      * @throws java.io.IOException If there is any error during writing.
      */
     public static void writeFully(GatheringByteChannel c,
-                                  ByteBuffer[] b, long size)
-        throws java.io.IOException{
+            ByteBuffer[] b, long size)
+            throws java.io.IOException {
 
         if(size == 0) {
             for(int i = 0; i < b.length; i++) {
@@ -110,7 +110,7 @@ public class ChannelUtil {
      * @throws java.io.IOException If there is any error during writing.
      */
     protected static int writeFullyInternal(WritableByteChannel c, ByteBuffer b)
-        throws java.io.IOException{
+            throws java.io.IOException {
         int written = 0;
         while(b.remaining() > 0) {
             written += c.write(b);
@@ -128,7 +128,7 @@ public class ChannelUtil {
      * @throws java.io.IOException If there is any error during reading.
      */
     public static ByteBuffer readFully(ReadableByteChannel c, ByteBuffer b)
-        throws java.io.IOException{
+            throws java.io.IOException {
         while(b.remaining() > 0) {
             int bytesRead = c.read(b);
 
@@ -152,7 +152,7 @@ public class ChannelUtil {
      * @throws java.io.IOException If there is any error during reading.
      */
     public static ByteBuffer readFully(FileChannel c, long off, ByteBuffer b)
-        throws java.io.IOException {
+            throws java.io.IOException {
         while(b.remaining() > 0) {
             int bytesRead = c.read(b, off);
 
@@ -174,18 +174,18 @@ public class ChannelUtil {
      * @throws java.io.IOException If there is any error transferring the data.
      */
     public static void transferFully(FileChannel src,
-                                     FileChannel dst)
-        throws java.io.IOException {
+            FileChannel dst)
+            throws java.io.IOException {
 
         long written = 0;
         long size = src.size();
         while(written < size) {
             written += src.transferTo(written,
-                                      size - written,
-                                      dst);
+                    size - written,
+                    dst);
         }
     }
-    
+
     /**
      * Transfers a portion of the content of one channel to another, making
      * sure that all data is written.
@@ -196,15 +196,14 @@ public class ChannelUtil {
      * @throws java.io.IOException If there is any error transferring the data.
      */
     public static void transferFully(FileChannel src,
-                                     long position,
-                                     long count,
-                                     FileChannel dst)
-        throws java.io.IOException {
+            long position,
+            long count,
+            FileChannel dst)
+            throws java.io.IOException {
         while(count > 0) {
             long n = src.transferTo(position, count, dst);
             count -= n;
             position += n;
         }
     }
-    
 } // ChannelUtil

@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.Calendar;
@@ -147,8 +146,8 @@ public class FieldTerm extends QueryTerm {
      * @param includeUpper true if the upper bound is inclusive
      */
     public FieldTerm(String name,
-                      Object lowerBound, boolean includeLower,
-                      Object upperBound, boolean includeUpper) {
+            Object lowerBound, boolean includeLower,
+            Object upperBound, boolean includeUpper) {
         this.name = name;
         this.op = Operator.RANGE;
         this.lowerBound = lowerBound;
@@ -237,15 +236,16 @@ public class FieldTerm extends QueryTerm {
         // we're supposed to have a date, parse it and then figure out
         // whether it is for a whole day.  The range case is handled specially
         // below since it requires two dates.
-        if(sf.getField().getType() == FieldInfo.Type.DATE && op != Operator.RANGE) {
+        if(sf.getField().getType() == FieldInfo.Type.DATE && op !=
+                Operator.RANGE) {
             try {
                 d = dp.parse(val);
                 time = d.getTime();
                 dayResolution = isDayResolution(d);
                 o = new Date(time);
             } catch(java.text.ParseException pe) {
-                log.warn(logTag, 3, "Invalid date format: \"" +
-                         val + "\" for date field: " + name);
+                logger.warning("Invalid date format: \"" + val +
+                        "\" for date field: " + name);
                 return;
             }
         }
@@ -338,8 +338,8 @@ public class FieldTerm extends QueryTerm {
                             }
                         }
                     } catch(java.text.ParseException pe) {
-                        log.warn(logTag, 3, "Invalid date format: \"" +
-                                 val + "\" for date field: " + name);
+                        logger.warning("Invalid date format: \"" + val +
+                                "\" for date field: " + name);
                         return;
                     }
                 }
@@ -350,27 +350,27 @@ public class FieldTerm extends QueryTerm {
 
             case MATCHES:
                 iter = ifpart.getMatchingIterator(name, val,
-                                                  matchCase);
+                        matchCase);
                 getIterator = false;
                 break;
             case SUBSTRING:
                 iter = ifpart.getSubstringIterator(name, val,
-                                                   matchCase,
-                                                   false, false);
+                        matchCase,
+                        false, false);
                 getIterator = false;
                 break;
 
             case STARTS:
                 iter = ifpart.getSubstringIterator(name, val,
-                                                   matchCase,
-                                                   true, false);
+                        matchCase,
+                        true, false);
                 getIterator = false;
                 break;
 
             case ENDS:
                 iter = ifpart.getSubstringIterator(name, val,
-                                                   matchCase,
-                                                   false, true);
+                        matchCase,
+                        false, true);
                 getIterator = false;
                 break;
         }
@@ -379,8 +379,8 @@ public class FieldTerm extends QueryTerm {
         // If we need to get an iterator, do it now.
         if(getIterator) {
             iter = ifpart.getFieldIterator(name, matchCase,
-                                           lowerBound, includeLower,
-                                           upperBound, includeUpper);
+                    lowerBound, includeLower,
+                    upperBound, includeUpper);
         }
 
         //
@@ -444,7 +444,7 @@ public class FieldTerm extends QueryTerm {
             if(sf instanceof BasicField) {
                 return ((BasicField) sf).getSimilar(ag, val, matchCase);
             } else {
-                log.warn(logTag, 0, "SIMILAR attempted for non-basic field");
+                logger.warning("SIMILAR attempted for non-basic field");
                 return new ArrayGroup(0);
             }
         }
@@ -499,8 +499,9 @@ public class FieldTerm extends QueryTerm {
                 String match = (String) qe.getName();
                 while(vpi.next()) {
                     scores[vpi.getID()] =
-                            Math.max(scores[vpi.getID()], valLen / match.length());
-               }
+                            Math.max(scores[vpi.getID()], valLen /
+                            match.length());
+                }
             }
 
             //
@@ -510,7 +511,7 @@ public class FieldTerm extends QueryTerm {
             for(int i = 0; i < scores.length; i++) {
                 scores[i] = Math.min(scores[i], 1);
             }
-            
+
             ScoredGroup sg = new ScoredGroup(part, scores);
             if(ag != null) {
                 sg = (ScoredGroup) ag.intersect(sg);
@@ -554,8 +555,8 @@ public class FieldTerm extends QueryTerm {
 
     private int nonWildCardLength(String s) {
         int l = 0;
-        for (int i = 0; i < s.length(); i++) {
-            switch (s.charAt(i)) {
+        for(int i = 0; i < s.length(); i++) {
+            switch(s.charAt(i)) {
                 case '*':
                 case '?':
                     continue;
@@ -576,6 +577,5 @@ public class FieldTerm extends QueryTerm {
         }
         return super.toString(prefix) + " " + myStr + " (" + estSize + ")";
     }
-
 } // FieldTerm
 

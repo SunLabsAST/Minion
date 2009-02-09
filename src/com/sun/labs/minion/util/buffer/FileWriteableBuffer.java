@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.util.buffer;
 
 import java.io.DataOutput;
@@ -34,8 +33,9 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
 import com.sun.labs.minion.util.ChannelUtil;
-import com.sun.labs.minion.util.MinionLog;
 import java.io.FileOutputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A class for a writeable buffer that encodes data directly to a file,
@@ -77,7 +77,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * The position in the buffer we're writing.
      */
     protected int pos;
-    
+
     /**
      * The position in our in-memory buffer.
      */
@@ -91,7 +91,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
     /**
      * A log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * A tag for our log entries.
@@ -158,7 +158,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         try {
             raf.seek(off + p);
         } catch(java.io.IOException ioe) {
-            log.error(logTag, 1, "Error seeking", ioe);
+            logger.log(Level.SEVERE, "Error seeking", ioe);
         }
     }
 
@@ -181,7 +181,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
             raf.write(buff, 0, bPos);
             bPos = 0;
         } catch(java.io.IOException ioe) {
-            log.error(logTag, 1, "Error writing file", ioe);
+            logger.log(Level.SEVERE, "Error writing file", ioe);
             buff = null;
         }
     }
@@ -228,7 +228,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
             raf.writeByte(b);
             raf.seek(x);
         } catch(java.io.IOException ioe) {
-            log.error(logTag, 1, "Error writing file", ioe);
+            logger.log(Level.SEVERE, "Error writing file", ioe);
         }
         return this;
     }
@@ -280,7 +280,8 @@ public class FileWriteableBuffer implements WriteableBuffer {
      */
     public int byteEncode(long n) {
         if(n < 0) {
-            throw new ArithmeticException(String.format("Negative value %d cannot by byte encoded", n));
+            throw new ArithmeticException(String.format(
+                    "Negative value %d cannot by byte encoded", n));
         }
         int nBytes = 0;
 
@@ -432,14 +433,14 @@ public class FileWriteableBuffer implements WriteableBuffer {
             //
             // Write the bytes in the file.
             ChannelUtil.readFully(raf.getChannel(), off, b);
-            
+
             //
             // Write the bytes in the buffer.
             if(bPos > 0) {
                 b.put(buff, 0, bPos);
             }
         } catch(java.io.IOException ioe) {
-            log.error(logTag, 1, "Error writing to buffer", ioe);
+            logger.log(Level.SEVERE, "Error writing to buffer", ioe);
         }
     }
 

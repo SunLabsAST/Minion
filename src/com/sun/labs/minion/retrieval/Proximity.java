@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.Arrays;
@@ -29,8 +28,8 @@ import java.util.Iterator;
 import java.util.List;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
+import java.util.logging.Logger;
 
 /**
  * An abstract class for all proximity operators.  This class includes the
@@ -85,7 +84,7 @@ public abstract class Proximity extends Operator {
      */
     protected boolean storePassages;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "PRX";
 
@@ -105,7 +104,7 @@ public abstract class Proximity extends Operator {
         orderedOps = new QueryElement[operands.size()];
         terms = new DictTerm[operands.size()];
         ocTerms = new boolean[operands.size()];
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
+        for(Iterator i = operands.iterator(); i.hasNext();) {
             QueryElement qe = (QueryElement) i.next();
             orderedOps[qe.order] = qe;
             if(qe instanceof DictTerm) {
@@ -144,7 +143,7 @@ public abstract class Proximity extends Operator {
      * retrieval.
      */
     protected void setStorePassages(boolean b) {
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
+        for(Iterator i = operands.iterator(); i.hasNext();) {
             QueryElement qe = (QueryElement) i.next();
             if(qe instanceof Proximity) {
                 ((Proximity) qe).setStorePassages(b);
@@ -166,7 +165,7 @@ public abstract class Proximity extends Operator {
     protected ArrayGroup evalTerms(ArrayGroup candidates, List terms) {
 
         float maxScore = 1;
-        
+
         //
         // A quick check for a single term query, which we'll just handle
         // as though it were not a proximity query, making sure to
@@ -185,9 +184,9 @@ public abstract class Proximity extends Operator {
 
             //
             // Figure out what fields we need.
-            int[] doFields; 
+            int[] doFields;
             if((searchFields == null) && (part instanceof InvFileDiskPartition)) {
-                doFields = new int[part.getManager().getMetaFile().size()+1];
+                doFields = new int[part.getManager().getMetaFile().size() + 1];
                 for(int i = 0; i < doFields.length; i++) {
                     doFields[i] = 1;
                 }
@@ -218,7 +217,7 @@ public abstract class Proximity extends Operator {
 
             return ag;
         }
-        
+
         //
         // A new scored group for our return set, which will never be
         // larger than our candidate set size.
@@ -245,9 +244,10 @@ public abstract class Proximity extends Operator {
         // Now, we'll go field by field and build up the positions for that
         // field.  If we have some fields that we're supposed to search,
         // we'll do only those, otherwise, we'll do everything.
-        int[] doFields; 
+        int[] doFields;
         if((searchFields == null) && (part instanceof InvFileDiskPartition)) {
-            doFields = new int[((InvFileDiskPartition)part).getManager().getMetaFile().size()+1];
+            doFields = new int[((InvFileDiskPartition) part).getManager().
+                    getMetaFile().size() + 1];
             for(int i = 0; i < doFields.length; i++) {
                 doFields[i] = 1;
             }
@@ -260,7 +260,7 @@ public abstract class Proximity extends Operator {
         // pull the positions for the terms and check for valid passages.
         for(int i = 0; i < candidates.size; i++) {
             int doc = candidates.docs[i];
-            
+
             //
             // Get the positions for the terms in this document.
             for(int j = 0; j < terms.size(); j++) {
@@ -278,7 +278,7 @@ public abstract class Proximity extends Operator {
                 if(doFields[f] == 0) {
                     continue;
                 }
-                
+
                 //
                 // Zero out the column lengths.
                 for(int j = 0; j < lens.length; j++) {
@@ -290,7 +290,7 @@ public abstract class Proximity extends Operator {
                     if(fieldPosns[j] == null) {
                         continue;
                     }
-                    
+
                     //
                     // Get the positions for this field for this term.
                     int[] fposns = fieldPosns[j][f];
@@ -306,7 +306,7 @@ public abstract class Proximity extends Operator {
                     // The current column and its length.
                     if(nPosns + lens[j] >= columns[j].length) {
                         columns[j] = Util.expandInt(columns[j],
-                                                    (nPosns + lens[j])*2);
+                                (nPosns + lens[j]) * 2);
 
                         //
                         // Steve says: I know that this doesn't do
@@ -322,20 +322,20 @@ public abstract class Proximity extends Operator {
                         // 1.2 up to 1.4.
                         int x = columns[j].length + 1;
                     }
-                    
+
                     arrayCopy(fposns, 1, columns[j], lens[j], nPosns);
                     //System.arraycopy(fposns, 1, columns[j], lens[j], nPosns);
                     lens[j] += nPosns;
 
                     if(lens[j] > columns[j].length) {
-                        log.debug(logTag, 0, "lens exceeds column length");
-                        log.debug(logTag, 0, "part: " + part);
-                        log.debug(logTag, 0, "doc: " + doc);
-                        log.debug(logTag, 0, "key: " + part.getDocumentTerm(doc));
-                        log.debug(logTag, 0, "j: " + j);
-                        log.debug(logTag, 0, "columns[j].length: " +
-                                  columns[j].length);
-                        log.debug(logTag, 0, "lens[j]: " + lens[j]);
+                        logger.info("lens exceeds column length");
+                        logger.info("part: " + part);
+                        logger.info("doc: " + doc);
+                        logger.info("key: " + part.getDocumentTerm(doc));
+                        logger.info("j: " + j);
+                        logger.info("columns[j].length: " +
+                                columns[j].length);
+                        logger.info("lens[j]: " + lens[j]);
                     }
                 }
 
@@ -360,10 +360,10 @@ public abstract class Proximity extends Operator {
                 // Sort the positions, so that we can do our work.
                 for(int j = 0; j < columns.length; j++) {
                     if(lens[j] > columns[j].length) {
-                        log.debug(logTag, 0, "doc: " + doc);
-                        log.debug(logTag, 0, "key: " + part.getDocumentTerm(doc));
-                        log.debug(logTag, 0, j + " " + part + " " +
-                                  lens[j] + " " + columns[j].length);
+                        logger.info("doc: " + doc);
+                        logger.info("key: " + part.getDocumentTerm(doc));
+                        logger.info(j + " " + part + " " +
+                                lens[j] + " " + columns[j].length);
 
                     }
                     Arrays.sort(columns[j], 0, lens[j]);
@@ -374,7 +374,7 @@ public abstract class Proximity extends Operator {
                 // let's see if any of them have matching passages.  Note
                 // that we don't have any intrinsic term penalties for now.
                 float minPenalty =
-                    checkPositions(ret, f, columns, lens, ocTerms, null);
+                        checkPositions(ret, f, columns, lens, ocTerms, null);
 
                 //
                 // If we actually got a passage, it will have been stored
@@ -395,11 +395,11 @@ public abstract class Proximity extends Operator {
             // set.
             if(somePassage) {
                 ret.docs[ret.size] = doc;
-                
+
                 //
                 // If we're supposed to boost perfect scores, do it now.
                 if(qc.getBoostPerfectProx() &&
-                   ret.scores[ret.size] == 1) {
+                        ret.scores[ret.size] == 1) {
                     ret.scores[ret.size] += scoredCandidates.scores[i];
                     if(ret.scores[ret.size] > maxScore) {
                         maxScore = ret.scores[ret.size];
@@ -408,7 +408,7 @@ public abstract class Proximity extends Operator {
                 ret.size++;
             }
         }
-        
+
         //
         // See if we need to normalize down scores greater than 1.
         if(maxScore > 1) {
@@ -432,9 +432,9 @@ public abstract class Proximity extends Operator {
      * @return The penalty associated with the given word positions.
      */
     protected float calcPenalty(int[] posns) {
-        float 	penalty = 0;
-        int 	pos, diff;
-        int 	prev 	= posns[0];
+        float penalty = 0;
+        int pos, diff;
+        int prev = posns[0];
 
         for(int i = 1; i < posns.length; i++) {
             pos = posns[i];
@@ -449,7 +449,7 @@ public abstract class Proximity extends Operator {
             // Figure out any gap or out of order penalty.
             if(prev > 0) {
                 diff = pos - prev;
-		    
+
                 if(diff < 0) {
 
                     //
@@ -482,21 +482,21 @@ public abstract class Proximity extends Operator {
      * <code>Float.MIN_VALUE</code> is returned.
      */
     protected float checkPositions(ScoredGroup ag,
-                                   int field,
-                                   int[][] columns,
-                                   int[] lens,
-                                   boolean[] ocColumn,
-                                   float[][] termPens) {
+            int field,
+            int[][] columns,
+            int[] lens,
+            boolean[] ocColumn,
+            float[][] termPens) {
 
-        int 	minCol 	      = -1;
-        int 	minPos;
-        int 	maxPos 	      = Integer.MIN_VALUE;
-        int 	nMissing;
-        float 	penalty;
-        int[] currPos 	      = new int[columns.length];
-        int[] tops    	      = new int[columns.length];
-        float[] topTermPens   = new float[columns.length];
-        float 	minPenalty    = Float.MAX_VALUE;
+        int minCol = -1;
+        int minPos;
+        int maxPos = Integer.MIN_VALUE;
+        int nMissing;
+        float penalty;
+        int[] currPos = new int[columns.length];
+        int[] tops = new int[columns.length];
+        float[] topTermPens = new float[columns.length];
+        float minPenalty = Float.MAX_VALUE;
         boolean addedPassages = false;
 
         //
@@ -512,7 +512,7 @@ public abstract class Proximity extends Operator {
                     maxPos = tops[i];
                 }
             } else {
-                tops[i] = prevTop > 0 ? prevTop+1 : prevTop;
+                tops[i] = prevTop > 0 ? prevTop + 1 : prevTop;
             }
             prevTop = tops[i];
         }
@@ -520,7 +520,8 @@ public abstract class Proximity extends Operator {
         //
         // We'll walk through the positions data until the columns are
         // exhausted, or until we can't add any more hits.
-        colLoop: while(true) {
+        colLoop:
+        while(true) {
 
             //
             // Just replace the top element that we removed the last time
@@ -530,9 +531,9 @@ public abstract class Proximity extends Operator {
                 if(pos < lens[minCol]) {
                     int newPos = columns[minCol][pos];
                     tops[minCol] = newPos;
-                    topTermPens[minCol] = 
-                        termPens == null ? 0 : termPens[minCol][pos];
-                    int nc = minCol+1;
+                    topTermPens[minCol] =
+                            termPens == null ? 0 : termPens[minCol][pos];
+                    int nc = minCol + 1;
                     if(nc < ocColumn.length && ocColumn[nc]) {
                         tops[nc] = newPos + 1;
                     }
@@ -545,10 +546,10 @@ public abstract class Proximity extends Operator {
             }
 
             nMissing = 0;
-            penalty  = 0;
-            minCol   = 0;
-            minPos   = Integer.MAX_VALUE;
-            prevTop  = -1;
+            penalty = 0;
+            minCol = 0;
+            minPos = Integer.MAX_VALUE;
+            prevTop = -1;
 
             //
             // Find the minimum column in the new tops and calculate the
@@ -600,7 +601,7 @@ public abstract class Proximity extends Operator {
                     if(pos < 0) {
                         continue;
                     }
-                    for(int j = i+1; j < tops.length; j++) {
+                    for(int j = i + 1; j < tops.length; j++) {
                         int pos2 = tops[j];
                         if(pos2 < 0) {
                             continue;
@@ -631,14 +632,14 @@ public abstract class Proximity extends Operator {
                     if(pos < 0) {
                         continue;
                     }
-                    for(int j = i+1; j < tops.length; j++) {
+                    for(int j = i + 1; j < tops.length; j++) {
                         int pos2 = tops[j];
                         if(pos2 < 0) {
                             continue;
                         }
-			
+
                         if(pos == pos2) {
-			    
+
                             //
                             // We have an equal column.  If one of the
                             // columns is from a one-char, we should
@@ -674,11 +675,11 @@ public abstract class Proximity extends Operator {
                     }
                 }
             }
-			    
+
             //
             // Now we can check for a new hit.
             penalty += calcPenalty(tops);
-            
+
             //
             // Penalties that >= 100 indicate seriously flawed passages
             // that we will simply ignore.
@@ -749,10 +750,10 @@ public abstract class Proximity extends Operator {
         return b.toString();
     }
 
-    protected void arrayCopy(int[] src, int srcPos, int[] dst, int dstPos, int len) {
-        for (int i=0; i < len; i++) {
+    protected void arrayCopy(int[] src, int srcPos, int[] dst, int dstPos,
+            int len) {
+        for(int i = 0; i < len; i++) {
             dst[dstPos++] = src[srcPos++];
         }
     }
-    
 } // Proximity

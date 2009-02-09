@@ -52,7 +52,8 @@ import com.sun.labs.minion.indexer.dictionary.BasicField;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An implementation of the results set interface.
@@ -116,7 +117,7 @@ public class ResultSetImpl implements ResultSet {
      */
     protected long queryTime;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "RSI";
 
@@ -162,7 +163,7 @@ public class ResultSetImpl implements ResultSet {
         try {
             results = (new QueryEvaluator()).eval(partitions, query);
         } catch(Exception qe) {
-            log.error(logTag, 1, "Error evaluating query", qe);
+            logger.log(Level.SEVERE, "Error evaluating query", qe);
             results = new ArrayList();
         }
 
@@ -170,8 +171,8 @@ public class ResultSetImpl implements ResultSet {
         // In order that the document counts are accurate, we need to
         // remove deleted documents at this point.
         for(int i = 0; i < results.size(); i++) {
-            results.get(i).removeDeleted(((DiskPartition) partitions.
-                    get(i)).getDeletedDocumentsMap());
+            results.get(i).removeDeleted(((DiskPartition) partitions.get(i)).
+                    getDeletedDocumentsMap());
         }
         this.qs.queryW.stop();
     } // ResultSetImpl constructor
@@ -269,7 +270,7 @@ public class ResultSetImpl implements ResultSet {
             FieldInfo vfi = e.getFieldInfo(field);
             FieldInfo sfi = e.getFieldInfo(scoreField);
             if(vfi == null || sfi == null) {
-                log.warn(logTag, 4, "Unknown field in getResultsForScoredField!");
+                logger.warning("Unknown field in getResultsForScoredField!");
                 return new ArrayList<Result>();
             }
 
@@ -677,10 +678,10 @@ public class ResultSetImpl implements ResultSet {
             clust.cluster();
             ret = clust.getClusters();
         } catch(PropertyException ex) {
-            log.error(logTag, 1, "Error getting clusterer factory", ex);
+            logger.log(Level.SEVERE, "Error getting clusterer factory", ex);
             ret = Collections.emptySet();
         } catch(Exception e) {
-            log.error(logTag, 1, "Error getting clusterer factory", e);
+            logger.log(Level.SEVERE, "Error getting clusterer factory", e);
             throw (e);
         } finally {
             return ret;

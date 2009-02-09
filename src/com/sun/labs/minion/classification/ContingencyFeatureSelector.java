@@ -40,7 +40,7 @@ import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Logger;
 
 /**
  * A feature selector that builds contingency features.  The weights
@@ -65,7 +65,7 @@ public class ContingencyFeatureSelector implements FeatureSelector {
     /**
      * A log.
      */
-    protected static MinionLog log = MinionLog.getLog();
+ Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * A tag.
@@ -269,8 +269,7 @@ public class ContingencyFeatureSelector implements FeatureSelector {
                         int ci = 0;
                         PostingsIterator pi = e.iterator(null);
                         if(pi == null) {
-                            log.warn(logTag, 4,
-                                     "Null postings iterator for entry");
+                            logger.warning("Null postings iterator for entry");
                             continue;
                         }
                         while(pi.next()) {

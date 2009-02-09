@@ -21,15 +21,13 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.partition;
 
 import java.io.RandomAccessFile;
 
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 
-import com.sun.labs.minion.util.MinionLog;
-
+import java.util.logging.Logger;
 
 /**
  * A class that holds a variety of statistics for a partition.  The
@@ -38,7 +36,8 @@ import com.sun.labs.minion.util.MinionLog;
  */
 public class PartitionStats {
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "PS";
 
     /**
@@ -105,16 +104,16 @@ public class PartitionStats {
      * provided channel.
      */
     public PartitionStats(RandomAccessFile raf)
-        throws java.io.IOException {
+            throws java.io.IOException {
 
         //
         // Read the data from the file.
-        this.raf  = raf;
-        nDocs     = raf.readInt();
-        nTokens   = raf.readLong();
-        maxfdt    = raf.readInt();
-        maxft     = raf.readInt();
-        nd        = raf.readInt();
+        this.raf = raf;
+        nDocs = raf.readInt();
+        nTokens = raf.readLong();
+        maxfdt = raf.readInt();
+        maxft = raf.readInt();
+        nd = raf.readInt();
 
         //
         // Derived info.
@@ -127,7 +126,7 @@ public class PartitionStats {
      * @param raf the file to which we're going to write the stats.
      */
     protected void write(RandomAccessFile raf)
-        throws java.io.IOException {
+            throws java.io.IOException {
         raf.writeInt(nDocs);
         raf.writeLong(nTokens);
         raf.writeInt(maxfdt);
@@ -138,5 +137,4 @@ public class PartitionStats {
     public String toString() {
         return nDocs + " " + nTokens + " " + maxfdt + " " + maxft + " " + nd;
     }
-
 } // PartitionStats

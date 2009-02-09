@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.util.props.ConfigStringList;
@@ -36,8 +35,7 @@ import java.io.InputStreamReader;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import com.sun.labs.minion.util.MinionLog;
-
+import java.util.logging.Logger;
 
 /**
  * A configurable set of stop words.
@@ -45,22 +43,22 @@ import com.sun.labs.minion.util.MinionLog;
  * @author Stephen Green <stephen.green@sun.com>
  */
 public class StopWords implements Configurable {
-    
+
     private String name;
-    
+
     private Set<String> stopwords;
-    
-    protected static MinionLog log = MinionLog.getLog();
-    
+
+    Logger logger = Logger.getLogger(getClass().getName());
+
     protected static String logTag = "SW";
-    
+
     /**
      * Creates a StopMap
      */
     public StopWords() {
         stopwords = new HashSet<String>();
     }
-    
+
     public void addFile(String stopwordsFile) {
         BufferedReader reader = null;
         try {
@@ -75,8 +73,7 @@ public class StopWords implements Configurable {
                 stopwords.add(curr.toLowerCase());
             }
         } catch(Exception stopE) {
-            log.warn(logTag, 3, "Error reading stop words: " +
-                    stopE.getMessage());
+            logger.warning("Error reading stop words: " + stopE.getMessage());
         } finally {
             try {
                 if(reader != null) {
@@ -85,30 +82,29 @@ public class StopWords implements Configurable {
             } catch(IOException ex) {
             }
         }
-        
+
     }
-    
+
     public boolean isStop(String s) {
         return stopwords.contains(s);
     }
-    
+
     public int size() {
         return stopwords.size();
     }
-    
+
     public void newProperties(PropertySheet ps) throws PropertyException {
         List<String> swf = ps.getStringList(PROP_STOPWORDS_FILES);
         for(String stopwordsFile : swf) {
             addFile(stopwordsFile);
         }
-        
+
     }
-    
+
     public String getName() {
         return name;
     }
-    
-    @ConfigStringList(mandatory=false)
+    @ConfigStringList(mandatory = false)
     public static final String PROP_STOPWORDS_FILES = "stopwords_files";
-    
+
 }

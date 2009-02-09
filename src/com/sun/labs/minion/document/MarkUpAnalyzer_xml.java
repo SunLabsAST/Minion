@@ -21,31 +21,31 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.document;
 
 import java.io.Reader;
 import com.sun.labs.minion.pipeline.Stage;
 
-import com.sun.labs.minion.util.MinionLog;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A wrapper around an XML analyzer that we can use in our typical context.
  */
 public class MarkUpAnalyzer_xml extends MarkUpAnalyzer {
-    
+
     protected XMLAnalyzer xa;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "MUX";
-    
+
     public MarkUpAnalyzer_xml(Reader r, int pos, String key) {
-	super(r, 0, key);
+        super(r, 0, key);
     }
 
     public MarkUpAnalyzer_xml(String s, String key) {
-	super(s, key);
+        super(s, key);
     }
 
     /**
@@ -53,20 +53,18 @@ public class MarkUpAnalyzer_xml extends MarkUpAnalyzer {
      */
     public void analyze(Stage stage) {
 
-	try {
-	    xa = new XMLAnalyzer(r, stage, this);
-	} catch (org.xml.sax.SAXException se) {
-	    log.warn(logTag, 2,
-		     "Error creating XML analyzer", se);
-	    xa = null;
-	}
+        try {
+            xa = new XMLAnalyzer(r, stage, this);
+        } catch(org.xml.sax.SAXException se) {
+            logger.log(Level.WARNING, "Error creating XML analyzer", se);
+            xa = null;
+        }
 
-	//
-	// If there were problems in initialization, we're done.
-	if(xa == null) {
-	    return;
-	}
-	xa.analyze();
+        //
+        // If there were problems in initialization, we're done.
+        if(xa == null) {
+            return;
+        }
+        xa.analyze();
     }
-
 } // MarkUpAnalyzer_xml

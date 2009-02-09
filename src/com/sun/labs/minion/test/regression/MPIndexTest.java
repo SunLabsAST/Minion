@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.test.regression;
 
 import java.io.File;
@@ -34,15 +33,15 @@ import java.util.Set;
 
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.test.SEMain;
 import com.sun.labs.minion.test.util.FileComparer;
 
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableFile;
-import com.sun.labs.minion.Log;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Multi-threaded index and test.
@@ -58,14 +57,17 @@ public class MPIndexTest {
      * The character encoding
      */
     protected static String charEnc = "8859_1";
+
     /**
      * Tag for the log
      */
     protected static String logTag = "MPIndexTest";
+
     /**
      * The log onto which messages <b>should</b> be written
      */
-    protected static Log log;
+    protected Logger logger = Logger.getLogger(getClass().getName());
+
     /**
      * Flags used to describe options permitted in the command line invocation
      */
@@ -79,20 +81,23 @@ public class MPIndexTest {
      * @param oDir the name of the output directory
      * @throws FileNotFoundException
      */
-    public MPIndexTest(String indexDir, String cmFile, String dDir, String oDir) throws FileNotFoundException {
+    public MPIndexTest(String indexDir, String cmFile, String dDir, String oDir)
+            throws FileNotFoundException {
         this();
         this.indexDir = indexDir;
         this.cmFile = cmFile;
         documentDirectory = new File(dDir);
         if(!documentDirectory.exists()) {
-            throw new FileNotFoundException("Document directory " + dDir + " does not exist");
+            throw new FileNotFoundException("Document directory " + dDir +
+                    " does not exist");
         }
         outputDirectory = new File(oDir);
-        if (!outputDirectory.exists()) {
-            throw new FileNotFoundException("Output directory " + oDir + " does not exist");
+        if(!outputDirectory.exists()) {
+            throw new FileNotFoundException("Output directory " + oDir +
+                    " does not exist");
         }
         createSearchEngine(cmFile, indexDir);
-        
+
     }
 
     /**
@@ -107,119 +112,103 @@ public class MPIndexTest {
         String cmFile = null;
         String outputDir = "/tmp";
 
-        if (args.length == 0) {
+        if(args.length == 0) {
             usage();
             return;
         }
 
         Thread.currentThread().setName("MergeTest");
-
-        int logLevel = 3;
-
-        //
-        // Set up the logging for the search engine. We'll send everything
-        // to the standard output, except for errors, which will go to
-        // standard error. We'll set the level at 3, which is pretty
-        // verbose.
-        Log log = Log.getLog();
-        log.setStream(System.out);
-        log.setStream(Log.ERROR, System.err);
-        log.setLevel(logLevel);
+        Logger logger = Logger.getLogger(MPIndexTest.class.getName());
 
         //
         // Handle the options.
-        while ((c = gopt.getopt()) != -1) {
-            switch (c) {
+        while((c = gopt.getopt()) != -1) {
+            switch(c) {
 
-            case 'c':
-                charEnc = gopt.optArg;
-                break;
+                case 'c':
+                    charEnc = gopt.optArg;
+                    break;
 
-            case 'd':
-                indexDir = gopt.optArg;
-                break;
+                case 'd':
+                    indexDir = gopt.optArg;
+                    break;
 
-            case 'f':
-                documentDir = gopt.optArg;
-                break;
+                case 'f':
+                    documentDir = gopt.optArg;
+                    break;
 
-            case 'l':
-                try {
-                    logLevel = Integer.parseInt(gopt.optArg);
-                } catch (NumberFormatException nfe) {
-                }
-                break;
+                case 'o':
+                    outputDir = gopt.optArg;
+                    break;
 
-            case 'o':
-                outputDir = gopt.optArg;
-                break;
-
-             case 'x':
-                cmFile = gopt.optArg;
-                break;
+                case 'x':
+                    cmFile = gopt.optArg;
+                    break;
             }
         }
 
         //
         // We may have gotten a larger log level.
-        log.setLevel(logLevel);
-
-        if (indexDir == null && cmFile == null) {
-            log.warn("logTag", 0, "You must specify a configuration.");
+        if(indexDir == null && cmFile == null) {
+            logger.warning("You must specify a configuration.");
             usage();
             return;
         }
 
-        if (documentDir == null) {
-            log.warn("logTag", 0, "You must specify a document directory.");
+        if(documentDir == null) {
+            logger.warning("You must specify a document directory.");
             usage();
             return;
         }
-        
-        
-        
+
+
+
 
         MPIndexTest test = null;
         try {
             test = new MPIndexTest(indexDir, cmFile, documentDir, outputDir);
-            
-        } catch (FileNotFoundException e) {
+
+        } catch(FileNotFoundException e) {
             e.printStackTrace();
             System.exit(1);
         }
         try {
             test.test();
-        } catch (IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
         }
 
     }
-
     /**
      * The directory containing the documents to be indexed
      */
     protected File documentDirectory;
+
     /**
      * A search engine
      */
     protected SearchEngineImpl engine;
+
     /**
      * The directory into which the de-indexed files should be written
      */
     protected File outputDirectory;
+
     /**
      * The directory to contain the index
      */
     protected String indexDir;
+
     /**
      * The filename of the configuration file if provided on the command line args
      */
     protected String cmFile;
+
     /**
      * The name of the configuration file preferred for use. This enables us to dump synchronously and avoid any multithreaded nastiness when re-reading the log
      */
     private final String CONFIG_FILE = "MPIndexTest-config.xml";
-    
+
     /**
      * Run the test
      * @throws IOException
@@ -249,36 +238,36 @@ public class MPIndexTest {
      * @throws IOException
      */
     private void index(String[] testFiles) throws IOException {
-        for (int i = 0; i < testFiles.length; i++) {
+        for(int i = 0; i < testFiles.length; i++) {
             String file = documentDirectory + File.separator + testFiles[i];
-    
+
             IndexableFile f = new IndexableFile(file, charEnc);
             Indexable document = SEMain.makeDocument(f);
-    
+
             try {
                 long len = f.length();
                 boolean longFile = len > 400000;
-                if (longFile) {
-                    log.debug(logTag, 0, "Long: " + f.length());
+                if(longFile) {
+                    logger.info("Long: " + f.length());
                     engine.flush();
                 }
                 engine.index(document);
-                if (longFile) {
+                if(longFile) {
                     engine.flush();
                 }
-    
-            } catch (SearchEngineException se) {
-                log.error(logTag, 1, "Error indexing document " + f, se);
-            } catch (Exception e) {
-                log.error(logTag, 0, "Error indexing", e);
+
+            } catch(SearchEngineException se) {
+                logger.log(Level.SEVERE, "Error indexing document " + f, se);
+            } catch(Exception e) {
+                logger.log(Level.SEVERE, "Error indexing", e);
             }
         }
         try {
             engine.close();
-        } catch (SearchEngineException e) {
+        } catch(SearchEngineException e) {
             e.printStackTrace();
         }
-    
+
     }
 
     /**
@@ -287,33 +276,34 @@ public class MPIndexTest {
      * being deleted.
      * @throws IOException
      */
-    protected void invert() throws IOException  {
+    protected void invert() throws IOException {
         //
         // Delete the old files in the output directory
         File[] files = outputDirectory.listFiles();
-        for (int i = 0; i < files.length; i++) {
+        for(int i = 0; i < files.length; i++) {
             File file = files[i];
-            if (!file.delete()) {
-                log.error(logTag, 2, "Failed to delete old file " + file.getName());
+            if(!file.delete()) {
+                logger.severe("Failed to delete old file " + file.getName());
             }
         }
         //
         // Create a new index inverter and output the inverted documents into
         // the output directory
-        IndexInverter inverter = new IndexInverter(cmFile, indexDir, outputDirectory);
-        log.log(logTag, MinionLog.LOG, "Thread count: " + Thread.activeCount());
-        log.log(logTag, MinionLog.LOG, "Starting inversion");
+        IndexInverter inverter = new IndexInverter(cmFile, indexDir,
+                outputDirectory);
+        logger.info("Thread count: " + Thread.activeCount());
+        logger.info("Starting inversion");
         try {
             inverter.outputInvertedIndex();
-        } catch (Exception e) {
+        } catch(Exception e) {
             System.err.println(e);
         }
         try {
             inverter.close();
-        } catch (SearchEngineException e) {
+        } catch(SearchEngineException e) {
             System.err.println(e);
         }
-        log.log(logTag, MinionLog.LOG, "Finished inversion");
+        logger.info("Finished inversion");
     }
 
     /**
@@ -326,7 +316,7 @@ public class MPIndexTest {
         Set<String> invertedSet = new HashSet<String>();
         //
         //Put the names of the test files into a set
-        for (int i = 0; i < testFiles.length; i++) {
+        for(int i = 0; i < testFiles.length; i++) {
             invertedSet.add(testFiles[i]);
         }
         //
@@ -335,16 +325,16 @@ public class MPIndexTest {
         //
         //Remove the name of every file in the output directory from the
         //set of files that have been indexed. This should result in an empty set
-        for (int i = 0; i < invertedFiles.length; i++) {
+        for(int i = 0; i < invertedFiles.length; i++) {
             invertedSet.remove(invertedFiles[i]);
         }
-        if (invertedSet.isEmpty()) {
-            log.log(logTag, MinionLog.LOG, "No missing files");
+        if(invertedSet.isEmpty()) {
+            logger.info("No missing files");
         } else {
             //
             //There are some files that have been indexed that are  
             //missing from the output directory
-            for (Iterator iter = invertedSet.iterator(); iter.hasNext();) {
+            for(Iterator iter = invertedSet.iterator(); iter.hasNext();) {
                 String filename = (String) iter.next();
                 System.err.println("Missing file: " + filename);
             }
@@ -358,8 +348,10 @@ public class MPIndexTest {
      * @throws IOException
      */
     protected boolean diff(String filename) throws IOException {
-        String outputPathname = outputDirectory.getAbsolutePath() + File.separator + filename;
-        String originalPathname = documentDirectory.getAbsolutePath() + File.separator + filename;
+        String outputPathname = outputDirectory.getAbsolutePath() +
+                File.separator + filename;
+        String originalPathname = documentDirectory.getAbsolutePath() +
+                File.separator + filename;
         FileComparer differ = new FileComparer(outputPathname, originalPathname);
         return differ.areLinesEqual();
     }
@@ -369,39 +361,41 @@ public class MPIndexTest {
      * @throws IOException
      */
     protected void diff() throws IOException {
-        log.log(logTag, MinionLog.LOG, "Starting diff");
-        
+        logger.info("Starting diff");
+
         String[] outputDocuments = outputDirectory.list();
-        for (int i = 0; i < outputDocuments.length; i++) {
+        for(int i = 0; i < outputDocuments.length; i++) {
             String filename = outputDocuments[i];
             boolean success = diff(filename);
-            if (!success) {
+            if(!success) {
                 System.err.println("Diff failed: " + filename);
             }
         }
-        log.log(logTag, MinionLog.LOG, "Finsihed diff");
+        logger.info("Finsihed diff");
     }
 
     /**
      * Creates a new instance of a search engines and assigns it to the field
      */
     protected void createSearchEngine(String cmFile, String indexDir) {
-        if (cmFile != null) {
+        if(cmFile != null) {
             try {
-                engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(cmFile, indexDir);
-            } catch (SearchEngineException se) {
-                log.error(logTag, 1, "Error opening collection", se);
+                engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                        cmFile, indexDir);
+            } catch(SearchEngineException se) {
+                logger.log(Level.SEVERE, "Error opening collection", se);
                 return;
             }
         } else {
             URL configURL = getClass().getResource(CONFIG_FILE);
-            if (configURL == null) {
+            if(configURL == null) {
                 throw new RuntimeException("Missing config file: " + CONFIG_FILE);
             }
             try {
-                engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(indexDir, configURL);
-            } catch (SearchEngineException se) {
-                log.error(logTag, 1, "Error opening collection", se);
+                engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(
+                        indexDir, configURL);
+            } catch(SearchEngineException se) {
+                logger.log(Level.SEVERE, "Error opening collection", se);
                 return;
             }
         }
@@ -420,12 +414,10 @@ public class MPIndexTest {
      * Help!
      */
     static void usage() {
-        System.out
-                .println("Usage: java com.sun.labs.minion.test.regression.MPIndexTest -c <character_encoding> " +
-                        "-d <index_directory> -f <document_directory> " +
-                        "-l <log_level> " +
-                        "-o <output_directory> " +
-                        "[-x <config_file>]");
+        System.out.println("Usage: java com.sun.labs.minion.test.regression.MPIndexTest -c <character_encoding> " +
+                "-d <index_directory> -f <document_directory> " +
+                "-l <log_level> " +
+                "-o <output_directory> " +
+                "[-x <config_file>]");
     }
-
 }

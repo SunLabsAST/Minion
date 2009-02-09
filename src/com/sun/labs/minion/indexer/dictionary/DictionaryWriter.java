@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import java.io.RandomAccessFile;
@@ -33,11 +32,11 @@ import com.sun.labs.minion.indexer.entry.IndexEntry;
 
 import com.sun.labs.minion.indexer.partition.PartitionStats;
 
-import com.sun.labs.minion.util.MinionLog;
 import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Logger;
 
 /**
  * A class that will write a dictionary to a file.  This can be used when
@@ -91,7 +90,7 @@ public class DictionaryWriter {
      * The number of offsets that we've encoded.
      */
     protected int nOffsets;
-        
+
     /**
      * A file to hold the temporary names buffer.
      */
@@ -137,7 +136,7 @@ public class DictionaryWriter {
      */
     protected int[] idToPosn;
 
-    protected static MinionLog log = MinionLog.getLog();
+    Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "DW";
 
@@ -158,11 +157,11 @@ public class DictionaryWriter {
      * @throws java.io.IOException if there was an error writing to disk
      */
     public DictionaryWriter(String path,
-                            NameEncoder encoder,
-                            PartitionStats partStats,
-                            int nChans,
-                            MemoryDictionary.Renumber renumber)
-        throws java.io.IOException {
+            NameEncoder encoder,
+            PartitionStats partStats,
+            int nChans,
+            MemoryDictionary.Renumber renumber)
+            throws java.io.IOException {
 
         this.encoder = encoder;
         this.partStats = partStats;
@@ -174,11 +173,11 @@ public class DictionaryWriter {
         String tname = Thread.currentThread().getName();
 
         File pf = new File(path);
-        
+
         namesFile = Util.getTempFile(pf, "names", ".n");
         namesRAF = new RandomAccessFile(namesFile, "rw");
         names = new FileWriteableBuffer(namesRAF, OUT_BUFFER_SIZE);
-        
+
         nameOffsetsFile = Util.getTempFile(pf, "offsets", ".no");
         nameOffsetsRAF = new RandomAccessFile(nameOffsetsFile, "rw");
         nameOffsets = new FileWriteableBuffer(nameOffsetsRAF, OUT_BUFFER_SIZE);
@@ -211,7 +210,7 @@ public class DictionaryWriter {
         // to record the position.
         if(dh.size % 4 == 0) {
             nameOffsets.byteEncode(names.position(),
-                                   dh.nameOffsetsBytes);
+                    dh.nameOffsetsBytes);
             nOffsets++;
             prevName = null;
         }
@@ -224,7 +223,7 @@ public class DictionaryWriter {
         // Encode the entry information, first taking note of where
         // this information is being encoded.
         infoOffsets.byteEncode(info.position(),
-                               dh.entryInfoOffsetsBytes);
+                dh.entryInfoOffsetsBytes);
         e.encodePostingsInfo(info);
 
         //
@@ -232,8 +231,8 @@ public class DictionaryWriter {
         if(idToPosn != null) {
             if(e.getID() >= idToPosn.length) {
                 idToPosn = Util.expandInt(idToPosn,
-                                           Math.max(e.getID() * 2,
-                                                    idToPosn.length*2));
+                        Math.max(e.getID() * 2,
+                        idToPosn.length * 2));
             }
             idToPosn[e.getID()] = dh.size;
         }
@@ -257,7 +256,7 @@ public class DictionaryWriter {
      * Finishes by writing the dictionary to the given file.
      */
     public void finish(RandomAccessFile dictFile)
-        throws java.io.IOException {
+            throws java.io.IOException {
 
         //
         // Write our header.
@@ -269,7 +268,7 @@ public class DictionaryWriter {
         if(dh.maxEntryID == 0) {
             dh.maxEntryID = dh.size;
         }
-        
+
         dh.computeValues();
 
         //
@@ -281,7 +280,7 @@ public class DictionaryWriter {
             // size of the merged dictionary.
             dh.idToPosnPos = dictFile.getFilePointer();
             FileWriteableBuffer temp =
-                new FileWriteableBuffer(dictFile, OUT_BUFFER_SIZE);
+                    new FileWriteableBuffer(dictFile, OUT_BUFFER_SIZE);
             for(int i = 0; i <= dh.maxEntryID; i++) {
                 temp.byteEncode(idToPosn[i], dh.idToPosnBytes);
             }
@@ -304,7 +303,7 @@ public class DictionaryWriter {
         dh.nameOffsetsPos = dictFile.getFilePointer();
         dh.nameOffsetsSize = nameOffsets.position();
         nameOffsets.write(dictChan);
-        
+
         //
         // Write the entry information to the output.
         dh.entryInfoPos = dictFile.getFilePointer();
@@ -328,22 +327,20 @@ public class DictionaryWriter {
         //
         // Close and delete the temporary files.
         namesRAF.close();
-        if (!namesFile.delete()) {
-            log.error(logTag, 2, "Failed to delete temporary namesFile");
+        if(!namesFile.delete()) {
+            logger.severe("Failed to delete temporary namesFile");
         }
         nameOffsetsRAF.close();
-        if (!nameOffsetsFile.delete()) {
-            log.error(logTag, 2, "Failed to delete temporary nameOffsetsFile");
+        if(!nameOffsetsFile.delete()) {
+            logger.severe("Failed to delete temporary nameOffsetsFile");
         }
         infoRAF.close();
-        if (!infoFile.delete()) {
-            log.error(logTag, 2, "Failed to delete temporary infoFile");
+        if(!infoFile.delete()) {
+            logger.severe("Failed to delete temporary infoFile");
         }
         infoOffsetsRAF.close();
-        if (!infoOffsetsFile.delete()) {
-            log.error(logTag, 2, "Failed to delete temporary infoOffsetsFile");
+        if(!infoOffsetsFile.delete()) {
+            logger.severe("Failed to delete temporary infoOffsetsFile");
         }
     }
-        
-    
 } // DictionaryWriter
