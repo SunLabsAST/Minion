@@ -24,13 +24,14 @@
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.DocumentVector;
+import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.NanoWatch;
-import com.sun.labs.util.SimpleLabsLogFormatter;
+import com.sun.labs.util.LabsLogFormatter;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -79,18 +80,19 @@ public class SimpleFindSimilar {
             return;
         }
 
-        String flags = "d:f:i:";
+        String flags = "d:f:i:n:";
         Getopt gopt = new Getopt(args, flags);
         String indexDir = null;
         String field = null;
         String input = null;
         int c;
+        int n = 0;
 
 
         Logger rl = Logger.getLogger("");
         for(Handler h : rl.getHandlers()) {
             h.setLevel(Level.ALL);
-            h.setFormatter(new SimpleLabsLogFormatter());
+            h.setFormatter(new LabsLogFormatter());
             try {
                 h.setEncoding("utf-8");
             } catch(Exception ex) {
@@ -113,6 +115,9 @@ public class SimpleFindSimilar {
 
                 case 'i':
                     input = gopt.optArg;
+                    break;
+                case 'n':
+                    n = Integer.parseInt(gopt.optArg);
                     break;
             }
         }
@@ -150,24 +155,41 @@ public class SimpleFindSimilar {
         }
         
         NanoWatch nw = new NanoWatch();
+        NanoWatch vw = new NanoWatch();
         for(String key : keys) {
             nw.start();
+            vw.start();
             DocumentVector dv = engine.getDocumentVector(key, field);
+            vw.stop();
             if(dv == null) {
                 System.out.println(String.format("null vector for: " + key));
                 continue;
             }
             ResultSet rs = dv.findSimilar();
             nw.stop();
+            if(n > 0) {
+                System.out.println(String.format("%s", key));
+                System.out.println(String.format(" %d %.3fms", rs.size(), nw.getLastTimeMillis()));
+                for(Result result : rs.getResults(0, n)) {
+                    System.out.printf(" %.3f %s\n", result.getScore(), result.getKey());
+                }
+            }
             if(nw.getClicks() % 50 == 0) {
                 System.out.println(String.format(
-                        "%d fs computed, avg time: %.3f", nw.getClicks(), nw.
+                        "%d fs computed, avg gdv: %.3fms avg fs: %.3fms",
+                        nw.getClicks(),
+                        vw.getAvgTimeMillis(),
+                        nw.
                         getAvgTimeMillis()));
             }
             
         }
-        System.out.println(String.format("%d fs computed, avg time: %.3f", keys.
-                size(), nw.getAvgTimeMillis()));
+        System.out.println(String.format(
+                "%d fs computed, avg gdv: %.3fms avg fs: %.3fms",
+                nw.getClicks(),
+                vw.getAvgTimeMillis(),
+                nw.getAvgTimeMillis()));
+        System.out.println(String.format("Stats:\n%s\n", engine.getQueryStats().dump()));
 
         engine.close();
     }

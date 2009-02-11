@@ -92,10 +92,10 @@ public class CachedDiskDictionary extends DiskDictionary {
             RandomAccessFile[] postFiles, int postInType,
             Partition part) throws java.io.IOException {
         this(entryClass, decoder, dictFile, postFiles, postInType,
-                DictionaryFactory.PROP_NAME_BUFFER_SIZE_DEFAULT,
-                DictionaryFactory.PROP_OFFSETS_BUFFER_SIZE_DEFAULT,
-                DictionaryFactory.PROP_INFO_BUFFER_SIZE_DEFAULT,
-                DictionaryFactory.PROP_INFO_OFFSETS_BUFFER_SIZE_DEFAULT, part);
+                2048,
+                1024,
+                1024,
+                1024, part);
     }
 
     /**

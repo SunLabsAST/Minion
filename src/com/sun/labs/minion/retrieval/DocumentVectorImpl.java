@@ -50,6 +50,8 @@ import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 import com.sun.labs.minion.pipeline.StopWords;
+import com.sun.labs.minion.retrieval.cache.TermCache;
+import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.util.Util;
 import java.util.logging.Logger;
 
@@ -405,8 +407,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
                     //
                     // We found two terms with the same name.
                     float combined = f1.getWeight() * f2.getWeight();
-                    WeightedFeature wf =
-                            new WeightedFeature(f1.getName(), combined);
+                    WeightedFeature wf = new WeightedFeature(f1.getName(), combined);
                     s.add(wf);
                 }
                 i1++;
@@ -591,6 +592,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             qor.setQueryStats(qs);
             qor.setField(fieldID);
 
+            TermCache termCache = curr.getTermCache();
+
             for(WeightedFeature f : sf) {
                 //
                 // Do things by ID for the partition that the document vector
@@ -598,12 +601,19 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
                 QueryEntry entry =
                         part == curr ? f.getEntry() : di.get(f.getName());
                 if(entry != null) {
-                    wf.initTerm(wc.setTerm(f.getName()));
+
+                    PostingsIterator pi;
+                    if(termCache != null) {
+                        TermCacheElement el = termCache.get(f.getName(), feat);
+                        pi = el.iterator();
+                    } else {
+                        wf.initTerm(wc.setTerm(f.getName()));
+                        pi = entry.iterator(feat);
+                    }
 
                     //
                     // If we got an entry in this partition, add its postings
                     // to the quick or.
-                    PostingsIterator pi = entry.iterator(feat);
                     qor.add(pi, f.getWeight());
                 } else {
                     qor.addWeightOnly(f.getWeight());
@@ -614,6 +624,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             // Add the results for this partition into the list
             // of results.
             ScoredGroup sg = (ScoredGroup) qor.getGroup();
+            qs.normW.start();
             if(fields == null) {
                 sg.normalize();
             } else {
@@ -624,6 +635,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
                     }
                 }
             }
+            qs.normW.stop();
             sg.removeDeleted();
             groups.add(sg);
         }

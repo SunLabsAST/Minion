@@ -2425,6 +2425,7 @@ public class QueryTest extends SEMain {
 
         for(Handler h : Logger.getLogger("").getHandlers()) {
             h.setFormatter(new LabsLogFormatter());
+            h.setLevel(Level.ALL);
         }
 
         //
@@ -2437,7 +2438,7 @@ public class QueryTest extends SEMain {
                     break;
 
                 case 'l':
-                    logLevel = Integer.parseInt(gopt.optArg);
+                    Logger.getLogger("").setLevel(Level.parse(gopt.optArg));
                     break;
 
                 case 'n':

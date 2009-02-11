@@ -26,6 +26,8 @@ package com.sun.labs.minion.util;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A least-recently-accessed cache.
@@ -41,7 +43,9 @@ public class LRACache<K,V> extends LinkedHashMap<K,V> {
     /**
      * The default cache size.
      */
-    protected static final int DEFAULT_SIZE = 100;
+    protected static final int DEFAULT_SIZE = 200;
+
+    private Logger logger = Logger.getLogger(getClass().getName());
 
     /**
      * Creates a cache of the default size.
@@ -56,7 +60,7 @@ public class LRACache<K,V> extends LinkedHashMap<K,V> {
      * than 0, then the cache can grow unboundedly.
      */
     public LRACache(int size) {
-        super(size > 0 ? size : 200 * 2, 0.75f, true);
+        super(size > 0 ? size : DEFAULT_SIZE, 0.75f, true);
         lraSize = size;
     } // LRACache constructor
 
@@ -68,6 +72,6 @@ public class LRACache<K,V> extends LinkedHashMap<K,V> {
      */
     protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
         return lraSize > 0 && size() > lraSize;
-    }
+        }
     
 } // LRACache

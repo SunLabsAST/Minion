@@ -195,8 +195,8 @@ public class DiskDictionary implements Dictionary {
     public DiskDictionary(Class entryClass,
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, CHANNEL_FULL_POST, 256,
-                null);
+        this(entryClass, decoder, dictFile, postFiles, FILE_FULL_POST, 256,
+                2048, 1024, 1024, 1024, null);
     }
 
     /**
@@ -215,7 +215,7 @@ public class DiskDictionary implements Dictionary {
             RandomAccessFile[] postFiles,
             Partition part) throws java.io.IOException {
         this(entryClass, decoder, dictFile, postFiles, CHANNEL_FULL_POST, 256,
-                part);
+                2048, 1024, 1024, 1024, part);
     }
 
     /**
@@ -234,33 +234,8 @@ public class DiskDictionary implements Dictionary {
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles, int postInType,
             Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, postInType, 256, part);
-    }
-
-    /**
-     * Creates a disk dictionary that we can use for querying.
-     * @param entryClass The class of the entries that the dictionary
-     * contains.
-     * @param decoder A decoder for the names in this dictionary.
-     * @param dictFile The file containing the dictionary.
-     * @param postFiles The files containing the postings associated with
-     * the entries in this dictionary.
-     * @param postInType The type of postings input to use.
-     * @param cacheSize The number of entries to use in the name and
-     * position caches.
-     * @param part The partition with which this dictionary is associated.
-     * @throws java.io.IOException if there is any error opening the dictionary
-     */
-    public DiskDictionary(Class entryClass,
-            NameDecoder decoder, RandomAccessFile dictFile,
-            RandomAccessFile[] postFiles, int postInType, int cacheSize,
-            Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles,
-                DictionaryFactory.PROP_POSTINGS_INPUT_DEFAULT, cacheSize,
-                DictionaryFactory.PROP_NAME_BUFFER_SIZE_DEFAULT,
-                DictionaryFactory.PROP_OFFSETS_BUFFER_SIZE_DEFAULT,
-                DictionaryFactory.PROP_INFO_BUFFER_SIZE_DEFAULT,
-                DictionaryFactory.PROP_INFO_OFFSETS_BUFFER_SIZE_DEFAULT, part);
+        this(entryClass, decoder, dictFile, postFiles, postInType,
+                256, 2048, 1024, 1024, 1024, part);
     }
 
     /**
@@ -290,8 +265,7 @@ public class DiskDictionary implements Dictionary {
         this.dictFile = dictFile;
         this.postFiles = postFiles;
         this.decoder = decoder;
-        this.postIn =
-                new PostingsInput[postFiles.length];
+        this.postIn = new PostingsInput[postFiles.length];
         this.part = part;
 
         //
@@ -555,10 +529,9 @@ public class DiskDictionary implements Dictionary {
      * size of this block will be returned.  Note that this guarantees
      * that the return value will be >= 0 if and only if the given entry
      * is found in the block.
-     * @param localOffsets a local copy of the name offset information
      * @param key the name of the entry to find
-     * @param localNames a copy of the names buffer, or null to make
-     * a copy internally
+     * @param lus a lookup state variable that contains local copies of the
+     * dictionary's buffers
      * @param partial if true, treat key as a stem and return as soon
      * as a partial match (one that begins with the stem) is found
      */
@@ -1251,7 +1224,8 @@ public class DiskDictionary implements Dictionary {
                             dh.postStart[i], buffSize);
                 }
             } catch(java.io.IOException ioe) {
-                logger.log(Level.SEVERE, "Error creating postings stream for iterator", ioe);
+                logger.log(Level.SEVERE,
+                        "Error creating postings stream for iterator", ioe);
                 buffChans[i] = postIn[i];
             }
         }

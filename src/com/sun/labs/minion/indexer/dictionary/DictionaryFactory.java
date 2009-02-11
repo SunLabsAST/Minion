@@ -82,20 +82,15 @@ public class DictionaryFactory implements Configurable {
                     entryClassName);
         }
         cacheSize = ps.getInt(PROP_CACHE_SIZE);
-        postingsInput =
-                ps.getInt(PROP_POSTINGS_INPUT);
-        nameBufferSize =
-                ps.getInt(PROP_NAME_BUFFER_SIZE);
-        offsetsBufferSize =
-                ps.getInt(PROP_OFFSETS_BUFFER_SIZE);
-        infoBufferSize =
-                ps.getInt(PROP_INFO_BUFFER_SIZE);
-        infoOffsetsBufferSize =
-                ps.getInt(PROP_INFO_OFFSETS_BUFFER_SIZE);
+        postingsInput = ps.getInt(PROP_POSTINGS_INPUT);
+        nameBufferSize = ps.getInt(PROP_NAME_BUFFER_SIZE);
+        offsetsBufferSize = ps.getInt(PROP_OFFSETS_BUFFER_SIZE);
+        infoBufferSize = ps.getInt(PROP_INFO_BUFFER_SIZE);
+        infoOffsetsBufferSize = ps.getInt(PROP_INFO_OFFSETS_BUFFER_SIZE);
     }
+    
     @ConfigString(defaultValue = "com.sun.labs.minion.indexer.entry.IDEntry")
-    public static final String PROP_ENTRY_CLASS_NAME =
-            "entry_class_name";
+    public static final String PROP_ENTRY_CLASS_NAME = "entry_class_name";
 
     private String entryClassName;
 
@@ -140,19 +135,17 @@ public class DictionaryFactory implements Configurable {
      * The size of the entry cache
      */
     @ConfigInteger(defaultValue = 256)
-    public static String PROP_CACHE_SIZE =
-            "cache_size";
+    public static String PROP_CACHE_SIZE = "cache_size";
 
-    public static int PROP_CACHE_SIZE_DEFAULT = 256;
+    protected int cacheSize;
 
     /**
      * The size of the buffer to use for entry information.
      */
     @ConfigInteger(defaultValue = 1024)
-    public static String PROP_INFO_BUFFER_SIZE =
-            "info_buffer_size";
+    public static String PROP_INFO_BUFFER_SIZE = "info_buffer_size";
 
-    public static int PROP_INFO_BUFFER_SIZE_DEFAULT = 1024;
+    protected int infoBufferSize;
 
     /**
      * The size of the buffer to use for the offsets to the entry information.
@@ -161,44 +154,29 @@ public class DictionaryFactory implements Configurable {
     public static String PROP_INFO_OFFSETS_BUFFER_SIZE =
             "info_offsets_buffer_size";
 
-    public static int PROP_INFO_OFFSETS_BUFFER_SIZE_DEFAULT = 1024;
+    protected int infoOffsetsBufferSize;
 
     /**
      * The size of the buffer to use for the entry names in the dictionary.
      */
     @ConfigInteger(defaultValue = 2048)
-    public static String PROP_NAME_BUFFER_SIZE =
-            "name_buffer_size";
+    public static String PROP_NAME_BUFFER_SIZE = "name_buffer_size";
 
-    public static int PROP_NAME_BUFFER_SIZE_DEFAULT = 2048;
+    protected int nameBufferSize;
 
     /**
      * The size of the buffer to use for the offsets into the entry names.
      */
     @ConfigInteger(defaultValue = 1024)
-    public static String PROP_OFFSETS_BUFFER_SIZE =
-            "offsets_buffer_size";
+    public static String PROP_OFFSETS_BUFFER_SIZE = "offsets_buffer_size";
 
-    public static int PROP_OFFSETS_BUFFER_SIZE_DEFAULT = 1024;
+    protected int offsetsBufferSize;
 
     /**
      * The type of postings input stream to use when reading postings.
      */
-    @ConfigInteger(defaultValue = 1)
-    public static String PROP_POSTINGS_INPUT =
-            "postings_input";
-
-    public static int PROP_POSTINGS_INPUT_DEFAULT = 1;
-
-    protected int cacheSize;
-
-    protected int infoBufferSize;
-
-    protected int infoOffsetsBufferSize;
-
-    protected int nameBufferSize;
-
-    protected int offsetsBufferSize;
+    @ConfigInteger(defaultValue = 3)
+    public static String PROP_POSTINGS_INPUT = "postings_input";
 
     protected int postingsInput;
 

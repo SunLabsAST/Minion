@@ -38,6 +38,8 @@ import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -184,8 +186,12 @@ public class BigQuery {
 
         //
         // Get the term cache element for this cluster and then fetch the weights.
-        TermCacheElement e = tc.get(cluster.getName());
-        PostingsIterator pi = e.iterator(wc, wf);
+        List<String> fnames = new ArrayList<String>();
+        for(Feature f : cluster) {
+            fnames.add(f.getName());
+        }
+        TermCacheElement e = tc.get(fnames);
+        PostingsIterator pi = e.iterator();
         while(pi.next()) {
             scores[pi.getID()] += pi.getWeight() * cluster.getWeight();
         }

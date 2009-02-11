@@ -443,20 +443,6 @@ public class DocumentVectorLengths {
      * Normalizes a set of document scores all in one go, using a local buffer
      * copy to avoid synchronization and churn in the buffer.  This will modify
      * the <code>scores</code> array.
-     *
-     * @param docs the document IDs to normalize
-     * @param scores the document scores
-     * @param p the number of document IDs and scores in the array
-     * @param qw the query weight to use for normalization
-     */
-    public void normalize(int[] docs, float[] scores, int p, float qw) {
-        normalize(docs, scores, p, qw, -1);
-    }
-
-    /**
-     * Normalizes a set of document scores all in one go, using a local buffer
-     * copy to avoid synchronization and churn in the buffer.  This will modify
-     * the <code>scores</code> array.
      * 
      * @param docs the document IDs to normalize
      * @param scores the document scores

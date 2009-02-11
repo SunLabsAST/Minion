@@ -446,12 +446,12 @@ public class ClassifierMemoryPartition extends MemoryPartition {
                     // We've already primed this term.
                     continue;
                 }
-                TermCacheElement tce = tc.create(fc.getName());
-                for (Feature f : fc) {
-                    tce.add(f.getName());
+                List<String> featNames = new ArrayList<String>();
+                for(Feature f : fc) {
+                    featNames.add(f.getName());
                 }
+                TermCacheElement tce = tc.get(featNames);
                 termStats.put(fc.getName(), tce.getTermStats());
-                tc.put(tce);
             }
         }
 

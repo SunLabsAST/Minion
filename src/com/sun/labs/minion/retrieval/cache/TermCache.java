@@ -25,59 +25,129 @@
 package com.sun.labs.minion.retrieval.cache;
 
 
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.util.LRACache;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * An LRA cache of terms and their associated postings.  This is partition specific.
+ * An LRA cache of terms and their associated postings.  Postings are cached per
+ * partition.  The cache is meant to handle "terms" that are composed of multiple
+ * actual terms, as well as terms that consist of a single string.  This is so
+ * that common cases (e.g., morphological variations of a term in querying) can
+ * be cached in a single set of postings.
+ *
+ * <p>
+ *
+ * Additionally, the cache can handle fielded and unfielded terms.
  */
-public class TermCache extends LRACache<String,TermCacheElement> {
+public class TermCache {
+
+    private LRACache<String, TermCacheElement> cache;
     
     protected DiskPartition part;
+
+    private Logger logger = Logger.getLogger(getClass().getName());
     
     public TermCache(DiskPartition part) {
         this(200, part);
     }
     
     public TermCache(int size, DiskPartition part) {
-        super(size);
+        cache = new LRACache<String, TermCacheElement>(size);
         this.part = part;
-    }
-
-    /**
-     * Creates a new element for this cache.  Note that the new element is not
-     * added to the cache, since no terms have been added to the element yet.
-     * @param name the name of the cache element.
-     * @return a new cache element
-     */
-    public TermCacheElement create(String name) {
-        return new TermCacheElement(name, part);
+//        logger.setLevel(Level.FINEST);
     }
 
     /**
      * Gets an element from the cache.  Overridden to add synchronization, since
      * this cache will be used by multiple threads.
      * @param name the name of the element to get.
-     * @return the element corresponding to that name.
+     * @return the element corresponding to that name.  The postings associated
+     * with this term will be for the whole document, as no iterator features
+     * were provided.
      */
-    public synchronized TermCacheElement get(String name) {
-        return super.get(name);
+    public TermCacheElement get(String term) {
+        return get(term, null);
     }
 
-    /**
-     * Puts an element into the cache.  This can be used by someone who has
-     * added postings to an element and now wants to make sure that the 
-     * results are available in the cache.
-     * @param el the element to put into the cache
-     * @throws IllegalArgumentException if you attempt to add an element that is
-     * drawn from a partition different than the one for this cache.
-     */
-    public synchronized void put(TermCacheElement el) {
-        if(el.part != part) {
-            throw new IllegalArgumentException(
-                    "Attempt to add element for partition " +
-                    el.part + " to cache for partition " + part);
+    public TermCacheElement get(String term, PostingsIteratorFeatures feat) {
+        return get(Collections.singletonList(term), feat);
+    }
+
+    public TermCacheElement get(List<String> terms) {
+        return get(terms, null);
+    }
+
+    public TermCacheElement get(List<String> terms, PostingsIteratorFeatures feat) {
+        TermCacheElement ret;
+
+        if(terms.size() > 1) {
+            Collections.sort(terms);
         }
-        put(el.name, el);
+        String key = getCacheKey(terms, feat);
+
+        synchronized(this) {
+            ret = cache.get(key);
+        }
+
+        QueryStats qs = feat == null ? null : feat.getQueryStats();
+        
+        if(ret == null) {
+
+            if(qs != null) {
+                qs.termCacheMisses++;
+            }
+
+//            if(logger.isLoggable(Level.FINEST)) {
+//                logger.finest(String.format("Creating term cache entry with key %s in %s", key, part));
+//            }
+
+            if(feat != null && feat.getFields() != null) {
+                //
+                // We need fielded postings
+                ret = new FieldedTermCacheElement(terms, feat, part);
+            } else {
+                //
+                // Whole-doc postings.
+                ret = new TermCacheElement(terms, feat, part);
+            }
+            synchronized(this) {
+                cache.put(key, ret);
+            }
+        } else {
+            if(qs != null) {
+                qs.termCacheHits++;
+            }
+        }
+        return ret;
+    }
+
+    private String getCacheKey(Collection<String> names, PostingsIteratorFeatures feat) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(part.toString());
+        sb.append(' ');
+        if(feat != null) {
+            int[] fields = feat.getFields();
+            if(fields != null) {
+                for(int f : fields) {
+                    sb.append(f);
+                }
+                sb.append(':');
+            }
+        }
+        for(Iterator<String> i = names.iterator(); i.hasNext(); ) {
+            sb.append(i.next());
+            if(i.hasNext()) {
+                sb.append('/');
+            }
+        }
+        return sb.toString();
     }
 } // TermCache

@@ -304,8 +304,7 @@ public class DictTerm extends QueryTerm implements Comparator {
 
             //
             // We'll handle things from the cache.
-            ArrayGroup tg = tce.getGroup(feat.getWeightingComponents(),
-                    feat.getWeightingFunction());
+            ArrayGroup tg = tce.getGroup();
             if(ag != null) {
                 tg = tg.intersect(ag);
             }
@@ -356,19 +355,17 @@ public class DictTerm extends QueryTerm implements Comparator {
         if(tc == null) {
             return null;
         }
-        String cacheName = getCacheKey();
-        TermCacheElement tce = tc.get(cacheName);
-        if(tce == null) {
-            qs.termCacheMisses++;
-            tce = tc.create(cacheName);
-            for(QueryEntry qe : dictEntries) {
-                tce.add(qe, feat);
-            }
-            tc.put(tce);
-        } else {
-            qs.termCacheHits++;
+
+        if(dictEntries.length == 0) {
+            return null;
         }
-        return tce;
+
+        List<String> terms = new ArrayList<String>();
+        for(QueryEntry qe : dictEntries) {
+            terms.add(qe.getName().toString());
+        }
+
+        return tc.get(terms, feat);
     }
 
     /**
