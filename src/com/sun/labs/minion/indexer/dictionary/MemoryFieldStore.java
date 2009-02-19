@@ -255,7 +255,7 @@ public class MemoryFieldStore extends FieldStore {
         FieldInfo fi = (FieldInfo) fieldStack.pop();
 
         if(fi == null) {
-            logger.warning("Empty field stack at endField");
+            logger.finest("Empty field stack at endField");
             shouldIndex = true;
             shouldVector = true;
             return;
