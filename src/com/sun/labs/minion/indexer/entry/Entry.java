@@ -24,8 +24,6 @@
 
 package com.sun.labs.minion.indexer.entry;
 
-import java.lang.Comparable;
-
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.partition.Partition;
 

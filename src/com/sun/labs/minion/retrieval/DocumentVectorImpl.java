@@ -114,7 +114,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
 
     protected QueryStats qs = new QueryStats();
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    private transient Logger logger = Logger.getLogger(getClass().getName());
 
     protected static String logTag = "DVI";
 

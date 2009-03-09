@@ -171,6 +171,8 @@ public class MemoryDictionary implements Dictionary {
      * Gets a new entry that can be added to this dictionary.
      *
      * @param name The name of the entry.
+     * @return a new entry for the dictionary, or <code>null</code> if there is
+     * an error instantiating the entry.
      */
     protected IndexEntry simpleNewEntry(Object name) {
         try {
@@ -192,6 +194,8 @@ public class MemoryDictionary implements Dictionary {
      * postings can be added correctly.
      *
      * @param name The name of the new entry.
+     * @return a new entry or <code>null</code> if there is an error instantiating
+     * the entry.
      */
     public IndexEntry newEntry(Object name) {
         IndexEntry e = simpleNewEntry(name);

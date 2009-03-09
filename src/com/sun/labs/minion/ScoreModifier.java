@@ -33,7 +33,7 @@ package com.sun.labs.minion;
 public interface ScoreModifier {
     /**
      * Modifies the provided score, possibly taking into account the data about
-     * the current document using the provide result accessor.
+     * the current document using the provided result accessor.
      * 
      * <p>
      * 

@@ -1381,8 +1381,7 @@ public class DiskDictionary implements Dictionary {
         // dictionaries and a heap to manage the merge.
         boolean keepIDToPosn = false;
         int[][] idMaps = new int[dicts.length][];
-        PriorityQueue<HE> h =
-                new PriorityQueue<HE>();
+        PriorityQueue<HE> h = new PriorityQueue<HE>();
         for(int i = 0; i < dicts.length; i++) {
             DiskDictionary dd = dicts[i];
             if(dd == null) {
