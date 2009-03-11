@@ -55,8 +55,8 @@ public class Not extends Operator {
      */
     public Not(Element element) {
         this.element = element;
-        operands = new ArrayList<Element>();
-        operands.add(element);
+        elements = new ArrayList<Element>();
+        elements.add(element);
     }
 
     public QueryElement getQueryElement() {

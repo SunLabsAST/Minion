@@ -62,7 +62,7 @@ public class And extends Operator {
 
     public QueryElement getQueryElement() {
         List<QueryElement> operands = new ArrayList();
-        for(Element e : Operator.this.operands) {
+        for(Element e : elements) {
             operands.add(e.getQueryElement());
         }
         return new com.sun.labs.minion.retrieval.And(operands);
