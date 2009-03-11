@@ -321,12 +321,10 @@ public class QueryTest extends SEMain {
 
             //
             // Collection stats.
-            Iterator l = manager.getActivePartitions().iterator();
-
-            output.print(" Active part numbers: ");
-            while(l.hasNext()) {
-                DiskPartition p = (DiskPartition) l.next();
-                output.print(p.getPartitionNumber() + " ");
+            List<DiskPartition> activeParts = manager.getActivePartitions();
+            output.format(" %d active partitions: ", activeParts.size());
+            for(DiskPartition p : activeParts) {
+                output.format("%d (%d) ", p.getPartitionNumber(), p.getNDocs());
             }
             output.println("");
 

@@ -29,8 +29,9 @@ import com.sun.labs.minion.retrieval.FieldTerm;
 import com.sun.labs.minion.retrieval.QueryElement;
 
 /**
- * A range query.  A range query returns all the elements whose
- * values fall between certain values.  The end points of the range can be
+ * A range query.  A range query can be used on a saved field and it
+ * returns all the elements whose
+ * values for the saved field fall between certain values.  The end points of the range can be
  * inclusive or exclusive, depending on the relational operators that are used
  * to build the range.
  */

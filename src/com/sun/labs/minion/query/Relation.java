@@ -33,6 +33,12 @@ import java.util.EnumSet;
  * class can be used for simple relations on string fields, {@link StringRelation}
  * provides the full set of relational operators that can be applied to string
  * fields.
+ *
+ * <p>
+ *
+ * Note that this API cannot currently check whether the field provided for the
+ * relation is a saved field.  This will be checked when the query is evaluated
+ * and a warning provided then.
  */
 public class Relation extends Element {
 

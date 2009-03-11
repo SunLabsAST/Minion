@@ -33,21 +33,36 @@ import java.util.List;
  */
 public class And extends Operator {
 
+    /**
+     * Creates an empty and operator.  This would evaluate to an empty set of
+     * documents.
+     */
     public And() {
         super();
     }
 
+    /**
+     * Creates an and operator that will operate on the provided elements.
+     * @param elements the elements that should be anded together.  A document
+     * will appear in the result set for this operator only if it appears in the
+     * result sets of all of the provided elements.
+     */
     public And(Collection<Element> elements) {
         super(elements);
     }
 
-    And(Element[] elements) {
+    /**
+     * Creates an and operator that will opearate on the provided elements.
+     *
+     * @param elements the elements that should be anded together.
+     */
+    public And(Element[] elements) {
         super(elements);
     }
 
     public QueryElement getQueryElement() {
         List<QueryElement> operands = new ArrayList();
-        for(Element e : elements) {
+        for(Element e : Operator.this.operands) {
             operands.add(e.getQueryElement());
         }
         return new com.sun.labs.minion.retrieval.And(operands);

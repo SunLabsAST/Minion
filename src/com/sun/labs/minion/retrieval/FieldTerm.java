@@ -187,6 +187,8 @@ public class FieldTerm extends QueryTerm {
         // We'll need to operate based on the type.
         sf = ifpart.getFieldStore().getSavedField(name);
         if(sf == null) {
+            logger.warning(String.format("Relational operator %s " +
+                    "cannot be used on un-SAVED field %s", op, name));
             return;
         }
 

@@ -1,0 +1,29 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+    <head>
+    </head>
+    <body>
+        <p>
+            Classes for providing programattic querying.  These classes provide a way to run
+            queries without having to embed queries written in one of the Minion query languages.
+        </p>
+
+        <p>
+            This can make things a lot easier in a number of instances.  For example, if
+            you want to find fields whose value is equal to a value provided by a user, then
+            you can use the programattic API to build a query like:
+        </p>
+
+        <pre>
+        String value = ...;
+        StringRelation r = new StringRelation("title", Relation.Operator.EQUALS, value);
+        ResultSet rs = engine.search(r);
+        </pre>
+
+        <p>
+            If you're trying to use the query language to do the same thing, then you need
+            to beware of values that have single or double quotes in them, since these will
+            need to be escaped before they can be passed to the query parser.
+        </p>
+    </body>
+</html>

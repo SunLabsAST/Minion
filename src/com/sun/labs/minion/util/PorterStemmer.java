@@ -76,6 +76,10 @@ public class PorterStemmer
       for (int c = 0; c < wLen; c++) b[i++] = w[c];
    }
 
+   public void add(String s) {
+       add(s.toCharArray(), s.length());
+   }
+
    /**
     * After a word has been stemmed, it can be retrieved by toString(),
     * or a reference to the internal buffer can be retrieved by getResultBuffer

@@ -34,14 +34,29 @@ public class Not extends Operator {
 
     private Element element;
 
+    /**
+     * Creates an empty boolean negation.  This will return all documents.
+     */
     public Not() {
         super();
     }
 
+    /**
+     * Creates a boolean negation of the given element.  A document will be
+     * in the result set for this operator only if it is <em>not</em> in the
+     * result set for the provided element.
+     *
+     * <p>
+     *
+     * A boolean negation is strictly evaluated:  a document is either in the result
+     * set or it is not.  Documents in the result set for this operator will not
+     * have scores associated with them.
+     * @param element
+     */
     public Not(Element element) {
         this.element = element;
-        elements = new ArrayList<Element>();
-        elements.add(element);
+        operands = new ArrayList<Element>();
+        operands.add(element);
     }
 
     public QueryElement getQueryElement() {

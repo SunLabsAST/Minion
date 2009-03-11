@@ -78,6 +78,8 @@ public class Term extends Element {
         this.term = term;
         if(mods != null) {
             this.modifiers = EnumSet.copyOf(mods);
+        } else {
+            this.modifiers = EnumSet.noneOf(Modifier.class);
         }
     }
 

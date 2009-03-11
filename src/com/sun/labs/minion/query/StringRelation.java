@@ -29,11 +29,20 @@ import java.util.EnumSet;
  * A query element for the string operators, which includes all of the valid
  * operators from <code>Relation</code>, as well as <code>substring</code>,
  * <code>matches</code>, <code>starts</code>, <code>ends</code>.
+ *
+ * @see Relation
  */
 public class StringRelation extends Relation {
 
     /**
-     * The valid operators for a range query.
+     * Creates a relation for a string field.
+     * @param field the field that the relation should operate on.  This should be
+     * a field that has the <code>SAVED</code> attribute and is of type <code>STRING</code>.
+     * If either of these preconditions is violated, a warning will be issued when
+     * the query is evaluated by the engine.
+     * @param operator the operator to use for the relation
+     * @param value the value that is being compared to the values in the
+     * field
      */
     public StringRelation(String field, Operator operator, String value) {
         if(!operator.isStringValid()) {

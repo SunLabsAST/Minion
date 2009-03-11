@@ -33,12 +33,27 @@ import java.util.List;
  * An abstract class for a query operator.
  */
 public abstract class Operator extends Element implements Iterable<Element> {
+
+    /**
+     * An operator has a list of operands, which are elements, either terms or
+     * other operators.
+     */
     protected List<Element> elements;
 
+    /**
+     * Creates an operator with an empty list of operands.
+     *
+     * @see #add(com.sun.labs.minion.query.Element)
+     */
     public Operator() {
         elements = new ArrayList<Element>();
     }
 
+    /**
+     * Creates an operator with the given list of operands.  A shallow copy of
+     * the operand list is taken.
+     * @param elements
+     */
     public Operator(Collection<Element> elements) {
         this.elements = new ArrayList<Element>(elements);
     }
