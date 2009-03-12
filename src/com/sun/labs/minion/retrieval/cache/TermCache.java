@@ -68,7 +68,7 @@ public class TermCache {
     /**
      * Gets an element from the cache.  Overridden to add synchronization, since
      * this cache will be used by multiple threads.
-     * @param name the name of the element to get.
+     * @param term the name of the element to get.
      * @return the element corresponding to that name.  The postings associated
      * with this term will be for the whole document, as no iterator features
      * were provided.

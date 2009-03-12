@@ -148,8 +148,9 @@ public class BalancedWinnow implements ClassifierModel {
      * @param manager the partition manager for the collection
      * @param training the set of documents in the training set
      * @param selectedFeatures the set of feature (clusters) to use
-     * @param tc a term cache for looking up terms in the collection
      * @param progress an object to use to report progress
+     * @throws SearchEngineException if there is any error using the index
+     * while training the classifier
      */
     public void train(String name,
             String fieldName,

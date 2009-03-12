@@ -575,13 +575,13 @@ public interface SearchEngine extends Searcher, Classifier {
     /**
      * Gets the combined query stats for any queries run by the engine.
      * @return the combined query statistics
-     * @see resetQueryStats
+     * @see #resetQueryStats
      */
     public QueryStats getQueryStats();
 
     /**
      * Resets the query stats for the engine.
-     * @see getQueryStats
+     * @see #getQueryStats
      */
     public void resetQueryStats();
 

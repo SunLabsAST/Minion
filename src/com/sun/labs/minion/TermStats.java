@@ -26,7 +26,7 @@ package com.sun.labs.minion;
 /**
  * An interface to some standard term statistics.
  *
- * @see SearchEngine.getTermStats
+ * @see SearchEngine#getTermStats(java.lang.String) 
  */
 public interface TermStats {
 

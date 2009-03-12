@@ -51,8 +51,6 @@ public class FieldedTermCacheElement extends TermCacheElement {
     /**
      * Creates a cache element with a given name.
      * @param terms the terms that will be cached in this element.
-     * @param fieldNames the names of the fields containing the postings for the
-     * terms cached in this entry.
      * @param feat the features to use when iterating through the postings for
      * terms added to this cache element.
      * @param part the partition from which the term has been selected.
