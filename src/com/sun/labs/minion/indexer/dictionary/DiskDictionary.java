@@ -503,8 +503,8 @@ public class DiskDictionary implements Dictionary {
      * have been found is returned, as described below.
      *
      * @param key the name of the entry to find
-     * @param localOffsets a copy of the name offsets buffer.
-     * @param localNames a copy of the names buffer.
+     * @param lus a lookup state that carries around copies of the buffers holding
+     * the dictionary data
      * @return the position of the entry, if the entry is found; otherwise,
      * <code>(-(location) -1)</code>.  <code>location</code> is defined
      * as the location of the first entry in the block "greater than" the
@@ -731,8 +731,7 @@ public class DiskDictionary implements Dictionary {
      *
      * @param name The name of the entry to be filled.
      * @param posn The position of this entry in the dictionary.
-     * @param localInfoOffsets The offsets into the entry information.
-     * @param localInfo The entry information to use.
+     * @param lus A lookup state containing copies of the dictionary's data
      * @param postIn The postings channels to use for reading postings.
      * @return The filled entry.
      */
