@@ -130,10 +130,8 @@ public class DiskBiGramDictionary extends DiskDictionary {
         List bigrams = new ArrayList(wc.length());
 
         //
-        // Candidate bigram and unigrams.
+        // Candidate bigrams.
         char[] bg = new char[2];
-        char[] ug = new char[wc.length()];
-        int nu = 0;
 
         //
         // Iterate over the pattern, turning it into a set of overlapping
@@ -159,13 +157,6 @@ public class DiskBiGramDictionary extends DiskDictionary {
         for(int i = b; i <= e; i++) {
 
             bg[1] = (ends && i == e) ? (char) 0 : wc.charAt(i);
-
-            //
-            // If this is not a wildcard character, then we have a unigram.
-            // Keep it just in case.
-            if(bg[0] != '*' && bg[0] != '?' && bg[0] != 0) {
-                ug[nu++] = bg[0];
-            }
 
             //
             // If there's any wildcard character, we can't have a bigram!
@@ -196,7 +187,25 @@ public class DiskBiGramDictionary extends DiskDictionary {
         // If we have bigrams, then make our ID list.
         if(bigrams.size() > 0) {
             ag = intersect(bigrams);
-        } else if(nu > 0) {
+        } else {
+
+            //
+            // Pull out any unigrams and use those.
+            char[] ug = new char[wc.length()];
+            int nu = 0;
+            for(int i = 0; i < wc.length(); i++) {
+                char c = wc.charAt(i);
+                if(c != '*' && c != '?') {
+                    ug[nu++] = c;
+                }
+            }
+
+            if(nu == 0) {
+                //
+                // No unigrams, no bigrams.  It's all wildcards, so we need to check
+                // everything.
+                return new int[0];
+            }
 
             //
             // There were no bigrams, but there were unigrams, so do
@@ -225,14 +234,12 @@ public class DiskBiGramDictionary extends DiskDictionary {
                     return null;
                 }
             }
-        } else {
-
-            //
-            // No bigrams and no unigrams.  We need to check everything.
-            return new int[0];
         }
 
         int[] ret = ag.getDocs();
+
+        //
+        // At this point, no hits means no matches.
         if(ret.length == 0) {
             return null;
         }
