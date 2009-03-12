@@ -128,17 +128,26 @@ public abstract class Element {
      * Term t = new Term("dog");
      * Set<String> s = new HashSet<String>();
      * s.add("title");
-     * s.add("dog");
+     * s.add("body");
      * t.setFields(s);
      * </pre>
      *
      * would return documents where the word <em>dog</em> occurs in the title
-     * of the document or the body (or both).     * @param fields
+     * of the document or the body (or both).     
+     * @param fields the fields that should be searched.  A copy of this set
+     * replaces any current fields in the element
+     * @see #addField(java.lang.String) 
      */
     public void setFields(Collection<String> fields) {
         this.fields = new HashSet<String>(fields);
     }
 
+    /**
+     * Gets a copy of the fields to which this element will be restricted when
+     * searching.
+     *
+     * @return a copy of the current set of fields
+     */
     public Set<String> getFields() {
         if(fields == null) {
             return null;

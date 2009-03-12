@@ -56,7 +56,7 @@ public class And extends Operator {
      *
      * @param elements the elements that should be anded together.
      */
-    public And(Element[] elements) {
+    public And(Element... elements) {
         super(elements);
     }
 

@@ -50,19 +50,24 @@ public abstract class Operator extends Element implements Iterable<Element> {
     }
 
     /**
+     * Creates an operator with the provided operands.
+     *
+     * @param elements the operands for the operator.
+     */
+    public Operator(Element... elements) {
+        this.elements = new ArrayList<Element>();
+        for(Element e : elements) {
+            this.elements.add(e);
+        }
+    }
+
+    /**
      * Creates an operator with the given list of operands.  A shallow copy of
      * the operand list is taken.
      * @param elements
      */
     public Operator(Collection<Element> elements) {
         this.elements = new ArrayList<Element>(elements);
-    }
-
-    public Operator(Element[] elements) {
-        this.elements = new ArrayList<Element>();
-        for(Element e : elements) {
-            this.elements.add(e);
-        }
     }
 
     public Operator add(Element element) {

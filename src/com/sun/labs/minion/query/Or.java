@@ -42,7 +42,7 @@ public class Or extends Operator {
         super(elements);
     }
 
-    Or(Element[] elements) {
+    public Or(Element... elements) {
         super(elements);
     }
     

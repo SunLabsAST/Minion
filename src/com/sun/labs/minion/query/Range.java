@@ -57,11 +57,11 @@ public class Range extends Element {
     /**
      * Creates a range operator.
      * @param field the field that we're interested in
-     * @param leftOp the operator for the left hand end of the range.  Must be either {@link Relation.Operator.GEQ} or
-     * {@link Relation.Operator.GREATER_THAN}
+     * @param leftOp the operator for the left hand end of the range.  Must be either {@link Relation.Operator#GEQ} or
+     * {@link Relation.Operator#GREATER_THAN}
      * @param leftVal the value for the left hand end of the range.
-     * @param rightOp the operator for the right hand end of the range.  Must be either {@link Relation.Operator.LEQ} or
-     * {@link Relation.Operator.LESS_THAN}
+     * @param rightOp the operator for the right hand end of the range.  Must be either {@link Relation.Operator#LEQ} or
+     * {@link Relation.Operator#LESS_THAN}
      * @param rightVal the value for the right hand end of the range.
      * @throws IllegalArgumentException if the preconditions for the operator types and positions are not met.
      */

@@ -25,6 +25,7 @@ package com.sun.labs.minion.query;
 
 import com.sun.labs.minion.retrieval.FieldTerm;
 import com.sun.labs.minion.retrieval.QueryElement;
+import java.util.Collection;
 import java.util.EnumSet;
 
 /**
@@ -133,6 +134,19 @@ public class Relation extends Element {
         this.operator = operator;
         this.value = value;
     }
+
+    @Override
+    public void addField(String field) {
+        throw new UnsupportedOperationException("Can't restrict a relation to " +
+                field);
+    }
+
+    @Override
+    public void setFields(Collection<String> fields) {
+        throw new UnsupportedOperationException("Can't restrict a relation to " +
+                fields);
+    }
+
 
     public String getField() {
         return field;
