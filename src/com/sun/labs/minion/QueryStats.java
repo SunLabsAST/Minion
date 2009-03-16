@@ -107,6 +107,12 @@ public class QueryStats implements Serializable {
     public NanoWatch postSortW = new NanoWatch();
 
     /**
+     * A stopwatch that accumulates the time spent combining document scores
+     * when generating results.
+     */
+    public NanoWatch docCombW = new NanoWatch();
+
+    /**
      * A stopwatch that accumulates the time spent normalizing document scores.
      */
     public NanoWatch normW = new NanoWatch();
@@ -131,6 +137,7 @@ public class QueryStats implements Serializable {
        intersectW.accumulate(qs.intersectW);
        piW.accumulate(qs.piW);
        postSortW.accumulate(qs.postSortW);
+       docCombW.accumulate(qs.docCombW);
        normW.accumulate(qs.normW);
     }
 
@@ -175,6 +182,10 @@ public class QueryStats implements Serializable {
         sb.append(String.format(" %-30s %10.1fms (%.2f%% of total)\n", "Sorting postings:",
                 postSortW.getTimeMillis(),
                 postSortW.getTimeMillis() * 100 / tqt));
+        sb.append(String.format(" %-30s %10.1fms (%.2f%% of total)\n",
+                "Combining document scores:",
+                docCombW.getTimeMillis(),
+                docCombW.getTimeMillis() * 100 / tqt));
         sb.append(String.format(" %-30s %10.1fms (%.2f%% of total)\n", "Normalizing scores:",
                 normW.getTimeMillis(),
                 normW.getTimeMillis() * 100 / tqt));

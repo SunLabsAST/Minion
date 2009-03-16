@@ -221,12 +221,14 @@ public class ScoredQuickOr extends QuickOr {
 
         if(storeAll) {
             p = 0;
+            qs.docCombW.start();
             for(int i = 0; i < weights.length; i++) {
                 if(weights[i] > 0) {
                     docs[p] = i;
                     weights[p++] = weights[i];
                 }
             }
+            qs.docCombW.stop();
         } else {
 
             if(added > 1) {
@@ -236,6 +238,7 @@ public class ScoredQuickOr extends QuickOr {
                 int s = -1;
                 int prev = -1;
 
+                qs.docCombW.start();
                 for(int i = 0; i < p; i++) {
                     if(docs[i] != prev) {
                         docs[++s] = docs[i];
@@ -245,6 +248,7 @@ public class ScoredQuickOr extends QuickOr {
                     }
                     prev = docs[i];
                 }
+                qs.docCombW.stop();
                 s++;
                 p = s;
             }
