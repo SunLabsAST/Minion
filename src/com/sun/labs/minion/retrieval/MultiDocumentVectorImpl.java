@@ -87,7 +87,7 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
 
     /**
      * Creates a document vector for a set of documents.  The resulting document
-     * vector is the centroid of the vectors fro the individual documnts.
+     * vector is the centroid of the vectors for the individual documents.
      *
      * @param e The search engine with which the documents are associated.
      * @param keys The entries from the document dictionary for the documents
