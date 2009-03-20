@@ -1082,7 +1082,7 @@ public class QueryTest extends SEMain {
                         output.println("");
                         totalVariants += e.length;
                         for(int c = 0; c < e.length; c++) {
-                            output.println(" " + e[c]);
+                            output.format(" %s (%d)\n", e[c].getName(), e[c].getN());
                         }
                     }
                 }
@@ -1144,7 +1144,7 @@ public class QueryTest extends SEMain {
                 for(Iterator<String> iter = variants.iterator(); iter.hasNext();) {
                     Entry e = p.getTerm(iter.next());
                     if(e != null) {
-                        output.println(" " + e);
+                        output.format(" %s (%d)\n", e.getName(), e.getN());
                         docFreq += e.getN();
                         totalVariants++;
                     }
