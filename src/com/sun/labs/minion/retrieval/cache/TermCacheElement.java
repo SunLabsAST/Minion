@@ -24,7 +24,6 @@
 package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.QueryStats;
-import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -38,6 +37,7 @@ import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -204,6 +204,9 @@ public class TermCacheElement {
 
     public ScoredGroup getGroup() {
         computeWeights();
+        if(ids == null || weights == null) {
+            logger.info(String.format("ids: %s weights: %s terms: %s part: %s", ids, weights, terms, part));
+        }
         return new ScoredGroup(part, ids.clone(), weights.clone(), n);
     }
 
