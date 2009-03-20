@@ -102,16 +102,15 @@ import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.AbstractPipelineImpl;
 import com.sun.labs.minion.pipeline.AsyncPipelineImpl;
 import com.sun.labs.minion.pipeline.PipelineFactory;
+import com.sun.labs.minion.query.And;
 import com.sun.labs.minion.query.Element;
+import com.sun.labs.minion.query.Or;
 import com.sun.labs.minion.query.Range;
 import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.query.StringRelation;
 import com.sun.labs.minion.query.Term;
-import com.sun.labs.minion.retrieval.And;
-import com.sun.labs.minion.retrieval.Or;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
-import com.sun.labs.minion.retrieval.DictTerm;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.parser.LuceneParser;
@@ -632,7 +631,7 @@ public class SearchEngineImpl implements SearchEngine,
             qs.accumulate(lqs);
             return rsi;
         } catch(Exception e) {
-            logger.log(Level.SEVERE, "Error evaluating query", e);
+            logger.log(Level.SEVERE, "Error evaluating query: " + qe, e);
             throw new SearchEngineException("Error evaluating query", e);
         } catch(Throwable t) {
             logger.log(Level.SEVERE, "Caught throwable", t);
@@ -872,21 +871,10 @@ public class SearchEngineImpl implements SearchEngine,
      */
     public ResultSet anyTerms(Collection<String> terms,
             Collection<String> fields) throws SearchEngineException {
-        List<QueryElement> qes = new ArrayList<QueryElement>();
+        Or or = new Or();
         for(String term : terms) {
-            DictTerm dt = new DictTerm(term);
-            dt.setDoMorph(false);
-            dt.setDoExpand(false);
-            dt.setDoStem(false);
-            dt.setDoWild(false);
-            dt.setMatchCase(false);
-            dt.setSearchFields(fields);
-            dt.strictEval = true;
-            qes.add(dt);
+            or.add(new Term(term, null));
         }
-        Or or = new Or(qes);
-        or.strictEval = true;
-        or.setSearchFields(fields);
         return search(or, "-score");
     }
 
@@ -899,21 +887,10 @@ public class SearchEngineImpl implements SearchEngine,
      */
     public ResultSet allTerms(Collection<String> terms,
             Collection<String> fields) throws SearchEngineException {
-        List<QueryElement> qes = new ArrayList<QueryElement>();
+        And and = new And();
         for(String term : terms) {
-            DictTerm dt = new DictTerm(term);
-            dt.setDoMorph(false);
-            dt.setDoExpand(false);
-            dt.setDoStem(false);
-            dt.setDoWild(false);
-            dt.setMatchCase(false);
-            dt.setSearchFields(fields);
-            dt.strictEval = true;
-            qes.add(dt);
+            and.add(new Term(term, null));
         }
-        And and = new And(qes);
-        and.strictEval = true;
-        and.setSearchFields(fields);
         return search(and, "-score");
     }
 
