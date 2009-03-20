@@ -129,12 +129,9 @@ public class DictTerm extends QueryTerm implements Comparator {
             feat.setCaseSensitive(matchCase);
             feat.setPositions(loadPositions);
             feat.setQueryStats(qs);
-
-            if(!strictEval) {
-                feat.setWeightingFunction(wf);
-                feat.setWeightingComponents(wc);
-                feat.setMult(fieldMultipliers);
-            }
+            feat.setWeightingFunction(wf);
+            feat.setWeightingComponents(wc);
+            feat.setMult(fieldMultipliers);
             feat.setQueryStats(qs);
         }
 
