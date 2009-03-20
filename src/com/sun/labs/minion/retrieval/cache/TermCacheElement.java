@@ -204,9 +204,6 @@ public class TermCacheElement {
 
     public ScoredGroup getGroup() {
         computeWeights();
-        if(ids == null || weights == null) {
-            logger.info(String.format("ids: %s weights: %s terms: %s part: %s", ids, weights, terms, part));
-        }
         return new ScoredGroup(part, ids.clone(), weights.clone(), n);
     }
 
