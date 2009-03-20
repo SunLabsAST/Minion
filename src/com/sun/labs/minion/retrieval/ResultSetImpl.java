@@ -163,7 +163,7 @@ public class ResultSetImpl implements ResultSet {
         try {
             results = (new QueryEvaluator()).eval(partitions, query);
         } catch(Exception qe) {
-            logger.log(Level.SEVERE, "Error evaluating query", qe);
+            logger.log(Level.SEVERE, "Error evaluating query: " + query, qe);
             results = new ArrayList();
         }
 
