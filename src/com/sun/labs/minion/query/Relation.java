@@ -25,6 +25,7 @@ package com.sun.labs.minion.query;
 
 import com.sun.labs.minion.retrieval.FieldTerm;
 import com.sun.labs.minion.retrieval.QueryElement;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumSet;
 
@@ -41,7 +42,7 @@ import java.util.EnumSet;
  * relation is a saved field.  This will be checked when the query is evaluated
  * and a warning provided then.
  */
-public class Relation extends Element {
+public class Relation extends Element implements Serializable {
 
     protected String field;
 
@@ -165,6 +166,6 @@ public class Relation extends Element {
     }
 
     public String toString() {
-        return field + " " + operator.getRep() + " " + value;
+        return "(" + operator.getRep() + " " + field + " " + value + ")";
     }
 }

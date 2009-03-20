@@ -26,13 +26,14 @@ package com.sun.labs.minion.query;
 import com.sun.labs.minion.retrieval.DictTerm;
 import com.sun.labs.minion.retrieval.QueryElement;
 import com.sun.labs.minion.util.CharUtils;
+import java.io.Serializable;
 import java.util.EnumSet;
 
 /**
  * A class for a search term.  Various modifiers can be applied to a term to
  * affect how the term should be treated during the search.
  */
-public class Term extends Element {
+public class Term extends Element implements Serializable {
 
     /**
      * The modifiers that affect which terms will be pulled from the index
@@ -109,6 +110,10 @@ public class Term extends Element {
         ret.setDoStem(modifiers.contains(Modifier.STEM));
         ret.setDoWild(modifiers.contains(Modifier.WILDCARD));
         return ret;
+    }
+
+    public String toString() {
+        return "Term: " + term + " mods: " + modifiers;
     }
 
 }

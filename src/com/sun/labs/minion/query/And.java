@@ -24,6 +24,7 @@
 package com.sun.labs.minion.query;
 
 import com.sun.labs.minion.retrieval.QueryElement;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.List;
 /**
  * A boolean and operator
  */
-public class And extends Operator {
+public class And extends Operator implements Serializable {
 
     /**
      * Creates an empty and operator.  This would evaluate to an empty set of
@@ -68,4 +69,7 @@ public class And extends Operator {
         return new com.sun.labs.minion.retrieval.And(operands);
     }
 
+    public String toString() {
+        return "(And " + elements + ")";
+    }
 }

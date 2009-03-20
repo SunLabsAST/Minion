@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.query;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -32,7 +33,7 @@ import java.util.List;
 /**
  * An abstract class for a query operator.
  */
-public abstract class Operator extends Element implements Iterable<Element> {
+public abstract class Operator extends Element implements Iterable<Element>, Serializable {
 
     /**
      * An operator has a list of operands, which are elements, either terms or

@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright 2007-2009 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
  *
@@ -21,42 +21,23 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.query;
 
-import com.sun.labs.minion.retrieval.QueryElement;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
- * A boolean or operator.
+ * A convenience class for a string matching relation.  This relation is only
+ * valid for saved fields that are strings.
  */
-public class Or extends Operator implements Serializable {
+public class Substring extends StringRelation implements Serializable {
 
-    public Or() {
-        super();
-    }
-
-    public Or(Collection<Element> elements) {
-        super(elements);
-    }
-
-    public Or(Element... elements) {
-        super(elements);
-    }
-    
-    public QueryElement getQueryElement() {
-        List<QueryElement> operands = new ArrayList();
-        for(Element e : elements) {
-            operands.add(e.getQueryElement());
-        }
-        return new com.sun.labs.minion.retrieval.Or(operands);
-    }
-
-    public String toString() {
-        return "(Or " + elements + ")";
+    /**
+     * Creates an equality relation.
+     * @param field the field whose values we want to test
+     * @param value the value to test against
+     */
+    public Substring(String field, String value) {
+        super(field, Operator.SUBSTRING, value);
     }
 
 }

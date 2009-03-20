@@ -24,6 +24,7 @@
 package com.sun.labs.minion.query;
 
 import com.sun.labs.minion.retrieval.QueryElement;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -32,7 +33,7 @@ import java.util.Set;
  * An abstract class for an element in a query:  the elements of a query are
  * terms, operators, relations and ranges.
  */
-public abstract class Element {
+public abstract class Element implements Serializable {
 
     /**
      * Whether this element should be interpreted in a strict boolean fashion.

@@ -25,12 +25,13 @@
 package com.sun.labs.minion.query;
 
 import com.sun.labs.minion.retrieval.QueryElement;
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * A boolean not operator.  Note that boolean not is a unary operator.
  */
-public class Not extends Operator {
+public class Not extends Operator implements Serializable {
 
     private Element element;
 
@@ -63,4 +64,7 @@ public class Not extends Operator {
         return new com.sun.labs.minion.retrieval.Not(element.getQueryElement());
     }
 
+    public String toString() {
+        return "(Not " + (elements.size() > 0 ? elements.get(0).toString() : "") + ")";
+    }
 }

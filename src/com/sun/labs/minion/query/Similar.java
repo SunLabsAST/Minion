@@ -26,32 +26,18 @@ package com.sun.labs.minion.query;
 import java.io.Serializable;
 
 /**
- * A query element for the string operators, which includes all of the valid
- * operators from <code>Relation</code>, as well as <code>substring</code>,
- * <code>matches</code>, <code>starts</code>, <code>ends</code>.
- *
- * @see Relation
+ * A convenience class for a string similarity relation.  This relation is only
+ * valid for saved fields that are strings.
  */
-public class StringRelation extends Relation  implements Serializable {
+public class Similar extends StringRelation implements Serializable {
 
     /**
-     * Creates a relation for a string field.
-     * @param field the field that the relation should operate on.  This should be
-     * a field that has the <code>SAVED</code> attribute and is of type <code>STRING</code>.
-     * If either of these preconditions is violated, a warning will be issued when
-     * the query is evaluated by the engine.
-     * @param operator the operator to use for the relation
-     * @param value the value that is being compared to the values in the
-     * field
+     * Creates an equality relation.
+     * @param field the field whose values we want to test
+     * @param value the value to test against
      */
-    public StringRelation(String field, Operator operator, String value) {
-        if(!operator.isStringValid()) {
-            throw new IllegalArgumentException(operator +
-                    " is not a valid StringRelation operator");
-        }
-        this.field = field;
-        this.operator = operator;
-        this.value = value;
+    public Similar(String field, String value) {
+        super(field, Operator.SIMILAR, value);
     }
 
 }

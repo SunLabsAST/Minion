@@ -27,6 +27,7 @@ package com.sun.labs.minion.query;
 import com.sun.labs.minion.query.Relation.Operator;
 import com.sun.labs.minion.retrieval.FieldTerm;
 import com.sun.labs.minion.retrieval.QueryElement;
+import java.io.Serializable;
 
 /**
  * A range query.  A range query can be used on a saved field and it
@@ -35,7 +36,7 @@ import com.sun.labs.minion.retrieval.QueryElement;
  * inclusive or exclusive, depending on the relational operators that are used
  * to build the range.
  */
-public class Range extends Element {
+public class Range extends Element implements Serializable {
 
     private String field;
 
@@ -120,7 +121,9 @@ public class Range extends Element {
     }
 
     public String toString() {
-        return field + " " + leftOp + " " + leftVal + " <and> " +
-                field + " " + rightOp + " " + rightVal;
+        return "(Range " +
+                "(" + leftOp.getRep() + " " + leftVal +
+                ") (" +
+                rightOp.getRep() + " " + rightVal + "))";
     }
 }
