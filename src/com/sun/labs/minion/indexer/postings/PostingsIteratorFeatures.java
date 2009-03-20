@@ -279,11 +279,25 @@ public class PostingsIteratorFeatures implements Cloneable {
     }
 
     public String toString() {
-        return (fields != null ? ("fields: " +
-                                  com.sun.labs.minion.util.Util.arrayToString(fields) + " ") : "") +
-            (mult != null ? "mult " : "") +
-            (positions ? "positions " : "") +
-            (caseSensitive ? "case sensitive " : "");
+        StringBuilder b = new StringBuilder();
+        boolean first = true;
+        if(fields != null) {
+            b.append("fields: ");
+            for(int i = 0; i < fields.length; i++) {
+                if(fields[i] != 0) {
+                    if(!first) {
+                        b.append(",");
+                    }
+                    b.append(i);
+                    first = false;
+                }
+            }
+        }
+        return b.toString() +
+            (mult != null ? " mult " : "") +
+            (positions ? " positions " : "") +
+            (caseSensitive ? " case sensitive " : "") +
+            " wc: " + wc + " wf: " + wf;
     }
 
 } // PostingsIteratorFeatures
