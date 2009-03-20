@@ -57,6 +57,7 @@ public class QuickOr {
 
     public QuickOr(DiskPartition part, int estSize) {
         this.part = part;
+        qs = new QueryStats();
         storeAll = shouldStoreAll(part, estSize);
         if (storeAll) {
             if (estSize > part.getMaxDocumentID()) {
