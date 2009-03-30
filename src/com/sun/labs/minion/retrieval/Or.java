@@ -58,7 +58,9 @@ public class Or extends Operator {
         ArrayGroup ret = null;
         for(Iterator i = operands.iterator(); i.hasNext(); ) {
             QueryElement qe = (QueryElement) i.next();
-            qe.strictEval = strictEval;
+            if(strictEval) {
+                qe.strictEval = strictEval;
+            }
             if(ret == null) {
                 ret = qe.eval(ag);
             } else {

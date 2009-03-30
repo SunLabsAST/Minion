@@ -71,7 +71,9 @@ public class And extends Operator {
         ArrayGroup ret = ag;
         for(Iterator i = operands.iterator(); i.hasNext(); ) {
             QueryElement qe = (QueryElement) i.next();
-            qe.strictEval = strict;
+            if(strict) {
+                qe.strictEval = strict;
+            }
             ret = qe.eval(ret);
         }
         return ret;
