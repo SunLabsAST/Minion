@@ -194,6 +194,11 @@ public class ScoredGroup extends ArrayGroup {
         }
         size = dist.length-1;
     }
+
+    @Override
+    public ArrayGroup getStrict() {
+        return new ArrayGroup(docs, size);
+    }
     
     /**
      * Gets a scored group from this group, which just returns this group.
