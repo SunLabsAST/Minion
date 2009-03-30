@@ -871,10 +871,30 @@ public class SearchEngineImpl implements SearchEngine,
      */
     public ResultSet anyTerms(Collection<String> terms,
             Collection<String> fields) throws SearchEngineException {
+        return anyTerms(terms, fields, false);
+    }
+
+    /**
+     * Builds a result set of the documents containing any of the given terms
+     * in any of the given fields.
+     * @param terms the terms to look for
+     * @param fields the fields to look for the terms in
+     * @param scored if <code>true</code> then return a scored set, otherwise
+     * return a strict boolean set.
+     * @return the set of documents that contain any of the given terms in any
+     * of the given fields.
+     */
+    public ResultSet anyTerms(Collection<String> terms,
+            Collection<String> fields,
+            boolean scored) throws SearchEngineException {
         Or or = new Or();
-        for(String term : terms) {
-            or.add(new Term(term, null));
+        for(String t : terms) {
+            Term term = new Term(t, null);
+            term.setFields(fields);
+            term.setStrict(!scored);
+            or.add(term);
         }
+        or.setStrict(!scored);
         return search(or, "-score");
     }
 
@@ -887,10 +907,27 @@ public class SearchEngineImpl implements SearchEngine,
      */
     public ResultSet allTerms(Collection<String> terms,
             Collection<String> fields) throws SearchEngineException {
+        return allTerms(terms, fields, true);
+    }
+    
+    /**
+     * Builds a result set containing all of the given terms in any of the given
+     * fields.
+     * @param terms the terms that we want to find
+     * @param fields the fields that we must find the terms in
+     * @throws SearchEngineException if there is an error during the search.
+     */
+    public ResultSet allTerms(Collection<String> terms,
+            Collection<String> fields,
+            boolean scored) throws SearchEngineException {
         And and = new And();
-        for(String term : terms) {
-            and.add(new Term(term, null));
+        for(String t : terms) {
+            Term term = new Term(t, null);
+            term.setFields(fields);
+            term.setStrict(!scored);
+            and.add(term);
         }
+        and.setStrict(!scored);
         return search(and, "-score");
     }
 
