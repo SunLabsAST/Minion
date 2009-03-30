@@ -305,7 +305,11 @@ public class DictTerm extends QueryTerm implements Comparator {
             if(ag != null) {
                 tg = tg.intersect(ag);
             }
-            return tg;
+            if(strictEval && (tg instanceof ScoredGroup)) {
+                return ((ScoredGroup) tg).getStrict();
+            } else {
+                return tg;
+            }
         }
 
         //
