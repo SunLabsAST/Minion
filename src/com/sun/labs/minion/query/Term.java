@@ -109,6 +109,8 @@ public class Term extends Element implements Serializable {
         ret.setDoMorph(modifiers.contains(Modifier.MORPH));
         ret.setDoStem(modifiers.contains(Modifier.STEM));
         ret.setDoWild(modifiers.contains(Modifier.WILDCARD));
+        ret.setSearchFields(fields);
+        ret.strictEval = strict;
         return ret;
     }
 
