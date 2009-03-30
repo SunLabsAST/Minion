@@ -56,7 +56,7 @@ public class Or extends Operator implements Serializable {
     }
 
     public String toString() {
-        return "(Or " + elements + ")";
+        return "(Or " + strict + " " + elements + ")";
     }
 
 }

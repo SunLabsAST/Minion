@@ -70,6 +70,6 @@ public class And extends Operator implements Serializable {
     }
 
     public String toString() {
-        return "(And " + elements + ")";
+        return "(And " + strict + " " + elements + ")";
     }
 }
