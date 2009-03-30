@@ -102,8 +102,13 @@ public class ScoredQuickOr extends QuickOr {
                 // field or from the whole document.
                 float w;
                 if(fieldID != -1) {
-                    w = ((FieldedPostingsIterator) pi).getFieldWeights()[fieldID] *
-                            qw;
+                    float[] fw =
+                            ((FieldedPostingsIterator) pi).getFieldWeights();
+                    if(fw != null) {
+                        w = fw[fieldID] * qw;
+                    } else {
+                        w = pi.getWeight() * qw;
+                    }
                 } else {
                     w = pi.getWeight() * qw;
                 }
@@ -124,8 +129,12 @@ public class ScoredQuickOr extends QuickOr {
                 // field or from the whole document.
                 float w;
                 if(fieldID != -1) {
-                    w = ((FieldedPostingsIterator) pi).getFieldWeights()[fieldID] *
-                            qw;
+                    float[] fw = ((FieldedPostingsIterator) pi).getFieldWeights();
+                    if(fw != null) {
+                        w = fw[fieldID] * qw;
+                    } else {
+                        w = pi.getWeight() * qw;
+                    }
                 } else {
                     w = pi.getWeight() * qw;
                 }
