@@ -116,6 +116,17 @@ public class DiskDictionary implements Dictionary {
     protected LRACache<Object, QueryEntry> nameCache;
 
     /**
+     * A lookup state local to each thread
+     */
+    protected static ThreadLocal<HashMap<DiskDictionary,LookupState>>
+            threadLookupStates =
+            new ThreadLocal<HashMap<DiskDictionary,LookupState>>() {
+        protected HashMap<DiskDictionary,LookupState> initialValue() {
+            return new HashMap<DiskDictionary,LookupState>();
+        }
+    };
+
+    /**
      * A decoder for the names in this dictionary.
      */
     protected NameDecoder decoder;
@@ -370,7 +381,16 @@ public class DiskDictionary implements Dictionary {
      * the name doesn't appear in the dictionary.
      */
     public QueryEntry get(Object name) {
-        return get(name, new LookupState());
+        //
+        // Perform the get using an existing lookup state for this thread (or
+        // create a lookup state if there isn't one).
+        HashMap<DiskDictionary,LookupState> map = threadLookupStates.get();
+        LookupState lus = map.get(this);
+        if (lus == null) {
+            lus = new LookupState();
+            map.put(this, lus);
+        }
+        return get(name, lus);
     }
 
     /**
