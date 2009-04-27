@@ -56,6 +56,7 @@ import com.sun.labs.minion.util.LRACache;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -118,11 +119,11 @@ public class DiskDictionary implements Dictionary {
     /**
      * A lookup state local to each thread
      */
-    protected static ThreadLocal<HashMap<DiskDictionary,LookupState>>
+    protected static ThreadLocal<WeakHashMap<DiskDictionary,LookupState>>
             threadLookupStates =
-            new ThreadLocal<HashMap<DiskDictionary,LookupState>>() {
-        protected HashMap<DiskDictionary,LookupState> initialValue() {
-            return new HashMap<DiskDictionary,LookupState>();
+            new ThreadLocal<WeakHashMap<DiskDictionary,LookupState>>() {
+        protected WeakHashMap<DiskDictionary,LookupState> initialValue() {
+            return new WeakHashMap<DiskDictionary,LookupState>();
         }
     };
 
@@ -370,7 +371,7 @@ public class DiskDictionary implements Dictionary {
     }
 
     public LookupState getLookupState() {
-        return new LookupState();
+        return new LookupState(this);
     }
 
     /**
@@ -384,10 +385,10 @@ public class DiskDictionary implements Dictionary {
         //
         // Perform the get using an existing lookup state for this thread (or
         // create a lookup state if there isn't one).
-        HashMap<DiskDictionary,LookupState> map = threadLookupStates.get();
+        WeakHashMap<DiskDictionary,LookupState> map = threadLookupStates.get();
         LookupState lus = map.get(this);
         if (lus == null) {
-            lus = new LookupState();
+            lus = new LookupState(this);
             map.put(this, lus);
         }
         return get(name, lus);
@@ -406,7 +407,7 @@ public class DiskDictionary implements Dictionary {
     public QueryEntry get(Object name, LookupState lus) {
 
         if(lus == null) {
-            lus = new LookupState();
+            lus = new LookupState(this);
         }
 
         lus.qs.dictLookups++;
@@ -1790,7 +1791,7 @@ public class DiskDictionary implements Dictionary {
      * A class that can be used to encapsulate the dictionary state when doing
      * multiple lookups during querying.
      */
-    public class LookupState {
+    public static class LookupState {
 
         ReadableBuffer localNames;
 
@@ -1804,13 +1805,13 @@ public class DiskDictionary implements Dictionary {
 
         QueryStats qs;
 
-        public LookupState() {
-            localNames = names.duplicate();
-            localNameOffsets = nameOffsets.duplicate();
-            localInfo = entryInfo.duplicate();
-            localInfoOffsets = entryInfoOffsets.duplicate();
-            if(idToPosn != null) {
-                localIDToPosn = idToPosn.duplicate();
+        public LookupState(DiskDictionary target) {
+            localNames = target.names.duplicate();
+            localNameOffsets = target.nameOffsets.duplicate();
+            localInfo = target.entryInfo.duplicate();
+            localInfoOffsets = target.entryInfoOffsets.duplicate();
+            if(target.idToPosn != null) {
+                localIDToPosn = target.idToPosn.duplicate();
             }
             qs = new QueryStats();
         }
@@ -1903,7 +1904,7 @@ public class DiskDictionary implements Dictionary {
         public DiskDictionaryIterator(Object startEntry, boolean includeStart,
                 Object stopEntry, boolean includeStop) {
 
-            lus = new LookupState();
+            lus = new LookupState(DiskDictionary.this);
             pos = 0;
             startPos = 0;
             stopPos = dh.size;
@@ -1977,7 +1978,7 @@ public class DiskDictionary implements Dictionary {
          * it will be limited to that number.
          */
         public DiskDictionaryIterator(int begin, int end) {
-            lus = new LookupState();
+            lus = new LookupState(DiskDictionary.this);
             pos = 0;
             startPos = Math.max(0, begin);
             stopPos = Math.min(end, dh.size);
@@ -2124,7 +2125,7 @@ public class DiskDictionary implements Dictionary {
         protected Object prevName;
 
         public LightDiskDictionaryIterator() {
-            lus = new LookupState();
+            lus = new LookupState(DiskDictionary.this);
             posn = -1;
             lus.localNames.position(0);
         }
