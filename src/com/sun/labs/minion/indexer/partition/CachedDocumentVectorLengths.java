@@ -58,7 +58,6 @@ public class CachedDocumentVectorLengths extends DocumentVectorLengths {
                     return 1;
                 }
                 if(cachedFieldLens[fieldID] == null) {
-                    logger.info(String.format("caching field %d", fieldID));
                     cachedFieldLens[fieldID] = uncompressLens(fieldLens[fieldID].duplicate());
                 }
                 return cachedFieldLens[fieldID][docID];
