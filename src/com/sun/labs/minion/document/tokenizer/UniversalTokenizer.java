@@ -1555,7 +1555,7 @@ public class UniversalTokenizer extends Tokenizer {
 
     protected String tokenString;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(UniversalTokenizer.class.getName());
 
     protected static String logTag = "UTK";
 

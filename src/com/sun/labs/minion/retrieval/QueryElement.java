@@ -114,7 +114,7 @@ public abstract class QueryElement implements Comparable {
      */
     protected float[] fieldMultipliers;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(QueryElement.class.getName());
 
     /**
      * Sets the current partition, and makes sure that we have valid search

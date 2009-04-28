@@ -44,7 +44,7 @@ public abstract class Operator extends QueryElement {
      */
     protected List<QueryElement> operands;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(Operator.class.getName());
 
     protected static String logTag = "OP";
 

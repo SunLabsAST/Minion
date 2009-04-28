@@ -232,7 +232,7 @@ public class DFOPostings implements Postings {
      */
     protected int skipSize = 64;
     
- Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(DFOPostings.class.getName());
     
     protected static String logTag = "DFOP";
     

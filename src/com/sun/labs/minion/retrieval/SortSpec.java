@@ -65,7 +65,7 @@ public class SortSpec {
      */
     protected boolean[] directions;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(SortSpec.class.getName());
 
     protected static String logTag = "SSPEC";
 

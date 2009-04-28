@@ -85,7 +85,7 @@ public class ArrayGroup implements Cloneable {
 
     protected ScoreModifier sm;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(ArrayGroup.class.getName());
 
     protected static String logTag = "AG";
 

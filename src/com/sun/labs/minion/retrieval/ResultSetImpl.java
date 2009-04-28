@@ -117,7 +117,7 @@ public class ResultSetImpl implements ResultSet {
      */
     protected long queryTime;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(ResultSetImpl.class.getName());
 
     protected static String logTag = "RSI";
 

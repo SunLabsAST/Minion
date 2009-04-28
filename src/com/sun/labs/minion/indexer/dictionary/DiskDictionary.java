@@ -161,7 +161,7 @@ public class DiskDictionary implements Dictionary {
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(DiskDictionary.class.getName());
 
     /**
      * The tag for this module.

@@ -161,7 +161,7 @@ public class WeightingComponents {
      */
     public float wt;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(WeightingComponents.class.getName());
 
     protected static String logTag = "WC";
 

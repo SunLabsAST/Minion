@@ -53,7 +53,7 @@ public class ScoredQuickOr extends QuickOr {
      */
     int fieldID = -1;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(ScoredQuickOr.class.getName());
 
     protected static String logTag = "SQO";
 

@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 
 public class QueryEvaluator {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(QueryEvaluator.class.getName());
 
     protected static String logTag = "EVAL";
 

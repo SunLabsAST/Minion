@@ -89,7 +89,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      */
     protected int[][] posns;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(DictTerm.class.getName());
 
     protected static String logTag = "DT";
 

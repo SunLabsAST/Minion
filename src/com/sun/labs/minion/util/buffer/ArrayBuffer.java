@@ -85,7 +85,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
     /**
      * The log for this buffer.
      */
- Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(ArrayBuffer.class.getName());
 
     /**
      * A tag to use in logging.

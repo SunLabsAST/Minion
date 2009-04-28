@@ -418,7 +418,7 @@ public class TokenCollectorStage extends StageAdapter {
      */
     protected boolean doingBigrams;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(TokenCollectorStage.class.getName());
 
     protected static String logTag = "TCS";
 

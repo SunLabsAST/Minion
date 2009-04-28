@@ -95,7 +95,7 @@ public abstract class Tokenizer extends StageAdapter implements
      */
     protected int maxTokLen = 256;
 
-    protected Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(Tokenizer.class.getName());
 
     protected static String logTag = "TOK";
 

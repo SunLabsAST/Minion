@@ -209,7 +209,7 @@ public class FieldInfo implements Cloneable,
     @ConfigBoolean(defaultValue = false)
     public static final String PROP_TRIMMED = "trimmed";
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(FieldInfo.class.getName());
 
     public static final String logTag = "FI";
 

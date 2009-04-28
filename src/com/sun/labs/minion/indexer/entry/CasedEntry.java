@@ -70,7 +70,7 @@ public abstract class CasedEntry extends BaseEntry implements CasedPostingsEntry
     /**
      * A log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(CasedEntry.class.getName());
 
     /**
      * A tag.
