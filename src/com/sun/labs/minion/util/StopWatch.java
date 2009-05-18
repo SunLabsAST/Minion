@@ -72,6 +72,10 @@ public class StopWatch implements Serializable {
         return lastTime;
     }
 
+    public long getLastStart() {
+        return lastStart;
+    }
+
     public double getAvgTime() {
         return getTime() / (double) clicks;
     }
