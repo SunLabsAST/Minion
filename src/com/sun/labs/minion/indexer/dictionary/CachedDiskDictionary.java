@@ -54,7 +54,7 @@ public class CachedDiskDictionary extends DiskDictionary {
     public CachedDiskDictionary(Class entryClass,
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, CHANNEL_FULL_POST, null);
+        this(entryClass, decoder, dictFile, postFiles, PostingsInputType.CHANNEL_FULL_POST, BufferType.FILEBUFFER, null);
     }
 
     /**
@@ -72,7 +72,7 @@ public class CachedDiskDictionary extends DiskDictionary {
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles,
             Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, CHANNEL_FULL_POST, part);
+        this(entryClass, decoder, dictFile, postFiles, PostingsInputType.CHANNEL_FULL_POST, BufferType.FILEBUFFER, part);
     }
 
     /**
@@ -89,9 +89,11 @@ public class CachedDiskDictionary extends DiskDictionary {
      */
     public CachedDiskDictionary(Class entryClass,
             NameDecoder decoder, RandomAccessFile dictFile,
-            RandomAccessFile[] postFiles, int postInType,
+            RandomAccessFile[] postFiles, PostingsInputType postingsInputType,
+            BufferType fileBufferType,
             Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, postInType,
+        this(entryClass, decoder, dictFile, postFiles, postingsInputType,
+                fileBufferType,
                 2048,
                 1024,
                 1024,
@@ -116,10 +118,12 @@ public class CachedDiskDictionary extends DiskDictionary {
      */
     public CachedDiskDictionary(Class entryClass,
             NameDecoder decoder, RandomAccessFile dictFile,
-            RandomAccessFile[] postFiles, int postInType, int nameBufferSize,
+            RandomAccessFile[] postFiles, PostingsInputType postingsInputType, BufferType fileBufferType,
+            int nameBufferSize,
             int offsetsBufferSize, int infoBufferSize, int infoOffsetsBufferSize,
             Partition part) throws java.io.IOException {
-        super(entryClass, decoder, dictFile, postFiles, postInType, -1,
+        super(entryClass, decoder, dictFile, postFiles, postingsInputType,
+                fileBufferType, -1,
                 nameBufferSize, offsetsBufferSize, infoBufferSize,
                 infoOffsetsBufferSize, part);
 

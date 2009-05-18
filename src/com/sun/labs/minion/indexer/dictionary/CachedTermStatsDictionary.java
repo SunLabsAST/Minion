@@ -59,7 +59,8 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
                 new StringNameHandler(),
                 new RandomAccessFile(df, "r"),
                 new RandomAccessFile[0],
-                DiskDictionary.CHANNEL_FULL_POST,
+                DiskDictionary.PostingsInputType.CHANNEL_FULL_POST,
+                DiskDictionary.BufferType.FILEBUFFER,
                 BUFFER_SIZE,    // Names buffer size
                 BUFFER_SIZE,    // Name offset buffer size
                 BUFFER_SIZE,    // Info buffer size

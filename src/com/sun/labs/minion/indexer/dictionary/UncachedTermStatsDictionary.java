@@ -66,7 +66,9 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
         super(TermStatsEntry.class,
                 new StringNameHandler(), new RandomAccessFile(df, "r"),
                 new RandomAccessFile[0],
-                DiskDictionary.CHANNEL_FULL_POST, 32768, BUFFER_SIZE,
+                DiskDictionary.PostingsInputType.CHANNEL_FULL_POST,
+                DiskDictionary.BufferType.FILEBUFFER,
+                32768, BUFFER_SIZE,
                 BUFFER_SIZE, BUFFER_SIZE, BUFFER_SIZE, null);
         this.df = df;
     }

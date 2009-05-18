@@ -55,7 +55,8 @@ public class DiskBiGramDictionary extends DiskDictionary {
 
     public DiskBiGramDictionary(RandomAccessFile dictFile,
                                  RandomAccessFile postFile,
-                                 int postInType,
+                                 PostingsInputType postInType,
+                                 BufferType fileBufferType,
                                  int cacheSize,
                                  int nameBufferSize,
                                  int offsetsBufferSize,
@@ -69,6 +70,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
               dictFile,
               new RandomAccessFile[]{postFile},
               postInType,
+              fileBufferType,
               cacheSize,
               nameBufferSize,
               offsetsBufferSize,

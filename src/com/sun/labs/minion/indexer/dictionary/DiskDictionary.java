@@ -55,6 +55,7 @@ import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.LRACache;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
+import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
@@ -168,25 +169,36 @@ public class DiskDictionary implements Dictionary {
      */
     protected static String logTag = "DD";
 
-    /**
-     * An integer indicating that we should use channel postings inputs.
-     */
-    public static final int CHANNEL_FULL_POST = 1;
+    public enum PostingsInputType {
+
+        /**
+         * File channel and fully load the postings.
+         */
+        CHANNEL_FULL_POST,
+        /**
+         * File channel and partially load the postings.
+         */
+        CHANNEL_PART_POST,
+        /**
+         * Random access file and fully load postings.
+         */
+        FILE_FULL_POST,
+        /**
+         * Random access file and partially load postings.
+         */
+        FILE_PART_POST
+    }
 
     /**
-     * Use a file channel and partially load postings
+     * An enum for the kinds of file-backed buffers that we can use to
+     * read the dictionary data.
      */
-    public static final int CHANNEL_PART_POST = 2;
+    public enum BufferType {
+        FILEBUFFER,
+        NIOFILEBUFFER
+    }
 
-    /**
-     * Use a random access file and fully load postings.
-     */
-    public static final int FILE_FULL_POST = 3;
-
-    /**
-     * Use a random access file and partially load postings.
-     */
-    public static final int FILE_PART_POST = 4;
+    private BufferType fileBufferType;
 
     /**
      * Creates an dict
@@ -207,7 +219,9 @@ public class DiskDictionary implements Dictionary {
     public DiskDictionary(Class entryClass,
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, FILE_FULL_POST, 256,
+        this(entryClass, decoder, dictFile, postFiles,
+                PostingsInputType.FILE_FULL_POST,
+                BufferType.FILEBUFFER, 256,
                 2048, 1024, 1024, 1024, null);
     }
 
@@ -226,7 +240,9 @@ public class DiskDictionary implements Dictionary {
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles,
             Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, CHANNEL_FULL_POST, 256,
+        this(entryClass, decoder, dictFile, postFiles, 
+                PostingsInputType.CHANNEL_FULL_POST,
+                BufferType.FILEBUFFER, 256,
                 2048, 1024, 1024, 1024, part);
     }
 
@@ -244,9 +260,10 @@ public class DiskDictionary implements Dictionary {
      */
     public DiskDictionary(Class entryClass,
             NameDecoder decoder, RandomAccessFile dictFile,
-            RandomAccessFile[] postFiles, int postInType,
+            RandomAccessFile[] postFiles, PostingsInputType postingsInputType,
             Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, postInType,
+        this(entryClass, decoder, dictFile, postFiles, postingsInputType,
+                BufferType.FILEBUFFER,
                 256, 2048, 1024, 1024, 1024, part);
     }
 
@@ -270,7 +287,9 @@ public class DiskDictionary implements Dictionary {
      */
     public DiskDictionary(Class entryClass,
             NameDecoder decoder, RandomAccessFile dictFile,
-            RandomAccessFile[] postFiles, int postInType, int cacheSize,
+            RandomAccessFile[] postFiles, 
+            PostingsInputType postingsInputType,
+            BufferType fileBufferType, int cacheSize,
             int nameBufferSize, int offsetsBufferSize, int infoBufferSize,
             int infoOffsetsBufferSize, Partition part) throws java.io.IOException {
         this.entryClass = entryClass;
@@ -279,6 +298,7 @@ public class DiskDictionary implements Dictionary {
         this.decoder = decoder;
         this.postIn = new PostingsInput[postFiles.length];
         this.part = part;
+        this.fileBufferType = fileBufferType;
 
         //
         // Read the header.
@@ -287,7 +307,7 @@ public class DiskDictionary implements Dictionary {
         //
         // Create the postings inputs.
         for(int i = 0; i < this.postIn.length; i++) {
-            switch(postInType) {
+            switch(postingsInputType) {
                 case CHANNEL_FULL_POST:
                     postIn[i] =
                             new ChannelPostingsInput(postFiles[i].getChannel(),
@@ -323,22 +343,36 @@ public class DiskDictionary implements Dictionary {
     protected void setUpBuffers(int nameBufferSize, int offsetsBufferSize,
             int infoBufferSize, int infoOffsetsBufferSize) throws java.io.IOException {
 
-        //
-        // Load the various buffers.
-        names = new FileReadableBuffer(dictFile, dh.namesPos, dh.namesSize,
-                nameBufferSize);
+        switch (fileBufferType) {
+            case FILEBUFFER:
+                names = new FileReadableBuffer(dictFile, dh.namesPos, dh.namesSize,
+                        nameBufferSize);
+                nameOffsets =
+                        new FileReadableBuffer(dictFile, dh.nameOffsetsPos,
+                        dh.nameOffsetsSize, offsetsBufferSize);
+                entryInfo =
+                        new FileReadableBuffer(dictFile, dh.entryInfoPos,
+                        dh.entryInfoSize, infoBufferSize);
+                entryInfoOffsets =
+                        new FileReadableBuffer(dictFile, dh.entryInfoOffsetsPos,
+                        dh.entryInfoOffsetsSize, infoOffsetsBufferSize);
+                break;
+            case NIOFILEBUFFER:
+                names = new NIOFileReadableBuffer(dictFile, dh.namesPos, dh.namesSize,
+                        nameBufferSize);
+                nameOffsets =
+                        new NIOFileReadableBuffer(dictFile, dh.nameOffsetsPos,
+                        dh.nameOffsetsSize, offsetsBufferSize);
 
-        nameOffsets =
-                new FileReadableBuffer(dictFile, dh.nameOffsetsPos,
-                dh.nameOffsetsSize, offsetsBufferSize);
-
-        entryInfo =
-                new FileReadableBuffer(dictFile, dh.entryInfoPos,
-                dh.entryInfoSize, infoBufferSize);
-
-        entryInfoOffsets =
-                new FileReadableBuffer(dictFile, dh.entryInfoOffsetsPos,
-                dh.entryInfoOffsetsSize, infoOffsetsBufferSize);
+                entryInfo =
+                        new NIOFileReadableBuffer(dictFile, dh.entryInfoPos,
+                        dh.entryInfoSize, infoBufferSize);
+                entryInfoOffsets =
+                        new NIOFileReadableBuffer(dictFile, dh.entryInfoOffsetsPos,
+                        dh.entryInfoOffsetsSize, infoOffsetsBufferSize);
+                break;
+        }
+        
     }
 
     /**
@@ -371,7 +405,13 @@ public class DiskDictionary implements Dictionary {
     }
 
     public LookupState getLookupState() {
-        return new LookupState(this);
+        WeakHashMap<DiskDictionary,LookupState> map = threadLookupStates.get();
+        LookupState lus = map.get(this);
+        if (lus == null) {
+            lus = new LookupState(this);
+            map.put(this, lus);
+        }
+        return lus;
     }
 
     /**
@@ -385,13 +425,7 @@ public class DiskDictionary implements Dictionary {
         //
         // Perform the get using an existing lookup state for this thread (or
         // create a lookup state if there isn't one).
-        WeakHashMap<DiskDictionary,LookupState> map = threadLookupStates.get();
-        LookupState lus = map.get(this);
-        if (lus == null) {
-            lus = new LookupState(this);
-            map.put(this, lus);
-        }
-        return get(name, lus);
+        return get(name, getLookupState());
     }
 
     /**
@@ -1818,6 +1852,10 @@ public class DiskDictionary implements Dictionary {
 
         public void setQueryStats(QueryStats qs) {
             this.qs = qs;
+        }
+
+        public QueryStats getQueryStats() {
+            return qs;
         }
     }
 

@@ -23,6 +23,8 @@
  */
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary.BufferType;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary.PostingsInputType;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.ConfigString;
 import com.sun.labs.util.props.Configurable;
@@ -33,6 +35,7 @@ import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.Partition;
+import com.sun.labs.util.props.ConfigEnum;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -82,11 +85,12 @@ public class DictionaryFactory implements Configurable {
                     entryClassName);
         }
         cacheSize = ps.getInt(PROP_CACHE_SIZE);
-        postingsInput = ps.getInt(PROP_POSTINGS_INPUT);
+        postingsInputType = (PostingsInputType) ps.getEnum(PROP_POSTINGS_INPUT);
         nameBufferSize = ps.getInt(PROP_NAME_BUFFER_SIZE);
         offsetsBufferSize = ps.getInt(PROP_OFFSETS_BUFFER_SIZE);
         infoBufferSize = ps.getInt(PROP_INFO_BUFFER_SIZE);
         infoOffsetsBufferSize = ps.getInt(PROP_INFO_OFFSETS_BUFFER_SIZE);
+        fileBufferType = (BufferType) ps.getEnum(PROP_FILE_BUFFER_TYPE);
     }
     
     @ConfigString(defaultValue = "com.sun.labs.minion.indexer.entry.IDEntry")
@@ -175,10 +179,18 @@ public class DictionaryFactory implements Configurable {
     /**
      * The type of postings input stream to use when reading postings.
      */
-    @ConfigInteger(defaultValue = 3)
+    @ConfigEnum(type=com.sun.labs.minion.indexer.dictionary.DiskDictionary.PostingsInputType.class, defaultValue = "FILE_FULL_POST")
     public static String PROP_POSTINGS_INPUT = "postings_input";
 
-    protected int postingsInput;
+    protected DiskDictionary.PostingsInputType postingsInputType;
+
+    /**
+     * The type of file buffers to use when reading dictionary data.
+     */
+    @ConfigEnum(type=com.sun.labs.minion.indexer.dictionary.DiskDictionary.BufferType.class, defaultValue="FILEBUFFER")
+    public static final String PROP_FILE_BUFFER_TYPE = "file_buffer_type";
+
+    private DiskDictionary.BufferType fileBufferType;
 
     /**
      * Gets a bigram dictionary.
@@ -188,7 +200,9 @@ public class DictionaryFactory implements Configurable {
             RandomAccessFile dictFile,
             RandomAccessFile postFile,
             DiskPartition part) throws IOException {
-        return new DiskBiGramDictionary(dictFile, postFile, postingsInput,
+        return new DiskBiGramDictionary(dictFile, postFile, 
+                postingsInputType,
+                fileBufferType,
                 cacheSize, nameBufferSize, offsetsBufferSize, infoBufferSize,
                 infoOffsetsBufferSize, part, mainDict);
     }
@@ -210,7 +224,8 @@ public class DictionaryFactory implements Configurable {
             RandomAccessFile[] postFiles,
             DiskPartition part) throws IOException {
         return new DiskDictionary(entryClass, decoder, dictFile, postFiles,
-                postingsInput, cacheSize, nameBufferSize, offsetsBufferSize,
+                postingsInputType, fileBufferType,
+                cacheSize, nameBufferSize, offsetsBufferSize,
                 infoBufferSize, infoOffsetsBufferSize, part);
     }
 
@@ -227,7 +242,8 @@ public class DictionaryFactory implements Configurable {
             RandomAccessFile dictFile, RandomAccessFile[] postFiles,
             DiskPartition part) throws IOException {
         return new DiskDictionary(entryClass, decoder, dictFile, postFiles,
-                postingsInput, cacheSize, nameBufferSize, offsetsBufferSize,
+                postingsInputType, fileBufferType,
+                cacheSize, nameBufferSize, offsetsBufferSize,
                 infoBufferSize, infoOffsetsBufferSize, part);
     }
 
