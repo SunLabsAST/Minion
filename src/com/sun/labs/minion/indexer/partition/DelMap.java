@@ -296,7 +296,7 @@ public class DelMap implements Cloneable {
         if(!((ReadableBuffer) delMap).test(id)) {
             ((WriteableBuffer) delMap).set(id);
 //            if(part != null && part instanceof DiskPartition) {
-            logger.info(part + " del " + id);
+//            logger.info(part + " del " + id);
 //            }
             nDeleted++;
             dirty = true;
@@ -307,7 +307,7 @@ public class DelMap implements Cloneable {
             return true;
         } else {
 //            if (part != null && part instanceof DiskPartition) {
-            logger.info(part + " already del " + id);
+//            logger.info(part + " already del " + id);
 //            }
 
         }
