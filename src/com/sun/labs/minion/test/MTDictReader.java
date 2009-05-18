@@ -5,7 +5,7 @@
 
 package com.sun.labs.minion.test;
 
-import com.sun.labs.minion.ResultSet;
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.engine.SearchEngineImpl;
@@ -36,6 +36,7 @@ public class MTDictReader implements Runnable {
     protected long stopTime = 0;
     protected Logger logger = null;
     protected NanoWatch nw = null;
+    protected DiskDictionary.LookupState lus;
 
     public MTDictReader(List<String> terms, DiskDictionary dict, int duration, int threadNum) {
         this.terms = new ArrayList<String>(terms);
@@ -44,26 +45,27 @@ public class MTDictReader implements Runnable {
         stopTime = System.currentTimeMillis() + duration * 1000;
         logger = Logger.getLogger(getClass().getName());
         nw = new NanoWatch();
-
         Collections.shuffle(this.terms);
     }
 
     public void run() {
         int iter = 0;
         while(System.currentTimeMillis() < stopTime) {
-            int qn = 1;
             for(String term : terms) {
                 nw.start();
                 QueryEntry entry = dict.get(term);
                 nw.stop();
+                if(!term.equals(entry.getName())) {
+                    logger.severe(String.format("Uh oh! thread: %d term: %s entry: %s", threadNum, term, entry.getName()));
+                }
                 if(logger.isLoggable(Level.FINER)) {
                     logger.finer(String.format(
                             "thread: %d %d/%d/%d term: %s %.2fms",
                             threadNum,
-                            iter, qn, terms.size(),
+                            iter, nw.getClicks(), terms.size(),
                             term, nw.getLastTimeMillis()));
                 }
-                if(qn % 50 == 0) {
+                if(nw.getClicks() % 500 == 0) {
                     logger.fine(String.format(
                             "thread: %d queries: %d average lookup time: %.2fms",
                             threadNum, nw.getClicks(), nw.getAvgTimeMillis()));
@@ -71,13 +73,13 @@ public class MTDictReader implements Runnable {
                         break;
                     }
                 }
-                qn++;
             }
             logger.fine(String.format(
                     "thread: %d iter: %d average lookup time: %.2fms", threadNum,
                     iter, nw.getAvgTimeMillis()));
             iter++;
         }
+        lus = dict.getLookupState();
     }
 
     public static void usage() {
@@ -193,7 +195,7 @@ public class MTDictReader implements Runnable {
         int curr = 0;
         List<String> terms = new ArrayList<String>();
         DictionaryIterator dit = selectedDict.iterator();
-        while (dit.hasNext() && curr < maxTerms) {
+        while (dit.hasNext() && terms.size() < maxTerms) {
             QueryEntry e = dit.next();
             if (curr++ % mod == 0) {
                 terms.add((String)e.getName());
@@ -201,18 +203,15 @@ public class MTDictReader implements Runnable {
         }
 
         //
-        // Prime the engine
-        ResultSet s = engine.search("the");
-        s.getResults(0, 10);
-
-        //
         // Kick off our test code
         try {
             NanoWatch total;
+            QueryStats qs;
             if(nThreads == 1) {
                 MTDictReader single = new MTDictReader(terms, selectedDict, duration, 0);
                 single.run();
                 total = single.nw;
+                qs = single.lus.getQueryStats();
             } else {
                 MTDictReader[] mtqs = new MTDictReader[nThreads];
                 Thread[] threads = new Thread[nThreads];
@@ -224,19 +223,25 @@ public class MTDictReader implements Runnable {
                 }
 
                 total = new NanoWatch();
+                qs = new QueryStats();
                 for(int i = 0; i < nThreads; i++) {
                     try {
                         threads[i].join();
                         total.accumulate(mtqs[i].nw);
+                        qs.accumulate(mtqs[i].lus.getQueryStats());
                     } catch(InterruptedException ie) {
                     }
                 }
             }
             logger.info(String.format(
-                    "threads: %d lookups: %d average lookup time: %.2fms",
-                    nThreads, total.getClicks(),
-                    total.getAvgTimeMillis()));
-            logger.info(engine.getQueryStats().dump());
+                    "threads: %d lookups: %d %d avg lookup: %.4fms ch: %d cm: %d hp: %.2f",
+                    nThreads,
+                    total.getClicks(),
+                    qs.dictLookups,
+                    total.getAvgTimeMillis(),
+                    qs.dictCacheHits, qs.dictCacheMisses, qs.dictCacheHits / (double) qs.dictLookups));
+
+//            logger.info(engine.getQueryStats().dump());
         } finally {
             engine.close();
         }
