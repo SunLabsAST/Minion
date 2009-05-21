@@ -23,6 +23,9 @@
  */
 package com.sun.labs.minion.retrieval;
 
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,7 +37,6 @@ import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Set;
@@ -53,7 +55,14 @@ import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.util.Util;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.Externalizable;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * A class that holds a weighted document vector for a given document from
@@ -63,7 +72,13 @@ import java.util.logging.Logger;
  * @see CompositeDocumentVectorImpl for an implementation that can handle 
  * features from multiple vectored fields.
  */
-public class DocumentVectorImpl implements DocumentVector, Serializable {
+public class DocumentVectorImpl implements DocumentVector, Externalizable {
+
+    /**
+     * We'll need to send this along when serializing as we're doing our own
+     * serialization via the <code>Externalizable</code> interface.
+     */
+    public static final long serialVersionUID = 2L;
 
     /**
      * The search engine that generated this vector.
@@ -81,7 +96,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
     protected String keyName;
 
     /**
-     * The field from which this document vector was generated.
+     * The fields from which this document vector was generated.
      */
     protected transient int[] fields;
 
@@ -112,19 +127,17 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      */
     protected boolean normalized = false;
 
-    protected QueryStats qs = new QueryStats();
+    protected transient QueryStats qs = new QueryStats();
 
-    private transient Logger logger = Logger.getLogger(getClass().getName());
-
-    protected static String logTag = "DVI";
+    private static Logger logger = Logger.getLogger(DocumentVectorImpl.class.getName());
 
     protected transient StopWords ignoreWords;
 
     protected String field;
 
-    protected int fieldID;
+    protected transient int fieldID;
 
-    protected DocumentVectorImpl() {
+    public DocumentVectorImpl() {
     }
 
     /**
@@ -236,6 +249,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         wf = qc.getWeightingFunction();
         wc = qc.getWeightingComponents();
         ignoreWords = qc.getVectorZeroWords();
+        qs = new QueryStats();
         setField(field);
     }
 
@@ -916,5 +930,75 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
                 }
             }
         }
-    } // DocumentVectorImpl
+    }
+
+    /**
+     * Writes the object to the provided output using a gzipped output stream to
+     * save space (the resulting serialized data is 2-3 times smaller than it is
+     * with the normal serialization approach.)  Changes to this method will require
+     * a change to the serial version and will require modifications to the
+     * <code>readExternal</code> method to reflect the changes.
+     * @param out the output where the
+     * @throws java.io.IOException if there is an error writing the object
+     * @see #serialVersionUID
+     * @see #readExternal(java.io.ObjectInput)
+     */
+    public void writeExternal(ObjectOutput out) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(new GZIPOutputStream(bos));
+        dos.writeBoolean(keyName != null);
+        if (keyName != null) {
+            dos.writeUTF(keyName);
+        }
+        dos.writeBoolean(normalized);
+        dos.writeBoolean(field != null);
+        if (field != null) {
+            dos.writeUTF(field);
+        }
+        dos.writeInt(v.length);
+        for (WeightedFeature f : v) {
+            dos.writeUTF(f.getName());
+            dos.writeFloat(f.getWeight());
+        }
+        dos.close();
+        out.writeLong(serialVersionUID);
+        out.writeInt(bos.size());
+        out.write(bos.toByteArray());
+    }
+
+    /**
+     * Reads the vector from the provided input.  This method reads a serial version
+     * first.
+     * @param in the input from which the vector will be read.
+     * @throws java.io.IOException if there is an error reading from the input
+     * or if the object being read has a different version than the one for this
+     * class
+     * @throws java.lang.ClassNotFoundException if there is an error instantiating
+     * the vector
+     */
+    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        long svuid = in.readLong();
+        if(svuid != serialVersionUID) {
+            throw new java.io.InvalidClassException(String.format("Read class version %d looking for %d", svuid, serialVersionUID));
+        }
+        int s = in.readInt();
+        byte[] gz = new byte[s];
+        in.readFully(gz);
+        DataInputStream dis = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(gz)));
+        if (dis.readBoolean()) {
+            keyName = dis.readUTF();
+        }
+        normalized = dis.readBoolean();
+        if (dis.readBoolean()) {
+            field = dis.readUTF();
+        }
+        int l = dis.readInt();
+        v = new WeightedFeature[l];
+        for(int i = 0; i < v.length; i++) {
+            String n = dis.readUTF();
+            float w = dis.readFloat();
+            v[i] = new WeightedFeature(n, w);
+        }
+        dis.close();
+    }
 }
