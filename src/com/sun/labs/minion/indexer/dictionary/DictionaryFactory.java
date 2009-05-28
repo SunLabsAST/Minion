@@ -138,7 +138,7 @@ public class DictionaryFactory implements Configurable {
     /**
      * The size of the entry cache
      */
-    @ConfigInteger(defaultValue = 256)
+    @ConfigInteger(defaultValue = 1024)
     public static String PROP_CACHE_SIZE = "cache_size";
 
     protected int cacheSize;
@@ -223,6 +223,11 @@ public class DictionaryFactory implements Configurable {
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles,
             DiskPartition part) throws IOException {
+        DictionaryHeader dh = getDictHeader(dictFile);
+        if(dh.size <= cacheSize) {
+            return new CachedDiskDictionary(entryClass, decoder, dictFile,
+                    postFiles, postingsInputType, fileBufferType, part);
+        }
         return new DiskDictionary(entryClass, decoder, dictFile, postFiles,
                 postingsInputType, fileBufferType,
                 cacheSize, nameBufferSize, offsetsBufferSize,
@@ -241,6 +246,18 @@ public class DictionaryFactory implements Configurable {
     public DiskDictionary getDiskDictionary(NameDecoder decoder,
             RandomAccessFile dictFile, RandomAccessFile[] postFiles,
             DiskPartition part) throws IOException {
+
+        //
+        // If we have a big cache and a small dictionary, then just read the
+        // darned thing.
+        DictionaryHeader dh = getDictHeader(dictFile);
+        if(dh.size <= cacheSize) {
+            return new CachedDiskDictionary(entryClass, decoder, dictFile, 
+                    postFiles, postingsInputType, fileBufferType, part);
+        }
+
+        //
+        // Normal disk-based dictionary.
         return new DiskDictionary(entryClass, decoder, dictFile, postFiles,
                 postingsInputType, fileBufferType,
                 cacheSize, nameBufferSize, offsetsBufferSize,
@@ -257,9 +274,15 @@ public class DictionaryFactory implements Configurable {
     }
 
     public MemoryDictionary getMemoryDictionary(Partition p) {
-        MemoryDictionary ret =
-                new MemoryDictionary(entryClass);
+        MemoryDictionary ret = new MemoryDictionary(entryClass);
         ret.setPartition(p);
         return ret;
+    }
+
+    private DictionaryHeader getDictHeader(RandomAccessFile dictFile) throws IOException {
+        long pos = dictFile.getFilePointer();
+        DictionaryHeader dh = new DictionaryHeader(dictFile);
+        dictFile.seek(pos);
+        return dh;
     }
 }

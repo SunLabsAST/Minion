@@ -27,7 +27,8 @@ package com.sun.labs.minion.indexer.dictionary;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.Partition;
-import com.sun.labs.minion.util.NanoWatch;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -40,6 +41,8 @@ public class CachedDiskDictionary extends DiskDictionary {
     private QueryEntry[] entries;
 
     public static final String logTag = "CDD";
+
+    private Map<Object,QueryEntry> entriesByName;
 
     /**
      * Creates a disk dictionary that we can use for querying.
@@ -128,13 +131,14 @@ public class CachedDiskDictionary extends DiskDictionary {
                 infoOffsetsBufferSize, part);
 
         entries = new QueryEntry[dh.maxEntryID];
+        entriesByName = new HashMap<Object, QueryEntry>(dh.maxEntryID);
 
         //
         // Read everything into the cache now.
         for(DictionaryIterator i = super.iterator(); i.hasNext();) {
             QueryEntry e = i.next();
             entries[e.getID() - 1] = e;
-            nameCache.put(e.getName(), e);
+            entriesByName.put(e.getName(), e);
         }
     }
 
@@ -146,7 +150,7 @@ public class CachedDiskDictionary extends DiskDictionary {
      * the name doesn't appear in the dictionary.
      */
     public QueryEntry get(Object name) {
-        return (QueryEntry) nameCache.get(name).getEntry();
+        return (QueryEntry) entriesByName.get(name).getEntry();
     }
 
     /**

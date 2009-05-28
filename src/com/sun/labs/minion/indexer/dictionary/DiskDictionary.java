@@ -24,6 +24,7 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.QueryStats;
+import com.sun.labs.minion.indexer.entry.CasedDFOEntry;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,15 +108,9 @@ public class DiskDictionary implements Dictionary {
     protected ReadableBuffer entryInfoOffsets;
 
     /**
-     * A cache from position to entry names used during binary searches for
-     * terms.
+     * An in-memory binary search tree to support searching for terms.
      */
-    protected LRACache<Integer, Object> posnCache;
-
-    /**
-     * A cache from entry name to a query entry.
-     */
-    protected LRACache<Object, QueryEntry> nameCache;
+    private BinarySearchTree bst;
 
     /**
      * A lookup state local to each thread
@@ -152,12 +147,6 @@ public class DiskDictionary implements Dictionary {
      * The partition that we are associated with.
      */
     protected Partition part;
-
-    /**
-     * A final object that we can use to synchronize on the name and position
-     * caches.
-     */
-    private final Object cacheLock = new Object();
 
     /**
      * The log.
@@ -335,9 +324,9 @@ public class DiskDictionary implements Dictionary {
                     dh.idToPosnSize);
         }
 
-        setCacheSize(cacheSize);
         setUpBuffers(nameBufferSize, offsetsBufferSize, infoBufferSize,
                 infoOffsetsBufferSize);
+        bst = new BinarySearchTree(cacheSize);
     }
 
     protected void setUpBuffers(int nameBufferSize, int offsetsBufferSize,
@@ -372,17 +361,8 @@ public class DiskDictionary implements Dictionary {
                         dh.entryInfoOffsetsSize, infoOffsetsBufferSize);
                 break;
         }
-        
-    }
 
-    /**
-     * Sets the sizes of the name and position cache.
-     *
-     * @param s The size of the caches to use.
-     */
-    public void setCacheSize(int s) {
-        posnCache = new LRACache<Integer, Object>(s);
-        nameCache = new LRACache<Object, QueryEntry>(s);
+        
     }
 
     /**
@@ -451,9 +431,9 @@ public class DiskDictionary implements Dictionary {
         // Check our cache first.
         QueryEntry ret = null;
 
-        synchronized(cacheLock) {
-            ret = nameCache.get(name);
-        }
+//        synchronized(cacheLock) {
+//            ret = nameCache.get(name);
+//        }
         if(ret != null) {
             lus.qs.dictCacheHits++;
             lus.qs.dictLookupW.stop();
@@ -479,12 +459,12 @@ public class DiskDictionary implements Dictionary {
 
             //
             // Cache the entry.
-            if(ret != null) {
-                synchronized(cacheLock) {
-                    posnCache.put(new Integer(pos), ret);
-                    nameCache.put(name, ret);
-                }
-            }
+//            if(ret != null) {
+//                synchronized(cacheLock) {
+//                    posnCache.put(new Integer(pos), ret);
+//                    nameCache.put(name, ret);
+//                }
+//            }
         }
 
         lus.qs.dictLookupW.stop();
@@ -529,27 +509,26 @@ public class DiskDictionary implements Dictionary {
 
         //
         // Check our cache first!
-        synchronized(cacheLock) {
-            Object o = posnCache.get(p);
-            if(o != null && o instanceof Entry) {
-                return (QueryEntry) ((Entry) o).getEntry();
-            }
-        }
+//        synchronized(cacheLock) {
+//            Object o = posnCache.get(p);
+//            if(o != null && o instanceof Entry) {
+//                return (QueryEntry) ((Entry) o).getEntry();
+//            }
+//        }
 
-        QueryEntry e =
-                find(posn, lus);
+        QueryEntry e = find(posn, lus);
 
         //
         // We'll cache the name for later if we got one.
-        if(e != null) {
-            synchronized(cacheLock) {
-                posnCache.put(p, e);
-                nameCache.put(e.getName(), e);
-            }
-            return (QueryEntry) e.getEntry();
-        }
+//        if(e != null) {
+//            synchronized(cacheLock) {
+//                posnCache.put(p, e);
+//                nameCache.put(e.getName(), e);
+//            }
+//            return (QueryEntry) e.getEntry();
+//        }
 
-        return null;
+        return e == null ? null : (QueryEntry) e.getEntry();
     }
 
     /**
@@ -597,51 +576,19 @@ public class DiskDictionary implements Dictionary {
         // each whole-entry offset.  The entry could be found as a
         // whole entry, or more likely this loop will narrow down which
         // compressed group it is a part of, then we'll iterate through
-        // the compressed entries to see if the entry exists
-        int l = 0; // lower bound
-        int u = dh.nOffsets - 1; // upper bound
-        int cmp = 0; // comparison value
-        int mid = 0; // midpoint
+        // the compressed entries to see if the entry exists.
+        //
+        // We'll start ou with the in-memory BST.
+        BinarySearchTree.Node n = bst.find(key);
+        int l = n.lower;
+        int u = n.upper;
+        int cmp = 0;
+        int mid = 0;
         while(l <= u) {
 
             mid = (l + u) / 2;
+            Object compare = getUncompressedName(mid, lus);
 
-            Integer m = new Integer(mid * 4);
-
-            //
-            // Check the cache for this position.
-            Object compare;
-            synchronized(cacheLock) {
-                compare = posnCache.get(m);
-            }
-
-            if(compare == null) {
-
-                //
-                // Get the offset of the uncompressed entry.
-                int offset =
-                        lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes *
-                        mid,
-                        dh.nameOffsetsBytes);
-
-                //
-                // Get the name of the entry at that position.
-                lus.localNames.position(offset);
-                compare = decoder.decodeName(null, lus.localNames);
-
-                //
-                // Cache this one.
-                synchronized(cacheLock) {
-                    posnCache.put(m, compare);
-                }
-            }
-
-            //
-            // If the thing in the cache was an actual entry, then get its
-            // name, so that we can do comparisons with it.
-            if(compare instanceof Entry) {
-                compare = ((Entry) compare).getName();
-            }
 
             //
             // If we're looking for partial matches, check
@@ -689,7 +636,7 @@ public class DiskDictionary implements Dictionary {
 
 
         //
-        // Walk this block of entries.  Note we're possibly re-decoding one
+        // Walk this block of entries.  Note we're re-decoding one
         // entry, but we won't worry about this until absolutely necessary.
         int offset =
                 lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes * mid,
@@ -740,6 +687,26 @@ public class DiskDictionary implements Dictionary {
     }
 
     /**
+     * Gets an uncompressed name from the dictionary.  Used during binary
+     * searches.
+     * @param pos the position of the uncompressed name to get.
+     * @param lus the state to use to do the decoding
+     * @return the name at the given position.
+     */
+    private Object getUncompressedName(int pos, LookupState lus) {
+        //
+        // Get the offset of the uncompressed entry.
+        int offset =
+                lus.localNameOffsets.byteDecode(
+                dh.nameOffsetsBytes * pos, dh.nameOffsetsBytes);
+
+        //
+        // Get the name of the entry at that position.
+        lus.localNames.position(offset);
+        return decoder.decodeName(null, lus.localNames);
+    }
+
+    /**
      * Finds the entry at the given position in this dictionary.
      * @return The entry at the given position, or <code>null</code> if
      * there is no entry at that position in this block.
@@ -755,20 +722,10 @@ public class DiskDictionary implements Dictionary {
 
         //
         // Where's the nearest uncompressed entry, and how far from
-        // there do we need to venture to get the entry with this id?
+        // there do we need to venture to get the entry at this position?
         int ui = posn / 4;
         int n = posn % 4;
-
-        //
-        // Get the offset of the uncompressed entry.
-        int offset =
-                lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes * ui,
-                dh.nameOffsetsBytes);
-
-        //
-        // Get the name of the entry at that position.
-        lus.localNames.position(offset);
-        Object name = decoder.decodeName(null, lus.localNames);
+        Object name = getUncompressedName(ui, lus);
 
         //
         // Walk ahead and get the name of the entry we want.
@@ -2198,6 +2155,100 @@ public class DiskDictionary implements Dictionary {
             } else {
                 return posn + 1;
             }
+        }
+    }
+
+    /**
+     * A binary search tree that we can fill in with the top few levels of the
+     * search tree for this dictionary.
+     */
+    protected class BinarySearchTree {
+
+        Node root;
+
+        int size;
+
+        int depth;
+
+        LookupState lus;
+        
+        public BinarySearchTree(int capacity) {
+
+            //
+            // quick approximation to the log base 2 of the cache size.
+            depth = (int) (Math.log(capacity) / Math.log(2)) - 1;
+            lus = getLookupState();
+            root = new Node(0, dh.nOffsets-1);
+            root.fill(depth);
+        }
+
+        /**
+         * Finds the node that's closest to the given name, returning it.
+         * @param name the name that we're searching for
+         * @return the node closest to the name in the BST.
+         */
+        public Node find(Object name) {
+            Node curr = root;
+            while(true) {
+                int cmp = ((Comparable) name).compareTo(curr.name);
+                if(cmp == 0) {
+                    return curr;
+                } else if(cmp < 0) {
+                    if(curr.left == null) {
+                        return curr;
+                    }
+                    curr = curr.left;
+                } else {
+                    if(curr.right == null) {
+                        return curr;
+                    }
+                    curr = curr.right;
+                }
+            }
+        }
+
+        /**
+         * A node in the binary search tree.
+         */
+        protected class Node {
+            Object name;
+            int lower;
+            int upper;
+            int mid;
+            Node left;
+            Node right;
+
+            public Node(int lower, int upper) {
+                //
+                // Get the name for the node at the midpoint.
+                mid = (lower + upper) / 2;
+                name = getUncompressedName(mid, lus);
+                this.lower = lower;
+                this.upper = upper;
+                size++;
+            }
+
+            public void fill(int depth) {
+                if(depth == 0 || lower >= upper) {
+                    return;
+                }
+
+                left = new Node(lower, mid - 1);
+                left.fill(depth - 1);
+                right = new Node(mid + 1, upper);
+                right.fill(depth - 1);
+            }
+
+            public String toString() {
+                return String.format("%s [%d %d %d] %s",
+                        left == null ? "" : left.toString(),
+                        lower, mid, upper,
+                        right == null ? "" : right.toString());
+            }
+        }
+
+        public String toString() {
+            return String.format("%d nodes: %s", size, root.toString());
         }
     }
 } // DiskDictionary
