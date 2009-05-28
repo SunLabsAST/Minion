@@ -154,7 +154,8 @@ public class FileReadableBuffer extends StdReadableImpl {
                 raf.seek(off);
                 return raf.read(buff);
             } catch(java.io.IOException ioe) {
-                logger.log(Level.SEVERE, "Error reading from file", ioe);
+                logger.log(Level.SEVERE, 
+                        String.format("Error reading from file buffer: bs: %d be: %d pos: %d off: %d", bs, be, pos, off), ioe);
                 return -1;
             }
         }
