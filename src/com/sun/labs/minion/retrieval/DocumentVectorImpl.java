@@ -944,26 +944,21 @@ public class DocumentVectorImpl implements DocumentVector, Externalizable {
      * @see #readExternal(java.io.ObjectInput)
      */
     public void writeExternal(ObjectOutput out) throws IOException {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        DataOutputStream dos = new DataOutputStream(new GZIPOutputStream(bos));
-        dos.writeBoolean(keyName != null);
-        if (keyName != null) {
-            dos.writeUTF(keyName);
-        }
-        dos.writeBoolean(normalized);
-        dos.writeBoolean(field != null);
-        if (field != null) {
-            dos.writeUTF(field);
-        }
-        dos.writeInt(v.length);
-        for (WeightedFeature f : v) {
-            dos.writeUTF(f.getName());
-            dos.writeFloat(f.getWeight());
-        }
-        dos.close();
         out.writeLong(serialVersionUID);
-        out.writeInt(bos.size());
-        out.write(bos.toByteArray());
+        out.writeBoolean(keyName != null);
+        if (keyName != null) {
+            out.writeUTF(keyName);
+        }
+        out.writeBoolean(normalized);
+        out.writeBoolean(field != null);
+        if (field != null) {
+            out.writeUTF(field);
+        }
+        out.writeInt(v.length);
+        for (WeightedFeature f : v) {
+            out.writeUTF(f.getName());
+            out.writeFloat(f.getWeight());
+        }
     }
 
     /**
@@ -981,24 +976,19 @@ public class DocumentVectorImpl implements DocumentVector, Externalizable {
         if(svuid != serialVersionUID) {
             throw new java.io.InvalidClassException(String.format("Read class version %d looking for %d", svuid, serialVersionUID));
         }
-        int s = in.readInt();
-        byte[] gz = new byte[s];
-        in.readFully(gz);
-        DataInputStream dis = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(gz)));
-        if (dis.readBoolean()) {
-            keyName = dis.readUTF();
+        if (in.readBoolean()) {
+            keyName = in.readUTF();
         }
-        normalized = dis.readBoolean();
-        if (dis.readBoolean()) {
-            field = dis.readUTF();
+        normalized = in.readBoolean();
+        if (in.readBoolean()) {
+            field = in.readUTF();
         }
-        int l = dis.readInt();
+        int l = in.readInt();
         v = new WeightedFeature[l];
         for(int i = 0; i < v.length; i++) {
-            String n = dis.readUTF();
-            float w = dis.readFloat();
+            String n = in.readUTF();
+            float w = in.readFloat();
             v[i] = new WeightedFeature(n, w);
         }
-        dis.close();
     }
 }
