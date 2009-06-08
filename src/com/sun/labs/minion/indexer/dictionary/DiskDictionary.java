@@ -24,7 +24,6 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.QueryStats;
-import com.sun.labs.minion.indexer.entry.CasedDFOEntry;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,7 +52,6 @@ import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsInput;
 import com.sun.labs.minion.util.CharUtils;
-import com.sun.labs.minion.util.LRACache;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
@@ -115,13 +113,13 @@ public class DiskDictionary implements Dictionary {
     /**
      * A lookup state local to each thread
      */
-    protected static ThreadLocal<WeakHashMap<DiskDictionary,LookupState>>
-            threadLookupStates =
-            new ThreadLocal<WeakHashMap<DiskDictionary,LookupState>>() {
-        protected WeakHashMap<DiskDictionary,LookupState> initialValue() {
-            return new WeakHashMap<DiskDictionary,LookupState>();
-        }
-    };
+    protected static ThreadLocal<WeakHashMap<DiskDictionary, LookupState>> threadLookupStates =
+            new ThreadLocal<WeakHashMap<DiskDictionary, LookupState>>() {
+
+                protected WeakHashMap<DiskDictionary, LookupState> initialValue() {
+                    return new WeakHashMap<DiskDictionary, LookupState>();
+                }
+            };
 
     /**
      * A decoder for the names in this dictionary.
@@ -151,7 +149,8 @@ public class DiskDictionary implements Dictionary {
     /**
      * The log.
      */
-    protected static Logger logger = Logger.getLogger(DiskDictionary.class.getName());
+    protected static Logger logger = Logger.getLogger(DiskDictionary.class.
+            getName());
 
     /**
      * The tag for this module.
@@ -176,6 +175,7 @@ public class DiskDictionary implements Dictionary {
          * Random access file and partially load postings.
          */
         FILE_PART_POST
+
     }
 
     /**
@@ -183,10 +183,11 @@ public class DiskDictionary implements Dictionary {
      * read the dictionary data.
      */
     public enum BufferType {
+
         FILEBUFFER,
         NIOFILEBUFFER
-    }
 
+    }
     private BufferType fileBufferType;
 
     /**
@@ -206,12 +207,13 @@ public class DiskDictionary implements Dictionary {
      * @throws java.io.IOException if there is any error opening the dictionary
      */
     public DiskDictionary(Class entryClass,
-            NameDecoder decoder, RandomAccessFile dictFile,
-            RandomAccessFile[] postFiles) throws java.io.IOException {
+                          NameDecoder decoder, RandomAccessFile dictFile,
+                          RandomAccessFile[] postFiles) throws
+            java.io.IOException {
         this(entryClass, decoder, dictFile, postFiles,
-                PostingsInputType.FILE_FULL_POST,
-                BufferType.FILEBUFFER, 256,
-                2048, 1024, 1024, 1024, null);
+             PostingsInputType.FILE_FULL_POST,
+             BufferType.FILEBUFFER, 256,
+             2048, 1024, 1024, 1024, null);
     }
 
     /**
@@ -226,13 +228,13 @@ public class DiskDictionary implements Dictionary {
      * @throws java.io.IOException if there is any error opening the dictionary
      */
     public DiskDictionary(Class entryClass,
-            NameDecoder decoder, RandomAccessFile dictFile,
-            RandomAccessFile[] postFiles,
-            Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, 
-                PostingsInputType.CHANNEL_FULL_POST,
-                BufferType.FILEBUFFER, 256,
-                2048, 1024, 1024, 1024, part);
+                          NameDecoder decoder, RandomAccessFile dictFile,
+                          RandomAccessFile[] postFiles,
+                          Partition part) throws java.io.IOException {
+        this(entryClass, decoder, dictFile, postFiles,
+             PostingsInputType.CHANNEL_FULL_POST,
+             BufferType.FILEBUFFER, 256,
+             2048, 1024, 1024, 1024, part);
     }
 
     /**
@@ -248,12 +250,13 @@ public class DiskDictionary implements Dictionary {
      * @throws java.io.IOException if there is any error opening the dictionary
      */
     public DiskDictionary(Class entryClass,
-            NameDecoder decoder, RandomAccessFile dictFile,
-            RandomAccessFile[] postFiles, PostingsInputType postingsInputType,
-            Partition part) throws java.io.IOException {
+                          NameDecoder decoder, RandomAccessFile dictFile,
+                          RandomAccessFile[] postFiles,
+                          PostingsInputType postingsInputType,
+                          Partition part) throws java.io.IOException {
         this(entryClass, decoder, dictFile, postFiles, postingsInputType,
-                BufferType.FILEBUFFER,
-                256, 2048, 1024, 1024, 1024, part);
+             BufferType.FILEBUFFER,
+             256, 2048, 1024, 1024, 1024, part);
     }
 
     /**
@@ -275,12 +278,14 @@ public class DiskDictionary implements Dictionary {
      * @throws java.io.IOException if there is any error opening the dictionary
      */
     public DiskDictionary(Class entryClass,
-            NameDecoder decoder, RandomAccessFile dictFile,
-            RandomAccessFile[] postFiles, 
-            PostingsInputType postingsInputType,
-            BufferType fileBufferType, int cacheSize,
-            int nameBufferSize, int offsetsBufferSize, int infoBufferSize,
-            int infoOffsetsBufferSize, Partition part) throws java.io.IOException {
+                          NameDecoder decoder, RandomAccessFile dictFile,
+                          RandomAccessFile[] postFiles,
+                          PostingsInputType postingsInputType,
+                          BufferType fileBufferType, int cacheSize,
+                          int nameBufferSize, int offsetsBufferSize,
+                          int infoBufferSize,
+                          int infoOffsetsBufferSize, Partition part) throws
+            java.io.IOException {
         this.entryClass = entryClass;
         this.dictFile = dictFile;
         this.postFiles = postFiles;
@@ -300,12 +305,12 @@ public class DiskDictionary implements Dictionary {
                 case CHANNEL_FULL_POST:
                     postIn[i] =
                             new ChannelPostingsInput(postFiles[i].getChannel(),
-                            true);
+                                                     true);
                     break;
                 case CHANNEL_PART_POST:
                     postIn[i] =
                             new ChannelPostingsInput(postFiles[i].getChannel(),
-                            false);
+                                                     false);
                     break;
                 case FILE_FULL_POST:
                     postIn[i] =
@@ -321,48 +326,57 @@ public class DiskDictionary implements Dictionary {
         if(dh.idToPosnSize > 0) {
             idToPosn =
                     new FileReadableBuffer(dictFile, dh.idToPosnPos,
-                    dh.idToPosnSize);
+                                           dh.idToPosnSize);
         }
 
         setUpBuffers(nameBufferSize, offsetsBufferSize, infoBufferSize,
-                infoOffsetsBufferSize);
+                     infoOffsetsBufferSize);
         bst = new BinarySearchTree(cacheSize);
     }
 
     protected void setUpBuffers(int nameBufferSize, int offsetsBufferSize,
-            int infoBufferSize, int infoOffsetsBufferSize) throws java.io.IOException {
+                                int infoBufferSize, int infoOffsetsBufferSize)
+            throws java.io.IOException {
 
-        switch (fileBufferType) {
+        switch(fileBufferType) {
             case FILEBUFFER:
-                names = new FileReadableBuffer(dictFile, dh.namesPos, dh.namesSize,
-                        nameBufferSize);
+                names = new FileReadableBuffer(dictFile, dh.namesPos,
+                                               dh.namesSize,
+                                               nameBufferSize);
                 nameOffsets =
                         new FileReadableBuffer(dictFile, dh.nameOffsetsPos,
-                        dh.nameOffsetsSize, offsetsBufferSize);
+                                               dh.nameOffsetsSize,
+                                               offsetsBufferSize);
                 entryInfo =
                         new FileReadableBuffer(dictFile, dh.entryInfoPos,
-                        dh.entryInfoSize, infoBufferSize);
+                                               dh.entryInfoSize, infoBufferSize);
                 entryInfoOffsets =
                         new FileReadableBuffer(dictFile, dh.entryInfoOffsetsPos,
-                        dh.entryInfoOffsetsSize, infoOffsetsBufferSize);
+                                               dh.entryInfoOffsetsSize,
+                                               infoOffsetsBufferSize);
                 break;
             case NIOFILEBUFFER:
-                names = new NIOFileReadableBuffer(dictFile, dh.namesPos, dh.namesSize,
-                        nameBufferSize);
+                names = new NIOFileReadableBuffer(dictFile, dh.namesPos,
+                                                  dh.namesSize,
+                                                  nameBufferSize);
                 nameOffsets =
                         new NIOFileReadableBuffer(dictFile, dh.nameOffsetsPos,
-                        dh.nameOffsetsSize, offsetsBufferSize);
+                                                  dh.nameOffsetsSize,
+                                                  offsetsBufferSize);
 
                 entryInfo =
                         new NIOFileReadableBuffer(dictFile, dh.entryInfoPos,
-                        dh.entryInfoSize, infoBufferSize);
+                                                  dh.entryInfoSize,
+                                                  infoBufferSize);
                 entryInfoOffsets =
-                        new NIOFileReadableBuffer(dictFile, dh.entryInfoOffsetsPos,
-                        dh.entryInfoOffsetsSize, infoOffsetsBufferSize);
+                        new NIOFileReadableBuffer(dictFile,
+                                                  dh.entryInfoOffsetsPos,
+                                                  dh.entryInfoOffsetsSize,
+                                                  infoOffsetsBufferSize);
                 break;
         }
 
-        
+
     }
 
     /**
@@ -385,9 +399,9 @@ public class DiskDictionary implements Dictionary {
     }
 
     public LookupState getLookupState() {
-        WeakHashMap<DiskDictionary,LookupState> map = threadLookupStates.get();
+        WeakHashMap<DiskDictionary, LookupState> map = threadLookupStates.get();
         LookupState lus = map.get(this);
-        if (lus == null) {
+        if(lus == null) {
             lus = new LookupState(this);
             map.put(this, lus);
         }
@@ -500,7 +514,7 @@ public class DiskDictionary implements Dictionary {
         int posn;
         if(lus.localIDToPosn != null) {
             posn = lus.localIDToPosn.byteDecode(id * dh.idToPosnBytes,
-                    dh.idToPosnBytes);
+                                                dh.idToPosnBytes);
         } else {
             posn = id - 1;
         }
@@ -640,7 +654,7 @@ public class DiskDictionary implements Dictionary {
         // entry, but we won't worry about this until absolutely necessary.
         int offset =
                 lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes * mid,
-                dh.nameOffsetsBytes);
+                                                dh.nameOffsetsBytes);
 
         lus.localNames.position(offset);
 
@@ -748,8 +762,8 @@ public class DiskDictionary implements Dictionary {
      * @return The filled entry.
      */
     protected QueryEntry newEntry(Object name, int posn,
-            LookupState lus,
-            PostingsInput[] postIn) {
+                                  LookupState lus,
+                                  PostingsInput[] postIn) {
 
         //
         // We'll use a default ID that's related to the position in the
@@ -765,7 +779,7 @@ public class DiskDictionary implements Dictionary {
         // find the information for this entry.
         int offset = lus.localInfoOffsets.byteDecode(posn *
                 dh.entryInfoOffsetsBytes,
-                dh.entryInfoOffsetsBytes);
+                                                     dh.entryInfoOffsetsBytes);
         ret.decodePostingsInfo(lus.localInfo, offset);
         return ret;
     }
@@ -788,8 +802,9 @@ public class DiskDictionary implements Dictionary {
      * @return an in-order array of the entries beginning with the stem
      */
     public QueryEntry[] getStemMatches(DiskBiGramDictionary biDict,
-            String term, boolean caseSensitive, int minLen, float matchCutOff,
-            int maxEntries, long timeLimit) {
+                                       String term, boolean caseSensitive,
+                                       int minLen, float matchCutOff,
+                                       int maxEntries, long timeLimit) {
         //
         // To stem the term, take half of the supplied term, or
         // minLen characters, whichever is larger
@@ -806,7 +821,7 @@ public class DiskDictionary implements Dictionary {
         // Get the entries that start with the given stem.
         QueryEntry[] candidates =
                 getSubstring(biDict, stem, caseSensitive, true, false,
-                maxEntries, timeLimit);
+                             maxEntries, timeLimit);
 
         //
         // Either there were no candidates or we timed out.
@@ -822,7 +837,7 @@ public class DiskDictionary implements Dictionary {
                     StringNameHandler.getShared(term, s);
             float diff =
                     shr / (float) Math.max(term.length(),
-                    s.length());
+                                           s.length());
 
             if(diff >= matchCutOff) {
                 ret.add(candidates[i]);
@@ -853,7 +868,8 @@ public class DiskDictionary implements Dictionary {
      * be matched
      */
     public QueryEntry[] getMatching(DiskBiGramDictionary biDict,
-            String pat, boolean caseSensitive, int maxEntries, long timeLimit) {
+                                    String pat, boolean caseSensitive,
+                                    int maxEntries, long timeLimit) {
 
         //
         // There's two stages to getting entries that match a wildcard
@@ -887,8 +903,7 @@ public class DiskDictionary implements Dictionary {
             return null;
         }
 
-        ArrayList<QueryEntry> res =
-                new ArrayList<QueryEntry>();
+        ArrayList<QueryEntry> res = new ArrayList<QueryEntry>();
 
         //
         // Get an array to save generating it over and over.
@@ -907,7 +922,7 @@ public class DiskDictionary implements Dictionary {
                     ((maxEntries <= 0) || (res.size() < maxEntries))) {
                 QueryEntry curr = (QueryEntry) entryIt.next();
                 if(Util.match(patArray, curr.toString().toCharArray(),
-                        caseSensitive)) {
+                              caseSensitive)) {
                     res.add(curr);
                 }
             }
@@ -920,7 +935,7 @@ public class DiskDictionary implements Dictionary {
                     ((maxEntries <= 0) || (res.size() < maxEntries)); i++) {
                 QueryEntry curr = get(entryIds[i]);
                 if(Util.match(patArray, curr.toString().toCharArray(),
-                        caseSensitive)) {
+                              caseSensitive)) {
                     res.add(curr);
                 }
             }
@@ -952,7 +967,8 @@ public class DiskDictionary implements Dictionary {
      * be matched
      */
     public QueryEntry[] getSpellingVariants(DiskBiGramDictionary biDict,
-            String word, boolean caseSensitive, int maxEntries, long timeLimit) {
+                                            String word, boolean caseSensitive,
+                                            int maxEntries, long timeLimit) {
 
         //
         // We'll find spelling variants in two steps.  First, use the
@@ -1077,8 +1093,10 @@ public class DiskDictionary implements Dictionary {
      * entries could be matched
      */
     public QueryEntry[] getSubstring(DiskBiGramDictionary biDict,
-            String substring, boolean caseSensitive, boolean starts,
-            boolean ends, int maxEntries, long timeLimit) {
+                                     String substring, boolean caseSensitive,
+                                     boolean starts,
+                                     boolean ends, int maxEntries,
+                                     long timeLimit) {
 
         //
         // Get a set of candidate strings. We'll set up a timer first...
@@ -1228,15 +1246,16 @@ public class DiskDictionary implements Dictionary {
                         com.sun.labs.minion.indexer.entry.DocKeyEntry.class) {
                     buffChans[i] =
                             new FileBackedPostingsInput(postFiles[i],
-                            dh.postStart[i], buffSize);
+                                                        dh.postStart[i],
+                                                        buffSize);
                 } else {
                     buffChans[i] =
                             new StreamPostingsInput(postFiles[i],
-                            dh.postStart[i], buffSize);
+                                                    dh.postStart[i], buffSize);
                 }
             } catch(java.io.IOException ioe) {
                 logger.log(Level.SEVERE,
-                        "Error creating postings stream for iterator", ioe);
+                           "Error creating postings stream for iterator", ioe);
                 buffChans[i] = postIn[i];
             }
         }
@@ -1292,9 +1311,9 @@ public class DiskDictionary implements Dictionary {
      * @return the iterator
      */
     public DictionaryIterator iterator(Object startEntry, boolean includeStart,
-            Object stopEntry, boolean includeStop) {
+                                       Object stopEntry, boolean includeStop) {
         return new DiskDictionaryIterator(startEntry, includeStart, stopEntry,
-                includeStop);
+                                          includeStop);
     }
 
     /**
@@ -1342,12 +1361,14 @@ public class DiskDictionary implements Dictionary {
      * @throws java.io.IOException when there is an error during the merge.
      */
     public int[][] merge(IndexEntry entryFactory,
-            NameEncoder encoder,
-            DiskDictionary[] dicts, EntryMapper[] mappers, int[] starts,
-            int[][] postIDMaps, RandomAccessFile mDictFile,
-            PostingsOutput[] postOut, boolean appendPostings) throws java.io.IOException {
+                         NameEncoder encoder,
+                         DiskDictionary[] dicts, EntryMapper[] mappers,
+                         int[] starts,
+                         int[][] postIDMaps, RandomAccessFile mDictFile,
+                         PostingsOutput[] postOut, boolean appendPostings)
+            throws java.io.IOException {
         return merge(entryFactory, encoder, null, dicts, mappers, starts,
-                postIDMaps, mDictFile, postOut, appendPostings);
+                     postIDMaps, mDictFile, postOut, appendPostings);
     }
 
     /**
@@ -1381,11 +1402,13 @@ public class DiskDictionary implements Dictionary {
      * @throws java.io.IOException when there is an error during the merge.
      */
     public int[][] merge(IndexEntry entryFactory,
-            NameEncoder encoder,
-            PartitionStats partStats,
-            DiskDictionary[] dicts, EntryMapper[] mappers, int[] starts,
-            int[][] postIDMaps, RandomAccessFile mDictFile,
-            PostingsOutput[] postOut, boolean appendPostings) throws java.io.IOException {
+                         NameEncoder encoder,
+                         PartitionStats partStats,
+                         DiskDictionary[] dicts, EntryMapper[] mappers,
+                         int[] starts,
+                         int[][] postIDMaps, RandomAccessFile mDictFile,
+                         PostingsOutput[] postOut, boolean appendPostings)
+            throws java.io.IOException {
 
         //
         // We'll keep a map from old to new IDs for each of the
@@ -1424,8 +1447,8 @@ public class DiskDictionary implements Dictionary {
         // We'll need a writer for the merged dictionary.
         DictionaryWriter dw =
                 new DictionaryWriter(part.getManager().getIndexDir(), encoder,
-                partStats, postOut.length,
-                keepIDToPosn
+                                     partStats, postOut.length,
+                                     keepIDToPosn
                 ? MemoryDictionary.Renumber.NONE
                 : MemoryDictionary.Renumber.RENUMBER);
 
@@ -1467,7 +1490,7 @@ public class DiskDictionary implements Dictionary {
                 // Give a subclass a crack at the merged entry and the
                 // entry at the top of the heap.
                 customSetup(me, top.curr, starts[top.index],
-                        postIDMaps[top.index]);
+                            postIDMaps[top.index]);
 
                 //
                 // Get the top of the heap and merge it with the entry we're
@@ -1574,15 +1597,16 @@ public class DiskDictionary implements Dictionary {
      * @throws java.io.IOException if there is any error reading or writing dictionaries
      */
     public void remapPostings(IndexEntry entryFactory,
-            NameEncoder encoder,
-            PartitionStats partStats, int[] postMap,
-            RandomAccessFile dictFile,
-            PostingsOutput[] postOut) throws java.io.IOException {
+                              NameEncoder encoder,
+                              PartitionStats partStats, int[] postMap,
+                              RandomAccessFile dictFile,
+                              PostingsOutput[] postOut) throws
+            java.io.IOException {
 
         DictionaryWriter dw =
                 new DictionaryWriter(part.getManager().getIndexDir(), encoder,
-                partStats, postOut.length,
-                MemoryDictionary.Renumber.NONE);
+                                     partStats, postOut.length,
+                                     MemoryDictionary.Renumber.NONE);
 
         //
         // Track what the highest ID is in the new dictionary
@@ -1697,7 +1721,7 @@ public class DiskDictionary implements Dictionary {
      *
      */
     protected void customSetup(IndexEntry me, QueryEntry e, int start,
-            int[] postIDMap) {
+                               int[] postIDMap) {
     }
 
     /**
@@ -1731,7 +1755,7 @@ public class DiskDictionary implements Dictionary {
         protected int index;
 
         public HE(DiskDictionary dd, int index,
-                EntryMapper mapper) {
+                  EntryMapper mapper) {
             i = dd.iterator();
             this.index = index;
             this.mapper = mapper;
@@ -1897,7 +1921,7 @@ public class DiskDictionary implements Dictionary {
          * dictionary.
          */
         public DiskDictionaryIterator(Object startEntry, boolean includeStart,
-                Object stopEntry, boolean includeStop) {
+                                      Object stopEntry, boolean includeStop) {
 
             lus = new LookupState(DiskDictionary.this);
             pos = 0;
@@ -2171,14 +2195,14 @@ public class DiskDictionary implements Dictionary {
         int depth;
 
         LookupState lus;
-        
+
         public BinarySearchTree(int capacity) {
 
             //
             // quick approximation to the log base 2 of the cache size.
             depth = (int) (Math.log(capacity) / Math.log(2)) - 1;
             lus = getLookupState();
-            root = new Node(0, dh.nOffsets-1);
+            root = new Node(0, dh.nOffsets - 1);
             root.fill(depth);
         }
 
@@ -2189,17 +2213,28 @@ public class DiskDictionary implements Dictionary {
          */
         public Node find(Object name) {
             Node curr = root;
+            Comparable cname = (Comparable) name;
             while(true) {
-                int cmp = ((Comparable) name).compareTo(curr.name);
+                int cmp = cname.compareTo(curr.name);
                 if(cmp == 0) {
                     return curr;
                 } else if(cmp < 0) {
-                    if(curr.left == null) {
+                    //
+                    // If the node to the left is null, or the name there is
+                    // less than this name, then we need to use this node, as
+                    // its start and end span the position where the name must
+                    // be.
+                    if(curr.left == null ||
+                            cname.compareTo(curr.left.name) > 0) {
                         return curr;
                     }
                     curr = curr.left;
                 } else {
-                    if(curr.right == null) {
+                    //
+                    // If the node to the right is null, or the name there is
+                    // greater than this name, then we need to use this node, as
+                    // its start and end span the position where the name must be.
+                    if(curr.right == null || cname.compareTo(curr.right.name) < 0) {
                         return curr;
                     }
                     curr = curr.right;
@@ -2211,11 +2246,17 @@ public class DiskDictionary implements Dictionary {
          * A node in the binary search tree.
          */
         protected class Node {
+
             Object name;
+
             int lower;
+
             int upper;
+
             int mid;
+
             Node left;
+
             Node right;
 
             public Node(int lower, int upper) {
@@ -2240,10 +2281,9 @@ public class DiskDictionary implements Dictionary {
             }
 
             public String toString() {
-                return String.format("%s [%d %d %d] %s",
-                        left == null ? "" : left.toString(),
-                        lower, mid, upper,
-                        right == null ? "" : right.toString());
+                return String.format("[%s %d %d %d]",
+                                     name,
+                                     lower, mid, upper);
             }
         }
 
