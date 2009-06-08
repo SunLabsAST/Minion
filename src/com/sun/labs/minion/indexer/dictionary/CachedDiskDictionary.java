@@ -150,7 +150,11 @@ public class CachedDiskDictionary extends DiskDictionary {
      * the name doesn't appear in the dictionary.
      */
     public QueryEntry get(Object name) {
-        return (QueryEntry) entriesByName.get(name).getEntry();
+        QueryEntry e = entriesByName.get(name);
+        if(e == null) {
+            return null;
+        }
+        return (QueryEntry) e.getEntry();
     }
 
     /**
