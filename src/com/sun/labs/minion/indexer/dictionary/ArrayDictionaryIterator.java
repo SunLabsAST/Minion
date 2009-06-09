@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -33,32 +32,36 @@ import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 public class ArrayDictionaryIterator implements DictionaryIterator {
 
     private DiskDictionary dd;
-    
+
     private QueryEntry[] entries;
-    
+
     private PostingsInput[] buffInputs;
 
     private int curr;
-    
+
+    private QueryEntry nextEntry;
+
     private int begin;
-    
+
     private int end;
 
     public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries) {
         this(dd, entries, 0, entries != null ? entries.length : 0, null);
     }
-    
+
     public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries,
-            PostingsInput[] buffInputs) {
+                                   PostingsInput[] buffInputs) {
         this(dd, entries, 0, entries != null ? entries.length : 0, buffInputs);
     }
-    
-    public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries, int begin, int end) {
+
+    public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries,
+                                   int begin, int end) {
         this(dd, entries, begin, end, null);
     }
-    
-    public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries, int begin, int end,
-            PostingsInput[] buffInputs) {
+
+    public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries,
+                                   int begin, int end,
+                                   PostingsInput[] buffInputs) {
         this.dd = dd;
         this.buffInputs = buffInputs;
         if(entries == null) {
@@ -73,9 +76,8 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
             this.end = end;
         }
     } // ArrayDictionaryIterator constructor
-    
-    // Implementation of java.util.Iterator
 
+    // Implementation of java.util.Iterator
     /**
      * Describe <code>remove</code> method here.
      *
@@ -85,27 +87,52 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
     }
 
     /**
-     * Describe <code>next</code> method here.
+     * Gets the next element from the iterator.
      *
-     * @return an <code>Object</code> value
+     * @return the next element if there is one.
+     * @throws java.util.NoSuchElementException if there are no more elements on
+     * the iterator.
      */
     public QueryEntry next() {
-        if(curr < end) {
-            return entries[curr++];
+
+        //
+        // If the next entry hasn't been set yet, then check to see if there
+        // is a next element.
+        if(nextEntry == null) {
+            if(!hasNext()) {
+                throw new java.util.NoSuchElementException("No more terms!");
+            }
         }
 
-        throw new java.util.NoSuchElementException("No more terms!");
+        //
+        // Set the next entry to null, so that we call hasNext next time around.
+        QueryEntry ret = nextEntry;
+        nextEntry = null;
+        return ret;
     }
 
     /**
-     * Describe <code>hasNext</code> method here.
+     * Tests whether this iterator has a next element.
      *
-     * @return a <code>boolean</code> value
+     * @return <code>true</code> if there is another element on the iterator.
      */
     public boolean hasNext() {
-        return curr < end;
+
+        //
+        // If there's no current next entry, then we need to skim ahead through
+        // the array, looking for a non-null
+        // entry to provide for the next call to next.
+        if(nextEntry == null) {
+            while(curr < end) {
+                nextEntry = entries[curr++];
+                if(nextEntry != null) {
+                    break;
+                }
+            }
+        }
+        return nextEntry != null;
     }
-    
+
     /**
      * Estimates the number of documents in the postings for the entries 
      * represented by this iterator
@@ -136,5 +163,5 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
     public QueryEntry get(int id) {
         return dd.getByID(id);
     }
-    
 } // ArrayDictionaryIterator
+
