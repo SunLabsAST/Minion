@@ -55,14 +55,8 @@ import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.util.Util;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.Externalizable;
 import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * A class that holds a weighted document vector for a given document from

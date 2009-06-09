@@ -60,7 +60,7 @@ public class CheckDV {
         while(pi.next()) {
             int tid = pi.getID();
             int freq = pi.getFreq();
-            QueryEntry term = part.getMainDictionary().get(tid);
+            QueryEntry term = part.getMainDictionary().getByID(tid);
             TermStats ts = e.getTermStats(term.getName().toString());
             System.out.format("stats: %s term freq: %d\n", ts, freq);
             PostingsIterator ti = term.iterator(feat);

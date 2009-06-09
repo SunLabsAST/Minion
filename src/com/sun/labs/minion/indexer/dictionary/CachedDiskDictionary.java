@@ -164,7 +164,7 @@ public class CachedDiskDictionary extends DiskDictionary {
      * @return The block, or <code>null</code> if the ID doesn't occur in
      * our dictionary.
      */
-    public QueryEntry get(int id) {
+    public QueryEntry getByID(int id) {
         if(id < 1 || id > entries.length) {
             return null;
         }

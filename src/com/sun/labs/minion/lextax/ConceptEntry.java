@@ -310,7 +310,7 @@ public class ConceptEntry implements IndexEntry, QueryEntry {
             Set conceptSet = new HashSet();
             for (Iterator iter = linkSet.iterator(); iter.hasNext();) {
                 Integer conceptId = (Integer) iter.next();
-                conceptSet.add(((DiskDictionary)dict).get(conceptId.intValue()));
+                conceptSet.add(((DiskDictionary)dict).getByID(conceptId.intValue()));
             }
             return conceptSet;
         }

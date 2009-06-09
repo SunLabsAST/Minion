@@ -112,7 +112,7 @@ public class ClusterDiskPartition extends DiskPartition
         // For each "doc" (ie cluster) that it appears in, get the features
         // for that cluster and throw them in the result set
         while (it.next()) {
-            DocKeyEntry docEnt = (DocKeyEntry)docDict.get(it.getID());
+            DocKeyEntry docEnt = (DocKeyEntry)docDict.getByID(it.getID());
             fcs.add(makeCluster(docEnt));
         }
         return fcs;
@@ -139,7 +139,7 @@ public class ClusterDiskPartition extends DiskPartition
 
             //
             // Look up the feature's name in the main dict.
-            Entry mainEntry = mainDict.get(f.getID());
+            Entry mainEntry = mainDict.getByID(f.getID());
             f.setName((String)mainEntry.getName());
             cluster.add(f);
         }

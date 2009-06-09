@@ -425,7 +425,7 @@ public class ClassifierDiskPartition extends DiskPartition {
 
             //
             // Look up the feature's name in the main dict.
-            Entry mainEntry = mainDict.get(f.getID());
+            Entry mainEntry = mainDict.getByID(f.getID());
             f.setName((String) mainEntry.getName());
             features.add(f);
         }

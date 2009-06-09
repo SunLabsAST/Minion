@@ -134,7 +134,7 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
     }
 
     public QueryEntry get(int id) {
-        return dd.get(id);
+        return dd.getByID(id);
     }
     
 } // ArrayDictionaryIterator

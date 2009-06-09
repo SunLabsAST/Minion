@@ -83,7 +83,7 @@ public class DiskTaxonomy extends Taxonomy {
      *            The id of the concept we want.
      */
     public synchronized ConceptEntry getConcept(int id) {
-        return (ConceptEntry) dict.get(id);
+        return (ConceptEntry) dict.getByID(id);
     }
 
     /**

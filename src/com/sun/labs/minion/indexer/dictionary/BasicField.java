@@ -552,7 +552,7 @@ public class BasicField implements SavedField {
                 //
                 // Get the term with the ID from the postings from our main
                 // dictionary, and add its name to the return List.
-                Entry val = ((DiskDictionary) values).get(vals[i]);
+                Entry val = ((DiskDictionary) values).getByID(vals[i]);
                 if(val != null) {
                     ret.add(val.getName());
                 }
@@ -563,7 +563,7 @@ public class BasicField implements SavedField {
         //
         // Return just the first value.
         if(vals.length != 0) {
-            Entry val = ((DiskDictionary) values).get(vals[0]);
+            Entry val = ((DiskDictionary) values).getByID(vals[0]);
             if(val != null) {
                 return val.getName();
             }
@@ -656,7 +656,7 @@ public class BasicField implements SavedField {
             value = CharUtils.toLowerCase(value);
         }
         for(int i = 0; i < var.length; i++) {
-            QueryEntry qe = ((DiskDictionary) values).get(var[i]);
+            QueryEntry qe = ((DiskDictionary) values).getByID(var[i]);
             String name = qe.getName().toString();
             if(!matchCase) {
                 name = CharUtils.toLowerCase(name);
@@ -984,15 +984,9 @@ public class BasicField implements SavedField {
          */
         private ReadableBuffer ldtv;
 
-        /**
-         * An iterator that we can use to fetch things by ID from the dictionary.
-         */
-        private DiskDictionary.DiskDictionaryIterator iter;
-
         public Fetcher() {
             ldtvo = dtvOffsets.duplicate();
             ldtv = dtvData.duplicate();
-            iter = (DiskDictionary.DiskDictionaryIterator) values.iterator();
         }
 
         /**
@@ -1005,7 +999,7 @@ public class BasicField implements SavedField {
             if(n == 0) {
                 return field.getDefaultSavedValue();
             }
-            return iter.get(ldtv.byteDecode()).getName();
+            return ((DiskDictionary) values).getByID(ldtv.byteDecode()).getName();
         }
 
         public List fetch(int docID) {
@@ -1017,7 +1011,7 @@ public class BasicField implements SavedField {
                     header.offsetBytes));
             int n = ldtv.byteDecode();
             for(int i = 0; i < n; i++) {
-                l.add(iter.get(ldtv.byteDecode()).getName());
+                l.add(((DiskDictionary) values).getByID(ldtv.byteDecode()).getName());
             }
             return l;
         }

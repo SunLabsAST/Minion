@@ -492,7 +492,7 @@ public class DiskDictionary implements Dictionary {
      * @return The block, or <code>null</code> if the ID doesn't occur in
      * our dictionary.
      */
-    public QueryEntry get(int id) {
+    public QueryEntry getByID(int id) {
         return get(id, getLookupState());
     }
 
@@ -933,7 +933,7 @@ public class DiskDictionary implements Dictionary {
             for(int i = 0; (i < entryIds.length) && (entryIds[i] != 0) &&
                     (!qtt.timedOut) &&
                     ((maxEntries <= 0) || (res.size() < maxEntries)); i++) {
-                QueryEntry curr = get(entryIds[i]);
+                QueryEntry curr = getByID(entryIds[i]);
                 if(Util.match(patArray, curr.toString().toCharArray(),
                               caseSensitive)) {
                     res.add(curr);
@@ -1023,7 +1023,7 @@ public class DiskDictionary implements Dictionary {
             // Now look up each entry to see if it is a possible match
             for(int i = 0; (i < entryIds.length) && (entryIds[i] != 0) &&
                     (!qtt.timedOut); i++) {
-                Entry curr = get(entryIds[i]);
+                Entry curr = getByID(entryIds[i]);
                 String name = (String) curr.getName();
                 res.add(curr);
                 double d = Util.levenshteinDistance(word, name);
@@ -1140,7 +1140,7 @@ public class DiskDictionary implements Dictionary {
         for(int i = 0; (i < entryIds.length) && (entryIds[i] != 0) &&
                 (!qtt.timedOut) &&
                 ((maxEntries <= 0) || (res.size() < maxEntries)); i++) {
-            QueryEntry curr = get(entryIds[i]);
+            QueryEntry curr = getByID(entryIds[i]);
             String name = curr.getName().toString();
             if(!caseSensitive) {
                 name = CharUtils.toLowerCase(name);

@@ -229,7 +229,6 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
                 return new WeightedFeature[0];
             }
 
-            WeightedFeature[] ret = new WeightedFeature[nIDs];
             wc.dvl = ((DiskPartition) dict.getPartition()).getDocumentVectorLength(docID, fieldID);
             List<WeightedFeature> fl = new ArrayList<WeightedFeature>();
             if(getN() > 0.1 * ((DiskPartition) dict.getPartition()).getNEntries()) {

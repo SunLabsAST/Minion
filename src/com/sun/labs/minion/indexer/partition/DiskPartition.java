@@ -462,7 +462,7 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public DocKeyEntry getDocumentTerm(int docID) {
         initDocDict();
-        return (DocKeyEntry) docDict.get(docID);
+        return (DocKeyEntry) docDict.getByID(docID);
     }
 
     /**
@@ -664,7 +664,7 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public QueryEntry getTerm(int id) {
         initMainDict();
-        return mainDict.get(id);
+        return mainDict.getByID(id);
     }
 
     /**
