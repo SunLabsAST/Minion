@@ -62,7 +62,13 @@ public class TermCacheElement {
 
     protected TermStatsImpl ts;
 
+    private float sqw;
+
     Logger logger = Logger.getLogger(getClass().getName());
+
+    WeightingFunction wf;
+
+    WeightingComponents wc;
 
     /**
      * Creates a cache element.
@@ -75,6 +81,8 @@ public class TermCacheElement {
         this.terms = new ArrayList<String>(terms);
         this.feat = feat;
         this.part = part;
+        wf = feat.getWeightingFunction();
+        wc = feat.getWeightingComponents();
         for(String term : terms) {
             add(part.getTerm(term));
         }
@@ -87,6 +95,9 @@ public class TermCacheElement {
 
         TermStatsImpl ets = part.getManager().getTermStats(
                 e.getName().toString());
+        wc.setTerm(ets);
+        float qw = wf.initTerm(wc);
+        sqw += qw * qw;
         if(ts == null) {
             ts = ets;
         } else {
@@ -98,6 +109,10 @@ public class TermCacheElement {
 
     public TermStatsImpl getTermStats() {
         return ts;
+    }
+
+    public float getQueryWeight() {
+        return sqw;
     }
     
     /**
@@ -191,10 +206,10 @@ public class TermCacheElement {
      */
     protected void computeWeights() {
         if(weights == null) {
+            weights = new float[n];
             WeightingComponents wc = feat.getWeightingComponents();
             WeightingFunction wf = feat.getWeightingFunction();
-            weights = new float[n];
-            wf.initTerm(wc.setTerm(ts));
+            sqw = wf.initTerm(wc.setTerm(ts));
             for(int i = 0; i < n; i++) {
                 wc.fdt = counts[i];
                 weights[i] = wf.termWeight(wc);
@@ -204,7 +219,9 @@ public class TermCacheElement {
 
     public ScoredGroup getGroup() {
         computeWeights();
-        return new ScoredGroup(part, ids.clone(), weights.clone(), n);
+        ScoredGroup ret = new ScoredGroup(part, ids.clone(), weights.clone(), n);
+        ret.setQueryWeight(sqw);
+        return ret;
     }
 
     public PostingsIterator iterator() {

@@ -302,6 +302,9 @@ public class ScoredGroup extends ArrayGroup {
     public ArrayGroup normalize(int field) {
         if(!normalized) {
             sqw = (float) Math.sqrt(sqw);
+            if(sqw == 0) {
+                sqw = 1;
+            }
             part.normalize(docs, scores, size, sqw, field);
             normalized = true;
         }
@@ -671,6 +674,10 @@ public class ScoredGroup extends ArrayGroup {
         }
         
         return sb.toString();
+    }
+
+    public void setQueryWeight(float sqw) {
+        this.sqw = sqw;
     }
     
     /**

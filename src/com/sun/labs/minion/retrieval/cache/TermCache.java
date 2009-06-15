@@ -105,10 +105,6 @@ public class TermCache {
                 qs.termCacheMisses++;
             }
 
-//            if(logger.isLoggable(Level.FINEST)) {
-//                logger.finest(String.format("Creating term cache entry with key %s in %s", key, part));
-//            }
-
             if(feat != null && feat.getFields() != null) {
                 //
                 // We need fielded postings
