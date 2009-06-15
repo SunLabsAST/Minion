@@ -594,6 +594,9 @@ public class DiskDictionary implements Dictionary {
         //
         // We'll start ou with the in-memory BST.
         BinarySearchTree.Node n = bst.find(key);
+        if(n == null) {
+            return -1;
+        }
         int l = n.lower;
         int u = n.upper;
         int cmp = 0;
@@ -2202,8 +2205,10 @@ public class DiskDictionary implements Dictionary {
             // quick approximation to the log base 2 of the cache size.
             depth = (int) (Math.log(capacity) / Math.log(2)) - 1;
             lus = getLookupState();
-            root = new Node(0, dh.nOffsets - 1);
-            root.fill(depth);
+            if(size() > 0) {
+                root = new Node(0, dh.nOffsets - 1);
+                root.fill(depth);
+            }
         }
 
         /**
@@ -2213,6 +2218,9 @@ public class DiskDictionary implements Dictionary {
          */
         public Node find(Object name) {
             Node curr = root;
+            if(curr == null) {
+                return null;
+            }
             Comparable cname = (Comparable) name;
             while(true) {
                 int cmp = cname.compareTo(curr.name);
