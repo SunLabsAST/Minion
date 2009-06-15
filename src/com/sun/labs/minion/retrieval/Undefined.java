@@ -63,6 +63,11 @@ public class Undefined extends UnaryOperator {
         
         NameTerm field = (NameTerm) operands.get(0);
         FieldInfo fi = part.getManager().getMetaFile().getFieldInfo(field.getName());
+        if(fi == null) {
+            logger.warning(String.format("Unknown field %s in <undefined> operator", field.getName()));
+            return new ArrayGroup(part, new int[0], 0);
+        }
+        
         if(!fi.isSaved()) {
             logger.warning("Non saved field " + field.getName() + " for <undefined> operator");
             
