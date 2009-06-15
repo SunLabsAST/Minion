@@ -207,7 +207,8 @@ public class QueryTest extends SEMain {
 
     private SimpleHighlighter shigh;
 
-    public QueryTest(URL cmFile, String indexDir, String engineType, String ds,
+    public QueryTest(URL cmFile, String indexDir, String engineType, 
+            String displayFields, String displayFormat,
             String ss, PrintStream output) throws java.io.IOException,
             SearchEngineException {
         if(engineType == null) {
@@ -224,7 +225,7 @@ public class QueryTest extends SEMain {
         manager = engine.getManager();
         searcher = engine;
         morphEn = LiteMorph_en.getMorph();
-        displaySpec = new DisplaySpec(ds);
+        displaySpec = new DisplaySpec(displayFields, displayFormat);
         sortSpec = ss;
         scoreForm = new DecimalFormat("###0.000");
         displayPassage = false;
@@ -922,9 +923,12 @@ public class QueryTest extends SEMain {
             //
             // Get the sort spec.
             sortSpec = q.substring(q.indexOf(' ') + 1).trim();
-        } else if(q.startsWith(":display")) {
-            displaySpec =
-                    new DisplaySpec(q.substring(q.indexOf(' ') + 1).trim());
+        } else if(q.startsWith(":display ") ||
+                q.startsWith(":displayFields ")) {
+            displaySpec.setDisplayFields(q.substring(q.indexOf(' ') + 1).trim());
+        } else if(q.startsWith(":displayFormat ") ||
+                (q.startsWith(":fo "))) {
+            displaySpec.setFormatString(q.substring(q.indexOf(' ') + 1).trim());
         } else if(q.startsWith(":gram")) {
             if(q.indexOf(' ') < 0) {
                 output.println("Currently using " +
@@ -2403,7 +2407,6 @@ public class QueryTest extends SEMain {
         String flags = "d:l:nf:x:pt:o:";
         Getopt gopt = new Getopt(args, flags);
         String inputFile = null;
-        int logLevel = 3;
         int c;
         String indexDir = null;
         URL cmFile = null;
@@ -2471,7 +2474,8 @@ public class QueryTest extends SEMain {
                 cmFile,
                 indexDir,
                 engineType,
-                "partNum,\\t,docID,\\t,dockey",
+                "partNum,docID,dockey",
+                "%5d%7d %s",
                 "-score",
                 output);
 
@@ -2598,7 +2602,14 @@ public class QueryTest extends SEMain {
          */
         protected String[] fields;
 
+        /**
+         * The values we'll print.
+         */
+        protected Object[] vals;
+
         protected TextHighlighter th = new TextHighlighter();
+
+        protected String formatString;
 
         /**
          * Makes a display spec from a string representation. The representation
@@ -2607,20 +2618,30 @@ public class QueryTest extends SEMain {
          * <code>\n</code> and <code>\t</code> to display newlines or tabs
          * in the output.
          */
-        public DisplaySpec(String s) {
+        public DisplaySpec(String displayFields, String formatString) {
+            setDisplayFields(displayFields);
+            setFormatString(formatString);
+        }
 
+        public void setDisplayFields(String displayFields) {
             //
             // Split the input at commas.
-            StringTokenizer tok = new StringTokenizer(s, ", ");
+            StringTokenizer tok = new StringTokenizer(displayFields, ", ");
             fields = new String[tok.countTokens()];
+            vals = new Object[fields.length];
             int i = 0;
             while(tok.hasMoreTokens()) {
                 fields[i++] = tok.nextToken();
             }
         }
 
+        public void setFormatString(String formatString) {
+            this.formatString = formatString;
+        }
+
         /**
          * Format a result.
+         * @param r the result to format.
          */
         public void format(Result r) {
             format("", r);
@@ -2640,26 +2661,24 @@ public class QueryTest extends SEMain {
             // We'll catch a few special cases.
             for(int i = 0; i < fields.length; i++) {
 
-                if(i > 0) {
-                    output.print(" ");
-                }
-
                 String fn = fields[i];
 
+                vals[i] = null;
+
                 if(fn.equals("dockey")) {
-                    output.print(r.getKey());
+                    vals[i] = r.getKey();
                 } else if(fn.equals("score")) {
-                    output.print(scoreForm.format(r.getScore()));
+                    vals[i] = r.getScore();
                 } else if(fn.equals("indexName")) {
-                    output.print(r.getIndexName());
+                    vals[i] = r.getIndexName();
                 } else if(fn.equals("docID")) {
-                    output.print(((ResultImpl) r).getDocID());
+                    vals[i] = ((ResultImpl) r).getDocID();
                 } else if(fn.equals("partNum")) {
-                    output.print(((ResultImpl) r).getPartNum());
+                    vals[i] = ((ResultImpl) r).getPartNum();
                 } else if(fn.equals("dvl")) {
                     ResultImpl ri = (ResultImpl) r;
-                    output.print(ri.getPart().getDocumentVectorLength(
-                            ri.getDocID()));
+                    vals[i] = ri.getPart().getDocumentVectorLength(
+                            ri.getDocID());
                 } else if(fn.startsWith("v:")) {
                     fn = fn.substring(2);
                     if(d == null) {
@@ -2667,21 +2686,20 @@ public class QueryTest extends SEMain {
                     }
                     List<Posting> post = d.getPostings(fn);
                     if(post != null) {
-                        output.println(post);
+                        vals[i] = post.toString();
                     }
-                } else if(fn.equals("\\n")) {
-                    output.print('\n');
-                } else if(fn.equals("\\t")) {
-                    output.print('\t');
                 } else {
                     List val = r.getField(fn);
-                    if(val.size() == 1) {
-                        output.print(val.get(0));
+                    if(val.size() == 0) {
+                        vals[i] = null;
+                    } else if(val.size() == 1) {
+                        vals[i] = val.get(0);
                     } else {
-                        output.print(val);
+                        vals[i] = val.toString();
                     }
                 }
             }
+            output.format(formatString, vals);
             output.println("");
         }
 
