@@ -81,6 +81,14 @@ public class Undefined extends UnaryOperator {
             //
             // If the field is null, but saved, then there are no defined values
             // for this partition, so we need to return all of the documents.
+            // If we had an input group, we'll just send that back, since the
+            // intersection would return all the documents anyways.
+            if(ag != null) {
+                return ag;
+            }
+
+            //
+            // Nope.  All the documents it is!
             ArrayGroup ret = new ArrayGroup(part.getMaxDocumentID());
             for(int i = 1; i <= part.getMaxDocumentID(); i++) {
                 ret.addDoc(i);
