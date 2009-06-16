@@ -89,11 +89,7 @@ public class Undefined extends UnaryOperator {
 
             //
             // Nope.  All the documents it is!
-            ArrayGroup ret = new ArrayGroup(part.getMaxDocumentID());
-            for(int i = 1; i <= part.getMaxDocumentID(); i++) {
-                ret.addDoc(i);
-            }
-            return ret;
+            return new NegativeGroup();
         }
         
         return sf.getUndefined(ag);
