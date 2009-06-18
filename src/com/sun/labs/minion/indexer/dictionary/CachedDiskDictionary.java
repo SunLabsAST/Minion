@@ -27,7 +27,7 @@ package com.sun.labs.minion.indexer.dictionary;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.Partition;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -40,9 +40,12 @@ public class CachedDiskDictionary extends DiskDictionary {
      */
     private QueryEntry[] entries;
 
-    public static final String logTag = "CDD";
-
     private Map<Object,QueryEntry> entriesByName;
+
+    /**
+     * The entries in the dictionary in the order they were in the dictionary.
+     */
+    private QueryEntry[] dictOrderEntries;
 
     /**
      * Creates a disk dictionary that we can use for querying.
@@ -111,11 +114,12 @@ public class CachedDiskDictionary extends DiskDictionary {
      * @param infoOffsetsBufferSize the size of the buffer (in bytes) to use for the entry information offsets
      * @param entryClass The class of the entries that the dictionary
      * contains.
+     * @param fileBufferType the type of file buffers to use for the postings
      * @param decoder A decoder for the names in this dictionary.
      * @param dictFile The file containing the dictionary.
      * @param postFiles The files containing the postings associated with
      * the entries in this dictionary.
-     * @param postInType The type of postings input to use.
+     * @param postingsInputType The type of postings input to use.
      * @param part The partition with which this dictionary is associated.
      * @throws java.io.IOException if there is any error opening the dictionary
      */
@@ -131,14 +135,22 @@ public class CachedDiskDictionary extends DiskDictionary {
                 infoOffsetsBufferSize, part);
 
         entries = new QueryEntry[dh.maxEntryID];
-        entriesByName = new HashMap<Object, QueryEntry>(dh.maxEntryID);
+        entriesByName = new LinkedHashMap<Object, QueryEntry>(dh.maxEntryID);
+
+        if(idToPosn != null) {
+            dictOrderEntries = new QueryEntry[dh.maxEntryID];
+        }
 
         //
         // Read everything into the cache now.
+        int p = 0;
         for(DictionaryIterator i = super.iterator(); i.hasNext();) {
             QueryEntry e = i.next();
             entries[e.getID() - 1] = e;
             entriesByName.put(e.getName(), e);
+            if(dictOrderEntries != null) {
+                dictOrderEntries[p++] = e;
+            }
         }
     }
 
@@ -149,6 +161,7 @@ public class CachedDiskDictionary extends DiskDictionary {
      * @return The entry associated with the name, or <code>null</code> if
      * the name doesn't appear in the dictionary.
      */
+    @Override
     public QueryEntry get(Object name) {
         QueryEntry e = entriesByName.get(name);
         if(e == null) {
@@ -164,6 +177,7 @@ public class CachedDiskDictionary extends DiskDictionary {
      * @return The block, or <code>null</code> if the ID doesn't occur in
      * our dictionary.
      */
+    @Override
     public QueryEntry getByID(int id) {
         if(id < 1 || id > entries.length) {
             return null;
@@ -171,7 +185,11 @@ public class CachedDiskDictionary extends DiskDictionary {
         return (QueryEntry) entries[id-1].getEntry();
     }
 
+    @Override
     public DictionaryIterator iterator() {
+        if(dictOrderEntries != null) {
+            return new ArrayDictionaryIterator(this, dictOrderEntries, 0, dictOrderEntries.length);
+        }
         return new ArrayDictionaryIterator(this, entries, 0, entries.length);
     }
 
@@ -187,7 +205,12 @@ public class CachedDiskDictionary extends DiskDictionary {
      * @return an iterator for the dictionary.  The elements of the iterator implement the
      * <CODE>Map.Entry</CODE> interface
      */
+    @Override
     public DictionaryIterator iterator(int begin, int end) {
+        if(dictOrderEntries != null) {
+            return new ArrayDictionaryIterator(this, dictOrderEntries, begin,
+                                               end);
+        }
         return new ArrayDictionaryIterator(this, entries, begin, end);
     }
 }
