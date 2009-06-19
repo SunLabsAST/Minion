@@ -66,7 +66,7 @@ import java.util.logging.Logger;
  * @see CompositeDocumentVectorImpl for an implementation that can handle 
  * features from multiple vectored fields.
  */
-public class DocumentVectorImpl implements DocumentVector, Externalizable {
+public class DocumentVectorImpl implements DocumentVector {
 
     /**
      * We'll need to send this along when serializing as we're doing our own
@@ -926,63 +926,63 @@ public class DocumentVectorImpl implements DocumentVector, Externalizable {
         }
     }
 
-    /**
-     * Writes the object to the provided output using a gzipped output stream to
-     * save space (the resulting serialized data is 2-3 times smaller than it is
-     * with the normal serialization approach.)  Changes to this method will require
-     * a change to the serial version and will require modifications to the
-     * <code>readExternal</code> method to reflect the changes.
-     * @param out the output where the
-     * @throws java.io.IOException if there is an error writing the object
-     * @see #serialVersionUID
-     * @see #readExternal(java.io.ObjectInput)
-     */
-    public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeLong(serialVersionUID);
-        out.writeBoolean(keyName != null);
-        if (keyName != null) {
-            out.writeUTF(keyName);
-        }
-        out.writeBoolean(normalized);
-        out.writeBoolean(field != null);
-        if (field != null) {
-            out.writeUTF(field);
-        }
-        out.writeInt(v.length);
-        for (WeightedFeature f : v) {
-            out.writeUTF(f.getName());
-            out.writeFloat(f.getWeight());
-        }
-    }
-
-    /**
-     * Reads the vector from the provided input.  This method reads a serial version
-     * first.
-     * @param in the input from which the vector will be read.
-     * @throws java.io.IOException if there is an error reading from the input
-     * or if the object being read has a different version than the one for this
-     * class
-     * @throws java.lang.ClassNotFoundException if there is an error instantiating
-     * the vector
-     */
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        long svuid = in.readLong();
-        if(svuid != serialVersionUID) {
-            throw new java.io.InvalidClassException(String.format("Read class version %d looking for %d", svuid, serialVersionUID));
-        }
-        if (in.readBoolean()) {
-            keyName = in.readUTF();
-        }
-        normalized = in.readBoolean();
-        if (in.readBoolean()) {
-            field = in.readUTF();
-        }
-        int l = in.readInt();
-        v = new WeightedFeature[l];
-        for(int i = 0; i < v.length; i++) {
-            String n = in.readUTF();
-            float w = in.readFloat();
-            v[i] = new WeightedFeature(n, w);
-        }
-    }
+//    /**
+//     * Writes the object to the provided output using a gzipped output stream to
+//     * save space (the resulting serialized data is 2-3 times smaller than it is
+//     * with the normal serialization approach.)  Changes to this method will require
+//     * a change to the serial version and will require modifications to the
+//     * <code>readExternal</code> method to reflect the changes.
+//     * @param out the output where the
+//     * @throws java.io.IOException if there is an error writing the object
+//     * @see #serialVersionUID
+//     * @see #readExternal(java.io.ObjectInput)
+//     */
+//    public void writeExternal(ObjectOutput out) throws IOException {
+//        out.writeLong(serialVersionUID);
+//        out.writeBoolean(keyName != null);
+//        if (keyName != null) {
+//            out.writeUTF(keyName);
+//        }
+//        out.writeBoolean(normalized);
+//        out.writeBoolean(field != null);
+//        if (field != null) {
+//            out.writeUTF(field);
+//        }
+//        out.writeInt(v.length);
+//        for (WeightedFeature f : v) {
+//            out.writeUTF(f.getName());
+//            out.writeFloat(f.getWeight());
+//        }
+//    }
+//
+//    /**
+//     * Reads the vector from the provided input.  This method reads a serial version
+//     * first.
+//     * @param in the input from which the vector will be read.
+//     * @throws java.io.IOException if there is an error reading from the input
+//     * or if the object being read has a different version than the one for this
+//     * class
+//     * @throws java.lang.ClassNotFoundException if there is an error instantiating
+//     * the vector
+//     */
+//    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+//        long svuid = in.readLong();
+//        if(svuid != serialVersionUID) {
+//            throw new java.io.InvalidClassException(String.format("Read class version %d looking for %d", svuid, serialVersionUID));
+//        }
+//        if (in.readBoolean()) {
+//            keyName = in.readUTF();
+//        }
+//        normalized = in.readBoolean();
+//        if (in.readBoolean()) {
+//            field = in.readUTF();
+//        }
+//        int l = in.readInt();
+//        v = new WeightedFeature[l];
+//        for(int i = 0; i < v.length; i++) {
+//            String n = in.readUTF();
+//            float w = in.readFloat();
+//            v[i] = new WeightedFeature(n, w);
+//        }
+//    }
 }
