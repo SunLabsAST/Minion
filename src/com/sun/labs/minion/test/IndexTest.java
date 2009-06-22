@@ -120,6 +120,7 @@ public class IndexTest extends SEMain {
 
         Logger l = Logger.getLogger("");
         for(Handler h : l.getHandlers()) {
+            h.setLevel(Level.ALL);
             h.setFormatter(new LabsLogFormatter());
         }
         boolean profiling = false;
