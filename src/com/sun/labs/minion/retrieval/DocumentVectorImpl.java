@@ -23,9 +23,6 @@
  */
 package com.sun.labs.minion.retrieval;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,7 +52,7 @@ import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.util.Util;
-import java.io.Externalizable;
+import java.io.Serializable;
 import java.util.logging.Logger;
 
 /**
@@ -66,7 +63,7 @@ import java.util.logging.Logger;
  * @see CompositeDocumentVectorImpl for an implementation that can handle 
  * features from multiple vectored fields.
  */
-public class DocumentVectorImpl implements DocumentVector {
+public class DocumentVectorImpl implements DocumentVector, Serializable {
 
     /**
      * We'll need to send this along when serializing as we're doing our own
