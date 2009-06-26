@@ -37,8 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
- * @author Stephen Green <stephen.green@sun.com>
+ * A term statistics dictionary that will live mostly on disk.
  */
 public class UncachedTermStatsDictionary extends DiskDictionary implements
         TermStatsDictionary {
@@ -67,7 +66,7 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
                 new StringNameHandler(), new RandomAccessFile(df, "r"),
                 new RandomAccessFile[0],
                 DiskDictionary.PostingsInputType.CHANNEL_FULL_POST,
-                DiskDictionary.BufferType.FILEBUFFER,
+                DiskDictionary.BufferType.NIOFILEBUFFER,
                 32768, BUFFER_SIZE,
                 BUFFER_SIZE, BUFFER_SIZE, BUFFER_SIZE, null);
         this.df = df;
