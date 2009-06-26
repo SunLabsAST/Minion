@@ -33,8 +33,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
- * @author Stephen Green <stephen.green@sun.com>
+ * A term statistics dictionary that will be cached entirely in memory.
  */
 public class CachedTermStatsDictionary extends CachedDiskDictionary implements TermStatsDictionary {
 
@@ -49,7 +48,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
     public static final String logTag = "UTSD";
 
     /**
-     * Creates a term statistics dictinary
+     * Creates a term statistics dictionary
      * @param df the file from which the terms statistics dictionary will
      * be read
      * @throws java.io.IOException if there is any error opening the dictionary
@@ -60,7 +59,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
                 new RandomAccessFile(df, "r"),
                 new RandomAccessFile[0],
                 DiskDictionary.PostingsInputType.CHANNEL_FULL_POST,
-                DiskDictionary.BufferType.FILEBUFFER,
+                DiskDictionary.BufferType.NIOFILEBUFFER,
                 BUFFER_SIZE,    // Names buffer size
                 BUFFER_SIZE,    // Name offset buffer size
                 BUFFER_SIZE,    // Info buffer size
