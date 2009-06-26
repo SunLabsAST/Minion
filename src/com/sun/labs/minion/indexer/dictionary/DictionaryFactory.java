@@ -179,7 +179,7 @@ public class DictionaryFactory implements Configurable {
     /**
      * The type of postings input stream to use when reading postings.
      */
-    @ConfigEnum(type=com.sun.labs.minion.indexer.dictionary.DiskDictionary.PostingsInputType.class, defaultValue = "FILE_FULL_POST")
+    @ConfigEnum(type=com.sun.labs.minion.indexer.dictionary.DiskDictionary.PostingsInputType.class, defaultValue = "CHANNEL_FULL_POST")
     public static String PROP_POSTINGS_INPUT = "postings_input";
 
     protected DiskDictionary.PostingsInputType postingsInputType;
