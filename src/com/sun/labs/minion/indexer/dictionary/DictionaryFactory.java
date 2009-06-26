@@ -187,7 +187,7 @@ public class DictionaryFactory implements Configurable {
     /**
      * The type of file buffers to use when reading dictionary data.
      */
-    @ConfigEnum(type=com.sun.labs.minion.indexer.dictionary.DiskDictionary.BufferType.class, defaultValue="FILEBUFFER")
+    @ConfigEnum(type=com.sun.labs.minion.indexer.dictionary.DiskDictionary.BufferType.class, defaultValue="NIOFILEBUFFER")
     public static final String PROP_FILE_BUFFER_TYPE = "file_buffer_type";
 
     private DiskDictionary.BufferType fileBufferType;
