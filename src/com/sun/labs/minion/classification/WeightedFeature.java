@@ -100,6 +100,23 @@ public class WeightedFeature implements Feature, Serializable {
         }
     };
 
+    /**
+     * An inverse count comparator.
+     */
+    public static final Comparator<WeightedFeature> INV_COUNT_COMPARATOR =
+            new Comparator<WeightedFeature>() {
+
+        @Override
+        public int compare(WeightedFeature o1, WeightedFeature o2) {
+            return o2.freq - o1.freq;
+        }
+
+        public boolean equals(Object o) {
+            return this == o;
+        }
+
+    };
+
     public WeightedFeature() {
     }
 
