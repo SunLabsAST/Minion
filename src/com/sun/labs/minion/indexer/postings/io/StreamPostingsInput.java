@@ -28,6 +28,7 @@ import java.io.RandomAccessFile;
 
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -119,6 +120,10 @@ public class StreamPostingsInput implements PostingsInput {
             throws java.io.IOException {
 
         ArrayBuffer ret = new ArrayBuffer(size);
+
+        if(offset < ms) {
+            read(offset);
+        }
 
         //
         // The number of bytes that we can pull out of our current buffer.
