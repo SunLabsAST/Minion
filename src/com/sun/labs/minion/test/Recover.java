@@ -53,7 +53,12 @@ import java.io.IOException;
 public class Recover {
 
     protected static void move(File od, File nd, String fn) throws IOException {
-        if(!(new File(od, fn)).renameTo(new File(nd, fn))) {
+        File oldFile = new File(od, fn);
+        System.out.println("old file: " + oldFile);
+        if(!oldFile.exists()) {
+            return;
+        }
+        if(!oldFile.renameTo(new File(nd, fn))) {
             throw new IOException("Failed to move file " + fn +
                     " from " + od + " to " + nd);
         }
@@ -102,12 +107,13 @@ public class Recover {
 
         //
         // Read the active file.
-        File idf = new File(indexDir);
+        File indexDirF = new File(indexDir);
+        File idf = new File(indexDirF, "index");
         File rd = new File(recoverDir);
-        File af = new File(new File(idf, "index"), "AL.PM");
+        File af = new File(idf, "AL.PM");
         DataInputStream in = new DataInputStream(new FileInputStream(af));
         int n = in.readInt();
-        Set s = new HashSet(n);
+        Set<Integer> s = new HashSet<Integer>(n);
         System.out.println(n + " partitions in active file: ");
         for(int i = 0; i < n; i++) {
             Integer p = new Integer(in.readInt());
@@ -146,13 +152,7 @@ public class Recover {
                     }
                 }
                 if(partNum != -1 && !s.contains(new Integer(partNum))) {
-                    String pn = "p" + partNum;
-                    System.out.println("Moving " + partNum);
-                    move(idf, rd, pn + ".del");
-                    move(idf, rd, pn + ".dict");
-                    move(idf, rd, pn + ".fields");
-                    move(idf, rd, pn + ".post");
-                    move(idf, rd, pn + ".tax");
+                    move(idf, rd, dir[i].getName());
                 }
             }
         }
