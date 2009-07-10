@@ -138,7 +138,7 @@ public class Recover {
         int partNum;
         for(int i = 0; i < dir.length; i++) {
             String name = dir[i].getName();
-            if(name.charAt(0) == 'p' && name.endsWith("post")) {
+            if(name.charAt(0) == 'p') {
 
                 //
                 // Check if there's a partition number.
