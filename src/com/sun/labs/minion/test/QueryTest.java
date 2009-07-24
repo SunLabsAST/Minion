@@ -79,6 +79,7 @@ import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldFrequency;
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.FieldValue;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
@@ -112,6 +113,7 @@ import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDictionary;
 import com.sun.labs.minion.indexer.dictionary.UncachedTermStatsDictionary;
+import com.sun.labs.minion.indexer.entry.CasedDFOEntry;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.lexmorph.disambiguation.Unsupervised;
@@ -119,6 +121,8 @@ import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.retrieval.FieldEvaluator;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
 import com.sun.labs.util.LabsLogFormatter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.Collections;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -281,6 +285,8 @@ public class QueryTest extends SEMain {
                 ":par <term>             Prints taxonomic parents of a term\n" +
                 ":sub <term>             Prints subsumed terms for <term>\n" +
                 "\nFields & Postings:\n" +
+                ":postsize <partnum> <outfile>\n" +
+                "                        Computes postings size statistics\n" +
                 ":fs <part> <field>      \n" +
                 ":sim <dockey> <dockey>  Compute similarity between docs\n" +
                 ":findsim <dockey> [<skim>]      Find documents similar to a doc\n" +
@@ -1808,6 +1814,30 @@ public class QueryTest extends SEMain {
                     }
                 }
             }
+        } else if(q.startsWith(":postsize")) {
+            String[] args = parseMessage(q.substring(q.indexOf(' ') + 1));
+            int pn = Integer.parseInt(args[0]);
+            for(DiskPartition dp : manager.getActivePartitions()) {
+                if(dp.getPartitionNumber() != pn) {
+                    continue;
+                }
+                PrintWriter of = null;
+                try {
+                    of = new PrintWriter(new OutputStreamWriter(new FileOutputStream(args[1]), "utf-8"));
+                    for(QueryEntry qe : dp.getMainDictionary()) {
+                        of.format("%d %s\n", ((CasedDFOEntry) qe).
+                                getTotalPostingsSize(), qe.getName());
+                    }
+                } catch(IOException ioe) {
+                    output.format("Error writing output file %s: %s", args[1],
+                                  ioe);
+                } finally {
+                    if(of != null) {
+                        of.close();
+                    }
+                }
+                
+            }
         } else if(q.startsWith(":docTerm ")) {
             String key = q.substring(q.indexOf(' ') + 1);
             DocKeyEntry dke = manager.getDocumentTerm(key);
@@ -2630,12 +2660,48 @@ public class QueryTest extends SEMain {
             fields = new String[tok.countTokens()];
             vals = new Object[fields.length];
             int i = 0;
+            StringBuilder df = new StringBuilder();
             while(tok.hasMoreTokens()) {
-                fields[i++] = tok.nextToken();
+
+                String fn = tok.nextToken();
+                fields[i] = fn;
+                FieldInfo fi = engine.getFieldInfo(fn);
+                if(fi == null || !fi.isSaved()) {
+                    if(fn.equals("dockey") || fn.equals("indexName")) {
+                        df.append("%s ");
+                    } else if(fn.equals("score") || fn.equals("dvl")) {
+                        df.append("%.3f ");
+                    } else if(fn.equals("docID") || fn.equals("partNum")) {
+                        df.append("%d ");
+                    } else if(fn.startsWith("v:")) {
+                        df.append("%s ");
+                    } else {
+                        logger.warning(String.format(
+                                "Display field %s is not saved", fields[i]));
+                        df.append("%s ");
+                    }
+                } else {
+                    switch(fi.getType()) {
+                        case DATE:
+                        case STRING:
+                            df.append("%s ");
+                            break;
+                        case INTEGER:
+                            df.append("%d ");
+                            break;
+                        case FLOAT:
+                            df.append("%.3f ");
+                            break;
+                    }
+                }
+                i++;
             }
+            setFormatString(df.toString());
+
         }
 
         public void setFormatString(String formatString) {
+            logger.info(String.format("formatString: %s", formatString));
             this.formatString = formatString;
         }
 

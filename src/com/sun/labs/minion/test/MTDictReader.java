@@ -252,12 +252,11 @@ public class MTDictReader implements Runnable {
                 }
             }
             logger.info(String.format(
-                    "threads: %d lookups: %d %d avg lookup: %.4fms ch: %d cm: %d hp: %.2f",
+                    "threads: %d lookups: %d %d avg lookup: %.4fms",
                     nThreads,
                     total.getClicks(),
                     qs.dictLookups,
-                    total.getAvgTimeMillis(),
-                    qs.dictCacheHits, qs.dictCacheMisses, qs.dictCacheHits / (double) qs.dictLookups));
+                    total.getAvgTimeMillis()));
 
 //            logger.info(engine.getQueryStats().dump());
         } finally {

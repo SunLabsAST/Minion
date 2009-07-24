@@ -30,6 +30,7 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.util.Getopt;
+import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,8 +41,6 @@ import java.util.logging.Logger;
 
 /**
  * Runs find similars in multiple threads.
- *
- * @author stgreen
  */
 public class FindSimilar implements Runnable {
 
@@ -54,6 +53,8 @@ public class FindSimilar implements Runnable {
     private String field;
 
     private Logger logger;
+
+    protected NanoWatch nw = new NanoWatch();
 
     public FindSimilar(SearchEngine engine, List<String> keys, String field, int reps) {
         this.engine = engine;
@@ -68,7 +69,9 @@ public class FindSimilar implements Runnable {
         for(int i = 0; i < reps; i++) {
             for (String key : keys) {
                 DocumentVector dv = engine.getDocumentVector(key, field);
+                nw.start();
                 ResultSet rs = dv.findSimilar();
+                nw.stop();
                 try {
                     for (Result r : rs.getResults(0, 10)) {
                         r.getKey();
@@ -78,7 +81,10 @@ public class FindSimilar implements Runnable {
                     logger.log(Level.SEVERE, "Failed: " + key, e);
                 }
             }
-            logger.info(Thread.currentThread().getName() + " finished rep " + i);
+            logger.info(String.format("%s rep %d average time for %d fses %.3f",
+                              Thread.currentThread().getName(),
+                              (i+1),
+                              nw.getClicks(), nw.getAvgTimeMillis()));
         }
 
     }
@@ -100,7 +106,7 @@ public class FindSimilar implements Runnable {
         String indexDir = null;
         int n = 4;
         int reps = 10;
-        String query = "aura-type = artist <and> socialtags <contains> canadian";
+        String query = "aura-type = artist";
         String field = "socialtags";
         int c;
 
@@ -170,7 +176,7 @@ public class FindSimilar implements Runnable {
         Thread[] threads = new Thread[n];
         List<String> keys = new ArrayList<String>();
 
-        for(Result r : engine.search(query).getResults(0, 100)) {
+        for(Result r : engine.search(query).getAllResults(false)) {
             keys.add(r.getKey());
         }
 
@@ -183,9 +189,14 @@ public class FindSimilar implements Runnable {
             threads[i].start();
         }
 
+        NanoWatch total = new NanoWatch();
         for(int i = 0; i < n; i++) {
             threads[i].join();
+            total.accumulate(fs[i].nw);
         }
+
+        System.out.format("Average time for %d fses %.3f\n",
+                total.getClicks(), total.getAvgTimeMillis());
 
         engine.close();
     }
