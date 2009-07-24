@@ -39,6 +39,7 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
+import com.sun.labs.minion.indexer.entry.IDEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.PartitionStats;
@@ -334,6 +335,10 @@ public class DiskDictionary implements Dictionary {
         bst = new BinarySearchTree(cacheSize);
     }
 
+    public DictionaryHeader getHeader() {
+        return dh;
+    }
+
     protected void setUpBuffers(int nameBufferSize, int offsetsBufferSize,
                                 int infoBufferSize, int infoOffsetsBufferSize)
             throws java.io.IOException {
@@ -445,17 +450,6 @@ public class DiskDictionary implements Dictionary {
         // Check our cache first.
         QueryEntry ret = null;
 
-//        synchronized(cacheLock) {
-//            ret = nameCache.get(name);
-//        }
-        if(ret != null) {
-            lus.qs.dictCacheHits++;
-            lus.qs.dictLookupW.stop();
-            return (QueryEntry) ret.getEntry();
-        }
-
-        lus.qs.dictCacheMisses++;
-
         //
         // Finding a entry by name is a two-step process.  First, the
         // position of the entry is determined by performing a binary
@@ -470,15 +464,6 @@ public class DiskDictionary implements Dictionary {
             //
             // The entry exists in the dictionary.  Look it up by position.
             ret = find(pos, lus);
-
-            //
-            // Cache the entry.
-//            if(ret != null) {
-//                synchronized(cacheLock) {
-//                    posnCache.put(new Integer(pos), ret);
-//                    nameCache.put(name, ret);
-//                }
-//            }
         }
 
         lus.qs.dictLookupW.stop();
@@ -519,28 +504,7 @@ public class DiskDictionary implements Dictionary {
             posn = id - 1;
         }
 
-        Integer p = new Integer(posn);
-
-        //
-        // Check our cache first!
-//        synchronized(cacheLock) {
-//            Object o = posnCache.get(p);
-//            if(o != null && o instanceof Entry) {
-//                return (QueryEntry) ((Entry) o).getEntry();
-//            }
-//        }
-
         QueryEntry e = find(posn, lus);
-
-        //
-        // We'll cache the name for later if we got one.
-//        if(e != null) {
-//            synchronized(cacheLock) {
-//                posnCache.put(p, e);
-//                nameCache.put(e.getName(), e);
-//            }
-//            return (QueryEntry) e.getEntry();
-//        }
 
         return e == null ? null : (QueryEntry) e.getEntry();
     }
@@ -1885,9 +1849,9 @@ public class DiskDictionary implements Dictionary {
         protected int stopPos;
 
         /**
-         * Buffered channels for reading postings.
+         * Buffered inputs for reading postings.
          */
-        protected PostingsInput[] buffChans;
+        protected PostingsInput[] bufferedPostings;
 
         /**
          * A flag indicating whether we should try to ignore entries whose names
@@ -1905,6 +1869,8 @@ public class DiskDictionary implements Dictionary {
         protected boolean casedEntries;
 
         protected boolean returnCurr;
+
+        private boolean unbufferedPostings;
 
         /**
          * Creates a DictionaryIterator that iterates over a range of
@@ -1985,7 +1951,7 @@ public class DiskDictionary implements Dictionary {
             casedEntries =
                     (newEntry(null) instanceof CasedEntry);
 
-            buffChans = getBufferedInputs();
+            bufferedPostings = getBufferedInputs();
         }
 
         /**
@@ -2008,7 +1974,7 @@ public class DiskDictionary implements Dictionary {
             lus.localNames.position(0);
             pos = startPos;
 
-            buffChans = getBufferedInputs();
+            bufferedPostings = getBufferedInputs();
         }
 
         /**
@@ -2031,6 +1997,17 @@ public class DiskDictionary implements Dictionary {
             this.actualOnly = actualOnly && casedEntries;
         }
 
+        /**
+         * Tells the iterator to not use the buffered postings that it may have.
+         * This is useful in situations where we don't need the streaming
+         * postings.
+         * @param unbufferedPostings if <code>true</code> then the entries will
+         * use unbuffered postings.
+         */
+        public void setUnbufferedPostings(boolean unbufferedPostings) {
+            this.unbufferedPostings = unbufferedPostings;
+        }
+
         public boolean hasNext() {
 
             //
@@ -2045,7 +2022,7 @@ public class DiskDictionary implements Dictionary {
             while(pos < stopPos) {
                 try {
                     Object name = decoder.decodeName(prevName, lus.localNames);
-                    curr = newEntry(name, pos, lus, buffChans);
+                    curr = newEntry(name, pos, lus, unbufferedPostings ? postIn : bufferedPostings);
                     prevName = name;
                     pos++;
                 } catch(StringIndexOutOfBoundsException sib) {
@@ -2299,5 +2276,6 @@ public class DiskDictionary implements Dictionary {
             return String.format("%d nodes: %s", size, root.toString());
         }
     }
+
 } // DiskDictionary
 

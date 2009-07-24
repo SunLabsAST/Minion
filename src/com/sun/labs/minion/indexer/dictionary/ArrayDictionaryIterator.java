@@ -35,8 +35,6 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
 
     private QueryEntry[] entries;
 
-    private PostingsInput[] buffInputs;
-
     private int curr;
 
     private QueryEntry nextEntry;
@@ -46,24 +44,17 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
     private int end;
 
     public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries) {
-        this(dd, entries, 0, entries != null ? entries.length : 0, null);
+        this(dd, entries, 0, entries != null ? entries.length : 0);
     }
 
     public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries,
                                    PostingsInput[] buffInputs) {
-        this(dd, entries, 0, entries != null ? entries.length : 0, buffInputs);
+        this(dd, entries, 0, entries != null ? entries.length : 0);
     }
 
     public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries,
                                    int begin, int end) {
-        this(dd, entries, begin, end, null);
-    }
-
-    public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries,
-                                   int begin, int end,
-                                   PostingsInput[] buffInputs) {
         this.dd = dd;
-        this.buffInputs = buffInputs;
         if(entries == null) {
             this.entries = new QueryEntry[0];
             curr = 0;
@@ -75,7 +66,7 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
             this.begin = begin;
             this.end = end;
         }
-    } // ArrayDictionaryIterator constructor
+    }
 
     // Implementation of java.util.Iterator
     /**
@@ -154,6 +145,10 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
     }
 
     public void setActualOnly(boolean actualOnly) {
+    }
+
+    @Override
+    public void setUnbufferedPostings(boolean unbufferedPostings) {
     }
 
     public QueryEntry get(Object name) {

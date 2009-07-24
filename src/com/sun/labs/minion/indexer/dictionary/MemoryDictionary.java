@@ -580,6 +580,10 @@ public class MemoryDictionary implements Dictionary {
             this.actualOnly = actualOnly;
         }
 
+        @Override
+        public void setUnbufferedPostings(boolean unbufferedPostings) {
+        }
+
         public QueryEntry get(Object name) {
             return (QueryEntry) map.get(name);
         }

@@ -76,4 +76,14 @@ public interface DictionaryIterator extends Iterator<QueryEntry> {
      * If <code>false</code> all entries will be returned.
      */
     public void setActualOnly(boolean actualOnly);
+    
+    /**
+     * Tells the iterator to not use the buffered postings that it may have.
+     * This is useful in situations where we don't need the streaming
+     * postings.
+     * @param unbufferedPostings if <code>true</code> then the entries will
+     * use unbuffered postings.
+     */
+    public void setUnbufferedPostings(boolean unbufferedPostings);
+
 } // DictionaryIterator

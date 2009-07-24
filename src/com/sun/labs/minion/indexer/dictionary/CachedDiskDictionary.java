@@ -144,6 +144,8 @@ public class CachedDiskDictionary extends DiskDictionary {
         //
         // Read everything into the cache now.
         int p = 0;
+        DictionaryIterator di = super.iterator();
+
         for(DictionaryIterator i = super.iterator(); i.hasNext();) {
             QueryEntry e = i.next();
             entries[e.getID() - 1] = e;
