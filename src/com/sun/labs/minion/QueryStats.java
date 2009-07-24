@@ -37,16 +37,6 @@ public class QueryStats implements Serializable {
     public int dictLookups;
     
     /**
-     * The number of main dictionary cache hits during the query.
-     */
-    public int dictCacheHits;
-    
-    /**
-     * The number of main dictionary cache misses during the query.
-     */
-    public int dictCacheMisses;
-
-    /**
      * The number of term cache hits.
      */
     public int termCacheHits;
@@ -124,8 +114,6 @@ public class QueryStats implements Serializable {
      */
     public void accumulate(QueryStats qs) {
        dictLookups += qs.dictLookups;
-       dictCacheHits += qs.dictCacheHits;
-       dictCacheMisses += qs.dictCacheMisses;
        postingsSize += qs.postingsSize;
        termCacheHits += qs.termCacheHits;
        termCacheMisses += qs.termCacheMisses;
@@ -154,8 +142,6 @@ public class QueryStats implements Serializable {
                 dictLookupW.getTimeMillis(),
                 dictLookupW.getTimeMillis() * 100 / tqt,
                 dictLookupW.getAvgTimeMillis()));
-        sb.append(String.format(" %-30s %10d\n", "Cache Hits:", dictCacheHits));
-        sb.append(String.format(" %-30s %10d\n", "Cache Misses:", dictCacheMisses));
         sb.append("Postings Activity\n");
         sb.append(String.format(" %d postings lists read in %.2fms (%.2f%% of total), %.2fms per read\n",
                 postReadW.getClicks(),
