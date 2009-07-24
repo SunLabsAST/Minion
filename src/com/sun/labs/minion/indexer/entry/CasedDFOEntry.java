@@ -373,6 +373,10 @@ public class CasedDFOEntry extends CasedEntry {
         return Math.max(n[CS], n[CI]);
     }
 
+    public long getTotalPostingsSize() {
+        return fnpSize[CS]+fnpSize[CI];
+    }
+
     public boolean hasPositionInformation() {
         return true;
     }
