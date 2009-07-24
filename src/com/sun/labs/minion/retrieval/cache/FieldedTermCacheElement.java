@@ -31,6 +31,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
+import com.sun.labs.minion.util.Util;
 import java.util.List;
 
 /**
@@ -127,6 +128,9 @@ public class FieldedTermCacheElement extends TermCacheElement {
                 tc[np] = pi.getFreq() + counts[p];
                 tfc[np] = fieldCounts[p];
                 int[] fc = ((FieldedPostingsIterator) pi).getFieldFreq();
+                if(tfc[np].length <= fc.length) {
+                    tfc[np] = Util.expandInt(tfc[np], tfc[np].length*2);
+                }
                 for(int i = 0; i < fc.length; i++) {
                     tfc[np][i] += fc[i];
                 }
