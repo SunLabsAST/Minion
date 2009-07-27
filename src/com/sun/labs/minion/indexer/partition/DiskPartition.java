@@ -315,6 +315,7 @@ public class DiskPartition extends Partition implements Closeable {
             mainDict = mainDictFactory.getDiskDictionary(new StringNameHandler(),
                     mainDictFile,
                     mainPostFiles, this);
+            mainDict.setName("main");
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Error opening main dictionary for " +
                     partNumber, ioe);
@@ -349,6 +350,7 @@ public class DiskPartition extends Partition implements Closeable {
                     docDictFile,
                     new RandomAccessFile[]{docPostFile},
                     this);
+            docDict.setName("doc");
         } catch(java.io.IOException ioe) {
             logger.severe("Error opening document dictionary for " + partNumber);
             docDict = null;

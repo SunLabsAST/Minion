@@ -39,7 +39,6 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
-import com.sun.labs.minion.indexer.entry.IDEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.PartitionStats;
@@ -110,6 +109,8 @@ public class DiskDictionary implements Dictionary {
      * An in-memory binary search tree to support searching for terms.
      */
     private BinarySearchTree bst;
+
+    private String name;
 
     /**
      * A lookup state local to each thread
@@ -337,6 +338,14 @@ public class DiskDictionary implements Dictionary {
 
     public DictionaryHeader getHeader() {
         return dh;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     protected void setUpBuffers(int nameBufferSize, int offsetsBufferSize,
@@ -1689,6 +1698,11 @@ public class DiskDictionary implements Dictionary {
      */
     protected void customSetup(IndexEntry me, QueryEntry e, int start,
                                int[] postIDMap) {
+    }
+
+    public String toString() {
+        return String.format("%s (%s) %s size: %d bst nodes: %d",
+                part, getClass().getSimpleName(), name, size(), bst.size);
     }
 
     /**

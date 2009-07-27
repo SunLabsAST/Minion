@@ -177,6 +177,7 @@ public class InvFileDiskPartition extends DiskPartition {
             logger.fine(partNumber + " Loading main bigram dictionary");
             bigramDict = bigramDictFactory.getBiGramDictionary(mainDict,
                     bigramDictFile, bigramPostFile, this);
+            bigramDict.setName("main-bigram");
         } catch(java.io.IOException ioe) {
             logger.severe("Error opening bigram dictionary for " + partNumber);
             bigramDict = null;

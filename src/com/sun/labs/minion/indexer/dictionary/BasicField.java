@@ -176,6 +176,7 @@ public class BasicField implements SavedField {
                 fieldStoreDictFactory.getDiskDictionary(
                 BasicField.getEntryClass(field),
                 BasicField.getNameDecoder(field), dictFile, postFiles, part);
+        ((DiskDictionary) values).setName(String.format("%s-values", field.getName()));
 
         //
         // If we're a character field, load our bigrams.
@@ -185,6 +186,7 @@ public class BasicField implements SavedField {
                     bigramDictFactory.getBiGramDictionary(
                     (DiskDictionary) values,
                     dictFile, postFiles[0], part);
+            bigrams.setName(String.format("%s-bigrams", field.getName()));
         }
 
         logger.finer("Loading docsToValues for field: " + field.getName());
