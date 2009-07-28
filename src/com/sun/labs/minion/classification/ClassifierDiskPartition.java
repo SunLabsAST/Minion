@@ -115,7 +115,6 @@ public class ClassifierDiskPartition extends DiskPartition {
     }
 
     protected ClassifierModel getClassifier(String cname) {
-        initDocDict();
         if(modelMap != null) {
             return modelMap.get(cname);
         }
@@ -160,7 +159,6 @@ public class ClassifierDiskPartition extends DiskPartition {
     }
 
     protected Map<String, ClassificationFeature> invert() {
-        initDocDict();
         if(features == null) {
             features = new TreeMap<String, ClassificationFeature>();
             allModels = new ClassifierModel[getMaxDocumentID() + 1];
@@ -266,8 +264,6 @@ public class ClassifierDiskPartition extends DiskPartition {
     public void classify(DiskPartition sdp,
             ExtraClassification ec,
             Map<String, ClassificationResult> results) {
-        initMainDict();
-        initDocDict();
 
         if(ec == null && modelInstance instanceof BulkClassifier) {
             StopWatch sw = new StopWatch();
@@ -396,14 +392,11 @@ public class ClassifierDiskPartition extends DiskPartition {
     }
 
     public Set getFeatures(String cname) {
-        initMainDict();
-        initDocDict();
         FeatureEntry ent = (FeatureEntry) docDict.get(cname);
         return ent == null ? null : makeFeatures(ent);
     }
 
     protected Set makeFeatures(FeatureEntry entry) {
-        initMainDict();
         Set features = new TreeSet();
 
         //

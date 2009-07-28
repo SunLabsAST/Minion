@@ -1589,9 +1589,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         if(calculateDVL && engine.getLongIndexingRun()) {
             try {
                 DiskPartition mdp = mergeAll();
-                if(mdp != null) {
-                    mdp.initDVL(true);
-                }
+                DocumentVectorLengths.calculate(mdp, termStatsDict,
+                                                       true);
                 activeParts.clear();
                 activeParts.add(mdp);
                 writeActiveFile(activeParts);

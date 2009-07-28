@@ -52,6 +52,7 @@ import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.classification.ClassifierManager;
 import com.sun.labs.minion.classification.Profiler;
+import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.StopWatch;
 import java.util.logging.Level;
 
@@ -358,7 +359,11 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
             //
             // A class manager exists, so perform classification if we're supposed to do that.
             DiskPartition sdp = manager.newDiskPartition(partNumber, manager);
-            sdp.initDVL(true);
+            try {
+                DocumentVectorLengths.calculate(sdp, getManager().getTermStatsDict(), true);
+            } catch (FileLockException ex) {
+                logger.log(Level.SEVERE, "Error calculating document vector lengths", ex);
+            }
             Map<String, ClassificationResult> results = classManager.classify(sdp);
             sdp.close();
             MetaFile mf = manager.getMetaFile();

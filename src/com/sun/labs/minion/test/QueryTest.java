@@ -2046,7 +2046,7 @@ public class QueryTest extends SEMain {
                 }
                 DocumentVectorLengths dvl = p.getDVL();
                 try {
-                    dvl.calculateLengths(p, tsd, adjustStats);
+                    dvl.calculate(p, tsd, adjustStats);
                 } catch(Exception e) {
                     output.println("Error calculating");
                     e.printStackTrace(output);
@@ -2701,7 +2701,6 @@ public class QueryTest extends SEMain {
         }
 
         public void setFormatString(String formatString) {
-            logger.info(String.format("formatString: %s", formatString));
             this.formatString = formatString;
         }
 

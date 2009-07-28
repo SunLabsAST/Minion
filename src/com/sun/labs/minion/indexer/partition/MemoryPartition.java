@@ -47,6 +47,7 @@ import com.sun.labs.minion.indexer.postings.DocOccurrence;
 
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
+import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.StopWatch;
 import java.util.Date;
 import java.util.logging.Level;
@@ -243,12 +244,17 @@ public abstract class MemoryPartition extends Partition {
         // partition and (while we're there) build new term statistics for the 
         // index.
         DiskPartition ndp = manager.newDiskPartition(partNumber, manager);
-        if(manager.getCalculateDVL() &&
-                !((SearchEngineImpl) manager.getEngine()).getLongIndexingRun()) {
-            sw.start();
-            ndp.initDVL(true);
-            sw.stop();
-            logger.fine("Init DVL: " + sw.getTime());
+        try {
+            if(manager.getCalculateDVL() &&
+                    !((SearchEngineImpl) manager.getEngine()).getLongIndexingRun()) {
+                sw.start();
+                DocumentVectorLengths.calculate(ndp, manager.
+                        getTermStatsDict(), true);
+                sw.stop();
+                logger.fine("Create DVL: " + sw.getTime());
+            }
+        } catch(FileLockException ex) {
+            logger.log(Level.SEVERE, "Exception writing document vectors", ex);
         }
 
         //

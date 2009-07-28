@@ -77,9 +77,6 @@ public class ClusterDiskPartition extends DiskPartition
      * @return the cluster with the given name
      */
     public FeatureCluster getCluster(String clusterName) {
-        initMainDict();
-        initDocDict();
-
         DocKeyEntry ent = (DocKeyEntry) docDict.get(clusterName);
         return ent == null ? null : makeCluster(ent);
     }
@@ -91,8 +88,6 @@ public class ClusterDiskPartition extends DiskPartition
      * @return the cluster containing that feature
      */
     public FeatureClusterSet getClustersContaining(String fname) {
-        initMainDict();
-        initDocDict();
         IDEntry ent = (IDEntry)mainDict.get(fname);
         FeatureClusterSet fcs = new FeatureClusterSet();
         

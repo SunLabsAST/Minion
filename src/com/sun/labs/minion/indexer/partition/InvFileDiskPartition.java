@@ -149,86 +149,41 @@ public class InvFileDiskPartition extends DiskPartition {
                 cacheVectorLengths, termCacheSize);
         this.fieldStoreDictFactory = fieldStoreDictFactory;
         this.bigramDictFactory = bigramDictFactory;
-    }
 
-    /**
-     * Initializes everything all at once.
-     * @throws java.io.IOException if there was an error reading the files
-     */
-    protected synchronized void initAll() throws java.io.IOException {
-        super.initAll();
-        initBigramDict();
-        initFields();
-    }
+        //
+        // Load the bigram dictionary.
+        File[] files = getBigramFiles();
+        bigramDictFile = new RandomAccessFile(files[0], "r");
+        bigramPostFile = new RandomAccessFile(files[1], "r");
 
-    /**
-     * Initializes the bigram dictionary, if necessary.
-     */
-    protected synchronized void initBigramDict() {
-        if(bigramDict != null) {
-            return;
-        }
+        logger.fine(partNumber + " Loading main bigram dictionary");
+        bigramDict = bigramDictFactory.getBiGramDictionary(mainDict,
+                                                           bigramDictFile,
+                                                           bigramPostFile, this);
+        bigramDict.setName("main-bigram");
 
-        try {
-            File[] files = getBigramFiles();
-            bigramDictFile = new RandomAccessFile(files[0], "r");
-            bigramPostFile = new RandomAccessFile(files[1], "r");
+        //
+        // Load the field store.
+        files = getFieldFiles();
+        fieldDictFile = new RandomAccessFile(files[0], "r");
+        fieldPostFile = new RandomAccessFile(files[1], "r");
 
-            logger.fine(partNumber + " Loading main bigram dictionary");
-            bigramDict = bigramDictFactory.getBiGramDictionary(mainDict,
-                    bigramDictFile, bigramPostFile, this);
-            bigramDict.setName("main-bigram");
-        } catch(java.io.IOException ioe) {
-            logger.severe("Error opening bigram dictionary for " + partNumber);
-            bigramDict = null;
-        }
-    }
+        logger.fine(partNumber + " Loading field store");
+        fields =
+                new DiskFieldStore(this, fieldDictFile,
+                                   new RandomAccessFile[]{fieldPostFile},
+                                   fieldStoreDictFactory,
+                                   bigramDictFactory, manager.metaFile);
 
-    /**
-     * Initializes the field store, if necessary.
-     */
-    protected synchronized void initFields() {
-
-        if(fields != null) {
-            return;
-        }
-
-        try {
-            //
-            // Get channels for the saved field data.
-            File[] files = getFieldFiles();
-            fieldDictFile = new RandomAccessFile(files[0], "r");
-            fieldPostFile = new RandomAccessFile(files[1], "r");
-
-            logger.fine(partNumber + " Loading field store");
-            fields =
-                    new DiskFieldStore(this, fieldDictFile,
-                    new RandomAccessFile[]{fieldPostFile}, fieldStoreDictFactory,
-                    bigramDictFactory, manager.metaFile);
-        } catch(java.io.IOException ioe) {
-            logger.log(Level.SEVERE, "Error opening field store for " +
-                    partNumber, ioe);
-            fields = null;
-        }
-    }
-
-    /**
-     * Initialise the taxonomy, should one be necessary.
-     * A taxonomy is initialised if the manager's indexConfig
-     * responds that one is necessary.
-     */
-    protected synchronized void initTaxonomy() {
+        //
+        // Load the taxonomy, if we have one.
         if(manager.getIndexConfig().taxonomyEnabled()) {
-            if(taxonomy != null) {
-                return;
-            }
 
             File taxFile = manager.makeTaxonomyFile(partNumber);
             if(!taxFile.exists()) {
                 return;
             }
 
-            initMainDict();
             try {
                 taxonomy = new DiskTaxonomy(taxFile, this);
             } catch(IOException ioe) {
@@ -237,7 +192,9 @@ public class InvFileDiskPartition extends DiskPartition {
                 taxonomy = null;
             }
         }
+
     }
+
 
     /**
      * Gets some or all of the data saved in a given field, in a given
@@ -281,7 +238,6 @@ public class InvFileDiskPartition extends DiskPartition {
      * <code>null</code> will be returned.
      */
     public Object getSavedFieldData(String name, int docID, boolean all) {
-        initFields();
         return fields.getSavedFieldData(name, docID, all);
     }
 
@@ -316,7 +272,6 @@ public class InvFileDiskPartition extends DiskPartition {
     }
 
     public Object getSavedFieldData(FieldInfo fi, int docID, boolean all) {
-        initFields();
         return fields.getSavedFieldData(fi, docID, all);
     }
 
@@ -324,7 +279,6 @@ public class InvFileDiskPartition extends DiskPartition {
      * Gets an iterator for all the saved fields in a document.
      */
     public Map<String, List> getSavedFields(int docID) {
-        initFields();
         return fields.getSavedFields(docID);
     }
 
@@ -364,7 +318,6 @@ public class InvFileDiskPartition extends DiskPartition {
     public DictionaryIterator getFieldIterator(String name,
             boolean caseSensitive, Object lowerBound, boolean includeLower,
             Object upperBound, boolean includeUpper) {
-        initFields();
         return fields.getFieldIterator(name, caseSensitive, lowerBound,
                 includeLower, upperBound, includeUpper);
     }
@@ -381,7 +334,6 @@ public class InvFileDiskPartition extends DiskPartition {
      */
     public DictionaryIterator getMatchingIterator(String name, String val,
             boolean caseSensitive) {
-        initFields();
         return fields.getMatchingIterator(name, val, caseSensitive, -1, -1);
     }
 
@@ -397,7 +349,6 @@ public class InvFileDiskPartition extends DiskPartition {
      */
     public DictionaryIterator getSubstringIterator(String name, String val,
             boolean caseSensitive, boolean starts, boolean ends) {
-        initFields();
         return fields.getSubstringIterator(name, val, caseSensitive, starts,
                 ends, -1, -1);
     }
@@ -415,7 +366,6 @@ public class InvFileDiskPartition extends DiskPartition {
      */
     public PostingsIterator getFieldPostings(String name, Object value,
             boolean caseSensitive) {
-        initFields();
         return fields.getFieldPostings(name, value, caseSensitive);
     }
 
@@ -430,12 +380,10 @@ public class InvFileDiskPartition extends DiskPartition {
      * Gets the field store associated with this partition.
      */
     public DiskFieldStore getFieldStore() {
-        initFields();
         return fields;
     }
 
     public int getFieldSize(String name) {
-        initFields();
         com.sun.labs.minion.indexer.dictionary.SavedField sf = fields.
                 getSavedField(name);
         if(sf != null) {
@@ -452,11 +400,9 @@ public class InvFileDiskPartition extends DiskPartition {
      * in the main dictionary.
      */
     public Set getSubsumed(String name) {
-        initMainDict();
         if(getMainDictionary().get(name) == null) {
             return null;
         }
-        initTaxonomy();
         if(taxonomy == null) {
             return null;
         }
@@ -470,7 +416,6 @@ public class InvFileDiskPartition extends DiskPartition {
      * with the given name.
      */
     public double[] euclideanDistance(double[] vec, String field) {
-        initFields();
         return fields.euclideanDistance(vec, field);
     }
 
@@ -485,7 +430,6 @@ public class InvFileDiskPartition extends DiskPartition {
                 new DiskBiGramDictionary[sortedParts.length];
         for(int i = 0; i < sortedParts.length; i++) {
             InvFileDiskPartition ifdp = (InvFileDiskPartition) sortedParts[i];
-            ifdp.initBigramDict();
             bgds[i] = ifdp.bigramDict;
         }
         //
@@ -518,7 +462,6 @@ public class InvFileDiskPartition extends DiskPartition {
                 new FileOutputStream(files[1]));
         DiskFieldStore[] stores = new DiskFieldStore[sortedParts.length];
         for(int i = 0; i < stores.length; i++) {
-            ((InvFileDiskPartition) sortedParts[i]).initFields();
             stores[i] = ((InvFileDiskPartition) sortedParts[i]).fields;
         }
 
@@ -532,12 +475,10 @@ public class InvFileDiskPartition extends DiskPartition {
 
         //
         // Merge the taxonomies, if they exist.
-        initTaxonomy();
         if(taxonomy != null) {
             logger.fine("Merge taxonomies");
             DiskTaxonomy[] taxes = new DiskTaxonomy[sortedParts.length];
             for(int i = 0; i < taxes.length; i++) {
-                ((InvFileDiskPartition) sortedParts[i]).initTaxonomy();
                 taxes[i] = ((InvFileDiskPartition) sortedParts[i]).taxonomy;
             }
 
@@ -590,8 +531,6 @@ public class InvFileDiskPartition extends DiskPartition {
      */
     public QueryEntry[] getMatching(String pat, boolean caseSensitive,
             int maxEntries, long timeLimit) {
-        initMainDict();
-        initBigramDict();
         return getMainDictionary().getMatching(bigramDict, pat, caseSensitive,
                 maxEntries, timeLimit);
     }
@@ -613,8 +552,6 @@ public class InvFileDiskPartition extends DiskPartition {
      */
     public QueryEntry[] getSpellingVariants(String pat, boolean caseSensitive,
             int maxEntries, long timeLimit) {
-        initMainDict();
-        initBigramDict();
         return getMainDictionary().getSpellingVariants(bigramDict, pat,
                 caseSensitive, maxEntries, timeLimit);
     }
@@ -637,8 +574,6 @@ public class InvFileDiskPartition extends DiskPartition {
      */
     public QueryEntry[] getSubstring(String pat, boolean caseSensitive,
             int maxEntries, long timeLimit) {
-        initMainDict();
-        initBigramDict();
         return getMainDictionary().getSubstring(bigramDict, pat, caseSensitive,
                 false, false, maxEntries, timeLimit);
     }
@@ -660,8 +595,6 @@ public class InvFileDiskPartition extends DiskPartition {
      */
     public QueryEntry[] getStemMatches(String term, boolean caseSensitive,
             int maxEntries, long timeLimit) {
-        initMainDict();
-        initBigramDict();
         return getStemMatches(term, caseSensitive, MIN_LEN, MATCH_CUT_OFF,
                 maxEntries, -1);
     }
@@ -763,7 +696,6 @@ public class InvFileDiskPartition extends DiskPartition {
      * @return Returns the taxonomy.
      */
     public DiskTaxonomy getTaxonomy() {
-        initTaxonomy();
         return taxonomy;
     }
 
@@ -773,8 +705,6 @@ public class InvFileDiskPartition extends DiskPartition {
      * @param o the writer to which the data will be output.
      */
     public void export(PrintWriter o) {
-        initDocDict();
-        initFields();
         for(DictionaryIterator di = docDict.iterator(); di.hasNext();) {
             DocKeyEntry dke = (DocKeyEntry) di.next();
             if(isDeleted(dke.getID())) {

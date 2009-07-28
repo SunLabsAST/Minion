@@ -88,7 +88,7 @@ public class DocumentVectorLengths {
     /**
      * A standard buffer size to use, in bytes.
      */
-    protected static int BUFF_SIZE = 4096;
+    protected static int BUFF_SIZE = 8192;
 
     Logger logger = Logger.getLogger(getClass().getName());
 
@@ -145,7 +145,9 @@ public class DocumentVectorLengths {
             //
             // If the file doesn't exist, then calculate the lengths.
             if(!vlFile.exists()) {
-                calculateLengths(part, part.getManager().getTermStatsDict(),
+                logger.fine("Calculating non-existent vector lengths");
+                calculate(part,
+                        part.getManager().getTermStatsDict(),
                         adjustStats);
             }
 
@@ -160,8 +162,7 @@ public class DocumentVectorLengths {
                 int n = raf.readInt();
                 fieldLens = new ReadableBuffer[nf];
                 offset = raf.getFilePointer();
-                for(int i = 0; i < n;
-                        i++) {
+                for(int i = 0; i < n; i++) {
                     raf.seek(offset);
                     int f = raf.readInt();
                     fieldLens[f] = new FileReadableBuffer(raf,
@@ -202,7 +203,7 @@ public class DocumentVectorLengths {
      * that were merged.  If this paramater is <code>false</code> the global
      * stats will not be rewritten.
      */
-    public void calculateLengths(DiskPartition p,
+    public static void calculate(DiskPartition p,
             TermStatsDictionary gts, boolean adjustStats)
             throws FileLockException, java.io.IOException {
 
@@ -223,7 +224,7 @@ public class DocumentVectorLengths {
         WeightingFunction wf = p.getQueryConfig().getWeightingFunction();
         WeightingComponents wc = p.getQueryConfig().getWeightingComponents();
         if(adjustStats) {
-            wc.N += part.getNDocs();
+            wc.N += p.getNDocs();
         }
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
         int[] vectored = null;
@@ -319,16 +320,16 @@ public class DocumentVectorLengths {
         // Write the new term stats dictionary.
         if(adjustStats) {
 
-            int tsn = part.getManager().getMetaFile().getNextTermStatsNumber();
-            File ntsf = part.getManager().makeTermStatsFile(tsn);
+            int tsn = p.getManager().getMetaFile().getNextTermStatsNumber();
+            File ntsf = p.getManager().makeTermStatsFile(tsn);
             RandomAccessFile gtraf = new RandomAccessFile(ntsf, "rw");
             gtw.finish(gtraf);
             gtraf.close();
 
             //
             // It's now safe to use this term stats dictionary.
-            part.getManager().getMetaFile().setTermStatsNumber(tsn);
-            part.getManager().updateTermStats();
+            p.getManager().getMetaFile().setTermStatsNumber(tsn);
+            p.getManager().updateTermStats();
         }
 
         //
@@ -337,7 +338,7 @@ public class DocumentVectorLengths {
 
         //
         // Write the document vector lengths.
-        dump(fvl, vl, part);
+        dump(p.getManager().makeVectorLengthFile(p.getPartitionNumber()), fvl, vl, p);
     }
 
     /**
@@ -348,7 +349,7 @@ public class DocumentVectorLengths {
      * @param vl the vector lengths for all vectored data in the documents
      * @param p the partitions with which these vector lengths are associated
      */
-    private void dump(float[][] fvl, float[] vl,
+    private static void dump(File vlFile, float[][] fvl, float[] vl,
             DiskPartition p)
             throws java.io.IOException {
 
@@ -360,16 +361,14 @@ public class DocumentVectorLengths {
         // Dump the fielded vectors, if we have them.
         if(fvl != null) {
             int n = 0;
-            for(int i = 0; i < fvl.length;
-                    i++) {
+            for(int i = 0; i < fvl.length; i++) {
                 if(fvl[i] != null) {
                     n++;
                 }
             }
             r.writeInt(fvl.length);
             r.writeInt(n);
-            for(int i = 0; i < fvl.length;
-                    i++) {
+            for(int i = 0; i < fvl.length; i++) {
                 if(fvl[i] != null) {
                     r.writeInt(i);
                     dump(new FileWriteableBuffer(r, 8192), fvl[i]);
@@ -382,15 +381,14 @@ public class DocumentVectorLengths {
         r.close();
     }
 
-    private void dump(WriteableBuffer b, float[] weights) {
-        for(int i = 1; i < weights.length;
-                i++) {
+    private static void dump(WriteableBuffer b, float[] weights) {
+        for(int i = 1; i < weights.length; i++) {
             b.encode((float) Math.sqrt(weights[i]));
         }
         ((FileWriteableBuffer) b).flush();
     }
 
-    private void addPostings(DiskPartition p,
+    private static void addPostings(DiskPartition p,
             PostingsIterator pi, TermStatsImpl ts, int[] vectored,
             float[][] fvl, float[] vl) {
         if(pi != null) {

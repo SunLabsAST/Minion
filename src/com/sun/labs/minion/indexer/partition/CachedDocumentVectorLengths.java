@@ -34,31 +34,35 @@ public class CachedDocumentVectorLengths extends DocumentVectorLengths {
     private float[] cachedLens;
 
     private float[][] cachedFieldLens;
-    
-    public CachedDocumentVectorLengths(DiskPartition part, boolean adjustStats) throws IOException {
+
+    public CachedDocumentVectorLengths(DiskPartition part, boolean adjustStats)
+            throws IOException {
         super(part, adjustStats);
-        cachedFieldLens = new float[part.getManager().getMetaFile().size()+1][];
+        cachedLens = uncompressLens(vecLens.duplicate());
+        cachedFieldLens =
+                new float[fieldLens.length][];
+        for(int i = 0; i < cachedFieldLens.length; i++) {
+            if(fieldLens[i] != null) {
+                cachedFieldLens[i] = uncompressLens(fieldLens[i].duplicate());
+            }
+        }
     }
 
     @Override
     public synchronized float getVectorLength(int docID) {
-        if (cachedLens == null) {
-            cachedLens = uncompressLens(vecLens.duplicate());
+        if(cachedLens == null) {
         }
         return cachedLens[docID];
     }
 
     @Override
     public synchronized float getVectorLength(int docID, int fieldID) {
-        switch (fieldID) {
+        switch(fieldID) {
             case -1:
                 return getVectorLength(docID);
             default:
-                if (fieldLens[fieldID] == null) {
+                if(fieldLens[fieldID] == null) {
                     return 1;
-                }
-                if(cachedFieldLens[fieldID] == null) {
-                    cachedFieldLens[fieldID] = uncompressLens(fieldLens[fieldID].duplicate());
                 }
                 return cachedFieldLens[fieldID][docID];
         }
@@ -75,25 +79,18 @@ public class CachedDocumentVectorLengths extends DocumentVectorLengths {
      * should be used for normalization.
      */
     public void normalize(int[] docs, float[] scores, int p, float qw,
-            int fieldID) {
+                          int fieldID) {
 
         float[] lvl;
 
         synchronized(this) {
             switch(fieldID) {
                 case -1:
-                    if(cachedLens == null) {
-                        cachedLens = uncompressLens(vecLens.duplicate());
-                    }
                     lvl = cachedLens;
                     break;
                 default:
                     if(fieldLens[fieldID] == null) {
                         return;
-                    }
-                    if(cachedFieldLens[fieldID] == null) {
-                        cachedFieldLens[fieldID] = uncompressLens(
-                                fieldLens[fieldID].duplicate());
                     }
                     lvl = cachedFieldLens[fieldID];
                     break;
@@ -103,14 +100,12 @@ public class CachedDocumentVectorLengths extends DocumentVectorLengths {
             scores[i] /= (lvl[docs[i]] * qw);
         }
     }
-    
+
     private float[] uncompressLens(ReadableBuffer b) {
-        float[] ret = new float[part.getMaxDocumentID()+1];
-        for (int i = 1; i <= part.getMaxDocumentID(); i++) {
+        float[] ret = new float[part.getMaxDocumentID() + 1];
+        for(int i = 1; i <= part.getMaxDocumentID(); i++) {
             ret[i] = b.decodeFloat();
         }
         return ret;
     }
-
-
 }
