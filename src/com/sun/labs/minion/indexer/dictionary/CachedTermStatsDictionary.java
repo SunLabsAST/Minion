@@ -41,11 +41,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
 
     private long closeTime;
 
-    private int refCount;
-
     public static int BUFFER_SIZE = 8 * 1024;
-
-    public static final String logTag = "UTSD";
 
     /**
      * Creates a term statistics dictionary
@@ -72,14 +68,17 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
         return (TermStatsEntry) get(term);
     }
 
+    @Override
     public void setCloseTime(long closeTime) {
         this.closeTime = closeTime;
     }
 
+    @Override
     public long getCloseTime() {
         return closeTime;
     }
 
+    @Override
     public void createRemoveFile() {
         File closeFile = new File(df + ".rem");
         try {
@@ -89,12 +88,13 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
         }
     }
 
+    @Override
     public boolean close(long currTime) {
         try {
             //
             // Check if enough time has passed for this close
             // to succeed.
-            if(currTime < closeTime || refCount > 0) {
+            if(currTime < closeTime) {
                 return false;
             }
             dictFile.close();
@@ -126,33 +126,4 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
         }
     }
 
-    /**
-     * Gets an iterator.
-     *
-     * @param ref if <code>true</code> then we will keep a reference count for
-     * this dictionary so that we don't close the file while it's in use.  If
-     * <code>false</code> this dictionary may be closed during iteration.
-     * @return an iterator for this dictionary
-     */
-    public DictionaryIterator iterator(boolean ref) {
-        if(ref) {
-            return iterator();
-        }
-        return super.iterator();
-    }
-
-    /**
-     * Gets an iterator and keeps a count of extant references to the dictionary,
-     * so that we know when a dictionary is no longer in use.
-     */
-    public DictionaryIterator iterator() {
-        refCount++;
-        return super.iterator();
-    }
-
-    public void iterationDone() {
-        if(refCount > 0) {
-            refCount--;
-        }
-    }
 }

@@ -245,10 +245,6 @@ public class WeightingComponents {
         return cs.getTermStats(term);
     }
 
-    public void setTermStats(String term, TermStatsImpl ts) {
-        cs.setTermStats(term, ts);
-    }
-
     /**
      * Initializes any document-level statistics that can be determined
      * from a document key.

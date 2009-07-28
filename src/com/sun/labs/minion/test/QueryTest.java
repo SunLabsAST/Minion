@@ -334,20 +334,8 @@ public class QueryTest extends SEMain {
                 output.format("%d (%d) ", p.getPartitionNumber(), p.getNDocs());
             }
             output.println("");
-
             output.println(" Sorting specification is: " + sortSpec);
-            // output.print(" Display specification is: ");
-            // for(int i = 0; i < displaySpec.length; i++) {
-            // if(i > 0) {
-            // output.print(",");
-            // }
-            // output.print(displaySpec[i]);
-            // }
-            // output.println("");
-
-            // output.println(" Current query language: " +
-            // currentLocale.getLanguage());
-
+            output.println(" Display specification is: " + displaySpec);
             output.println(" Partitions have:\n" + "  " + manager.getNDocs() +
                     " documents\n" + "  " + manager.getNTokens() + " tokens\n" +
                     "  " + manager.getNTerms() + " terms");
@@ -472,6 +460,8 @@ public class QueryTest extends SEMain {
             } catch(SearchEngineException se) {
                 logger.log(Level.SEVERE, "Error running search", se);
             }
+        } else if(q.equals(":stats")) {
+            stats();
         } else if(q.startsWith(":all")) {
             String[] vals =
                     parseMessage(q.substring(q.indexOf(' ') + 1).trim());
@@ -567,7 +557,6 @@ public class QueryTest extends SEMain {
                 TermStatsEntry tse = (TermStatsEntry) di.next();
                 output.println(tse.getTermStats());
             }
-            tsd.iterationDone();
         } else if(q.startsWith(":class ")) {
 
             //
@@ -2890,6 +2879,10 @@ public class QueryTest extends SEMain {
                 currCol += curr.length() + 1;
             }
             return output.toString();
+        }
+
+        public String toString() {
+            return "fields: " + Util.arrayToString(fields) + " format: \"" + formatString + "\"";
         }
     }
 }

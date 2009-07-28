@@ -56,7 +56,8 @@ public class FindSimilar implements Runnable {
 
     protected NanoWatch nw = new NanoWatch();
 
-    public FindSimilar(SearchEngine engine, List<String> keys, String field, int reps) {
+    public FindSimilar(SearchEngine engine, List<String> keys, String field,
+                       int reps) {
         this.engine = engine;
         this.keys = new ArrayList<String>(keys);
         this.field = field;
@@ -67,24 +68,36 @@ public class FindSimilar implements Runnable {
 
     public void run() {
         for(int i = 0; i < reps; i++) {
-            for (String key : keys) {
+            for(String key : keys) {
                 DocumentVector dv = engine.getDocumentVector(key, field);
+                if(dv == null) {
+                    continue;
+                }
                 nw.start();
                 ResultSet rs = dv.findSimilar();
                 nw.stop();
                 try {
-                    for (Result r : rs.getResults(0, 10)) {
+                    for(Result r : rs.getResults(0, 10)) {
                         r.getKey();
                     }
-                    logger.fine("Worked: " + key);
-                } catch (Exception e) {
+                    if(logger.isLoggable(Level.FINE)) {
+                        logger.fine("Worked: " + key);
+                    }
+                } catch(Exception e) {
                     logger.log(Level.SEVERE, "Failed: " + key, e);
+                }
+                if(nw.getClicks() % 10 == 0) {
+                    logger.info(String.format(
+                            "%s %d fs avg: %.3f",
+                                              Thread.currentThread().getName(),
+                                              nw.getClicks(),
+                                              nw.getAvgTimeMillis()));
                 }
             }
             logger.info(String.format("%s rep %d average time for %d fses %.3f",
-                              Thread.currentThread().getName(),
-                              (i+1),
-                              nw.getClicks(), nw.getAvgTimeMillis()));
+                                      Thread.currentThread().getName(),
+                                      (i + 1),
+                                      nw.getClicks(), nw.getAvgTimeMillis()));
         }
 
     }
@@ -96,7 +109,7 @@ public class FindSimilar implements Runnable {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
+        if(args.length == 0) {
             usage();
             return;
         }
@@ -119,31 +132,39 @@ public class FindSimilar implements Runnable {
         //
         // Use the labs format logging.
         Logger rl = Logger.getLogger("");
-        for (Handler h : rl.getHandlers()) {
+        for(Handler h : rl.getHandlers()) {
             h.setLevel(Level.ALL);
             h.setFormatter(new SimpleLabsLogFormatter());
             try {
                 h.setEncoding("utf-8");
-            } catch (Exception ex) {
+            } catch(Exception ex) {
                 rl.severe("Error setting output encoding");
             }
         }
 
         //
         // Handle the options.
-        while ((c = gopt.getopt()) != -1) {
-            switch (c) {
+        while((c = gopt.getopt()) != -1) {
+            switch(c) {
 
                 case 'd':
                     indexDir = gopt.optArg;
                     break;
 
                 case 'f':
-                    field = gopt.optArg;
+                    if(gopt.optArg.equals("null")) {
+                        field = null;
+                    } else {
+                        field = gopt.optArg;
+                    }
                     break;
 
                 case 'n':
                     n = Integer.parseInt(gopt.optArg);
+                    break;
+
+                case 'q':
+                    query = gopt.optArg;
                     break;
 
                 case 'r':
@@ -156,7 +177,7 @@ public class FindSimilar implements Runnable {
             }
         }
 
-        if (indexDir == null) {
+        if(indexDir == null) {
             System.err.println(String.format("You must specify an index directory"));
             usage();
             return;
@@ -167,7 +188,7 @@ public class FindSimilar implements Runnable {
         SearchEngine engine;
         try {
             engine = SearchEngineFactory.getSearchEngine(indexDir);
-        } catch (SearchEngineException se) {
+        } catch(SearchEngineException se) {
             System.err.println("Error opening collection: " + se);
             return;
         }
@@ -196,9 +217,8 @@ public class FindSimilar implements Runnable {
         }
 
         System.out.format("Average time for %d fses %.3f\n",
-                total.getClicks(), total.getAvgTimeMillis());
+                          total.getClicks(), total.getAvgTimeMillis());
 
         engine.close();
     }
-
 }

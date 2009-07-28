@@ -27,8 +27,6 @@ package com.sun.labs.minion.retrieval;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
-import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
@@ -45,8 +43,6 @@ public class CollectionStats {
      * statistics.
      */
     protected PartitionManager pm;
-    
-    protected DictionaryIterator di;
     
     /**
      * A local cache of term stats.
@@ -97,8 +93,7 @@ public class CollectionStats {
     public CollectionStats(PartitionManager pm) {
         this.pm = pm;
         termStats = new HashMap<String,TermStatsImpl>();
-        for(Iterator i = pm.getActivePartitions().iterator(); i.hasNext();) {
-            Partition p = (Partition) i.next();
+        for(Partition p : pm.getActivePartitions()) {
             nDocs            += p.getNDocs();
             PartitionStats s  = p.getStats();
             nTokens          += s.nTokens;
@@ -107,18 +102,16 @@ public class CollectionStats {
             nd               += s.nd;
         }
         avgDocLen = (float) nTokens / nDocs;
-        di = pm.getTermStatsDict().iterator(false);
     }
     
     /**
      * Gets the collection-wide statistics for a given term name.
+     * @param term the term for which we want statistics.
+     * @return the term statistics for the term, if it is found in the collection,
+     * otherwise return <code>null</code>.
      */
-    public synchronized TermStatsImpl getTermStats(String s) {
-        TermStatsEntry tse = (TermStatsEntry) di.get(s);
-        if(tse == null) {
-            return null;
-        }
-        return tse.getTermStats();
+    public TermStatsImpl getTermStats(String term) {
+        return pm.getTermStats(term);
     }
     
     public int getNDocs() {
@@ -137,11 +130,4 @@ public class CollectionStats {
         return nd;
     }
     
-    void setTermStats(String term, TermStatsImpl ts) {
-        termStats.put(term, ts);
-    }
-    
-    public String toString() {
-        return di.toString();
-    }
 } // CollectionStats

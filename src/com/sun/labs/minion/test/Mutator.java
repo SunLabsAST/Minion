@@ -145,21 +145,15 @@ public class Mutator extends SEMain implements Runnable {
                 " -i <file list>   " +
                 "Directory or file list to index (Required)\n" +
                 " -d <index dir>   " +
-                "Directory containing index (Required)\n" +
-                " -w <dict type>   " +
-                "For wildcard expansion (BG, RT).  Default: BG\n" +
-                " -e <entry type>  " +
-                "Postings entry type (Word, Doc).  Default: Word\n" +
+                "The index directory\n" +
                 " -r <num>         " +
                 "The number of times to update, < 0 means run continuously (default: 10)\n" +
                 " -s <num>         " +
                 "Maximum number of seconds between update runs\n" +
                 " -t <num>         " +
                 "The number of threads to run\n" +
-                " -g <num>         " +
-                "The number of concurrent merge threads to allow (Default: 1)\n" +
                 " -n <num>         " +
-                "The number of lines in the input file (required)\n" +
+                "The number of lines to use from the input file (default: all)\n" +
                 " -m <num>          " +
                 "The maximum number of files to index/update\n" +
                 " -x <file>        " +
@@ -170,7 +164,7 @@ public class Mutator extends SEMain implements Runnable {
 
     public static void main(String[] args) throws java.io.IOException, SearchEngineException {
 
-        String flags = "i:d:w:e:s:n:m:r:t:g:x:";
+        String flags = "i:d:s:n:m:r:t:x:";
         stuff = null;
         updateInterval = 10;
         nUpdates = 10;

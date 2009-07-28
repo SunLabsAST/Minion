@@ -333,10 +333,6 @@ public class DocumentVectorLengths {
         }
 
         //
-        // Reduce the refcount in the term stats dictionary so that it can close.
-        gts.iterationDone();
-
-        //
         // Write the document vector lengths.
         dump(p.getManager().makeVectorLengthFile(p.getPartitionNumber()), fvl, vl, p);
     }

@@ -46,11 +46,7 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
 
     private long closeTime;
 
-    private int refCount;
-
     public static int BUFFER_SIZE = 8 * 1024;
-
-    public static final String logTag = "UTSD";
 
     public UncachedTermStatsDictionary() {
     }
@@ -141,12 +137,13 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
         raf.close();
     }
 
+    @Override
     public boolean close(long currTime) {
         try {
             //
             // Check if enough time has passed for this close
             // to succeed.
-            if(currTime < closeTime || refCount > 0) {
+            if(currTime < closeTime) {
                 return false;
             }
             dictFile.close();
@@ -165,7 +162,7 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
     public static void create(String indexDir, File df) {
         try {
             Logger.getLogger(UncachedTermStatsDictionary.class.getName())
-                    .info("Making term stats dictionary: " + df);
+                    .fine("Making term stats dictionary: " + df);
             RandomAccessFile raf = new RandomAccessFile(df, "rw");
             MemoryDictionary tts =
                     new MemoryDictionary(TermStatsEntry.class);
@@ -177,36 +174,6 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
         } catch(java.io.IOException ioe) {
             Logger.getLogger(UncachedTermStatsDictionary.class.getName())
                     .log(Level.SEVERE, "Error creating term stats dictionary", ioe);
-        }
-    }
-
-    /**
-     * Gets an iterator.
-     *
-     * @param ref if <code>true</code> then we will keep a reference count for
-     * this dictionary so that we don't close the file while it's in use.  If
-     * <code>false</code> this dictionary may be closed during iteration.
-     * @return an iterator for this dictionary
-     */
-    public DictionaryIterator iterator(boolean ref) {
-        if(ref) {
-            return iterator();
-        }
-        return super.iterator();
-    }
-
-    /**
-     * Gets an iterator and keeps a count of extant references to the dictionary,
-     * so that we know when a dictionary is no longer in use.
-     */
-    public DictionaryIterator iterator() {
-        refCount++;
-        return super.iterator();
-    }
-
-    public void iterationDone() {
-        if(refCount > 0) {
-            refCount--;
         }
     }
 

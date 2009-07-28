@@ -40,32 +40,17 @@ public interface TermStatsDictionary extends Closeable {
      */
     public int size();
     /**
-     * Gets the term statistics associated with the give term.
+     * Gets the term statistics associated with the given term.
      * 
+     * @param term the term for which we want collection statistics.
      * @return the term statistics associated with the given term, or <code>null</code>
      * if that term does not occur in the index
      */
     public TermStatsEntry getTermStats(String term);
 
     /**
-     * Gets an iterator for this dictionary that may be reference counted.
-     *
-     * @param ref if <code>true</code> then references to the iterator for a
-     * dictionary will be counted, and the dictionary will not be allowed to be
-     * closed until all references are released.  References can be released by
-     * calling the <code>iterationDone</code> method
-     * @see #iterationDone
-     */
-    public DictionaryIterator iterator(boolean ref);
-
-    /**
-     * Indicates that a reference counted iterator for this dictionary is
-     * no longer in use, so a reference may be removed.
-     */
-    public void iterationDone();
-
-    /**
-     * Gets a reference-counted iterator for this dictionary.
+     * Gets an for this dictionary.
+     * @return an iterator for the term stats.
      */
     public DictionaryIterator iterator();
 }

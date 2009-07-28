@@ -142,7 +142,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
         // If there's already a term, get rid of it!
         if(old != null) {
 
-            logger.warning("Duplicate dockey in partition: " + key +
+            logger.fine("Duplicate dockey in partition: " + key +
                     " deleting old version: " + old.getID());
 
             //
