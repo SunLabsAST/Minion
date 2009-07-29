@@ -1123,7 +1123,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
     /**
      * Gets a list of the top n most frequent field values for a given
-     * named field.  If n is < 1, all field values are returned, in order
+     * named field.  If n is &lt; 1, all field values are returned, in order
      * of their frequency from most to least frequent.
      *
      * @param field the name of the field to rank
@@ -3049,6 +3049,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         if(!newTSF.equals(currTSF) && newTSF.exists()) {
 
             TermStatsDictionary oldTSD = termStatsDict;
+            termStatsDict = termstatsDictFactory.getDictionary(newTSF);
             
             //
             // Set up the new dictionary.
@@ -3057,8 +3058,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             //
             // Set up to (eventually) close and delete the term stats dictionary, which might be in
             // use by someone else.
-            oldTSD.setCloseTime(System.currentTimeMillis() +
-                    partCloseDelay * 2);
+            oldTSD.setCloseTime(System.currentTimeMillis() + partCloseDelay * 2);
             thingsToClose.add(oldTSD);
         }
     }
