@@ -48,6 +48,8 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
 
     public static int BUFFER_SIZE = 8 * 1024;
 
+    private boolean closed;
+
     public UncachedTermStatsDictionary() {
     }
 
@@ -146,11 +148,20 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
             if(currTime < closeTime) {
                 return false;
             }
+            closed = true;
             dictFile.close();
         } catch(IOException ex) {
             logger.severe("Error closing term stats dictionary:" + df);
         }
         return true;
+    }
+
+    public void setClosed() {
+        closed = true;
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 
     /**

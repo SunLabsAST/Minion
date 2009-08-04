@@ -160,6 +160,9 @@ public class DictTerm extends QueryTerm implements Comparator {
             while(partitionIterator.hasNext()) {
                 InvFileDiskPartition p =
                         (InvFileDiskPartition) partitionIterator.next();
+                if(p.isClosed()) {
+                    continue;
+                }
                 Set subsumedConceptEntries = p.getSubsumed(this.getName());
                 if(subsumedConceptEntries != null) {
                     for(Iterator iter = subsumedConceptEntries.iterator(); iter.
@@ -183,16 +186,10 @@ public class DictTerm extends QueryTerm implements Comparator {
         Set variants = new HashSet();
 
         //
-        // We'll fetch the main dictionary for this partition and get a lookup
-        // state that we can use for multiple lookups.
-        LookupState lus = part.getMainDictionary().getLookupState();
-        lus.setQueryStats(qs);
-
-        //
         // We'll start with the term itself, unless we're doing a wildcard.
         if(!doWild) {
             if(val != null) {
-                QueryEntry e = part.getTerm(val, matchCase, lus);
+                QueryEntry e = part.getTerm(val, matchCase);
                 if(e != null) {
                     variants.add(e);
                 }
@@ -203,8 +200,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         // Knowledge Variants are up next.
         if(doMorph) {
             for(int i = 0; i < knowledgeVariants.length; i++) {
-                QueryEntry me = part.getTerm(knowledgeVariants[i], matchCase,
-                        lus);
+                QueryEntry me = part.getTerm(knowledgeVariants[i], matchCase);
                 if(me != null) {
                     variants.add(me);
                 }
@@ -244,7 +240,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         if(doExpand) {
             for(int i = 0; i < semanticVariants.length; i++) {
                 QueryEntry me =
-                        part.getTerm(semanticVariants[i], matchCase, lus);
+                        part.getTerm(semanticVariants[i], matchCase);
                 if(me != null) {
                     variants.add(me);
                 }

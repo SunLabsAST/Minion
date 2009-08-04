@@ -582,17 +582,15 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
 
         //
         // Iterate through the partitions, looking for the features.
-        DiskPartition part = null;
-        if(key != null) {
-            part = (DiskPartition) key.getPartition();
-        }
-        PostingsIteratorFeatures feat =
-                new PostingsIteratorFeatures(wf, wc);
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
         feat.setFields(fields);
         feat.setQueryStats(qs);
         for(DiskPartition curr : e.getManager().getActivePartitions()) {
 
-            DictionaryIterator di = curr.getMainDictionaryIterator();
+            if(curr.isClosed()) {
+                continue;
+            }
+
             ScoredQuickOr qor = new ScoredQuickOr(curr, 1024);
             qor.setQueryStats(qs);
             qor.setField(fieldID);
@@ -600,11 +598,11 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             TermCache termCache = curr.getTermCache();
 
             for(WeightedFeature f : sf) {
+                
                 //
                 // Do things by ID for the partition that the document vector
                 // was drawn from!
-                QueryEntry entry =
-                        part == curr ? f.getEntry() : di.get(f.getName());
+                QueryEntry entry = curr.getTerm(f.getName());
                 if(entry != null) {
 
                     PostingsIterator pi;
@@ -749,7 +747,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         // Now handle the rest of the partitions.
         for(DiskPartition curr : e.getManager().getActivePartitions()) {
 
-            if(curr == part) {
+            if(curr == part || curr.isClosed()) {
                 continue;
             }
 

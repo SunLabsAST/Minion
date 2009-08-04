@@ -47,8 +47,6 @@ public class DocCache extends LRACache<String,DocCacheElement> {
     
     protected WeightingComponents wc;
     
-    protected Map<DiskPartition, DictionaryIterator> m;
-    
     public DocCache(SearchEngine engine) {
         this(200, engine, null , null);
     }
@@ -72,15 +70,10 @@ public class DocCache extends LRACache<String,DocCacheElement> {
     
     public DocCacheElement get(String key, String field, DiskPartition p) {
         
-        DictionaryIterator di = m.get(p); 
-        if(di == null) {
-            di = (DictionaryIterator) p.getDocumentIterator();
-            m.put(p, di);
-        }
         String hk = p + key + field;
         DocCacheElement e = get(hk);
         if(e == null) {
-            e = new DocCacheElement((DocKeyEntry) di.get(key), p, field, wf, wc);
+            e = new DocCacheElement((DocKeyEntry) p.getDocumentTerm(key), p, field, wf, wc);
             put(hk, e);
         }
         return e;

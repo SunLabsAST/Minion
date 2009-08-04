@@ -446,7 +446,7 @@ public class DiskDictionary implements Dictionary {
      * @return The entry associated with the name, or <code>null</code> if
      * the name doesn't appear in the dictionary.
      */
-    public QueryEntry get(Object name, LookupState lus) {
+    protected QueryEntry get(Object name, LookupState lus) {
 
         if(lus == null) {
             lus = new LookupState(this);
@@ -2110,14 +2110,6 @@ public class DiskDictionary implements Dictionary {
         public int getNEntries() {
             return stopPos - startPos;
         }
-
-        public QueryEntry get(int id) {
-            return DiskDictionary.this.get(id, lus);
-        }
-
-        public QueryEntry get(Object name) {
-            return DiskDictionary.this.get(name, lus);
-        }
     }
 
     /**
@@ -2188,17 +2180,15 @@ public class DiskDictionary implements Dictionary {
 
         int depth;
 
-        LookupState lus;
-
         public BinarySearchTree(int capacity) {
 
             //
             // quick approximation to the log base 2 of the cache size.
             depth = (int) (Math.log(capacity) / Math.log(2)) - 1;
-            lus = getLookupState();
+            LookupState lus = new LookupState(DiskDictionary.this);
             if(size() > 0) {
-                root = new Node(0, dh.nOffsets - 1);
-                root.fill(depth);
+                root = new Node(lus, 0, dh.nOffsets - 1);
+                root.fill(lus, depth);
             }
         }
 
@@ -2258,7 +2248,7 @@ public class DiskDictionary implements Dictionary {
 
             Node right;
 
-            public Node(int lower, int upper) {
+            public Node(LookupState lus, int lower, int upper) {
                 //
                 // Get the name for the node at the midpoint.
                 mid = (lower + upper) / 2;
@@ -2268,15 +2258,15 @@ public class DiskDictionary implements Dictionary {
                 size++;
             }
 
-            public void fill(int depth) {
+            public void fill(LookupState lus, int depth) {
                 if(depth == 0 || lower >= upper) {
                     return;
                 }
 
-                left = new Node(lower, mid - 1);
-                left.fill(depth - 1);
-                right = new Node(mid + 1, upper);
-                right.fill(depth - 1);
+                left = new Node(lus, lower, mid - 1);
+                left.fill(lus, depth - 1);
+                right = new Node(lus, mid + 1, upper);
+                right.fill(lus, depth - 1);
             }
 
             public String toString() {

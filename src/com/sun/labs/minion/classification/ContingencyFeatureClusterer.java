@@ -181,16 +181,12 @@ public class ContingencyFeatureClusterer implements FeatureClusterer {
         Map<Integer, String> tm = new HashMap<Integer, String>();
 
         //
-        // Get a private copy of the document dictionary.
-        DictionaryIterator ddi = (DictionaryIterator) part.getDocumentIterator();
-
-        //
         // For each document ID that we encounter, we'll pull the
         // document term and then iterate through the terms in that,
         // document.
         int processed = 0;
         for(ArrayGroup.DocIterator i = ag.iterator(); i.next();) {
-            DocKeyEntry e = (DocKeyEntry) ddi.get(i.getDoc());
+            DocKeyEntry e = (DocKeyEntry) part.getDocumentTerm(i.getDoc());
             if(e == null) {
                 logger.warning("No document term for " +
                         part + " " + i.getDoc());

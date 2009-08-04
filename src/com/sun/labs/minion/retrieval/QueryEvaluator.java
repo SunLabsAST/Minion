@@ -63,7 +63,7 @@ public class QueryEvaluator {
      * @return a list of <code>ArrayGroup</code>s containing the results
      * for the corresponding partitions.
      */
-    public List eval(List parts, QueryElement qe) {
+    public List eval(List<DiskPartition> parts, QueryElement qe) {
 
         List ret = new ArrayList();
 
@@ -74,8 +74,10 @@ public class QueryEvaluator {
             DictTerm dt = (DictTerm) qe;
             String qt = ((DictTerm) qe).getName();
             if(qt.matches("\\**")) {
-                for(Iterator i = parts.iterator(); i.hasNext();) {
-                    DiskPartition p = (DiskPartition) i.next();
+                for(DiskPartition p : parts) {
+                    if(p.isClosed()) {
+                        continue;
+                    }
                     ArrayGroup ag = new NegativeGroup();
                     ag.part = p;
                     ret.add(ag);
@@ -86,8 +88,10 @@ public class QueryEvaluator {
 
         //
         // This is a normal evaluation.
-        for(Iterator i = parts.iterator(); i.hasNext();) {
-            DiskPartition p = (DiskPartition) i.next();
+        for(DiskPartition p : parts) {
+            if(p.isClosed()) {
+                continue;
+            }
             qe.setPartition(p);
             ArrayGroup ag = qe.eval(null);
             ag.part = p;

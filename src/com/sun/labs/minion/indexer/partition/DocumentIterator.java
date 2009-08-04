@@ -34,8 +34,6 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 
 /**
  * An iterator for all of the documents in a set of partitions.
- *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public class DocumentIterator implements Iterator<Document> {
     
@@ -47,7 +45,7 @@ public class DocumentIterator implements Iterator<Document> {
     
     protected QueryEntry currEntry;
     
-    protected Iterator partIter;
+    protected Iterator<DiskPartition> partIter;
     
     protected Iterator docIter;
     
@@ -74,7 +72,21 @@ public class DocumentIterator implements Iterator<Document> {
         // try.
         if(currPart == null) {
             if(partIter.hasNext()) {
-                currPart = (DiskPartition) partIter.next();
+                currPart = partIter.next();
+                while(currPart.isClosed()) {
+                    if(partIter.hasNext()) {
+                        currPart = partIter.next();
+                    } else {
+                        currPart = null;
+                        break;
+                    }
+                }
+
+                if(currPart == null) {
+                    currEntry = null;
+                    return false;
+                }
+                
                 docIter = currPart.getDocumentIterator();
             } else {
                 currEntry = null;

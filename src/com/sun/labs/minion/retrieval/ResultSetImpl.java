@@ -142,7 +142,7 @@ public class ResultSetImpl implements ResultSet {
     public ResultSetImpl(QueryElement query,
             QueryConfig qc,
             QueryStats qs,
-            List partitions,
+            List<DiskPartition> partitions,
             SearchEngine e) {
         this.query = query;
         this.e = e;

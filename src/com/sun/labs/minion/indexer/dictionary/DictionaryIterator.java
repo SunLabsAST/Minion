@@ -44,22 +44,6 @@ public interface DictionaryIterator extends Iterator<QueryEntry> {
     public int getNEntries();
 
     /**
-     * Gets an entry for a specific name from the dictionary that this iterator
-     * is iterating through.  This is an atypical iterator method, but it may
-     * be a lot faster, especially if the implementation keeps a local copy of
-     * dictionary data for faster uncontended access.
-     */
-    public QueryEntry get(Object name);
-
-     /**
-     * Gets an entry for a specific ID from the dictionary that this iterator
-     * is iterating through.  This is an atypical iterator method, but it may
-     * be a lot faster, especially if the implementation keeps a local copy of
-     * dictionary data for faster uncontended access.
-     */
-   public QueryEntry get(int id);
-
-    /**
      * Modifies the iterator so that it only returns entries whose names have
      * actually occurred in the indexed material.  So, for example, if the word
      * <em>Dog</em> occurs in the indexed material, and is the only occurrence

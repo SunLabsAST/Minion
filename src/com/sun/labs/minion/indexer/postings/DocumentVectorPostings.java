@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
-import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -255,9 +255,9 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
                     }
                 }
             } else {
-                DictionaryIterator di = ((DiskPartition) dict.getPartition()).getMainDictionary().iterator();
+                DiskDictionary dd = ((DiskPartition) dict.getPartition()).getMainDictionary();
                 while(pi.next()) {
-                    QueryEntry qe = di.get(pi.getID());
+                    QueryEntry qe = dd.getByID((int) pi.getID());
                     String name = qe.getName().toString();
                     wc.setTerm(name).setDocument(pi);
                     wf.initTerm(wc);

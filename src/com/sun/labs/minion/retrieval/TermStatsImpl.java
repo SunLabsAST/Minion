@@ -94,9 +94,12 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
      *
      * @param i the iterator
      */
-    protected void init(Iterator i) {
+    protected void init(Iterator<DiskPartition> i) {
         while(i.hasNext()) {
-            DiskPartition p = (DiskPartition) i.next();
+            DiskPartition p = i.next();
+            if(p.isClosed()) {
+                continue;
+            }
             Entry e = p.getTerm(name);
             if(e != null) {
                 add(e);

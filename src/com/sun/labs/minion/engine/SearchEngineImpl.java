@@ -323,9 +323,12 @@ public class SearchEngineImpl implements SearchEngine,
         List<String> remaining = new ArrayList<String>(keys);
         List<Document> docs =
                 new ArrayList<Document>();
-        for(Iterator i = parts.iterator(); i.hasNext();) {
+        for(Iterator<DiskPartition> i = parts.iterator(); i.hasNext();) {
 
-            DiskPartition p = (DiskPartition) i.next();
+            DiskPartition p = i.next();
+            if(p.isClosed()) {
+                continue;
+            }
             for(Iterator<String> j = remaining.iterator(); j.hasNext();) {
 
                 //
@@ -620,7 +623,7 @@ public class SearchEngineImpl implements SearchEngine,
         try {
             CollectionStats cs =
                     new CollectionStats(invFilePartitionManager);
-            List parts = invFilePartitionManager.getActivePartitions();
+            List<DiskPartition> parts = invFilePartitionManager.getActivePartitions();
             QueryConfig cqc = (QueryConfig) queryConfig.clone();
             qe.setQueryConfig(cqc);
             cqc.setCollectionStats(cs);
@@ -769,18 +772,19 @@ public class SearchEngineImpl implements SearchEngine,
         //
         // We'll get a list of the active partitions and the keys that we're
         // looking for.
-        List parts = invFilePartitionManager.getActivePartitions();
+        List<DiskPartition> parts = invFilePartitionManager.getActivePartitions();
         List<String> remaining = new ArrayList<String>(keys);
         List sets = new ArrayList();
-        for(Iterator i = parts.iterator(); i.hasNext();) {
+        for(DiskPartition p : parts) {
+            if(p.isClosed()) {
+                continue;
+            }
 
             //
             // We'll make an array group for this partition.
-            DiskPartition p = (DiskPartition) i.next();
             ArrayGroup ag = new ArrayGroup(remaining.size());
             ag.setPartition(p);
 
-            int pos = 0;
             for(Iterator j = remaining.iterator(); j.hasNext();) {
                 String key = (String) j.next();
 
@@ -822,19 +826,18 @@ public class SearchEngineImpl implements SearchEngine,
         //
         // We'll get a list of the active partitions and the keys that we're
         // looking for.
-        List parts = invFilePartitionManager.getActivePartitions();
+        List<DiskPartition> parts = invFilePartitionManager.getActivePartitions();
         Map<String, Float> remaining =
                 new LinkedHashMap<String, Float>(keys);
         List sets = new ArrayList();
-        for(Iterator i = parts.iterator(); i.hasNext();) {
+        for(DiskPartition p : parts) {
+            if(p.isClosed()) {
+                continue;
+            }
 
-            //
-            // We'll make an array group for this partition.
-            DiskPartition p = (DiskPartition) i.next();
             ScoredGroup ag = new ScoredGroup(remaining.size());
             ag.setPartition(p);
 
-            int pos = 0;
             for(Iterator<Map.Entry<String, Float>> j =
                     remaining.entrySet().iterator(); j.hasNext();) {
                 Map.Entry<String, Float> e = j.next();

@@ -43,6 +43,8 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
 
     public static int BUFFER_SIZE = 8 * 1024;
 
+    private boolean closed;
+
     /**
      * Creates a term statistics dictionary
      * @param df the file from which the terms statistics dictionary will
@@ -80,6 +82,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
 
     @Override
     public void createRemoveFile() {
+        logger.log(Level.INFO, String.format("createRemoveFile"), new Exception("here"));
         File closeFile = new File(df + ".rem");
         try {
             closeFile.createNewFile();
@@ -97,11 +100,20 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
             if(currTime < closeTime) {
                 return false;
             }
+            closed = true;
             dictFile.close();
         } catch(IOException ex) {
             logger.severe("Error closing term stats dictionary:" + df);
         }
         return true;
+    }
+
+    public void setClosed() {
+        closed = true;
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 
     /**

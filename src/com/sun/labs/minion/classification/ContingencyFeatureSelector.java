@@ -257,13 +257,11 @@ public class ContingencyFeatureSelector implements FeatureSelector {
                     engine.getPM().getActivePartitions().iterator();
                     partIt.hasNext();) {
                 DiskPartition part = (DiskPartition) partIt.next();
-                DiskDictionaryIterator dictIt =
-                        (DiskDictionaryIterator) part.getMainDictionaryIterator();
                 int[] uniqDocs = new int[0];
                 for(Iterator clustIt = curr.getContents().iterator();
                         clustIt.hasNext();) {
                     Feature f = (Feature) clustIt.next();
-                    QueryEntry e = dictIt.get(f.getName());
+                    QueryEntry e = part.getTerm(f.getName());
                     if(e != null) {
                         int[] currDocs = new int[e.getN()];
                         int ci = 0;

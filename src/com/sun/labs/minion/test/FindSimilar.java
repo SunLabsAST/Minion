@@ -32,6 +32,8 @@ import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.util.SimpleLabsLogFormatter;
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -86,7 +88,7 @@ public class FindSimilar implements Runnable {
                 } catch(Exception e) {
                     logger.log(Level.SEVERE, "Failed: " + key, e);
                 }
-                if(nw.getClicks() % 10 == 0) {
+                if(nw.getClicks() % 20 == 0) {
                     logger.info(String.format(
                             "%s %d fs avg: %.3f",
                                               Thread.currentThread().getName(),
@@ -114,13 +116,14 @@ public class FindSimilar implements Runnable {
             return;
         }
 
-        String flags = "d:f:n:q:r:";
+        String flags = "d:f:n:q:r:x:";
         Getopt gopt = new Getopt(args, flags);
         String indexDir = null;
         int n = 4;
         int reps = 10;
         String query = "aura-type = artist";
         String field = "socialtags";
+        URL cmFile = null;
         int c;
 
 
@@ -171,8 +174,8 @@ public class FindSimilar implements Runnable {
                     reps = Integer.parseInt(gopt.optArg);
                     break;
 
-                case '1':
-                    query = gopt.optArg;
+                case 'x':
+                    cmFile = (new File(gopt.optArg)).toURI().toURL();
                     break;
             }
         }
@@ -187,7 +190,7 @@ public class FindSimilar implements Runnable {
         // Open our engine for use. 
         SearchEngine engine;
         try {
-            engine = SearchEngineFactory.getSearchEngine(indexDir);
+            engine = SearchEngineFactory.getSearchEngine(indexDir, cmFile);
         } catch(SearchEngineException se) {
             System.err.println("Error opening collection: " + se);
             return;

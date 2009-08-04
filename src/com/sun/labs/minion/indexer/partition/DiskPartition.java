@@ -36,7 +36,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import com.sun.labs.minion.indexer.Closeable;
-import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
@@ -120,6 +119,8 @@ public class DiskPartition extends Partition implements Closeable {
      * active.
      */
     protected File removedFile;
+
+    private boolean closed;
 
     /**
      * The deletion map for this partition.
@@ -284,6 +285,10 @@ public class DiskPartition extends Partition implements Closeable {
         return dvl;
     }
 
+    public DiskDictionary getDocumentDictionary() {
+        return docDict;
+    }
+
     /**
      * Gets an iterator for the document keys in this partition.  All
      * documents, including those that have been deleted will be returned.
@@ -446,6 +451,7 @@ public class DiskPartition extends Partition implements Closeable {
         if(closeTime > currTime) {
             return false;
         }
+        closed = true;
         try {
 
             syncDeletedMap();
@@ -472,6 +478,14 @@ public class DiskPartition extends Partition implements Closeable {
             logger.log(Level.SEVERE, "Error closing partition", ioe);
         }
         return true;
+    }
+
+    public void setClosed() {
+        closed = true;
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 
     /**
@@ -575,27 +589,11 @@ public class DiskPartition extends Partition implements Closeable {
      * name.
      */
     public QueryEntry getTerm(String name, boolean caseSensitive) {
-
-        return getTerm(name, caseSensitive, null);
-    }
-
-    /**
-     * Gets the term associated with a given name.
-     *
-     * @param name The name of the term.
-     * @param caseSensitive If <code>true</code> then the term should be
-     * looked up in the case that it is given.
-     * @param lus a lookup state to use for the dictionary lookup
-     * @return the entry from the main dicitionary associated with the given
-     * name.
-     */
-    public QueryEntry getTerm(String name, boolean caseSensitive,
-                              LookupState lus) {
         if(caseSensitive) {
-            return mainDict.get(name, lus);
+            return mainDict.get(name);
         }
 
-        return mainDict.get(CharUtils.toLowerCase(name), lus);
+        return mainDict.get(CharUtils.toLowerCase(name));
     }
 
     /**

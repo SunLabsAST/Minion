@@ -27,8 +27,6 @@ package com.sun.labs.minion.indexer;
 /**
  * An interface for things that can be closed, but that must respect a delay to
  * account for things that may be in use.
- *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public interface Closeable {
     
@@ -44,7 +42,23 @@ public interface Closeable {
      * @return <code>true</code> if the thing was closed, <code>false</code> otherwise.
      */
     public boolean close(long currTime);
-    
+
+    /**
+     * Sets the closed property for this thing, even if we're not quite ready to
+     * close it yet.
+     */
+    public void setClosed();
+
+    /**
+     * Checks to see whether this thing is closed.
+     * @return <code>true</code> if the thing has been closed, <code>false</code>
+     * otherwise.
+     */
+    public boolean isClosed();
+
+    /**
+     * Creates the file indicating that this thing can be removed.
+     */
     public void createRemoveFile();
     
 }

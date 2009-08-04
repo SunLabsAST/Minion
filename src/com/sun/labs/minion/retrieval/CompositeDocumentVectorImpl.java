@@ -733,6 +733,10 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
         feat.setFields(fieldIDs);
         for(DiskPartition curr : e.getManager().getActivePartitions()) {
 
+            if(curr.isClosed()) {
+                continue;
+            }
+
             //
             // For each partition, we'll heap the feature vectors so that we 
             // can process the terms in dictionary order.  For each of the fields
@@ -742,7 +746,6 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
             //
             // Also, we'll use a local dictionary iterator so that we have our
             // own temp buffers running.
-            DictionaryIterator di = curr.getMainDictionaryIterator();
             PriorityQueue<HE> h = new PriorityQueue<HE>();
             float[][] scores = new float[fieldFeatures.length][];
             for(int i = 0; i < fieldFeatures.length; i++) {
@@ -799,7 +802,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
                 // Do things by ID for the partition that the document vector
                 // was drawn from!
                 QueryEntry entry =
-                        part == curr ? cf.getEntry() : di.get(cf.getName());
+                        part == curr ? cf.getEntry() : curr.getTerm(cf.getName());
                 if(entry != null) {
                     wf.initTerm(wc.setTerm(cf.getName()));
                     PostingsIterator pi = entry.iterator(feat);
