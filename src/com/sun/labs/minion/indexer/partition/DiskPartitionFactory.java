@@ -112,5 +112,10 @@ public class DiskPartitionFactory implements Configurable {
     throws java.io.IOException {
         return new DiskPartition(number, m, mainDictFactory, documentDictFactory, cacheVectorLengths, termCacheSize);
     }
+
+    public DiskPartition getBaseDiskPartition(int number, PartitionManager m)
+            throws java.io.IOException {
+        return new DiskPartition(number, m, mainDictFactory, documentDictFactory, cacheVectorLengths, termCacheSize);
+    }
     
 }

@@ -779,6 +779,20 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     /**
+     * Instantiates a base disk partition for this manager
+     *
+     * @param partNum the partition number
+     * @param m the manager
+     * @return the new partition
+     * @throws java.io.IOException if there is any error opening the partition
+     */
+    protected DiskPartition newBaseDiskPartition(Integer partNum,
+            PartitionManager m)
+            throws java.io.IOException {
+        return partitionFactory.getBaseDiskPartition(partNum, m);
+    }
+
+    /**
      * Get a timer that can be used during querying to time tasks.
      *
      * @return the query timer

@@ -358,7 +358,7 @@ public class InvFileMemoryPartition extends MemoryPartition implements Stage {
                 classManager.doClassification()) {
             //
             // A class manager exists, so perform classification if we're supposed to do that.
-            DiskPartition sdp = manager.newDiskPartition(partNumber, manager);
+            DiskPartition sdp = manager.newBaseDiskPartition(partNumber, manager);
             try {
                 DocumentVectorLengths.calculate(sdp, getManager().getTermStatsDict(), true);
             } catch (FileLockException ex) {
