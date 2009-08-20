@@ -82,7 +82,7 @@ public class ClassifierDiskPartition extends DiskPartition {
      */
     protected long dataStart;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ClassifierDiskPartition.class.getName());
 
     protected static String logTag = "CDP";
 
@@ -614,8 +614,7 @@ public class ClassifierDiskPartition extends DiskPartition {
      */
     protected static void reap(PartitionManager m, int n) {
         if(!((ClassifierManager) m).makeModelSpecificFile(n).delete()) {
-            Logger.getLogger(ClassifierDiskPartition.class.getName())
-                    .severe("Failed to reap classifier partition");
+            logger.severe("Failed to reap classifier partition");
         }
         DiskPartition.reap(m, n);
     }

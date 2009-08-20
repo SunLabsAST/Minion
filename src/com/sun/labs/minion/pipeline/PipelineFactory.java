@@ -59,7 +59,7 @@ public class PipelineFactory implements Configurable {
      */
     ConfigurationManager cm;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(PipelineFactory.class.getName());
 
     protected static String logTag = "PF";
 

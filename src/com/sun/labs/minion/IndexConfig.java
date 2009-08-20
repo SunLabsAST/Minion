@@ -206,7 +206,7 @@ public class IndexConfig implements Cloneable,
     /**
      * The log for the search engine
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(IndexConfig.class.getName());
 
     /**
      * A tag that will be used for log entries

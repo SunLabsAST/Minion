@@ -95,7 +95,7 @@ public abstract class AbstractClusterer implements Configurable {
     
     protected static double[] one = {1};
     
- Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(AbstractClusterer.class.getName());
     
     public static final String logTag = "ACL";
     

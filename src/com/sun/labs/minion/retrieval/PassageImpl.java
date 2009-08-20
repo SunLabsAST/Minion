@@ -136,7 +136,7 @@ public class PassageImpl implements Passage, Comparable {
      */
     protected String elidedUnHLValue;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(PassageImpl.class.getName());
 
     protected static String logTag = "PI";
 

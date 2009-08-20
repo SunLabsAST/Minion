@@ -123,7 +123,7 @@ public class BitBuffer implements Cloneable, IntEncoder {
     protected final static int 	BIT_INDEX_MASK 	      = BITS_PER_UNIT - 1;
     protected final static int  FULL_UNIT 	      = 0xffffffff;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private static Logger logger = Logger.getLogger(BitBuffer.class.getName());
 
     /**
      * The bits in this BitSet.  The ith bit is stored in bits[i/64] at

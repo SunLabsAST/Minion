@@ -91,9 +91,7 @@ public class Unsupervised {
      */
     int J;
 
-    Logger logger = Logger.getLogger(getClass().getName());
-
-    private static String logTag = "DIS";
+    static Logger logger = Logger.getLogger(Unsupervised.class.getName());
 
     /**
      * Creates a disambiguator.

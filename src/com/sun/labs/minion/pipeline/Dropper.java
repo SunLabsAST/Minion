@@ -63,7 +63,7 @@ public class Dropper extends StageAdapter {
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(Dropper.class.getName());
 
     /**
      * The log tag.

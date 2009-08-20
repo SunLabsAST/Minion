@@ -80,7 +80,7 @@ public class FeatureVector implements SavedField {
      */
     protected int width = 0;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(FeatureVector.class.getName());
 
     protected static String logTag = "FV";
 

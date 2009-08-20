@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 public class StopWordsStage extends StageAdapter implements
         com.sun.labs.util.props.Configurable {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(StopWordsStage.class.getName());
 
     protected static String logTag = "SWS";
 

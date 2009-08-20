@@ -71,7 +71,7 @@ public class KeyWordProfiler implements Profiler, Configurable {
      */
     private Map<String, List<String>> m;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(KeyWordProfiler.class.getName());
 
     private static String logTag = "KWP";
 

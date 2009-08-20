@@ -50,6 +50,8 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
 
     private boolean closed;
 
+    static Logger logger = Logger.getLogger(UncachedTermStatsDictionary.class.getName());
+
     public UncachedTermStatsDictionary() {
     }
 
@@ -128,11 +130,11 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
             tsw.write(tse);
             nMerged++;
             if(nMerged % 100000 == 0) {
-                Logger.getLogger("").info("Generated " + nMerged);
+                logger.info("Generated " + nMerged);
             }
         }
         if(nMerged % 100000 != 0) {
-            Logger.getLogger("").info("Generated " + nMerged);
+            logger.info("Generated " + nMerged);
         }
         RandomAccessFile raf = new RandomAccessFile(df, "rw");
         tsw.finish(raf);
@@ -172,8 +174,7 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
      */
     public static void create(String indexDir, File df) {
         try {
-            Logger.getLogger(UncachedTermStatsDictionary.class.getName())
-                    .fine("Making term stats dictionary: " + df);
+            logger.fine("Making term stats dictionary: " + df);
             RandomAccessFile raf = new RandomAccessFile(df, "rw");
             MemoryDictionary tts =
                     new MemoryDictionary(TermStatsEntry.class);
@@ -183,8 +184,7 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
                     MemoryDictionary.IDMap.NONE, null);
             raf.close();
         } catch(java.io.IOException ioe) {
-            Logger.getLogger(UncachedTermStatsDictionary.class.getName())
-                    .log(Level.SEVERE, "Error creating term stats dictionary", ioe);
+            logger.log(Level.SEVERE, "Error creating term stats dictionary", ioe);
         }
     }
 

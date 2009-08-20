@@ -77,7 +77,7 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
      */
     protected Stage stage;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private static Logger logger = Logger.getLogger(MarkUpAnalyzer_html.class.getName());
 
     public MarkUpAnalyzer_html(Reader r, int pos, String key) {
         super(r, pos, key);

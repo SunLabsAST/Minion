@@ -56,7 +56,7 @@ public class QuestioningStage extends StageAdapter implements
     /**
      * Log
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(QuestioningStage.class.getName());
 
     /**
      * Tag for the log

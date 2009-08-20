@@ -39,7 +39,7 @@ public class StemmingClusterer extends ContingencyFeatureClusterer {
     /**
      * The log 
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+   static  Logger logger = Logger.getLogger(StemmingClusterer.class.getName());
 
     /** 
      * The log tag 

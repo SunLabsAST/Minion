@@ -49,7 +49,7 @@ public class Context {
 
     protected int[] counts;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(Context.class.getName());
 
     public static final String logTag = "CON";
 

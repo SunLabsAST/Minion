@@ -59,7 +59,7 @@ public class ContingencyFeatureCluster implements FeatureCluster {
      */
     protected String name;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ContingencyFeatureCluster.class.getName());
 
     protected static String logTag = "CFC";
 

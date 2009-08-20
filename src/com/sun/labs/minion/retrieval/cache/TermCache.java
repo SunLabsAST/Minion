@@ -53,7 +53,7 @@ public class TermCache {
     
     protected DiskPartition part;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private static Logger logger = Logger.getLogger(TermCache.class.getName());
     
     public TermCache(DiskPartition part) {
         this(200, part);

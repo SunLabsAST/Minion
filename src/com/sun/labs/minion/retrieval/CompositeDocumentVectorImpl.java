@@ -131,7 +131,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
      */
     protected boolean normalized = false;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(CompositeDocumentVectorImpl.class.getName());
 
     protected static String logTag = "CDVI";
 

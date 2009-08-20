@@ -124,7 +124,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
      */
     public static void create(String indexDir, File df) {
         try {
-            Logger.getLogger(CachedTermStatsDictionary.class.getName()).info("Making term stats dictionary: " + df);
+            logger.info("Making term stats dictionary: " + df);
             RandomAccessFile raf = new RandomAccessFile(df, "rw");
             MemoryDictionary tts =
                     new MemoryDictionary(TermStatsEntry.class);
@@ -134,7 +134,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
                     MemoryDictionary.IDMap.NONE, null);
             raf.close();
         } catch(java.io.IOException ioe) {
-            Logger.getLogger(CachedTermStatsDictionary.class.getName()).log(Level.SEVERE, "Error creating term stats dictionary", ioe);
+            logger.log(Level.SEVERE, "Error creating term stats dictionary", ioe);
         }
     }
 

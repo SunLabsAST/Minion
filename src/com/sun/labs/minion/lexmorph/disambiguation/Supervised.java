@@ -68,7 +68,7 @@ public class Supervised implements Serializable {
      */
     private Set<String> vocab;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(Supervised.class.getName());
 
     private static String logTag = "SUPD";
 

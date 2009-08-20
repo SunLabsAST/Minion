@@ -39,7 +39,7 @@ public class DocCacheElement {
 
     protected DocumentVectorImpl dvi;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(DocCacheElement.class.getName());
 
     protected static String logTag = "DCE";
 

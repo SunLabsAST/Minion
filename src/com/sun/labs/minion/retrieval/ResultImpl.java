@@ -95,7 +95,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      */
     protected QueryStats qs;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ResultImpl.class.getName());
 
     protected static String logTag = "RI";
 

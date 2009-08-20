@@ -66,7 +66,7 @@ public class MPIndexTest {
     /**
      * The log onto which messages <b>should</b> be written
      */
-    protected Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(MPIndexTest.class.getName());
 
     /**
      * Flags used to describe options permitted in the command line invocation

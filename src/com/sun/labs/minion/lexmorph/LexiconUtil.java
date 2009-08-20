@@ -41,6 +41,8 @@ import java.util.logging.Logger;
  */
 public class LexiconUtil {
 
+    static Logger logger = Logger.getLogger(LexiconUtil.class.getName());
+
     public static Word[] valueWords(Value val) { // pmartin 23sep02
         if(val == null) {
             return null;
@@ -846,7 +848,7 @@ public class LexiconUtil {
         } else if(v.categoryp()) {
             nBits = encodeCategoryVal(bb, (Category) v);
         } else if(v.phrasep()) {
-            Logger.getLogger(LexiconUtil.class.getName()).finest("encodeValue can't do phrases!");
+            logger.finest("encodeValue can't do phrases!");
         } else {
             nBits = encodeAtomVal(bb, (Atom) v);
         }
@@ -929,7 +931,7 @@ public class LexiconUtil {
             int[] ints = new int[n];
             for(int i = 0; i < n; i++) {
                 if(atms[i] == null) {
-                    Logger.getLogger(LexiconUtil.class.getName()).finest("null atom in element " + i +
+                    logger.finest("null atom in element " + i +
                             " of array " + LexiconUtil.printStringArray(atms));
                 }
                 ints[i] = (atms[i].index) & Lexicon.WORDINDEXMASK;

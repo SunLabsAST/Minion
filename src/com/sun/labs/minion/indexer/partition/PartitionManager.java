@@ -1629,10 +1629,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // Get the files in the directory.
         File[] dir = idf.listFiles();
 
-        Logger sl = Logger.getLogger(PartitionManager.class.getName());
-        
         if(dir == null) {
-            sl.severe("Recover unable to list directory files.");
+            logger.severe("Recover unable to list directory files.");
             return;
         }
 
@@ -1646,7 +1644,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 //
                 // Remove lock file.
                 if(!dir[i].delete()) {
-                    sl.severe("Failed to delete lock file " + dir[i].
+                    logger.severe("Failed to delete lock file " + dir[i].
                             getName());
                 }
             } else if(n.charAt(0) == 'p' && n.endsWith("post")) {
@@ -1666,7 +1664,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                             if(parts[j] == partNum) {
                                 if(!makeRemovedPartitionFile(iD, partNum).
                                         createNewFile()) {
-                                    sl.severe("Failed to create rem file for part " +
+                                    logger.severe("Failed to create rem file for part " +
                                             partNum);
                                 }
                                 break;
@@ -2860,7 +2858,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(PartitionManager.class.getName());
 
     /**
      * The tag for this module.

@@ -41,14 +41,13 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author ja151348
  */
 public class InvFilePartitionUtils {
 
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(InvFilePartitionUtils.class.getName());
 
     /**
      * The tag for this module.
@@ -190,7 +189,7 @@ public class InvFilePartitionUtils {
             dictFile.close();
             postStream.close();
         } catch(java.io.IOException ioe) {
-            Logger.getLogger(InvFilePartitionUtils.class.getName()).log(Level.SEVERE, "Error dumping partition", ioe);
+            logger.log(Level.SEVERE, "Error dumping partition", ioe);
         }
     }
 }

@@ -52,7 +52,7 @@ public class ContingencyFeatureClusterer implements FeatureClusterer {
     /**
      * The log
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ContingencyFeatureCluster.class.getName());
 
     /**
      * The log tag

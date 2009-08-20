@@ -36,7 +36,7 @@ public class MarkUpAnalyzer_xml extends MarkUpAnalyzer {
 
     protected XMLAnalyzer xa;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(MarkUpAnalyzer_xml.class.getName());
 
     protected static String logTag = "MUX";
 

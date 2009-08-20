@@ -36,7 +36,7 @@ class List implements Value {
 
     public Value[] contents;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private static Logger logger = Logger.getLogger(List.class.getName());
 
     public List(Lexicon lexicon) {
         this.lexicon = lexicon;

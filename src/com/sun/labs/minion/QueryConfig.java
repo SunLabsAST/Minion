@@ -265,7 +265,7 @@ public class QueryConfig implements Cloneable,
     /**
      * Our log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(QueryConfig.class.getName());
 
     /**
      * The log tag.

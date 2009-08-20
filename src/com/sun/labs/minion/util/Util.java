@@ -43,7 +43,7 @@ public class Util {
     /**
      * A log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(Util.class.getName());
 
     /**
      * A tag for our log entries.

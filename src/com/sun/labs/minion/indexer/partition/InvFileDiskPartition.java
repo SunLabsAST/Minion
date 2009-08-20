@@ -663,11 +663,10 @@ public class InvFileDiskPartition extends DiskPartition {
     protected static void reap(PartitionManager m, int n) {
         //
         // Remove the data files.
-        Logger sl = Logger.getLogger(InvFileDiskPartition.class.getName());
         File[] files = getAllFiles(m, n);
         for(int i = 0; i < files.length; i++) {
             if(!files[i].delete() && (files[i].exists())) {
-                sl.warning("Failed to delete: " + files[i]);
+                logger.warning("Failed to delete: " + files[i]);
             }
         }
 
@@ -675,10 +674,10 @@ public class InvFileDiskPartition extends DiskPartition {
         // Remove the deletion bitmap and the removed partition files.
         if(m.makeDeletedDocsFile(n).exists() &&
                 !m.makeDeletedDocsFile(n).delete()) {
-            sl.severe("Failed to reap partition " + n + " deleted docs");
+            logger.severe("Failed to reap partition " + n + " deleted docs");
         }
         if(!m.makeRemovedPartitionFile(n).delete()) {
-            sl.severe("Failed to reap partition " + n + " rem file");
+            logger.severe("Failed to reap partition " + n + " rem file");
         }
     }
 

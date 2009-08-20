@@ -122,7 +122,7 @@ public class BasicField implements SavedField {
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(BasicField.class.getName());
 
     /**
      * The log tag.
@@ -281,7 +281,7 @@ public class BasicField implements SavedField {
             case STRING:
                 return new StringNameHandler();
             default:
-                Logger.getLogger(BasicField.class.getName()).warning("Field: " + field.getName() + " " +
+                logger.warning("Field: " + field.getName() + " " +
                         "has unknown SAVED type: " + field.getType() +
                         ", using VARCHAR.");
                 return new StringNameHandler();

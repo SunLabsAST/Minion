@@ -90,7 +90,7 @@ public class DocumentVectorLengths {
      */
     protected static int BUFF_SIZE = 8192;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(DocumentVectorLengths.class.getName());
 
     protected static String logTag = "DVL";
 

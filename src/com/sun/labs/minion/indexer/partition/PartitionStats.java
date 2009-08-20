@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  */
 public class PartitionStats {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(PartitionStats.class.getName());
 
     protected static String logTag = "PS";
 

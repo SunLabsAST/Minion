@@ -71,7 +71,7 @@ public class Sense implements Serializable {
      */
     transient private LogMath lm = new LogMath(1.0001f, true);
 
-    transient private Logger logger = Logger.getLogger(getClass().getName());
+    static private Logger logger = Logger.getLogger(Sense.class.getName());
 
     public Sense() {
         logger.info("here!");

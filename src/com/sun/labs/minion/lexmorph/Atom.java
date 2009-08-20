@@ -29,14 +29,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 class Atom implements Value, Comparable {
+
+    private static Logger logger = Logger.getLogger(Atom.class.getName());
     /**
-	 * 
-	 */
-	protected final Lexicon lexicon;
-	protected String wordstring;
+     *
+     */
+    protected final Lexicon lexicon;
+
+    protected String wordstring;
+
     protected int index;
+
     protected Number numericalValue; //the numerical value of this word, if any
-    protected ConcurrentHashMap  props; //property list of this atom
+
+    protected ConcurrentHashMap props; //property list of this atom
 
     // the following is private so that only makeAtom can make atoms
     protected Atom (Lexicon lexicon, String str) {
@@ -129,7 +135,7 @@ class Atom implements Value, Comparable {
          }
          this.lexicon.highAtomIndex++;
          this.lexicon.valueIndexTable[newIdx] = this;
-         Logger.getLogger(getClass().getName()).finest("assignAtomIndex " + newIdx + " for " +
+         logger.finest("assignAtomIndex " + newIdx + " for " +
                    printEntryString());
          index = newIdx;
          return newIdx;

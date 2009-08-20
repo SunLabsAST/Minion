@@ -91,7 +91,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
     /**
      * A log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(FileWriteableBuffer.class.getName());
 
     /**
      * A tag for our log entries.

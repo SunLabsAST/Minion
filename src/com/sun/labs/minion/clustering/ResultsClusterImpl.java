@@ -90,7 +90,7 @@ public class ResultsClusterImpl implements ResultsCluster,
      */
     double[] centroid;
 
- Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ResultsClusterImpl.class.getName());
 
     protected static String logTag = "RCI";
 
@@ -306,7 +306,7 @@ public class ResultsClusterImpl implements ResultsCluster,
             return com.sun.labs.minion.clustering.ClusterUtil.euclideanDistance(centroid,
                                                                    com.sun.labs.minion.clustering.ClusterUtil.normalize(point));
         } catch(SearchEngineException ex) {
-            Logger.getLogger("global").log(Level.SEVERE, null, ex);
+            logger.log(Level.SEVERE, null, ex);
             return 0;
         }
     }

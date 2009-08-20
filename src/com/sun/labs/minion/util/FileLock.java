@@ -57,7 +57,7 @@ import java.util.logging.Logger;
  */
 public class FileLock {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(FileLock.class.getName());
 
     public static final String logTag = "FL";
 

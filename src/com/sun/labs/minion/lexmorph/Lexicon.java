@@ -4248,7 +4248,7 @@ public class Lexicon {
     public static void stopDebug() {
         debug = false;
     }
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(Lexicon.class.getName());
 
     protected static String logTag = "LEX";
 

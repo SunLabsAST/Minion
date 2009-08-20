@@ -106,7 +106,7 @@ public class AsyncDumper implements Runnable, Dumper {
 
     private NanoWatch nw;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(AsyncDumper.class.getName());
 
     protected static String logTag = "ADMP";
 

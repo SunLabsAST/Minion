@@ -41,7 +41,7 @@ public class BlurbStage extends StageAdapter {
 
     protected HashSet stopWords;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(BlurbStage.class.getName());
 
     protected static String logTag = "BS";
 

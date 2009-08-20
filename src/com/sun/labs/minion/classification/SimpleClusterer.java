@@ -46,7 +46,7 @@ public class SimpleClusterer implements FeatureClusterer {
 
     private DocCache dc;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(SimpleClusterer.class.getName());
 
     private static String logTag = "SIMPC";
 

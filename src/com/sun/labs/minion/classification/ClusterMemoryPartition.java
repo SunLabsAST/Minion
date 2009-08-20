@@ -52,7 +52,7 @@ public class ClusterMemoryPartition extends MemoryPartition
     /**
      * The log.
      */
- Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ClusterMemoryPartition.class.getName());
 
     /**
      * The tag for this module.

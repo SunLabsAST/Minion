@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 
 public class StemStage extends StageAdapter {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(StemStage.class.getName());
 
     protected static String logTag = "SS";
 

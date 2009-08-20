@@ -50,7 +50,7 @@ public class FieldStore {
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(FieldStore.class.getName());
 
     /**
      * The log tag.

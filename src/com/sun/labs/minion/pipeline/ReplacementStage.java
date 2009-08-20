@@ -43,7 +43,7 @@ public class ReplacementStage extends StageAdapter implements Configurable {
 
     private Map<String, String> replace;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ReplacementStage.class.getName());
 
     protected static String logTag = "RS";
 

@@ -79,7 +79,7 @@ public class FeaturePostings implements Postings {
      */
     protected Buffer info;
 
- Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(FeaturePostings.class.getName());
 
     protected static String logTag = "FP";
 

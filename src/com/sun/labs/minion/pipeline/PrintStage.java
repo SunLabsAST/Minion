@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 
 public class PrintStage extends StageAdapter {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(PrintStage.class.getName());
 
     protected static String logTag = "PS";
 

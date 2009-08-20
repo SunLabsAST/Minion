@@ -64,7 +64,7 @@ public class WordEntry {
      */
     private final Lexicon lexicon;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private static Logger logger = Logger.getLogger(WordEntry.class.getName());
 
     ConcurrentHashMap properties; //property list of this word
 

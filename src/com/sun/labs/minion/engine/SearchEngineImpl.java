@@ -234,7 +234,7 @@ public class SearchEngineImpl implements SearchEngine,
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(SearchEngineImpl.class.getName());
 
     /**
      * Our log tag.

@@ -134,7 +134,7 @@ public class IDPostings implements Postings, MergeablePostings {
      */
     protected int skipSize = 64;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(IDPostings.class.getName());
 
     protected static String logTag = "IDP";
 

@@ -86,7 +86,7 @@ public abstract class AbstractPipelineImpl implements Pipeline {
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(AbstractPipelineImpl.class.getName());
 
     /**
      * Our log tag.

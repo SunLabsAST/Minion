@@ -94,7 +94,7 @@ public class BigQuery {
 
     int p;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(BigQuery.class.getName());
 
     protected static String logTag = "BQ";
 

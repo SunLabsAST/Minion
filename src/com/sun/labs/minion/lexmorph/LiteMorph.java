@@ -100,7 +100,7 @@ public abstract class LiteMorph implements KnowledgeSource {
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(LiteMorph.class.getName());
 
     /**
      * The tag for this module.
@@ -586,7 +586,7 @@ public abstract class LiteMorph implements KnowledgeSource {
 
     private static void debug(String str) {
         if(debugFlag) {
-            Logger.getLogger(LiteMorph.class.getName()).info(str);
+            logger.info(str);
         }
     }
     public static boolean traceFlag = false; //so tester can set it
@@ -594,7 +594,7 @@ public abstract class LiteMorph implements KnowledgeSource {
 
     private static void trace(String str) {
         if(traceFlag) {
-            Logger.getLogger(LiteMorph.class.getName()).info(str);
+            logger.info(str);
         }
     }
 }

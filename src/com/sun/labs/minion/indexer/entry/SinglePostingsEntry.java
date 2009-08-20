@@ -66,7 +66,7 @@ public abstract class SinglePostingsEntry extends BaseEntry {
     /**
      * A log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(SinglePostingsEntry.class.getName());
 
     /**
      * A tag for the log.

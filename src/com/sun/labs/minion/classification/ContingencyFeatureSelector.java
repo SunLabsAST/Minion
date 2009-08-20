@@ -65,7 +65,7 @@ public class ContingencyFeatureSelector implements FeatureSelector {
     /**
      * A log.
      */
- Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ContingencyFeatureSelector.class.getName());
 
     /**
      * A tag.

@@ -75,7 +75,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
     /**
      * A log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ChannelReadableBuffer.class.getName());
 
     /**
      * A tag for our log entries.

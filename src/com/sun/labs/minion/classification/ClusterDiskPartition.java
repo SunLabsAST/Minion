@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 public class ClusterDiskPartition extends DiskPartition
 {
 
- Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ClusterDiskPartition.class.getName());
 
     protected static String logTag = "ClustDP";
 

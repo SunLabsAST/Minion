@@ -41,7 +41,7 @@ public class Word implements Value {
      */
     private final Lexicon lexicon;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private static Logger logger = Logger.getLogger(Word.class.getName());
 
     protected String wordstring;
 

@@ -27,9 +27,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import com.sun.labs.minion.util.BitBuffer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class Category extends Atom {
+
+    private static Logger logger = Logger.getLogger(Category.class.getName());
 
     /**
      *
@@ -64,9 +67,11 @@ public class Category extends Atom {
         }
         this.lexicon.highCatIndex++;
         this.lexicon.valueIndexTable[newIdx] = this;
-        Logger.getLogger(getClass().getName()).finest("assignCategoryIndex " + newIdx +
-                " for " +
-                printEntryString());
+        if(logger.isLoggable(Level.FINEST)) {
+            logger.finest("assignCategoryIndex " + newIdx +
+                    " for " +
+                    printEntryString());
+        }
         index = newIdx;
         return newIdx;
     }

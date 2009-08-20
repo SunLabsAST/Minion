@@ -77,7 +77,7 @@ public class XMLAnalyzer extends DefaultHandler {
      */
     protected Map fields = new HashMap();
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(XMLAnalyzer.class.getName());
 
     protected static String logTag = "XMLA";
 

@@ -64,9 +64,7 @@ import java.util.logging.Logger;
  */
 public class BalancedWinnow implements ClassifierModel {
 
-    private static final String logTag = "WINN";
-
- Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(BalancedWinnow.class.getName());
 
     private float theta = 0;
 

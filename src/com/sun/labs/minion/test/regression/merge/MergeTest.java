@@ -519,7 +519,7 @@ public class MergeTest {
     /**
      * The log onto which messages <b>should</b> be written
      */
-    protected Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(MergeTest.class.getName());
 
     /**
      * The number of documents to be indexed per iteration

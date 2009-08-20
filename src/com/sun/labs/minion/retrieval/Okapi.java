@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  */
 public class Okapi implements WeightingFunction {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(Okapi.class.getName());
 
     protected static String logTag = "OK";
 

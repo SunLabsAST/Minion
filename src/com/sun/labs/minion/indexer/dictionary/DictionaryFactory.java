@@ -50,7 +50,7 @@ public class DictionaryFactory implements Configurable {
      */
     public DictionaryFactory() {
     }
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(DictionaryFactory.class.getName());
 
     protected static String logTag = "DF";
 

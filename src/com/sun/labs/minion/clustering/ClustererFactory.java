@@ -49,7 +49,7 @@ public class ClustererFactory implements com.sun.labs.util.props.Configurable {
 
     private Class<AbstractClusterer> resultsClustererClass;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ClustererFactory.class.getName());
 
     public static final String logTag = "RCF";
 

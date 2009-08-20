@@ -37,7 +37,6 @@ import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -63,8 +62,6 @@ public class TermCacheElement {
     protected TermStatsImpl ts;
 
     private float sqw;
-
-    Logger logger = Logger.getLogger(getClass().getName());
 
     WeightingFunction wf;
 

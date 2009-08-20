@@ -69,7 +69,7 @@ public class DelMap implements Cloneable {
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(DelMap.class.getName());
 
     /**
      * The log tag.

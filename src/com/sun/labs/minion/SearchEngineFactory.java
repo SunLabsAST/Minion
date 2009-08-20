@@ -47,7 +47,7 @@ public class SearchEngineFactory {
      */
     public static final String DEFAULT_ENGINE = "search_engine";
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(SearchEngineFactory.class.getName());
 
     public static final String logTag = "SEF";
 
@@ -127,7 +127,6 @@ public class SearchEngineFactory {
             URL configFile)
             throws SearchEngineException {
         ConfigurationManager cm;
-        Logger sl = Logger.getLogger(SearchEngineFactory.class.getName());
         try {
             File f = getDefaultConfigFile(indexDir);
             if(f != null && f.exists()) {
@@ -139,7 +138,7 @@ public class SearchEngineFactory {
                 try {
                     cm.addProperties(f.toURI().toURL());
                 } catch(IOException ioe) {
-                    sl.warning("Error loading index config file: " + f +
+                    logger.warning("Error loading index config file: " + f +
                             " Continuing without it");
                 }
 
@@ -149,7 +148,7 @@ public class SearchEngineFactory {
                 String en = cm.getGlobalProperty("engine_name");
                 if(en != null) {
                     if(!en.equals(engineName)) {
-                        sl.warning("getSearchEngine using inconsistent engine names.  Given \"" +
+                        logger.warning("getSearchEngine using inconsistent engine names.  Given \"" +
                                 engineName + "\" config contains: \"" + en +
                                 "\" using config name!");
                     }

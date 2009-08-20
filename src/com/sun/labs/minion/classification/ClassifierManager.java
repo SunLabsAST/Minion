@@ -90,7 +90,7 @@ public class ClassifierManager extends PartitionManager {
      */
     private Map<String, HumanSelected> humanSelected;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private static Logger logger = Logger.getLogger(ClassifierManager.class.getName());
 
     /**
      * Constructs the ClassifierManager.  The Term selector and clusterer are

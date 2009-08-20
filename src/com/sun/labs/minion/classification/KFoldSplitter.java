@@ -88,7 +88,7 @@ public class KFoldSplitter implements ResultSplitter
     /**
      * The log.
      */
- Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(KFoldSplitter.class.getName());
 
     /**
      * The tag for this module.

@@ -55,7 +55,7 @@ public class WeightedFeatureVector {
      */
     protected boolean normalized;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(WeightedFeatureVector.class.getName());
 
     protected static String logTag = "WFV";
 

@@ -54,7 +54,7 @@ public class SimpleFindSimilar {
 
     private String field;
 
-    private Logger logger = Logger.getLogger(getClass().getName());
+    private static Logger logger = Logger.getLogger(SimpleFindSimilar.class.getName());
 
     public SimpleFindSimilar(SearchEngine engine, List<String> keys,
             String field, int reps) {

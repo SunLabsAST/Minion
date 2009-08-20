@@ -85,9 +85,7 @@ public class DocumentImpl implements Document {
      */
     private Map<String, List<Posting>> vectoredFields;
 
-    Logger logger = Logger.getLogger(getClass().getName());
-
-    private static final String logTag = "DIMPL";
+    static Logger logger = Logger.getLogger(DocumentImpl.class.getName());
 
     /**
      * Creates an empty document.

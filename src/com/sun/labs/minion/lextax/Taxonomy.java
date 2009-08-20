@@ -101,6 +101,6 @@ public abstract class Taxonomy {
     /**
      * The log to which we write messages.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(Taxonomy.class.getName());
 
 } // Taxonomy

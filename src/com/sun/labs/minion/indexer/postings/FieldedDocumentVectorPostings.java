@@ -47,7 +47,7 @@ public class FieldedDocumentVectorPostings implements Postings,
 
     DocumentVectorPostings full;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(FieldedDocumentVectorPostings.class.getName());
 
     public static final String logTag = "FDVP";
 

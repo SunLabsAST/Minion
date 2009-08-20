@@ -59,7 +59,7 @@ public class FieldClusterer extends AbstractClusterer {
 
     Iterator hits;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(FieldClusterer.class.getName());
 
     protected static String logTag = "FC";
 

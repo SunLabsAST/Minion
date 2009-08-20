@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 public class LowerCaseStage extends StageAdapter {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(LowerCaseStage.class.getName());
 
     protected static String logTag = "LCS";
 

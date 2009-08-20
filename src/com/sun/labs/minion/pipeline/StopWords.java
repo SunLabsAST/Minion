@@ -48,9 +48,7 @@ public class StopWords implements Configurable {
 
     private Set<String> stopwords;
 
-    Logger logger = Logger.getLogger(getClass().getName());
-
-    protected static String logTag = "SW";
+    static Logger logger = Logger.getLogger(StopWords.class.getName());
 
     /**
      * Creates a StopMap

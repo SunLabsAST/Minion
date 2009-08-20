@@ -138,7 +138,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
 
     protected static float gamma[] = {32, 64, 128};
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(Rocchio.class.getName());
 
     protected static String logTag = "ROCC";
 

@@ -72,7 +72,7 @@ public class MetaFile {
 
     protected Map<Integer, FieldInfo> idToInfo;
 
-    protected Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(MetaFile.class.getName());
 
     protected static String logTag = "MetaFile";
 

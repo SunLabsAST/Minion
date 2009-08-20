@@ -92,7 +92,7 @@ public class ClassifierMemoryPartition extends MemoryPartition {
     /**
      * The log.
      */
- Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ClassifierMemoryPartition.class.getName());
 
     /**
      * The tag for this module.

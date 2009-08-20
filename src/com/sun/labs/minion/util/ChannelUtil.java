@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 
 public class ChannelUtil {
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(ChannelUtil.class.getName());
 
     protected static String logTag = "CU";
 

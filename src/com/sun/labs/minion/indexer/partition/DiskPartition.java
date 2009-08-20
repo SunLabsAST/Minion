@@ -526,25 +526,23 @@ public class DiskPartition extends Partition implements Closeable {
      */
     protected static void reap(PartitionManager m, int n) {
 
-        Logger sl = Logger.getLogger(DiskPartition.class.getName());
-
         //
         // Remove the data files.
         File[] files = getAllFiles(m, n);
         for(int i = 0; i < files.length;
                 i++) {
             if((!files[i].delete()) && (files[i].exists())) {
-                sl.warning("Failed to delete: " + files[i]);
+                logger.warning("Failed to delete: " + files[i]);
             }
         }
 
         //
         // Remove the deletion bitmap and the removed partition files.
         if(!m.makeDeletedDocsFile(n).delete()) {
-            sl.severe("Failed to reap partition " + n);
+            logger.severe("Failed to reap partition " + n);
         }
         if(!m.makeRemovedPartitionFile(n).delete()) {
-            sl.severe("Failed to reap partition " + n);
+            logger.severe("Failed to reap partition " + n);
         }
     }
 

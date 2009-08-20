@@ -83,7 +83,7 @@ public class HighlightStage extends StageAdapter {
      */
     protected String[] qt;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(HighlightStage.class.getName());
 
     protected static String logTag = "HS";
 

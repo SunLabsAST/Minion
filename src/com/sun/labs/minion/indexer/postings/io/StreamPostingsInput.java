@@ -58,7 +58,7 @@ public class StreamPostingsInput implements PostingsInput {
      */
     protected byte[] b;
 
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(StreamPostingsInput.class.getName());
 
     protected static String logTag = "SPI";
 

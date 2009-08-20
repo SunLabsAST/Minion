@@ -165,7 +165,7 @@ import java.util.logging.Logger;
  */
 public class QueryTest extends SEMain {
 
-    protected Logger logger = Logger.getLogger(getClass().getName());
+    protected static Logger logger = Logger.getLogger(QueryTest.class.getName());
 
     protected static final String logTag = "QT";
 

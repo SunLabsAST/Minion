@@ -53,15 +53,15 @@ public class Mutator extends SEMain implements Runnable {
 
     protected List<String> indexList;
 
-    protected static String stuff;
+    protected String stuff;
 
-    protected static int nLines;
+    protected int nLines;
 
-    protected static int maxUpd;
+    protected int maxUpd;
 
-    protected static int nUpdates;
+    protected int nUpdates;
 
-    protected static int updateInterval;
+    protected int updateInterval;
 
     Logger logger = Logger.getLogger(getClass().getName());
 
@@ -74,6 +74,23 @@ public class Mutator extends SEMain implements Runnable {
         indexList = new ArrayList<String>(l);
     }
 
+    public  void setMaxUpd(int maxUpd) {
+        this.maxUpd = maxUpd;
+    }
+
+    public void setnLines(int nLines) {
+        this.nLines = nLines;
+    }
+
+    public void setnUpdates(int nUpdates) {
+        this.nUpdates = nUpdates;
+    }
+
+    public void setUpdateInterval(int updateInterval) {
+        this.updateInterval = updateInterval;
+    }
+
+    
     public void run() {
 
         int nIter = 1;
@@ -165,11 +182,11 @@ public class Mutator extends SEMain implements Runnable {
     public static void main(String[] args) throws java.io.IOException, SearchEngineException {
 
         String flags = "i:d:s:n:m:r:t:x:";
-        stuff = null;
-        updateInterval = 10;
-        nUpdates = 10;
-        nLines = Integer.MAX_VALUE;
-        maxUpd = 100;
+        String stuff = null;
+        int updateInterval = 10;
+        int nUpdates = 10;
+        int nLines = Integer.MAX_VALUE;
+        int maxUpd = 100;
         int nThreads = 1;
         Getopt gopt = new Getopt(args, flags);
         int c;
@@ -305,6 +322,10 @@ public class Mutator extends SEMain implements Runnable {
         try {
             for(int i = 0; i < nThreads; i++) {
                 muts[i] = new Mutator(engine, il, i + 1);
+                muts[i].setMaxUpd(maxUpd);
+                muts[i].setUpdateInterval(updateInterval);
+                muts[i].setnLines(nLines);
+                muts[i].setnUpdates(nUpdates);
                 threads[i] = new Thread(muts[i]);
                 threads[i].start();
             }

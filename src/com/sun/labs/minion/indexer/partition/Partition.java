@@ -99,7 +99,7 @@ public abstract class Partition implements Comparable<Partition>, Configurable {
     /**
      * The log.
      */
-    Logger logger = Logger.getLogger(getClass().getName());
+    static Logger logger = Logger.getLogger(Partition.class.getName());
 
     /**
      * The log tag.
