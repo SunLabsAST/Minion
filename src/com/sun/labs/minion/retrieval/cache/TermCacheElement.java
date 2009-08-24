@@ -45,6 +45,8 @@ import java.util.logging.Logger;
  */
 public class TermCacheElement {
 
+    private static Logger logger = Logger.getLogger(TermCacheElement.class.getName());
+
     protected List<String> terms;
     
     protected DiskPartition part;
@@ -202,10 +204,8 @@ public class TermCacheElement {
      * weighting function and set of weighting components.
      */
     protected void computeWeights() {
-        if(weights == null) {
+        if(weights == null && ts != null) {
             weights = new float[n];
-            WeightingComponents wc = feat.getWeightingComponents();
-            WeightingFunction wf = feat.getWeightingFunction();
             sqw = wf.initTerm(wc.setTerm(ts));
             for(int i = 0; i < n; i++) {
                 wc.fdt = counts[i];
@@ -215,6 +215,12 @@ public class TermCacheElement {
     }
 
     public ScoredGroup getGroup() {
+        if(ts == null) {
+            //
+            // No term stats means no terms in this partition, so return
+            // an empty group.
+            return new ScoredGroup(0);
+        }
         computeWeights();
         ScoredGroup ret = new ScoredGroup(part, ids.clone(), weights.clone(), n);
         ret.setQueryWeight(sqw);

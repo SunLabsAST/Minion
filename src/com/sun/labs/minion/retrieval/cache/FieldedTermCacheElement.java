@@ -168,9 +168,7 @@ public class FieldedTermCacheElement extends TermCacheElement {
      * weighting function and set of weighting components.
      */
     protected void computeWeights() {
-        if(weights == null) {
-            WeightingComponents wc = feat.getWeightingComponents();
-            WeightingFunction wf = feat.getWeightingFunction();
+        if(weights == null && ts != null) {
             weights = new float[n];
             fieldWeights = new float[n][];
             wf.initTerm(wc.setTerm(ts));
