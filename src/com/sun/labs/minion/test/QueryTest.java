@@ -2103,23 +2103,30 @@ public class QueryTest extends SEMain {
             displayResults(rs);
 
         } else if(q.startsWith(":ffs ")) {
-            String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
-            String key = vals.length > 1 ? vals[1] : vals[0];
-            String field = vals.length > 1 ? vals[0] : null;
-            double skim = vals.length > 2 ? Double.parseDouble(vals[2]) : 1.0;
-            DocumentVector dv;
-            if(field != null) {
-                dv = engine.getDocumentVector(key, field);
-            } else {
-                dv = engine.getDocumentVector(key);
-            }
-            output.println("dv: " + dv);
-            if(dv != null) {
-                ResultSet rs = ((DocumentVectorImpl) dv).findSimilar("-score",
-                        skim);
-                displayResults(rs);
-            } else {
-                output.println("No such doc: " + key);
+            try {
+                String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
+                String key = vals.length > 1 ? vals[1] : vals[0];
+                String field = vals.length > 1 ? vals[0] : null;
+                double skim =
+                        vals.length > 2 ? Double.parseDouble(vals[2]) : 1.0;
+                DocumentVector dv;
+                if(field != null) {
+                    dv = engine.getDocumentVector(key, field);
+                } else {
+                    dv = engine.getDocumentVector(key);
+                }
+                output.println("dv: " + dv);
+                if(dv != null) {
+                    ResultSet rs = ((DocumentVectorImpl) dv).findSimilar(
+                            "-score",
+                                                                         skim);
+                    displayResults(rs);
+                } else {
+                    output.println("No such doc: " + key);
+                }
+            } catch(Exception ex) {
+                output.println("Exception finding similar");
+                ex.printStackTrace(output);
             }
         } else if(q.startsWith(":cfs ")) {
             String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
