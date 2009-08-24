@@ -42,6 +42,7 @@ import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
+import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.concurrent.TimeUnit;
@@ -165,7 +166,7 @@ public class DocumentVectorLengths {
                 for(int i = 0; i < n; i++) {
                     raf.seek(offset);
                     int f = raf.readInt();
-                    fieldLens[f] = new FileReadableBuffer(raf,
+                    fieldLens[f] = new NIOFileReadableBuffer(raf,
                             raf.getFilePointer(),
                             buffSize);
 
@@ -178,7 +179,7 @@ public class DocumentVectorLengths {
 
             //
             // Open the file of vector lengths and then create our buffer.
-            vecLens = new FileReadableBuffer(raf, offset, buffSize);
+            vecLens = new NIOFileReadableBuffer(raf, offset, buffSize);
             lock.releaseLock();
         } catch(FileLockException fle) {
             logger.severe("Error locking vector lengths file: " + vlFile + ": " + fle);

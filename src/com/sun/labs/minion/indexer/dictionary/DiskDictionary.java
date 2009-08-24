@@ -327,7 +327,7 @@ public class DiskDictionary implements Dictionary {
 
         if(dh.idToPosnSize > 0) {
             idToPosn =
-                    new FileReadableBuffer(dictFile, dh.idToPosnPos,
+                    new NIOFileReadableBuffer(dictFile, dh.idToPosnPos,
                                            dh.idToPosnSize);
         }
 
