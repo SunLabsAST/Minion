@@ -528,8 +528,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         // If the number of terms that we'll consider is a substantial portion of
         // the number of terms in the dictionary, then we're going to do things
         // a bit differently.
-        if(v == null && skimPercent == 1 &&
-                key.getN() >=
+        if(v == null && skimPercent == 1 && key.getN() >=
                 0.1 * key.getPartition().getManager().getNTerms()) {
             return bigFindSimilar(sortOrder, skimPercent);
         }
@@ -600,20 +599,20 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             for(WeightedFeature f : sf) {
                 
                 //
-                // Do things by ID for the partition that the document vector
-                // was drawn from!
-                QueryEntry entry = curr.getTerm(f.getName());
-                if(entry != null) {
-
-                    PostingsIterator pi;
-                    if(termCache != null) {
-                        TermCacheElement el = termCache.get(f.getName(), feat);
-                        pi = el.iterator();
-                    } else {
+                // Try to do things with the term cache if we can.
+                PostingsIterator pi = null;
+                if(termCache != null) {
+                    TermCacheElement el = termCache.get(f.getName(), feat);
+                    pi = el.iterator();
+                } else {
+                    QueryEntry entry = curr.getTerm(f.getName());
+                    if(entry != null) {
                         wf.initTerm(wc.setTerm(f.getName()));
                         pi = entry.iterator(feat);
                     }
+                }
 
+                if(pi != null) {
                     //
                     // If we got an entry in this partition, add its postings
                     // to the quick or.
@@ -645,8 +644,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         qs.queryW.stop();
         ((SearchEngineImpl) e).addQueryStats(qs);
 
-        ResultSetImpl ret =
-                new ResultSetImpl(e, sortOrder, groups);
+        ResultSetImpl ret = new ResultSetImpl(e, sortOrder, groups);
         ret.setQueryStats(qs);
         return ret;
     }
