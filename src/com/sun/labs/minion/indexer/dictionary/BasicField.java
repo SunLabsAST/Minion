@@ -56,6 +56,7 @@ import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
+import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import java.io.File;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -193,12 +194,12 @@ public class BasicField implements SavedField {
 
         //
         // Load the docs to vals data, using a file backed buffer.
-        dtvData = new FileReadableBuffer(postFiles[0], header.dtvOffset, 8192);
+        dtvData = new NIOFileReadableBuffer(postFiles[0], header.dtvOffset, 8192);
 
         //
         // Load the docs to vals offset data, using a file backed buffer.
         dtvOffsets =
-                new FileReadableBuffer(postFiles[0], header.dtvOffsetOffset,
+                new NIOFileReadableBuffer(postFiles[0], header.dtvOffsetOffset,
                 8192);
     }
 
