@@ -62,7 +62,11 @@ public class ScoredQuickOr extends QuickOr {
      * result set is used for our initial calculation.
      */
     public ScoredQuickOr(DiskPartition part, int estSize) {
-        super(part, estSize);
+        this(part, estSize, false);
+    }
+
+    public ScoredQuickOr(DiskPartition part, int estSize, boolean shouldStoreAll) {
+        super(part, estSize, shouldStoreAll);
         if(storeAll) {
             weights = new float[docs.length];
         } else {
@@ -72,6 +76,10 @@ public class ScoredQuickOr extends QuickOr {
 
     public void setField(int fieldID) {
         this.fieldID = fieldID;
+    }
+
+    public String toString() {
+        return String.format("part: %s storeAll: %s nDocs: %d size: %d", part, storeAll, part.getNDocs(), p);
     }
 
     /**

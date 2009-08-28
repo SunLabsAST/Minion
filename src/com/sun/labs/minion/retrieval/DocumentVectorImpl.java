@@ -590,7 +590,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
                 continue;
             }
 
-            ScoredQuickOr qor = new ScoredQuickOr(curr, 1024);
+            ScoredQuickOr qor = new ScoredQuickOr(curr, 1024, true);
             qor.setQueryStats(qs);
             qor.setField(fieldID);
 
