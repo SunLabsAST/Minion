@@ -338,15 +338,6 @@ public class DictTerm extends QueryTerm implements Comparator {
         }
     }
 
-    private String getCacheKey() {
-        StringBuilder sb = new StringBuilder();
-        for(QueryEntry qe : dictEntries) {
-            sb.append(qe.getName() + "/");
-        }
-        sb.append(Util.arrayToString(searchFields));
-        return sb.toString();
-    }
-
     private TermCacheElement getTermCacheElement(PostingsIteratorFeatures feat) {
         TermCache tc = part.getTermCache();
         if(tc == null) {

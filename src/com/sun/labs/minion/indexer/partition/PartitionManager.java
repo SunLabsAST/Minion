@@ -1582,6 +1582,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // Close the open partitions and whatever else needs to be closed.
         synchronized(activeParts) {
             for(DiskPartition p : activeParts) {
+                System.err.format("termCache %s\n", p.getTermCache());
                 p.close();
             }
             activeParts.clear();
