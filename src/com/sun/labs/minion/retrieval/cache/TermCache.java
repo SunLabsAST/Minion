@@ -57,6 +57,7 @@ public class TermCache implements CacheValueComputer<TermCacheKey, TermCacheElem
         this.part = part;
         cache = new ConcurrentLRUCache<TermCacheKey, TermCacheElement>(size,
                                                                        this);
+        cache.setName(part + " tc");
     }
 
     @Override
