@@ -26,8 +26,6 @@ package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.SearchEngine;
-import java.util.Map;
-import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
