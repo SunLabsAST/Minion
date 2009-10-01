@@ -120,6 +120,10 @@ public class TermCache implements CacheValueComputer<TermCacheKey, TermCacheElem
         }
     }
 
+    public void close() {
+        cache.close();
+    }
+
     public String toString() {
         return String.format("cache: %d items %d hits %d misses %.3f ratio",
                 cache.size(), cache.getHits(), cache.getMisses(),

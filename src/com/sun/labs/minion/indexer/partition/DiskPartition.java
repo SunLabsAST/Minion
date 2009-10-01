@@ -39,7 +39,6 @@ import com.sun.labs.minion.indexer.Closeable;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
-import com.sun.labs.minion.indexer.dictionary.DiskDictionary.LookupState;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.DuplicateKeyException;
@@ -54,7 +53,6 @@ import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A partition of the index which is resident on the disk and suitable for
@@ -452,8 +450,14 @@ public class DiskPartition extends Partition implements Closeable {
             return false;
         }
         closed = true;
+
         try {
 
+            if(termCache != null) {
+                termCache.close();
+                termCache = null;
+            }
+            
             syncDeletedMap();
 
             //
@@ -464,15 +468,18 @@ public class DiskPartition extends Partition implements Closeable {
                         i++) {
                     mainPostFiles[i].close();
                 }
+                mainDict = null;
             }
 
             if(docDict != null) {
                 docDictFile.close();
                 docPostFile.close();
+                docDict = null;
             }
 
             if(dvl != null) {
                 dvl.close();
+                dvl = null;
             }
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Error closing partition", ioe);

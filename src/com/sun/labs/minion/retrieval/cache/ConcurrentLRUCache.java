@@ -123,6 +123,10 @@ public class ConcurrentLRUCache<K, V> {
         this.name = name;
     }
 
+    public void close() {
+        cleaner.setFinished(true);
+    }
+
     /**
      * A class to hold a future task and a timestamp.
      * @param <V>
@@ -175,6 +179,8 @@ public class ConcurrentLRUCache<K, V> {
 
         private PriorityQueue<Holder<V>> togo;
 
+        private boolean finished;
+
         public Cleaner() {
             togo = new PriorityQueue<Holder<V>>(highWater - lowWater, comp);
         }
@@ -183,9 +189,14 @@ public class ConcurrentLRUCache<K, V> {
             this.notifyAll();
         }
 
+        public void setFinished(boolean finished) {
+            this.finished = finished;
+        }
+
+
         @Override
         public void run() {
-            while(true) {
+            while(!finished) {
                 try {
                     synchronized(this) {
                         this.wait();

@@ -986,7 +986,7 @@ public class DiskDictionary implements Dictionary {
         if(!caseSensitive) {
             word = word.toLowerCase();
         }
-        logger.info("Num entries matched: " + entryIds.length);
+        
         //
         // Now pile up the potential matches and get the edit distances
         // for them.
