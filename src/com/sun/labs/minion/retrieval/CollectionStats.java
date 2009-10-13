@@ -24,13 +24,13 @@
 
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.indexer.partition.DiskPartition;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
-import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.partition.PartitionStats;
+import java.util.List;
 
 /**
  * A container for collection level statistics that are coelesced out of
@@ -43,11 +43,6 @@ public class CollectionStats {
      * statistics.
      */
     protected PartitionManager pm;
-    
-    /**
-     * A local cache of term stats.
-     */
-    protected Map<String,TermStatsImpl> termStats;
     
     /**
      * The total number of documents in the collection.
@@ -91,9 +86,12 @@ public class CollectionStats {
     public float avgDocLen;
     
     public CollectionStats(PartitionManager pm) {
+        this(pm, pm.getActivePartitions());
+    }
+
+    public CollectionStats(PartitionManager pm, List<DiskPartition> parts) {
         this.pm = pm;
-        termStats = new HashMap<String,TermStatsImpl>();
-        for(Partition p : pm.getActivePartitions()) {
+        for(DiskPartition p : parts) {
             nDocs            += p.getNDocs();
             PartitionStats s  = p.getStats();
             nTokens          += s.nTokens;

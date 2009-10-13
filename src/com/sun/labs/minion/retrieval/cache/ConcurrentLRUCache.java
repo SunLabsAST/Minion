@@ -202,16 +202,18 @@ public class ConcurrentLRUCache<K, V> {
                         this.wait();
                     }
 
-                    if(map.size() < highWater) {
+                    int s = map.size();
+                    if(s < highWater) {
                         continue;
                     }
+                    
                     NanoWatch nw = new NanoWatch();
                     nw.start();
 
                     //
                     // We'll use the priority queue to build a min-heap of the
                     // oldest entries, which we'll then remove.
-                    int n = map.size() - lowWater;
+                    int n = s - lowWater;
                     for(Holder<V> h : map.values()) {
                         if(togo.size() < n) {
                             togo.offer(h);

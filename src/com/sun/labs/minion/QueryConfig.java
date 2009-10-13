@@ -468,7 +468,7 @@ public class QueryConfig implements Cloneable,
      * @return the collection level statistics for this engine
      */
     public CollectionStats getCollectionStats() {
-        return new CollectionStats(e.getPM());
+        return e.getPM().getCollectionStats();
     }
 
     /**

@@ -567,9 +567,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 }
             }
 
-            if(addNew) {
+            if(addNew && newlyLoadedParts.size() > 0) {
                 activeParts.addAll(newlyLoadedParts);
+
+                //
+                // Only update the collection stats when we get new partitions.
+                collectionStats = new CollectionStats(this, activeParts);
             }
+
 
             //
             // Update our term statistics dictionary, if necessary.
@@ -1506,6 +1511,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     public QueryConfig getQueryConfig() {
         return engine.getQueryConfig();
+    }
+
+    public CollectionStats getCollectionStats() {
+        return collectionStats;
     }
 
     /**
@@ -2782,6 +2791,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     protected final List<DiskPartition> activeParts =
             Collections.synchronizedList(new ArrayList<DiskPartition>());
+
+    /**
+     * The current statistics for this collection.
+     */
+    private CollectionStats collectionStats;
 
     /**
      * The list of parts to close.
