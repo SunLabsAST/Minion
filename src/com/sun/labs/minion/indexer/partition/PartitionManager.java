@@ -1,22 +1,22 @@
 /*
  * Copyright 2007-2008 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
- * 
+ *
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2
  * only, as published by the Free Software Foundation.
- * 
+ *
  * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
  * included in the LICENSE file that accompanied this code).
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA
- * 
+ *
  * Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
@@ -76,9 +76,12 @@ import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.util.DirCopier;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Queue;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -224,8 +227,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                         DirCopier dc = new DirCopier(startingDataDir, iDFile);
                         dc.copy();
                     } catch(java.io.IOException ioe) {
-                        logger.log(Level.SEVERE, "Error copying starting directory",
-                                ioe);
+                        logger.log(Level.SEVERE,
+                                   "Error copying starting directory",
+                                   ioe);
                     }
                 } else {
                     logger.warning("Starting data directory " +
@@ -237,25 +241,19 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // The name of our active file.
-        activeFile = makeActiveFile();
-
-        //
-        // The lock for our active file, which we'll try a few more times
-        // than a normal lock.
-        activeLock =
-                new FileLock(lockDirFile, activeFile, 300, TimeUnit.SECONDS);
+        activeFile = new ActiveFile(indexDirFile, lockDirFile, logTag);
 
         //
         // Set up the lock for the merge.  We make this a single try, no
         // pause lock because we don't want to wait until the lock is
         // ready, we simply want to see whether we can get it.
         mergeLock = new FileLock(lockDirFile, new File("merge." + logTag), 0,
-                TimeUnit.SECONDS);
+                                 TimeUnit.SECONDS);
 
         //
         // Read the active file.
         try {
-            activeLock.acquireLock();
+            activeFile.lock();
 
             //
             // Make the meta file.  We'll write it if it doesn't exist.
@@ -296,33 +294,34 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     }
                     termStatsDict = termstatsDictFactory.getDictionary(currTSF);
                 } catch(java.io.IOException ioe) {
-                    logger.log(Level.SEVERE, "Error opening term stats dictionary",
-                            ioe);
+                    logger.log(Level.SEVERE,
+                               "Error opening term stats dictionary",
+                               ioe);
                 } catch(FileLockException fle) {
-                    logger.log(Level.SEVERE, "Error opening term stats dictionary",
-                            fle);
+                    logger.log(Level.SEVERE,
+                               "Error opening term stats dictionary",
+                               fle);
                 }
             }
 
             updateActiveParts(true);
-            activeLock.releaseLock();
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "I/O error updating active partition list",
-                    ioe);
+                       ioe);
             activeParts.clear();
         } catch(FileLockException fle) {
             logger.log(Level.SEVERE,
-                    "Error locking active file for active file read", fle);
+                       "Error locking active file for active file read", fle);
             activeParts.clear();
         } catch(Exception e) {
             logger.log(Level.SEVERE, "Other exception during updateActive", e);
             activeParts.clear();
         } finally {
             try {
-                activeLock.releaseLock();
+                activeFile.unlock();
             } catch(FileLockException fle) {
                 logger.log(Level.SEVERE,
-                        "Unable to release active lock after update", fle);
+                           "Unable to release active lock after update", fle);
             }
 
         }
@@ -330,160 +329,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Start our housekeeping thread.
         timer = new Timer("PM-timer");
-        timer.scheduleAtFixedRate(new HouseKeeper(), 
-                activeCheckInterval,
-                activeCheckInterval);
-    }
-
-    /**
-     * Reads the numbers of the active partitions from the active file.
-     *
-     * @throws java.io.IOException if there are any errors reading the
-     * active file.
-     * @throws FileLockException if there is any error
-     * locking or unlocking the active file.
-     * @return a list of the numbers of the active
-     * partitions.
-     */
-    protected List<Integer> readActiveFile() throws java.io.IOException,
-            FileLockException {
-
-        boolean releaseNeeded = false;
-        List<Integer> ret =
-                new ArrayList<Integer>();
-
-        if(!activeLock.hasLock()) {
-            activeLock.acquireLock();
-            releaseNeeded = true;
-        }
-
-        RandomAccessFile active;
-        int nParts = 0;
-
-        //
-        // Handle the case of a non-existent active file.
-        if(!activeFile.exists()) {
-            active = new RandomAccessFile(activeFile, "rw");
-            active.writeInt(nParts);
-            active.getFD().sync();
-            active.close();
-            if(releaseNeeded) {
-                activeLock.releaseLock();
-            }
-            logger.fine("Created active file: " + activeFile);
-            return ret;
-        }
-
-        //
-        // We know we need to read data.
-        //
-        // Open the file containing the data.
-        active = new RandomAccessFile(activeFile, "r");
-
-        //
-        // Read the number of partitions.
-        try {
-            nParts = active.readInt();
-        } catch(java.io.IOException ioe) {
-            logger.severe("Error reading number of " +
-                    "active partitions.");
-            active.close();
-            if(releaseNeeded) {
-                activeLock.releaseLock();
-            }
-            throw ioe;
-        }
-
-        //
-        // Read the partition numbers, then close the file.
-        try {
-            for(int i = 0; i < nParts;
-                    i++) {
-                ret.add(active.readInt());
-            }
-        } catch(java.io.IOException ioe) {
-            logger.severe("Error reading partition numbers.");
-            active.close();
-            if(releaseNeeded) {
-                activeLock.releaseLock();
-            }
-            throw ioe;
-        }
-        active.close();
-
-        if(logger.isLoggable(Level.FINER)) {
-            logger.finer("Read AL: " + ret);
-        }
-
-        //
-        // If we locked it just for reading, then we can release the lock
-        // now.
-        if(releaseNeeded) {
-            activeLock.releaseLock();
-        }
-
-        return ret;
-    }
-
-    /**
-     * Writes a list of partition numbers to the active file.  Locks the
-     * active file if necessary.
-     *
-     * @param parts The list of partitions or partition numbers to write to
-     * the active file.
-     * @throws java.io.IOException if there is an error writing the file.
-     * @throws FileLockException if there is any error
-     * locking the active file.
-     */
-    protected void writeActiveFile(List<DiskPartition> parts) throws java.io.IOException,
-            FileLockException {
-
-        boolean releaseNeeded = false;
-        if(!activeLock.hasLock()) {
-            activeLock.acquireLock();
-            releaseNeeded = true;
-        }
-
-        logger.finer("Writing AL: " + parts);
-
-        RandomAccessFile active = null;
-
-        //
-        // We want to write partition numbers in order.
-        List<Integer> sort;
-        synchronized(parts) {
-            sort = getPartNumbers(parts);
-        }
-
-        //
-        // The active file should be in sorted order.
-        Collections.sort(sort);
-
-        try {
-            //
-            // Open the file containing the data.
-            active = new RandomAccessFile(activeFile, "rw");
-
-            //
-            // Write the list.
-            active.writeInt(parts.size());
-            for(Integer pn : sort) {
-                active.writeInt(pn);
-            }
-            active.setLength(active.getFilePointer());
-            active.getFD().sync();
-            active.close();
-        } catch(java.io.IOException ioe) {
-            logger.severe("Error writing active file");
-            if(releaseNeeded) {
-                activeLock.releaseLock();
-            }
-            throw ioe;
-        }
-
-        if(releaseNeeded) {
-            activeLock.releaseLock();
-        }
+        timer.scheduleAtFixedRate(new HouseKeeper(),
+                                  activeCheckInterval,
+                                  activeCheckInterval);
     }
 
     /**
@@ -495,107 +343,95 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return The list of newly opened partitions.
      * @throws Exception if anything goes wrong.
      */
-    public List<DiskPartition> updateActiveParts(boolean addNew) throws Exception {
+    public List<DiskPartition> updateActiveParts(boolean addNew) throws
+            Exception {
+
+        boolean releaseNeeded = false;
 
         //
-        // We're going to synchronize on activeParts around the whole thing
-        // so that we know no one is changing it out from under us.
-        synchronized(activeParts) {
-            boolean releaseNeeded = false;
-
-            //
-            // Re-read the meta file.
-            try {
-                metaFile.read();
-            } catch(Exception e) {
-                logger.warning("Error reading meta file in update: " + e);
-            }
-
-            if(!activeLock.hasLock()) {
-                activeLock.acquireLock();
-                releaseNeeded = true;
-            }
-
-            List<Integer> add = readActiveFile();
-            List<Integer> currList = getPartNumbers(activeParts);
-            List<Integer> close = new ArrayList<Integer>(currList);
-
-            //
-            // Get the partitions that we have opened that are not in the
-            // active file, and those that are in the active file, but we don't
-            // have opened.
-            close.removeAll(add);
-            add.removeAll(currList);
-
-            //
-            // We need to close partitions that were merged and not add
-            // them again.
-            synchronized(mergedParts) {
-                List<Integer> mp = getPartNumbers(mergedParts);
-                close.addAll(mp);
-                add.removeAll(mp);
-                mergedParts.clear();
-            }
-
-            //
-            // Remove any partitions that we have to close.
-            if(close.size() > 0) {
-                for(Iterator<DiskPartition> i = activeParts.iterator(); i.hasNext();) {
-                    DiskPartition dp = i.next();
-                    if(close.contains(dp.getPartitionNumber())) {
-                        dp.setCloseTime(System.currentTimeMillis() +
-                                partCloseDelay);
-                        dp.setClosed();
-                        thingsToClose.add(dp);
-                        i.remove();
-                    }
-                }
-            }
-
-            //
-            // Add any partitions that we haven't opened.
-            List<DiskPartition> newlyLoadedParts = new ArrayList<DiskPartition>();
-            for(Integer pn : add) {
-                try {
-                    newlyLoadedParts.add(newDiskPartition(pn, this));
-                } catch(java.io.IOException ioe) {
-                    logger.log(Level.SEVERE, "Error activating partition: " + pn +
-                            " in updateActivePartitions", ioe);
-                } catch(Exception e) {
-                    logger.log(Level.SEVERE, "Exception loading partition: " + pn +
-                            " in updateActivePartitions", e);
-                }
-            }
-
-            if(addNew && newlyLoadedParts.size() > 0) {
-                activeParts.addAll(newlyLoadedParts);
-
-                //
-                // Only update the collection stats when we get new partitions.
-                collectionStats = new CollectionStats(this, activeParts);
-            }
-
-
-            //
-            // Update our term statistics dictionary, if necessary.
-            try {
-                updateTermStats();
-            } catch(java.io.IOException ex) {
-                logger.log(Level.SEVERE, "Error reading term stats dictionary during updateActiveParts");
-                termStatsDict = null;
-            } catch(FileLockException ex) {
-                logger.log(Level.SEVERE, "Error locking metafile during updateActiveParts");
-                termStatsDict = null;
-            }
-
-            //
-            // If we had to acquire the lock, release it now.
-            if(releaseNeeded) {
-                activeLock.releaseLock();
-            }
-
-            return newlyLoadedParts;
+        // Re-read the meta file.
+        try {
+            metaFile.read();
+        } catch(Exception e) {
+            logger.warning("Error reading meta file in update: " + e);
         }
+
+        activeFile.lock();
+
+        List<Integer> add = activeFile.read();
+        List<Integer> currList = ActiveFile.getPartNumbers(activeParts);
+        List<Integer> close = new ArrayList<Integer>(currList);
+
+        //
+        // Get the partitions that we have opened that are not in the
+        // active file, and those that are in the active file, but we don't
+        // have opened.
+        close.removeAll(add);
+        add.removeAll(currList);
+
+        //
+        // We need to close partitions that were merged and not add
+        // them again.
+        List<Integer> mp = getPartNumbers(mergedParts);
+        close.addAll(mp);
+        add.removeAll(mp);
+        mergedParts.clear();
+
+        //
+        // Remove any partitions that we have to close.
+        if(close.size() > 0) {
+            for(Iterator<DiskPartition> i = activeParts.iterator(); i.hasNext();) {
+                DiskPartition dp = i.next();
+                if(close.contains(dp.getPartitionNumber())) {
+                    dp.setCloseTime(System.currentTimeMillis() + partCloseDelay);
+                    dp.setClosed();
+                    thingsToClose.add(dp);
+                    i.remove();
+                }
+            }
+        }
+
+        //
+        // Add any partitions that we haven't opened.
+        List<DiskPartition> newlyLoadedParts = new ArrayList<DiskPartition>();
+        for(Integer pn : add) {
+            try {
+                newlyLoadedParts.add(newDiskPartition(pn, this));
+            } catch(java.io.IOException ioe) {
+                logger.log(Level.SEVERE, "Error activating partition: " + pn +
+                        " in updateActivePartitions", ioe);
+            } catch(Exception e) {
+                logger.log(Level.SEVERE, "Exception loading partition: " + pn +
+                        " in updateActivePartitions", e);
+            }
+        }
+
+        if(addNew && newlyLoadedParts.size() > 0) {
+            activeParts.addAll(newlyLoadedParts);
+
+            //
+            // Only update the collection stats when we get new partitions.
+            collectionStats = new CollectionStats(this, activeParts);
+        }
+
+
+        //
+        // Update our term statistics dictionary, if necessary.
+        try {
+            updateTermStats();
+        } catch(java.io.IOException ex) {
+            logger.log(Level.SEVERE,
+                       "Error reading term stats dictionary during updateActiveParts");
+            termStatsDict = null;
+        } catch(FileLockException ex) {
+            logger.log(Level.SEVERE,
+                       "Error locking metafile during updateActiveParts");
+            termStatsDict = null;
+        }
+
+        activeFile.unlock();
+
+        return newlyLoadedParts;
     }
 
     /**
@@ -608,7 +444,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * removed from the old partitions.
      */
     protected synchronized void addNewPartition(int partNumber,
-            Set<Object> keys) {
+                                                Set<Object> keys) {
         //
         // If we're asked to add a weird partition, don't do it.
         if(partNumber <= 0) {
@@ -626,23 +462,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 //
                 // Update the active list.
                 try {
-                    activeLock.acquireLock();
-                    synchronized(activeParts) {
-                        updateActiveParts(true);
-                        writeActiveFile(activeParts);
-                    }
-                    activeLock.releaseLock();
+                    updateActiveParts(true);
+                    activeFile.write(activeParts);
                 } catch(Exception e) {
-                    logger.severe("Error locking collection " +
+                    logger.severe("Error updating active partitions " +
                             "during add new partition for partition: " +
                             partNumber);
-                    if(activeLock.hasLock()) {
-                        try {
-                            activeLock.releaseLock();
-                        } catch(Exception e2) {
-                        }
-                    }
-                    return;
                 }
             }
             return;
@@ -653,89 +478,66 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             DiskPartition ndp = newDiskPartition(partNumber, this);
             addNewPartition(ndp, keys);
         } catch(IOException ex) {
-            logger.log(Level.SEVERE, "Error opening new partition: " + partNumber,
-                    ex);
+            logger.log(Level.SEVERE, "Error opening new partition: " +
+                    partNumber,
+                       ex);
         }
     }
 
     protected synchronized void addNewPartition(DiskPartition dp,
-            Set<Object> keys) {
+                                                Set<Object> keys) {
 
         //
         // Get the latest version of the active file, locking out
         // anyone else.
         try {
-            activeLock.acquireLock();
+            activeFile.lock();
             updateActiveParts(true);
-        } catch(FileLockException fle) {
-            logger.log(Level.SEVERE, "Error locking collection " +
-                    "during add new partition for partition: " + dp + " " +
-                    activeLock);
-            return;
-        } catch(java.io.IOException ioe) {
-            logger.log(Level.SEVERE, "I/O Error reading partitions " +
-                    "during add new partition for partition: " + dp);
+
+            //
+            // OK, if we've crossed the high water mark, we need to take
+            // remedial action now.
+            if(!noMoreMerges && activeParts.size() >= openPartitionHighWaterMark) {
+                handleTooManyPartitions();
+            }
+
+            //
+            // Update our term statistics dictionary, if necessary.
             try {
-                activeLock.releaseLock();
-            } catch(FileLockException fle) {
+                updateTermStats();
+            } catch(Exception ex) {
+                logger.log(Level.SEVERE,
+                           String.format(
+                        "Error reading term stats dictionary when adding %s", dp),
+                           ex);
+                termStatsDict = null;
             }
-            return;
-        } catch(Exception e) {
-            logger.log(Level.SEVERE, "Other exception during updateActive", e);
-            return;
-        }
 
-        //
-        // OK, if we've crossed the high water mark, we need to take 
-        // remedial action now.
-        if(!noMoreMerges && activeParts.size() >= openPartitionHighWaterMark) {
-            handleTooManyPartitions();
-        }
+            //
+            // Delete the keys we updated.
+            if(keys != null && keys.size() > 0) {
+                deleteKeys(keys);
+            }
 
-        //
-        // Update our term statistics dictionary, if necessary.
-        try {
-            updateTermStats();
-        } catch(java.io.IOException ioe) {
-            logger.log(Level.SEVERE, "Error reading term stats dictionary  " +
-                    "during add new partition for partition: " + dp);
-            termStatsDict = null;
-        } catch(FileLockException fle) {
-            logger.log(Level.SEVERE, "Error locking meta file for term stats update " +
-                    "during add new partition for partition: " + dp);
-            termStatsDict = null;
-        }
-
-        //
-        // Delete the keys we updated.
-        if(keys != null && keys.size() > 0) {
-            deleteKeys(keys, activeParts);
-        }
-
-        //
-        // OK, add the new partition to the list of active partitions and 
-        // make sure it's in order by partition number.
-        synchronized(activeParts) {
+            //
+            // OK, add the new partition to the list of active partitions and
+            // make sure it's in order by partition number.
             activeParts.add(dp);
-            Collections.sort(activeParts);
-        }
 
-        //
-        // Write the active file.
-        try {
-            synchronized(activeParts) {
-                writeActiveFile(activeParts);
+            //
+            // Write the active file.
+            activeFile.write(activeParts);
+        } catch(Exception ex) {
+            logger.log(Level.SEVERE, String.format("Exception adding %s", ex));
+        } finally {
+            try {
+                activeFile.unlock();
+            } catch(Exception ex) {
+                logger.log(Level.SEVERE,
+                           String.format(
+                        "Error unlocking active file when adding %s", dp),
+                           ex);
             }
-
-            activeLock.releaseLock();
-        } catch(java.io.IOException ioe) {
-            logger.log(Level.SEVERE, "I/O Error writing active " +
-                    "file during add new partition",
-                    ioe);
-        } catch(FileLockException fle) {
-            logger.log(Level.SEVERE, "Error unlocking collection " +
-                    "during add new partition",
-                    fle);
         }
 
         //
@@ -764,9 +566,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return the active partitions
      */
     public List<DiskPartition> getActivePartitions() {
-        synchronized(activeParts) {
-            return new ArrayList<DiskPartition>(activeParts);
-        }
+        return new ArrayList<DiskPartition>(activeParts);
     }
 
     /**
@@ -778,7 +578,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @throws java.io.IOException if there is any error opening the partition
      */
     protected DiskPartition newDiskPartition(Integer partNum,
-            PartitionManager m)
+                                             PartitionManager m)
             throws java.io.IOException {
         return partitionFactory.getDiskPartition(partNum, m);
     }
@@ -792,7 +592,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @throws java.io.IOException if there is any error opening the partition
      */
     protected DiskPartition newBaseDiskPartition(Integer partNum,
-            PartitionManager m)
+                                                 PartitionManager m)
             throws java.io.IOException {
         return partitionFactory.getBaseDiskPartition(partNum, m);
     }
@@ -856,17 +656,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // Try each partition, quitting when we find the one with the key.
-        synchronized(activeParts) {
-            for(DiskPartition p : activeParts) {
-                if(p.deleteDocument(key)) {
-                    p.syncDeletedMap();
-                    break;
-                }
-            }
-            if(!activeFile.setLastModified(System.currentTimeMillis())) {
-                logger.severe("Failed to update active file mod time");
+        for(DiskPartition p : activeParts) {
+            if(p.deleteDocument(key)) {
+                p.syncDeletedMap();
             }
         }
+        activeFile.setLastModified(System.currentTimeMillis());
     }
 
     /**
@@ -876,23 +671,19 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @param keys The list of keys of the documents to be deleted.
      */
     public void deleteDocuments(List<String> keys) {
-        synchronized(activeParts) {
-            for(DiskPartition dp : activeParts) {
-                boolean some = false;
-                for(Iterator<String> i = keys.iterator(); i.hasNext();) {
-                    if(dp.deleteDocument(i.next())) {
-                        i.remove();
-                        some = true;
-                    }
-                }
-                if(some) {
-                    dp.syncDeletedMap();
+        for(DiskPartition dp : activeParts) {
+            boolean some = false;
+            for(Iterator<String> i = keys.iterator(); i.hasNext();) {
+                if(dp.deleteDocument(i.next())) {
+                    i.remove();
+                    some = true;
                 }
             }
-            if(!activeFile.setLastModified(System.currentTimeMillis())) {
-                logger.severe("Failed to update active file mod time");
+            if(some) {
+                dp.syncDeletedMap();
             }
         }
+        activeFile.setLastModified(System.currentTimeMillis());
     }
 
     /**
@@ -900,14 +691,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * force the deletion bitmaps to be flushed to the disk.
      *
      * @param keys The list of document keys to delete.
-     * @param parts The partitions to delete the keys from.
      */
-    protected void deleteKeys(Set<Object> keys, List parts) {
+    protected void deleteKeys(Set<Object> keys) {
 
-        synchronized(parts) {
-            for(int i = 0; i < parts.size(); i++) {
-                ((DiskPartition) parts.get(i)).updatePartition(keys);
-            }
+        for(DiskPartition p : activeParts) {
+            p.updatePartition(keys);
         }
         if(!activeFile.setLastModified(System.currentTimeMillis())) {
             logger.severe("Failed to update active file mod time");
@@ -996,10 +784,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public ResultSet getSimilar(String key, String name) {
         double[] vec = (double[]) getFieldValue(name, key);
         List results = new ArrayList();
-        for(int i = 0; i < activeParts.size();
-                i++) {
-            InvFileDiskPartition p = (InvFileDiskPartition) activeParts.get(i);
-            results.add(new ScoredGroup(p, p.euclideanDistance(vec, name)));
+        for(DiskPartition dp : activeParts) {
+            results.add(new ScoredGroup(dp,
+                                        ((InvFileDiskPartition) dp).
+                    euclideanDistance(vec, name)));
         }
 
         //
@@ -1010,10 +798,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     public double getDistance(int d1, int d2, String name) {
-        InvFileDiskPartition p = (InvFileDiskPartition) activeParts.get(0);
+        InvFileDiskPartition p = (InvFileDiskPartition) activeParts.peek();
         FeatureVector v1 = (FeatureVector) p.getFieldStore().getSavedField(name);
         return v1.distance(d1,
-                (FeatureVector) p.getFieldStore().getSavedField(name), d2);
+                           (FeatureVector) p.getFieldStore().getSavedField(name),
+                           d2);
     }
 
     /**
@@ -1076,7 +865,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * proportion of the field value that is covered by the given pattern.
      */
     public SortedSet<FieldValue> getMatching(String field,
-            String pattern) {
+                                             String pattern) {
         SortedSet<FieldValue> ret =
                 new TreeSet<FieldValue>();
         for(Iterator i = getActivePartitions().iterator(); i.hasNext();) {
@@ -1129,7 +918,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public List getAllFieldValues(String field, String key) {
         List ret = null;
         for(DiskPartition dp : getActivePartitions()) {
-            ret = (List) ((InvFileDiskPartition) dp).getSavedFieldData(field, key, true);
+            ret =
+                    (List) ((InvFileDiskPartition) dp).getSavedFieldData(field,
+                                                                         key,
+                                                                         true);
             if(ret != null && ret.size() > 0) {
                 return ret;
             }
@@ -1148,7 +940,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      *         type for the field, ordered by frequency
      */
     public List<FieldFrequency> getTopFieldValues(String field, int n,
-            boolean ignoreCase) {
+                                                  boolean ignoreCase) {
         //
         // Make a heap to store the top n values (ranked by freq), and
         // iterate across all values to fill in the heap
@@ -1185,7 +977,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
     /**
      * Handles the case where we've exceeded the high water mark for partitions.
-     * The resolution is to run a merge of the smaller partitions in the index, 
+     * The resolution is to run a merge of the smaller partitions in the index,
      * resulting in an index with a number of partitions equal to the low water
      * mark for open partitions.
      */
@@ -1207,11 +999,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             ourMergeLock.acquireLock();
         } catch(IOException ex) {
             logger.log(Level.SEVERE,
-                    "Error getting merge lock when too many partitions", ex);
+                       "Error getting merge lock when too many partitions", ex);
             return false;
         } catch(FileLockException fle) {
             logger.log(Level.SEVERE,
-                    "Error getting merge lock when too many partitions", fle);
+                       "Error getting merge lock when too many partitions", fle);
             return false;
         }
 
@@ -1220,12 +1012,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // will merge faster.
         List<DiskPartition> parts = new ArrayList<DiskPartition>(activeParts);
         Collections.sort(parts,
-                new Comparator<DiskPartition>() {
+                         new Comparator<DiskPartition>() {
 
-                    public int compare(DiskPartition o1, DiskPartition o2) {
-                        return o1.getMaxDocumentID() - o2.getMaxDocumentID();
-                    }
-                });
+            public int compare(DiskPartition o1, DiskPartition o2) {
+                return o1.getMaxDocumentID() - o2.getMaxDocumentID();
+            }
+        });
 
         //
         // Take a sublist that will get us to the low water mark.
@@ -1276,9 +1068,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
         return null;
     }
-
     private ExtFilter remFilter = new ExtFilter("rem");
+
     private ExtFilter delFilter = new ExtFilter("del");
+
     private RTSFilter rtsdFilter = new RTSFilter();
 
     /**
@@ -1326,7 +1119,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 }
             } else if(delFilter.accept(curr) &&
                     !makeDictionaryFile(delFilter.partNum,
-                    "main").exists()) {
+                                        "main").exists()) {
 
                 //
                 // Remove an orphaned deletion map.
@@ -1343,7 +1136,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                               curr.replace(".rem",
                                            ""))).delete();
                     currF.delete();
-                    logger.fine(String.format("Removed term stats %d", rtsdFilter.getTermStatsNumber()));
+                    logger.fine(String.format("Removed term stats %d",
+                                              rtsdFilter.getTermStatsNumber()));
                 }
             }
         }
@@ -1358,8 +1152,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     protected void reapPartition(int partNumber) {
         InvFileDiskPartition.reap(this, partNumber);
     }
-
-
     /**
      * A pattern for partition files that gets the partition number and the
      * extension.
@@ -1371,7 +1163,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * files with various extensions.
      */
     protected class ExtFilter implements SimpleFilter {
-
 
         /**
          * The partition number for the last file parsed.
@@ -1421,8 +1212,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             return ext;
         }
     }
-
-    private static Pattern dtsp = Pattern.compile(".*termstats\\.(\\d+)\\.dict.rem");
+    private static Pattern dtsp = Pattern.compile(
+            ".*termstats\\.(\\d+)\\.dict.rem");
 
     protected class RTSFilter implements SimpleFilter {
 
@@ -1450,37 +1241,35 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public synchronized void purge() {
         lastPurgeTime = new Date();
         try {
-            activeLock.acquireLock();
+            activeFile.lock();
 
             //
             // Mark the partitions as removed and close them.
-            synchronized(activeParts) {
-                for(DiskPartition p : activeParts) {
-                    try {
-                        p.removedFile.createNewFile();
-                    } catch(java.io.IOException ioe) {
-                        logger.severe("Error making removed file during purge");
-                    }
-                    p.setCloseTime(System.currentTimeMillis() + partCloseDelay);
-                    thingsToClose.add(p);
-                }
-                activeParts.clear();
-
-                //
-                // Write an empty active file, but leave the meta file since we
-                // want to keep field definitions (and it doesn't matter if the
-                // partition number or termstats number isn't reset)
+            for(DiskPartition p : activeParts) {
                 try {
-                    writeActiveFile(activeParts);
-                } catch(FileLockException fle) {
-                    logger.log(Level.SEVERE, "Exception locking active file during purge: " +
-                            fle);
+                    p.removedFile.createNewFile();
                 } catch(java.io.IOException ioe) {
-                    logger.log(Level.SEVERE, "Error writing active file during purge: " +
-                            ioe);
+                    logger.severe("Error making removed file during purge");
                 }
-                logger.info("Purged index in: " + indexDir);
+                p.setCloseTime(System.currentTimeMillis() + partCloseDelay);
+                thingsToClose.add(p);
             }
+            activeParts.clear();
+
+            //
+            // Write an empty active file, but leave the meta file since we
+            // want to keep field definitions (and it doesn't matter if the
+            // partition number or termstats number isn't reset)
+            try {
+                activeFile.write(activeParts);
+            } catch(FileLockException fle) {
+                logger.log(Level.SEVERE, "Exception locking active file during purge: " +
+                        fle);
+            } catch(java.io.IOException ioe) {
+                logger.log(Level.SEVERE, "Error writing active file during purge: " +
+                        ioe);
+            }
+            logger.info("Purged index in: " + indexDir);
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Exception locking active file during purge: " +
                     ioe);
@@ -1489,7 +1278,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     fle);
         } finally {
             try {
-                activeLock.releaseLock();
+                activeFile.unlock();
             } catch(FileLockException fle) {
                 logger.log(Level.SEVERE, "Exception unlocking active file during purge: " +
                         fle);
@@ -1569,7 +1358,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // If this was a long indexing run, and we're supposed to compute
-        // document vector lengths, then do a final merge and take the 
+        // document vector lengths, then do a final merge and take the
         // opportunity to compute vector lengths and a term stats dictionary.
         //
         // Once that's done, we need to re-write the active partitions list!
@@ -1577,10 +1366,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             try {
                 DiskPartition mdp = mergeAll();
                 DocumentVectorLengths.calculate(mdp, termStatsDict,
-                                                       true);
+                                                true);
                 activeParts.clear();
                 activeParts.add(mdp);
-                writeActiveFile(activeParts);
+                activeFile.write(activeParts);
             } catch(FileLockException ex) {
                 logger.log(Level.SEVERE, "Error locking active file after " +
                         " long indexing run merge", ex);
@@ -1589,22 +1378,16 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // Close the open partitions and whatever else needs to be closed.
-        synchronized(activeParts) {
-            for(DiskPartition p : activeParts) {
-                System.err.format("termCache %s\n", p.getTermCache());
-                p.close();
-            }
-            activeParts.clear();
+        for(DiskPartition p : activeParts) {
+            p.close();
         }
+        activeParts.clear();
 
-        synchronized(thingsToClose) {
-            for(Closeable c : thingsToClose) {
-                c.close(Long.MAX_VALUE);
-                c.createRemoveFile();
-            }
-            thingsToClose.clear();
+        for(Closeable c : thingsToClose) {
+            c.close(Long.MAX_VALUE);
+            c.createRemoveFile();
         }
-
+        thingsToClose.clear();
 
         logger.fine("Shutdown " + indexDir + " " + randID);
     }
@@ -1654,8 +1437,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 //
                 // Remove lock file.
                 if(!dir[i].delete()) {
-                    logger.severe("Failed to delete lock file " + dir[i].
-                            getName());
+                    logger.severe("Failed to delete lock file " +
+                            dir[i].getName());
                 }
             } else if(n.charAt(0) == 'p' && n.endsWith("post")) {
 
@@ -1724,7 +1507,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * name.
      */
     public static File makeDictionaryFile(String iD, int partNumber,
-            String type) {
+                                          String type) {
         return new File(iD + File.separator + "p" + partNumber +
                 (type != null ? ("." +
                 type) : "") + ".dict");
@@ -1756,8 +1539,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * name.
      */
     public static File makePostingsFile(String iD, int partNumber,
-            String type,
-            int number) {
+                                        String type,
+                                        int number) {
         return new File(iD + File.separator + "p" + partNumber +
                 (type != null ? ("." +
                 type) : "") +
@@ -1906,7 +1689,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * Merges all partitions from the active list into a new partition.
      * The merged partitions are removed from the active list, and the new
      * partition is then placed there.
-     * 
+     *
      * @return the merged partition.  This may be an existing partition!
      */
     public synchronized DiskPartition mergeAll() {
@@ -1914,13 +1697,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // No need to merge one partition.
         if(activeParts.size() == 1) {
-            return activeParts.get(0);
+            return activeParts.peek();
         }
 
         //
         // Do the merge and reap any deleted partitions.
         Merger m;
-        m = getMerger(getActivePartitions());
+        m = getMerger((List<DiskPartition>) getActivePartitions());
         return m.merge();
     }
 
@@ -1939,14 +1722,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Get a list of the active partitions sorted by the number of
         // documents that they contain.
-        List<DiskPartition> parts = getActivePartitions();
+        List<DiskPartition> parts = (List<DiskPartition>) getActivePartitions();
         Collections.sort(parts,
-                new Comparator<DiskPartition>() {
+                         new Comparator<DiskPartition>() {
 
-                    public int compare(DiskPartition o1, DiskPartition o2) {
-                        return o1.getMaxDocumentID() - o2.getMaxDocumentID();
-                    }
-                });
+            public int compare(DiskPartition o1, DiskPartition o2) {
+                return o1.getMaxDocumentID() - o2.getMaxDocumentID();
+            }
+        });
 
         //
         // Check each partition in turn to see if it overflows the
@@ -2122,7 +1905,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return the partition resulting from the merge
      */
     protected DiskPartition realMerge(List<DiskPartition> diskParts,
-            boolean calculateDVL) {
+                                      boolean calculateDVL) {
         //
         // If we don't have any partitions left, then we're done.
         if(diskParts.size() == 0) {
@@ -2217,9 +2000,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @param parts the partitions for which we want the numbers
      * @return an list of the active partition numbers.
      */
-    protected List<Integer> getPartNumbers(List<DiskPartition> parts) {
-        List<Integer> ret =
-                new ArrayList<Integer>();
+    protected List<Integer> getPartNumbers(Collection<DiskPartition> parts) {
+        List<Integer> ret = new ArrayList<Integer>();
         synchronized(parts) {
             for(DiskPartition dp : parts) {
                 ret.add(dp.getPartitionNumber());
@@ -2237,8 +2019,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return a list of the partitions corresponding to the numbers given.
      */
     protected List<DiskPartition> getPartitions(List<Integer> partNums) {
-        List<DiskPartition> ret =
-                new ArrayList<DiskPartition>();
+        List<DiskPartition> ret = new ArrayList<DiskPartition>();
         synchronized(activeParts) {
             for(DiskPartition dp : activeParts) {
                 if(partNums.remove(new Integer(dp.getPartitionNumber()))) {
@@ -2299,9 +2080,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     /**
-     * Gets an instance of the merger class that can be used to merge any 
-     * partitions that require it.  If no merge is currently required, then 
-     * <code>null</code> is returned. 
+     * Gets an instance of the merger class that can be used to merge any
+     * partitions that require it.  If no merge is currently required, then
+     * <code>null</code> is returned.
      *
      * @return An instance of <code>Merger</code> that can be used to merge
      * these partitions, or <code>null</code> if no merge is currently
@@ -2446,8 +2227,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             try {
                 newDP = toMerge.get(0).merge(toMerge, preDelMaps, true);
             } catch(Exception e) {
-                logger.log(Level.SEVERE, "Exception merging partitions: " + toMerge,
-                        e);
+                logger.log(Level.SEVERE, "Exception merging partitions: " +
+                        toMerge,
+                           e);
             }
 
             if(newDP != null) {
@@ -2455,10 +2237,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 boolean releaseNeeded = false;
 
                 try {
-                    if(!activeLock.hasLock()) {
-                        activeLock.acquireLock();
-                        releaseNeeded = true;
-                    }
+                    activeFile.lock();
 
                     //
                     // Fix up the deletion bitmap for the new
@@ -2549,36 +2328,32 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     //
                     // Put the partitions we merged onto the
                     // list of merged partitions.
-                    synchronized(mergedParts) {
-                        mergedParts.addAll(toMerge);
-                    }
+                    mergedParts.addAll(toMerge);
 
-                    synchronized(activeParts) {
-                        updateActiveParts(true);
-                        if(newDP != null) {
-                            activeParts.add(newDP);
-                        }
-                        writeActiveFile(activeParts);
+                    updateActiveParts(true);
+                    if(newDP != null) {
+                        activeParts.add(newDP);
                     }
+                    activeFile.write(activeParts);
 
-                //
-                // Some day we'll want notification when partitions have been
-                // merged.
+                    //
+                    // Some day we'll want notification when partitions have been
+                    // merged.
 //                    synchronized(listeners) {
 //                        for(IndexListener il : listeners) {
-//                            
+//
 //                        }
 //                    }
                 } catch(FileLockException fle) {
                     mergeThread = null;
                     logger.log(Level.SEVERE, "Error locking active file after merge: " +
-                            activeLock, fle);
+                            activeFile, fle);
                     try {
                         localMergeLock.releaseLock();
                     } catch(FileLockException fle2) {
                         logger.log(Level.SEVERE,
-                                "Error releasing merge lock after error after merge.",
-                                fle2);
+                                   "Error releasing merge lock after error after merge.",
+                                   fle2);
                     }
                 } catch(java.io.IOException ioe) {
                     logger.log(Level.SEVERE, "I/O Error after merge.", ioe);
@@ -2588,13 +2363,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     //
                     // Release the locks we're holding.
                     try {
-                        if(releaseNeeded) {
-                            activeLock.releaseLock();
-                        }
+                        activeFile.unlock();
                         localMergeLock.releaseLock();
                     } catch(FileLockException fle) {
                         logger.log(Level.SEVERE, "Error unlocking after error after merge: " +
-                                activeLock, fle);
+                                activeFile, fle);
                     }
                 }
             }
@@ -2671,7 +2444,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
          */
         protected void closeThings(long time) {
             synchronized(thingsToClose) {
-                for(Iterator<Closeable> i = thingsToClose.iterator(); i.hasNext();) {
+                for(Iterator<Closeable> i = thingsToClose.iterator();
+                        i.hasNext();) {
                     Closeable clo = i.next();
                     if(clo.close(time)) {
                         clo.createRemoveFile();
@@ -2701,7 +2475,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // Get any newly added partitions, but don't add
             // them to the active list yet.
             try {
-                activeLock.acquireLock();
+                activeFile.lock();
             } catch(Exception e) {
 
                 //
@@ -2742,18 +2516,16 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 // Exceptions here need to be logged!
                 logger.log(Level.SEVERE, "Exception in HouseKeeper", e);
             } finally {
-                if(activeLock.hasLock()) {
-                    try {
-                    activeLock.releaseLock();
-                    } catch (FileLockException ex) {
-                        logger.log(Level.SEVERE, "Exception unlocking active file", ex);
-                    }
+                try {
+                    activeFile.unlock();
+                } catch(FileLockException ex) {
+                    logger.log(Level.SEVERE,
+                               "Exception unlocking active file", ex);
                 }
             }
 
             lastMod = stamp;
         }
-        
         /**
          * The last modified time for the active file.
          */
@@ -2773,12 +2545,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     /**
      * The file containing the list of active partitions.
      */
-    protected File activeFile;
-
-    /**
-     * A lock for our active file.  We'll use this as a global lock.
-     */
-    protected FileLock activeLock;
+    protected ActiveFile activeFile;
 
     /**
      * A lock for the collection so that only one merge may be ongoing
@@ -2789,8 +2556,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     /**
      * The list of partitions that we're managing.
      */
-    protected final List<DiskPartition> activeParts =
-            Collections.synchronizedList(new ArrayList<DiskPartition>());
+    protected final Queue<DiskPartition> activeParts =
+            new ConcurrentLinkedQueue<DiskPartition>();
 
     /**
      * The current statistics for this collection.
@@ -2800,21 +2567,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     /**
      * The list of parts to close.
      */
-    protected final List<Closeable> thingsToClose =
-                Collections.synchronizedList(new ArrayList<Closeable>());
+    protected final Queue<Closeable> thingsToClose =
+            new ConcurrentLinkedQueue<Closeable>();
 
     /**
      * A list of partitions that have been merged.
      */
-    protected final List<DiskPartition> mergedParts =
-            Collections.synchronizedList(new ArrayList<DiskPartition>());
-
-    /**
-     * A list of field names that should be loaded into main memory for
-     * faster processing.
-     */
-    protected final List<String> fieldsToLoad =
-                Collections.synchronizedList(new ArrayList<String>());
+    protected final Queue<DiskPartition> mergedParts =
+            new ConcurrentLinkedQueue<DiskPartition>();
 
     /**
      * A thread to be used during merge operations.
@@ -2896,8 +2656,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 shutdown();
             } catch(IOException ex) {
                 logger.log(Level.SEVERE,
-                        "Error shutting down for re-initialization",
-                        ex);
+                           "Error shutting down for re-initialization",
+                           ex);
             }
         }
         partitionFactory = (DiskPartitionFactory) ps.getComponent(
@@ -2998,7 +2758,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     private int maxMergeSize;
 
     @ConfigInteger(defaultValue = 1000)
-    public static final String PROP_ACTIVE_CHECK_INTERVAL = "active_check_interval";
+    public static final String PROP_ACTIVE_CHECK_INTERVAL =
+            "active_check_interval";
 
     private int activeCheckInterval;
 
@@ -3100,11 +2861,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @throws com.sun.labs.minion.util.FileLockException if there is an error
      * locking the meta file to get the number for the next term stats dictionary.
      */
-    public void recalculateTermStats() throws java.io.IOException, FileLockException {
+    public void recalculateTermStats() throws java.io.IOException,
+            FileLockException {
         int tsn = metaFile.getNextTermStatsNumber();
         File newTSF = makeTermStatsFile(tsn);
         (new UncachedTermStatsDictionary()).recalculateTermStats(newTSF,
-                getActivePartitions());
+                                                                 getActivePartitions());
         metaFile.setTermStatsNumber(tsn);
         updateTermStats();
     }
@@ -3116,11 +2878,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
             TermStatsDictionary oldTSD = termStatsDict;
             termStatsDict = termstatsDictFactory.getDictionary(newTSF);
-            
+
             //
             // Set up the new dictionary.
             currTSF = newTSF;
-            
+
             //
             // Set up to (eventually) close and delete the term stats dictionary, which might be in
             // use by someone else.

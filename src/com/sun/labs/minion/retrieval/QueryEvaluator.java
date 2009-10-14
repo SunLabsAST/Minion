@@ -24,11 +24,11 @@
 package com.sun.labs.minion.retrieval;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.query.Relation;
+import java.util.Collection;
 import java.util.logging.Logger;
 
 public class QueryEvaluator {
@@ -63,7 +63,7 @@ public class QueryEvaluator {
      * @return a list of <code>ArrayGroup</code>s containing the results
      * for the corresponding partitions.
      */
-    public List eval(List<DiskPartition> parts, QueryElement qe) {
+    public List eval(Collection<DiskPartition> parts, QueryElement qe) {
 
         List ret = new ArrayList();
 

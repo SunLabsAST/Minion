@@ -142,7 +142,7 @@ public class ResultSetImpl implements ResultSet {
     public ResultSetImpl(QueryElement query,
             QueryConfig qc,
             QueryStats qs,
-            List<DiskPartition> partitions,
+            Collection<DiskPartition> partitions,
             SearchEngine e) {
         this.query = query;
         this.e = e;
@@ -171,8 +171,7 @@ public class ResultSetImpl implements ResultSet {
         // In order that the document counts are accurate, we need to
         // remove deleted documents at this point.
         for(int i = 0; i < results.size(); i++) {
-            results.get(i).removeDeleted(((DiskPartition) partitions.get(i)).
-                    getDeletedDocumentsMap());
+            results.get(i).removeDeleted();
         }
         this.qs.queryW.stop();
     } // ResultSetImpl constructor

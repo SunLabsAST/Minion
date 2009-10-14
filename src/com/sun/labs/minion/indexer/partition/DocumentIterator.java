@@ -26,11 +26,11 @@ package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.Document;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 import com.sun.labs.minion.engine.DocumentImpl;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import java.util.Collection;
 
 /**
  * An iterator for all of the documents in a set of partitions.
@@ -39,7 +39,7 @@ public class DocumentIterator implements Iterator<Document> {
     
     protected PartitionManager m;
     
-    protected List parts;
+    protected Collection<DiskPartition> parts;
     
     protected DiskPartition currPart;
     

@@ -319,13 +319,10 @@ public class SearchEngineImpl implements SearchEngine,
         //
         // We'll get a list of the active partitions and the keys that we're
         // looking for.
-        List parts = invFilePartitionManager.getActivePartitions();
         List<String> remaining = new ArrayList<String>(keys);
-        List<Document> docs =
-                new ArrayList<Document>();
-        for(Iterator<DiskPartition> i = parts.iterator(); i.hasNext();) {
+        List<Document> docs = new ArrayList<Document>();
+        for(DiskPartition p : invFilePartitionManager.getActivePartitions()) {
 
-            DiskPartition p = i.next();
             if(p.isClosed()) {
                 continue;
             }
@@ -623,7 +620,7 @@ public class SearchEngineImpl implements SearchEngine,
         try {
             CollectionStats cs =
                     new CollectionStats(invFilePartitionManager);
-            List<DiskPartition> parts = invFilePartitionManager.getActivePartitions();
+            Collection<DiskPartition> parts = invFilePartitionManager.getActivePartitions();
             QueryConfig cqc = (QueryConfig) queryConfig.clone();
             qe.setQueryConfig(cqc);
             cqc.setCollectionStats(cs);
@@ -772,7 +769,7 @@ public class SearchEngineImpl implements SearchEngine,
         //
         // We'll get a list of the active partitions and the keys that we're
         // looking for.
-        List<DiskPartition> parts = invFilePartitionManager.getActivePartitions();
+        Collection<DiskPartition> parts = invFilePartitionManager.getActivePartitions();
         List<String> remaining = new ArrayList<String>(keys);
         List sets = new ArrayList();
         for(DiskPartition p : parts) {
@@ -826,9 +823,8 @@ public class SearchEngineImpl implements SearchEngine,
         //
         // We'll get a list of the active partitions and the keys that we're
         // looking for.
-        List<DiskPartition> parts = invFilePartitionManager.getActivePartitions();
-        Map<String, Float> remaining =
-                new LinkedHashMap<String, Float>(keys);
+        Collection<DiskPartition> parts = invFilePartitionManager.getActivePartitions();
+        Map<String, Float> remaining = new LinkedHashMap<String, Float>(keys);
         List sets = new ArrayList();
         for(DiskPartition p : parts) {
             if(p.isClosed()) {

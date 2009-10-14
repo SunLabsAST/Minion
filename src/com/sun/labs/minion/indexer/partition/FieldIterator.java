@@ -25,13 +25,12 @@
 package com.sun.labs.minion.indexer.partition;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 import java.util.PriorityQueue;
-import com.sun.labs.minion.indexer.entry.CasedEntry;
 import com.sun.labs.minion.indexer.entry.CasedIDEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import java.util.Collection;
 
 
 /**
@@ -57,10 +56,10 @@ public class FieldIterator implements Iterator {
      * @param parts The partitions from which we'll draw field values.
      * @param field The field whose values we want to iterate through.
      */
-    public FieldIterator(List parts, String field, boolean ignoreCase) {
+    public FieldIterator(Collection<DiskPartition> parts, String field, boolean ignoreCase) {
         h = new PriorityQueue<HE>();
-        for(Iterator i = parts.iterator(); i.hasNext(); ) {
-            HE e = new HE((InvFileDiskPartition) i.next(), field, ignoreCase);
+        for(DiskPartition p : parts) {
+            HE e = new HE((InvFileDiskPartition) p, field, ignoreCase);
             if(e.next()) {
                 h.offer(e);
             }

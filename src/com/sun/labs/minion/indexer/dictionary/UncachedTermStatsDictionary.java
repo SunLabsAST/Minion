@@ -31,7 +31,7 @@ import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
-import java.util.List;
+import java.util.Collection;
 import java.util.PriorityQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,18 +72,22 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
         this.df = df;
     }
 
+    @Override
     public TermStatsEntry getTermStats(String term) {
         return (TermStatsEntry) get(term);
     }
 
+    @Override
     public void setCloseTime(long closeTime) {
         this.closeTime = closeTime;
     }
 
+    @Override
     public long getCloseTime() {
         return closeTime;
     }
 
+    @Override
     public void createRemoveFile() {
         File closeFile = new File(df + ".rem");
         try {
@@ -99,8 +103,11 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
      * wonky.
      * @param df the file where the term stats dictionary will be written
      * @param parts the partitions whose dictionaries will be included
+     * @throws java.io.IOException if there is an error writing the new term
+     * statistics.
+     *
      */
-    public void recalculateTermStats(File df, List<DiskPartition> parts) throws java.io.IOException {
+    public void recalculateTermStats(File df, Collection<DiskPartition> parts) throws java.io.IOException {
         PriorityQueue<HE> h = new PriorityQueue<HE>();
         for(DiskPartition p : parts) {
             HE el = new HE(p.getMainDictionaryIterator());

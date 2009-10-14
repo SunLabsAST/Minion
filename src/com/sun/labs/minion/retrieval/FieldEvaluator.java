@@ -31,6 +31,7 @@ import java.util.List;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.query.Relation;
+import java.util.Collection;
 
 /**
  * A class that can be used to evaluate a simple parametric query against a 
@@ -88,7 +89,7 @@ public class FieldEvaluator {
         
         term.setQueryConfig(e.getQueryConfig());
         
-        List<DiskPartition> parts = ((SearchEngineImpl) e).getPM().getActivePartitions();
+        Collection<DiskPartition> parts = ((SearchEngineImpl) e).getPM().getActivePartitions();
         
         List<ArrayGroup> groups = new ArrayList<ArrayGroup>();
 

@@ -42,6 +42,7 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.util.Getopt;
+import java.util.Collection;
 
 /**
  * A class to test deletions in partitions while those partitions are
@@ -169,7 +170,7 @@ public class DelDuringMerge {
         //
         // Get the partitions.
         PartitionManager pm = engine.getPM();
-        List<DiskPartition> active = pm.getActivePartitions();
+        Collection<DiskPartition> active = pm.getActivePartitions();
 
         logger.info("Partitions: " + active);
 
@@ -184,7 +185,7 @@ public class DelDuringMerge {
         //
         // Start the merge, which will store the pre-merge deletion state.
         PartitionManager.Merger merger = null;
-        merger = pm.getMerger(active);
+        merger = pm.getMerger((List<DiskPartition>) active);
         if(merger == null) {
             logger.severe("Could not get merger for " + active);
             return;

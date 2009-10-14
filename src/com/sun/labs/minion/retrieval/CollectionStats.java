@@ -25,12 +25,10 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
-import java.util.HashMap;
-import java.util.Map;
 
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.partition.PartitionStats;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * A container for collection level statistics that are coelesced out of
@@ -89,7 +87,7 @@ public class CollectionStats {
         this(pm, pm.getActivePartitions());
     }
 
-    public CollectionStats(PartitionManager pm, List<DiskPartition> parts) {
+    public CollectionStats(PartitionManager pm, Collection<DiskPartition> parts) {
         this.pm = pm;
         for(DiskPartition p : parts) {
             nDocs            += p.getNDocs();
