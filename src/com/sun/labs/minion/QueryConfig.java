@@ -420,7 +420,7 @@ public class QueryConfig implements Cloneable,
      * initialized with the collection-level statistics for this collection.
      */
     public WeightingComponents getWeightingComponents() {
-        return getWeightingComponents(new CollectionStats(e.getManager()));
+        return getWeightingComponents(getCollectionStats());
     }
 
     /**

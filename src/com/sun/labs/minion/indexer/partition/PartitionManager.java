@@ -202,6 +202,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         lockDirFile = new File(lockDir);
         randID = (int) (Math.random() * Integer.MAX_VALUE);
 
+        collectionStats = new CollectionStats(this);
+
         //
         // Set up the query timer.
         queryTimer = new Timer(true);
@@ -346,8 +348,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public List<DiskPartition> updateActiveParts(boolean addNew) throws
             Exception {
 
-        boolean releaseNeeded = false;
-
         //
         // Re-read the meta file.
         try {
@@ -356,7 +356,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             logger.warning("Error reading meta file in update: " + e);
         }
 
-        activeFile.lock();
+        boolean releaseNeeded = false;
+        if(!activeFile.isLocked()) {
+            activeFile.lock();
+            releaseNeeded = true;
+        }
 
         List<Integer> add = activeFile.read();
         List<Integer> currList = ActiveFile.getPartNumbers(activeParts);
@@ -429,7 +433,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             termStatsDict = null;
         }
 
-        activeFile.unlock();
+        if(releaseNeeded) {
+            activeFile.unlock();
+        }
 
         return newlyLoadedParts;
     }
@@ -2464,7 +2470,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // See if the file has changed.  This may not be perfect,
             // but it will keep us from over-locking.
             long stamp = activeFile.lastModified();
-            if(ignored < MAX_IGNORE && stamp == lastMod) {
+            if(stamp == lastMod && ignored < MAX_IGNORE) {
                 ignored++;
                 return;
             }
@@ -2498,18 +2504,15 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // out the updates to the active partition list, but don't put
             // them on the list yet!
             try {
-                List<DiskPartition> loaded = updateActiveParts(false);
-
                 //
                 // We have the list of updated partitions.  Get the
                 // updated deletion bitmaps without changing the copies
                 // in the partions.
-                synchronized(activeParts) {
-                    for(DiskPartition dp : activeParts) {
-                        dp.syncDeletedMap();
-                    }
-                    activeParts.addAll(loaded);
+                for(DiskPartition dp : activeParts) {
+                    dp.syncDeletedMap();
                 }
+                
+                updateActiveParts(true);
             } catch(Exception e) {
 
                 //

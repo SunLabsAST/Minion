@@ -902,7 +902,7 @@ public class DiskPartition extends Partition implements Closeable {
             // people dicking with it before we're ready to use it.
             DelMap d = dmi.next();
             p.ignored = false;
-            if(p.stats.nDocs == d.nDeleted) {
+            if(p.stats.nDocs == d.getNDeleted()) {
                 p.ignored = true;
                 i.remove();
                 dmi.remove();
