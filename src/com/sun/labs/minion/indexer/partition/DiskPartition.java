@@ -463,6 +463,7 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // Close the main dictionary and postings.
             if(mainDictFile != null) {
+                mainDict.close();
                 mainDictFile.close();
                 for(int i = 0; i < mainPostFiles.length;
                         i++) {
@@ -472,6 +473,7 @@ public class DiskPartition extends Partition implements Closeable {
             }
 
             if(docDict != null) {
+                docDict.close();
                 docDictFile.close();
                 docPostFile.close();
                 docDict = null;

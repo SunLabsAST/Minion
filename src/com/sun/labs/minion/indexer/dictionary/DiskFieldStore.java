@@ -120,6 +120,11 @@ public class DiskFieldStore extends FieldStore {
      * Closes the field store.
      */
     public void close() throws java.io.IOException {
+        for(SavedField field : savedFields) {
+            if(field != null) {
+                field.close();
+            }
+        }
     }
     
     /**

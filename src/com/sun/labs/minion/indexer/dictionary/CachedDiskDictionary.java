@@ -60,7 +60,8 @@ public class CachedDiskDictionary extends DiskDictionary {
     public CachedDiskDictionary(Class entryClass,
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, PostingsInputType.CHANNEL_FULL_POST, BufferType.FILEBUFFER, null);
+        this(entryClass, decoder, dictFile, postFiles,
+                PostingsInputType.CHANNEL_FULL_POST, BufferType.FILEBUFFER, null);
     }
 
     /**
@@ -78,7 +79,8 @@ public class CachedDiskDictionary extends DiskDictionary {
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles,
             Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, PostingsInputType.CHANNEL_FULL_POST, BufferType.FILEBUFFER, part);
+        this(entryClass, decoder, dictFile, postFiles,
+                PostingsInputType.CHANNEL_FULL_POST, BufferType.FILEBUFFER, part);
     }
 
     /**
@@ -145,6 +147,7 @@ public class CachedDiskDictionary extends DiskDictionary {
         // Read everything into the cache now.
         int p = 0;
         DictionaryIterator di = super.iterator();
+        di.setUnbufferedPostings(true);
 
         for(DictionaryIterator i = super.iterator(); i.hasNext();) {
             QueryEntry e = i.next();
@@ -185,6 +188,14 @@ public class CachedDiskDictionary extends DiskDictionary {
             return null;
         }
         return (QueryEntry) entries[id-1].getEntry();
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        entries = null;
+        entriesByName.clear();
+        dictOrderEntries = null;
     }
 
     @Override

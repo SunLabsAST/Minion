@@ -651,6 +651,16 @@ public class BasicField implements SavedField {
         return ret;
     }
 
+    @Override
+    public void close() {
+        if(bigrams != null) {
+            bigrams.close();
+        }
+        if(values instanceof DiskDictionary) {
+            ((DiskDictionary) values).close();
+        }
+    }
+
     public ArrayGroup getSimilar(ArrayGroup ag, String value, boolean matchCase) {
         int[] var = bigrams.getAllVariants(value, true);
         int maxd = Integer.MIN_VALUE;

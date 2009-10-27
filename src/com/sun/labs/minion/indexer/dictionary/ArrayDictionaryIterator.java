@@ -115,7 +115,7 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
         // entry to provide for the next call to next.
         if(nextEntry == null) {
             while(curr < end) {
-                nextEntry = entries[curr++];
+                nextEntry = (QueryEntry) entries[curr++].getEntry();
                 if(nextEntry != null) {
                     break;
                 }

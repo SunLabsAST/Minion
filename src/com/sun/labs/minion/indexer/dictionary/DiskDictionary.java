@@ -1700,6 +1700,14 @@ public class DiskDictionary implements Dictionary {
                                int[] postIDMap) {
     }
 
+    /**
+     * Closes the dictionary, which should release any resources that we're holding
+     * in caches.
+     */
+    public void close() {
+        bst = null;
+    }
+
     public String toString() {
         return String.format("%s (%s) %s size: %d bst nodes: %d",
                 part, getClass().getSimpleName(), name, size(), bst.size);
@@ -2047,8 +2055,7 @@ public class DiskDictionary implements Dictionary {
                 //
                 // If we're returning all entries or if this name occurred,
                 // go ahead and return true.
-                if(!actualOnly ||
-                        ((CasedEntry) curr).nameOccurred()) {
+                if(!actualOnly || ((CasedEntry) curr).nameOccurred()) {
 
                     //
                     // We can return this element next time around.

@@ -496,11 +496,13 @@ public class InvFileDiskPartition extends DiskPartition {
         }
         try {
             if(fields != null) {
+                fields.close();
                 fieldDictFile.close();
                 fieldPostFile.close();
             }
 
             if(bigramDict != null) {
+                bigramDict.close();
                 bigramDictFile.close();
                 bigramPostFile.close();
             }

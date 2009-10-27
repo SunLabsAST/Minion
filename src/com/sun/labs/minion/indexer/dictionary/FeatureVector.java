@@ -266,6 +266,10 @@ public class FeatureVector implements SavedField {
         return ret;
     }
 
+    @Override
+    public void close() {
+    }
+
     public DictionaryIterator iterator(Object lowerBound, boolean includeLower,
             Object upperBound, boolean includeUpper) {
         return null;

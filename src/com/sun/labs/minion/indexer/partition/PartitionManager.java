@@ -534,7 +534,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // Write the active file.
             activeFile.write(activeParts);
         } catch(Exception ex) {
-            logger.log(Level.SEVERE, String.format("Exception adding %s", ex));
+            logger.log(Level.SEVERE, String.format("Exception adding %s", dp), ex);
         } finally {
             try {
                 activeFile.unlock();
