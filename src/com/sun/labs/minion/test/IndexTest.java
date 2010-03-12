@@ -226,6 +226,10 @@ public class IndexTest extends SEMain {
                 engine = SearchEngineFactory.getSearchEngine(indexDir,
                         engineType, cmFile);
             }
+
+            //
+            // Define the fields we know about
+            defineFields(engine);
         } catch(SearchEngineException se) {
             logger.log(Level.SEVERE, "Error opening collection", se);
             return;

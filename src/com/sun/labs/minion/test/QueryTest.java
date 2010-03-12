@@ -109,6 +109,7 @@ import java.io.StringReader;
 import java.net.URL;
 import java.util.HashSet;
 import com.sun.labs.minion.classification.ExplainableClassifierModel;
+import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDictionary;
@@ -117,6 +118,10 @@ import com.sun.labs.minion.indexer.entry.CasedDFOEntry;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.lexmorph.disambiguation.Unsupervised;
+import com.sun.labs.minion.pipeline.Dropper;
+import com.sun.labs.minion.pipeline.PrintStage;
+import com.sun.labs.minion.pipeline.Stage;
+import com.sun.labs.minion.pipeline.SyncPipelineImpl;
 import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.retrieval.FieldEvaluator;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
@@ -272,6 +277,7 @@ public class QueryTest extends SEMain {
                 ":ts                     Prints term stats dictionary\n" +
                 ":cvl [<part> ...]       Calculate and dump vector lengths for a given partition\n" +
                 ":rts                    Re-generates term stats using all active partitions\n" +
+                ":tok <file>             Tokenize a file, useful inside the debugger\n" +
                 "\nWild Card, etc:\n" +
                 ":sw                     Toggles case-sensitivity for wild cards\n" +
                 ":wild <pattern>         Prints matching terms from each partition\n" +
@@ -1567,6 +1573,18 @@ public class QueryTest extends SEMain {
                                         int[][] posn =
                                                 ((PosPostingsIterator) pi).
                                                 getPositions();
+                                        for (int j = 0; j < posn.length; j++) {
+                                            output.println();
+                                            output.print(
+                                                    " field " + j +
+                                                    " id" + pi.getID() +
+                                                    " f" + pi.getFreq() +
+                                                    " n" + posn[j][0]);
+                                            for (int k = 1; k < posn[j].length; k++) {
+                                                output.print(" " + posn[j][k]);
+                                            }
+                                        }
+                                        output.flush();
                                     }
                                 } catch(Exception ite) {
                                     output.println("Exception: " + ite);
@@ -2383,6 +2401,20 @@ public class QueryTest extends SEMain {
                     }
                 }
             }
+        } else if (q.startsWith(":tok")) {
+            String file = q.substring(q.indexOf(' ') + 1).trim();
+            List<Stage> stages = new ArrayList<Stage>();
+            Dropper dropStage = new Dropper();
+            PrintStage printStage = new PrintStage(dropStage, true);
+            UniversalTokenizer utok = new UniversalTokenizer(printStage);
+            stages.add(utok);
+            stages.add(printStage);
+            stages.add(dropStage);
+
+            SyncPipelineImpl pipeline = new SyncPipelineImpl(null, engine,
+                                                             stages, null);
+            IndexableFile f = new IndexableFile(file, "8859_1");
+            pipeline.indexDocument(this.makeDocument(f));
         } else {
             return 0;
         }

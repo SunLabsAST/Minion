@@ -399,10 +399,16 @@ public class MPIndexTest {
                 return;
             }
         }
+        try {
+            SEMain.defineFields(engine);
+        } catch (SearchEngineException e) {
+            logger.log(Level.SEVERE, "Failed to define fields", e);
+            return;
+        }
     }
 
     /**
-     * Default contructor. Sets up the index inverter
+     * Default constructor. Sets up the index inverter
      */
     public MPIndexTest() {
         //

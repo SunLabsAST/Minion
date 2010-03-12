@@ -786,6 +786,12 @@ public class MergeTest {
                 return;
             }
         }
+        try {
+            SEMain.defineFields(engine);
+        } catch (SearchEngineException e) {
+            logger.log(Level.SEVERE, "Failed to define fields", e);
+            return;
+        }
     }
 
     /**

@@ -24,16 +24,37 @@
 
 package com.sun.labs.minion.test;
 
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
+import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.SearchEngineException;
 import java.util.Date;
+import java.util.EnumSet;
 
 /**
  * A base class for all of our sample programs.
  */
 public class SEMain  {
     
+    /**
+     * Define the fields that will be used by makeDocument
+     * 
+     * @param engine the search engine in which to define the fields
+     */
+    public static void defineFields(SearchEngine engine)
+        throws SearchEngineException
+    {
+        EnumSet saved = EnumSet.of(FieldInfo.Attribute.SAVED);
+        engine.defineField(new FieldInfo("enc", saved, FieldInfo.Type.STRING));
+        engine.defineField(new FieldInfo("last-mod", saved, FieldInfo.Type.DATE));
+        EnumSet regular = EnumSet.of(FieldInfo.Attribute.INDEXED,
+                                     FieldInfo.Attribute.TOKENIZED,
+                                     FieldInfo.Attribute.VECTORED);
+        engine.defineField(new FieldInfo("file", regular));
+    }
+
     /**
      * Makes a document suitable for indexing or highlighting using a search
      * engine. 
