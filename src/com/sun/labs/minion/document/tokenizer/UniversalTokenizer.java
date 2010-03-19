@@ -335,8 +335,10 @@ public class UniversalTokenizer extends Tokenizer {
         }
 
         //
-        // Break words at the maximum token length.
-        if(tokLen >= maxTokLen) {
+        // Break words at the maximum token length, not including any
+        // accumulated whitespace (which won't be part of the token)
+        int noWhiteLen = tokLen - whiteCount;
+        if(noWhiteLen >= maxTokLen) {
             if(state == ASIAN) {
                 continueAsianFlag = true;
                 if(ngramLength > 0) {
