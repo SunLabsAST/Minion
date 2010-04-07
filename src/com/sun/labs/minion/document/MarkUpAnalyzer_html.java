@@ -307,6 +307,9 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
                     name = val;
                 } else if (param.trim().toLowerCase().equals("content")) {
                     content = val;
+                    if (content.trim().length() == 0) {
+                        content = null;
+                    }
                 }
             }
             if (name != null && content != null) {
