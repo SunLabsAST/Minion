@@ -101,11 +101,12 @@ public class WebTransformer extends Transformer {
         // should be a single root "q" element, containing a set of "qe"s, each
         // containing a single term node
         TokenCollectorStage tcs = new TokenCollectorStage();
+        int order = 0;
 
         //
         // Make a bunch of buckets to contain each of the operator types
-        List ors = new ArrayList();
-        List ands = new ArrayList();
+        List<QueryElement> ors = new ArrayList<QueryElement>();
+        List<QueryElement> ands = new ArrayList<QueryElement>();
 
         SimpleNode q = (SimpleNode) root.getChildren().iterator().next();
         Iterator cit = q.getChildren().iterator();
@@ -118,6 +119,7 @@ public class WebTransformer extends Transformer {
             QueryElement qe = WebElementFactory.make(curr, mods, tcs);
 
             if(qe != null) {
+                qe.setOrder(order++);
                 if(isNot(mods)) {
                     ands.add(new Not(qe));
                 } else if(isOr(mods)) {
@@ -149,14 +151,21 @@ public class WebTransformer extends Transformer {
             ands.add(or);
         }
 
-        //
-        // Now determine which kind of AND to make
-        if(defaultOperator == Searcher.OP_PAND) {
-            result = new PAnd(ands);
+        if (ands.size() == 1) {
+            QueryElement child = ands.get(0);
+            if (!(child instanceof DictTerm)) {
+                result = child;
+            }
         } else {
-            result = new And(ands);
-        }
 
+            //
+            // Now determine which kind of AND to make
+            if(defaultOperator == Searcher.OP_PAND) {
+                result = new PAnd(ands);
+            } else {
+                result = new And(ands);
+            }
+        }
         return result;
     }
 
