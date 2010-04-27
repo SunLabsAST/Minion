@@ -151,13 +151,16 @@ public class WebTransformer extends Transformer {
             ands.add(or);
         }
 
+        boolean andsHandled = false;
         if (ands.size() == 1) {
             QueryElement child = ands.get(0);
             if (!(child instanceof DictTerm)) {
                 result = child;
+                andsHandled = true;
             }
-        } else {
-
+        }
+        
+        if (!andsHandled) {
             //
             // Now determine which kind of AND to make
             if(defaultOperator == Searcher.OP_PAND) {
