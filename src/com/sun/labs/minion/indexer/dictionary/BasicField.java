@@ -211,7 +211,7 @@ public class BasicField implements SavedField {
         //
         // We'll use a cased IDEntry for string fields that we want to do
         // case sensitive querying on.
-        if(field.getType() == FieldInfo.Type.STRING && !field.isCaseSensitive()) {
+        if(field.getType() == FieldInfo.Type.STRING && field.isCaseSensitive()) {
             return CasedIDEntry.class;
         }
 
