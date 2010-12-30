@@ -28,6 +28,7 @@ import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 
 import java.util.ArrayList;
@@ -460,6 +461,21 @@ public class ClassifierMemoryPartition extends MemoryPartition {
     protected void endTrainingClass(int featureSize) {
         partClasses++;
     }
+
+    @Override
+    protected int dump() throws IOException {
+        int ret = super.dump();
+        //
+        // Do a merge synchronously if one is needed.
+        PartitionManager.Merger m = manager.getMerger();
+        if(m != null) {
+            m.run();
+        }
+
+        return ret;
+    }
+
+
 
     /**
      * Dumps the data that is specific to the classifier partition.

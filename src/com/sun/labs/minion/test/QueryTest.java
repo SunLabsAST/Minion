@@ -1201,12 +1201,20 @@ public class QueryTest extends SEMain {
             } catch(NumberFormatException nfe) {
             }
 
-            output.println(field + " " + pn);
+            if(pn > 0) {
+                output.println(field + " " + pn);
+            }
 
             if(pn == -1) {
-                for(Iterator i = manager.getFieldIterator(field); i.hasNext();) {
-                    output.println("value: " + i.next());
+                int nv = 0;
+                for(FieldFrequency ff : manager.getTopFieldValues(field, -1,
+                                                                  false)) {
+                    output.format(
+                            "%s: %d\n",
+                            ff.getVal(), ff.getFreq());
+                    nv++;
                 }
+                output.format("%s has %d values\n", field, nv);
             } else {
                 for(Iterator l = manager.getActivePartitions().iterator(); l.
                         hasNext();) {

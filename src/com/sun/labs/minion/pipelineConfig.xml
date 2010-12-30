@@ -58,6 +58,17 @@
     <!-- A stage to lowercase terms as they come in. -->
     <component name="lower_case" type="com.sun.labs.minion.pipeline.LowerCaseStage"/>
     
+    <!-- A stage to remove stop words. -->
+    <component name="stopper" type="com.sun.labs.minion.pipeline.StopWordsStage">
+        <property name="stopwords" value="stopwords"/>
+    </component>
+    
+    <component name="stopwords" type="com.sun.labs.minion.pipeline.StopWords">
+        <propertylist name="stopwords_files">
+        <item>stopwords</item>    
+        </propertylist>
+    </component>
+
     <!-- A stage to drop things on the floor. -->
     <component name="dropper" type="com.sun.labs.minion.pipeline.Dropper"/>
     

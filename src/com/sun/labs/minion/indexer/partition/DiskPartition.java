@@ -264,10 +264,12 @@ public class DiskPartition extends Partition implements Closeable {
 
         //
         // Initialize the document vector lengths if we're not on a long run.
-        if(cacheVectorLengths) {
-            dvl = new CachedDocumentVectorLengths(this, false);
-        } else {
-            dvl = new DocumentVectorLengths(this, false);
+        if(manager.getCalculateDVL()) {
+            if(cacheVectorLengths) {
+                dvl = new CachedDocumentVectorLengths(this, false);
+            } else {
+                dvl = new DocumentVectorLengths(this, false);
+            }
         }
         
         if(termCacheSize > 0) {

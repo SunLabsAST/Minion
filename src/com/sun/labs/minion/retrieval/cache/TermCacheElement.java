@@ -80,8 +80,14 @@ public class TermCacheElement {
         this.terms = new ArrayList<String>(terms);
         this.feat = feat;
         this.part = part;
-        wf = feat.getWeightingFunction();
-        wc = feat.getWeightingComponents();
+        if(feat == null) {
+            this.feat = new PostingsIteratorFeatures(part.getManager().
+                    getQueryConfig().getWeightingFunction(),
+                                                     part.getManager().
+                    getQueryConfig().getWeightingComponents());
+        }
+        wf = this.feat.getWeightingFunction();
+        wc = this.feat.getWeightingComponents();
         for(String term : terms) {
             add(part.getTerm(term));
         }

@@ -187,7 +187,7 @@ public class ClassifierManager extends PartitionManager {
     }
 
     /**
-     * Find classifiers that are similar to the named classifier.
+     * Finds classifiers that are similar to the named classifier.
      * @param cname the name of the classifier for which we want to find similar
      * classifiers
      * @return a list of the similar classifiers, along with scores indicating

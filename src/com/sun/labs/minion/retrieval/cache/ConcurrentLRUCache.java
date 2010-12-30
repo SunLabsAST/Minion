@@ -26,6 +26,8 @@ public class ConcurrentLRUCache<K, V> {
 
     private ConcurrentMap<K, Holder<V>> map;
 
+    private int size;
+
     private int lowWater;
 
     private int highWater;
@@ -46,13 +48,18 @@ public class ConcurrentLRUCache<K, V> {
 
     public ConcurrentLRUCache(int size, CacheValueComputer<K, V> c) {
         this.c = c;
-        map = new ConcurrentHashMap<K, Holder<V>>(size, 0.75f, 100);
+        this.size = size;
         lowWater = size;
         highWater = (int) (size * 1.1);
-        cleaner = new Cleaner();
-        cleanerThread = new Thread(cleaner, "CacheCleaner");
-        cleanerThread.setDaemon(true);
-        cleanerThread.start();
+        if(size > 0) {
+            map = new ConcurrentHashMap<K, Holder<V>>(size, 0.75f, 100);
+            cleaner = new Cleaner();
+            cleanerThread = new Thread(cleaner, "CacheCleaner");
+            cleanerThread.setDaemon(true);
+            cleanerThread.start();
+        } else {
+            map = new ConcurrentHashMap<K, Holder<V>>();
+        }
     }
 
     public V get(final K key) throws InterruptedException {
@@ -73,7 +80,7 @@ public class ConcurrentLRUCache<K, V> {
                     misses++;
                     h = hn;
                     hn.run();
-                    if(map.size() >= highWater) {
+                    if(size > 0 && map.size() >= highWater) {
                         cleaner.wake();
                     }
                 }

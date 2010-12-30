@@ -52,6 +52,7 @@ import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -445,7 +446,7 @@ public class ClassifierDiskPartition extends DiskPartition {
             int newMaxDocID,
             int[] docIDStart,
             int[] nUndel,
-            int[][] docIDMaps)
+            int [][] docIDMaps)
             throws Exception {
 
         //
@@ -516,7 +517,7 @@ public class ClassifierDiskPartition extends DiskPartition {
                 //
                 // Walk through each model, copying over the non-deleted
                 // ones.
-                for(int j = 0; j < nModels; j++) {
+                for(int j = 0; j < cdp.nModels; j++) {
 
                     //
                     // What's the offset in the msd file of the current
@@ -613,9 +614,9 @@ public class ClassifierDiskPartition extends DiskPartition {
      * @param n The partition number to reap.
      */
     protected static void reap(PartitionManager m, int n) {
-        if(!((ClassifierManager) m).makeModelSpecificFile(n).delete()) {
-            logger.severe("Failed to reap classifier partition");
-        }
-        DiskPartition.reap(m, n);
+//        if(!((ClassifierManager) m).makeModelSpecificFile(n).delete()) {
+//            logger.severe("Failed to reap classifier partition");
+//        }
+//        DiskPartition.reap(m, n);
     }
 }
