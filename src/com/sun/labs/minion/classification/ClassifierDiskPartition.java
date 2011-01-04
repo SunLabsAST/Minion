@@ -456,15 +456,13 @@ public class ClassifierDiskPartition extends DiskPartition {
                 newPartNumber);
         RandomAccessFile mmsd =
                 new RandomAccessFile(mmsdFile, "rw");
-        WriteableBuffer b = new ArrayBuffer(newMaxDocID * 8);
+        WriteableBuffer mergedMSDOffs = new ArrayBuffer(newMaxDocID * 8);
 
         //
         // Write the number of models and then skip over the place where
         // the offsets will be stored.
         mmsd.writeInt(newMaxDocID);
         mmsd.seek(newMaxDocID * 8 + 4);
-
-        int nOff = 0;
 
         //
         // Now, for each of the partitions, merge the model specific data.
@@ -492,27 +490,14 @@ public class ClassifierDiskPartition extends DiskPartition {
                 // getting the first offset from the buffer which we'll use
                 // to compute deltas from the offsets in the buffer.
                 long origOff = cdp.msdOff.byteDecode(0, 8);
-                b.byteEncode(off, 8);
-                nOff++;
+                mergedMSDOffs.byteEncode(off, 8);
                 for(int j = 1, k = 8; j < cdp.nModels; j++, k += 8) {
                     long diff = cdp.msdOff.byteDecode(k, 8) - origOff;
-                    b.byteEncode(off + diff, 8);
-                    nOff++;
+                    mergedMSDOffs.byteEncode(off + diff, 8);
                 }
             } else {
 
                 int[] idMap = docIDMaps[i];
-
-                //
-                // We'll try to copy as many undeleted models at a time as
-                // we can, so we need to remember where the offset of the
-                // undeleted model where we started is.  We'll start with
-                // a value less than zero, which will get initialized when
-                // we hit the first non-deleted model.  We'll also need to
-                // remember which model number it was so that we can
-                // re-encode offsets correctly.
-                long prevOff = -1;
-                int prevMod = 0;
 
                 //
                 // Walk through each model, copying over the non-deleted
@@ -520,66 +505,29 @@ public class ClassifierDiskPartition extends DiskPartition {
                 for(int j = 0; j < cdp.nModels; j++) {
 
                     //
-                    // What's the offset in the msd file of the current
-                    // model?
-                    long currOff = cdp.msdOff.byteDecode(j * 8, 8);
+                    // Skip deleted models.
+                    if(idMap[j + 1] < 0) {
+                        continue;
+                    }
 
                     //
-                    // If we encounter a model that's been deleted, then we
-                    // may need to copy data for undeleted models.
-                    if(idMap[j + 1] < 0) {
+                    // What's the offset in the msd file of the current
+                    // model and the next one (or the end of the file.)
+                    long currOff = cdp.msdOff.byteDecode(j * 8, 8);
+                    long nextOff = j + 1 >= cdp.nModels ? cdp.msd.length() : cdp.msdOff.
+                            byteDecode((j + 1) * 8, 8);
+                    long numBytes = nextOff - currOff;
 
-                        //
-                        // If we haven't encountered an undeleted model
-                        // yet, then just keep going.
-                        if(prevOff == -1) {
-                            continue;
-                        }
-                        long nb = currOff - prevOff;
-                        if(nb > 0) {
+                    //
+                    // Encode the offset in the merged file for this data.
+                    mergedMSDOffs.byteEncode(mmsd.getFilePointer(), 8);
 
-                            //
-                            // We need to encode the offsets for each of
-                            // the models that we're copying.  The first
-                            // offset will be the current offset in the
-                            // file and then we'll re-encode up to this
-                            // position in the offsets buffer.
-                            long mergeOff = mmsd.getFilePointer();
-                            b.byteEncode(mergeOff, 8);
-                            nOff++;
-                            for(int k = prevMod + 1; k < j; k++) {
-
-                                //
-                                // What was the delta from the offset where
-                                // we will start copying?
-                                long diff = cdp.msdOff.byteDecode(k * 8, 8) -
-                                        prevOff;
-
-                                //
-                                // Encode the new offset.
-                                b.byteEncode(mergeOff + diff, 8);
-                                nOff++;
-                            }
-
-                            //
-                            // Copy the data.
-                            ChannelUtil.transferFully(cdp.msd.getChannel(),
-                                    prevOff,
-                                    nb,
-                                    mmsd.getChannel());
-                            prevOff = -1;
-                        }
-                    } else {
-
-                        //
-                        // If this is the first undeleted model that we've
-                        // encountered, then remember the offset where we
-                        // found it.
-                        if(prevOff == -1) {
-                            prevOff = currOff;
-                            prevMod = j;
-                        }
-                    }
+                    //
+                    // Copy the data.
+                    ChannelUtil.transferFully(cdp.msd.getChannel(),
+                                              currOff,
+                                              numBytes,
+                                              mmsd.getChannel());
                 }
             }
         }
@@ -588,8 +536,9 @@ public class ClassifierDiskPartition extends DiskPartition {
         // Zip back and write the offsets.
         long pos = mmsd.getFilePointer();
         mmsd.seek(4);
-        b.write(mmsd);
+        mergedMSDOffs.write(mmsd);
         mmsd.seek(pos);
+        mmsd.close();
     }
 
     /**
