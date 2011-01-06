@@ -83,7 +83,8 @@ public class ClassifierDiskPartition extends DiskPartition {
      */
     protected long dataStart;
 
-    static Logger logger = Logger.getLogger(ClassifierDiskPartition.class.getName());
+    static Logger logger = Logger.getLogger(ClassifierDiskPartition.class.
+            getName());
 
     protected static String logTag = "CDP";
 
@@ -97,9 +98,9 @@ public class ClassifierDiskPartition extends DiskPartition {
      * @param manager the classifier manager for this partition
      */
     public ClassifierDiskPartition(Integer partNum,
-            ClassifierManager manager,
-            DictionaryFactory mainDictFactory,
-            DictionaryFactory documentDictFactory)
+                                   ClassifierManager manager,
+                                   DictionaryFactory mainDictFactory,
+                                   DictionaryFactory documentDictFactory)
             throws java.io.IOException {
         super(partNum, manager, mainDictFactory, documentDictFactory);
 
@@ -108,7 +109,7 @@ public class ClassifierDiskPartition extends DiskPartition {
         //
         // Open the model specific data file and read things in.
         msd = new RandomAccessFile(manager.makeModelSpecificFile(partNumber),
-                "r");
+                                   "r");
 
         nModels = msd.readInt();
         msdOff = new FileReadableBuffer(msd, 4, nModels * 8, 1024);
@@ -234,8 +235,8 @@ public class ClassifierDiskPartition extends DiskPartition {
                 model.setFromField(ff);
                 model.read(msd);
             } catch(java.io.IOException ioe) {
-                logger.log(Level.SEVERE,"Error reading model " +
-                        "specific data for: " + fe.getName(), ioe);
+                logger.log(Level.SEVERE, "Error reading model "
+                        + "specific data for: " + fe.getName(), ioe);
             }
         }
 
@@ -263,8 +264,8 @@ public class ClassifierDiskPartition extends DiskPartition {
      * @param results a map to fill up with classification results
      */
     public void classify(DiskPartition sdp,
-            ExtraClassification ec,
-            Map<String, ClassificationResult> results) {
+                         ExtraClassification ec,
+                         Map<String, ClassificationResult> results) {
 
         if(ec == null && modelInstance instanceof BulkClassifier) {
             StopWatch sw = new StopWatch();
@@ -319,9 +320,9 @@ public class ClassifierDiskPartition extends DiskPartition {
             //
             // If we have a restriction to a particular classifier field, or
             // we're supposed to exclude this classifier, then check that now.
-            if(ec != null &&
-                    (!model.getFromField().equals(ec.getClassifierFromField()) ||
-                    ec.isExcluded(model.getModelName()))) {
+            if(ec != null && (!model.getFromField().equals(ec.
+                    getClassifierFromField()) || ec.isExcluded(model.
+                    getModelName()))) {
                 continue;
             }
 
@@ -354,21 +355,23 @@ public class ClassifierDiskPartition extends DiskPartition {
                 float[] scores = model.classify(sdp);
 
                 int nInClass = assembleResults(scores, model.getModelName(),
-                        resultField, results);
+                                               resultField, results);
 
 
                 sw.stop();
-                logger.fine(String.format("\"%s\" %dms, %d/%d",
-                        entry.getName(),
-                        sw.getTime(),
-                        nInClass, scores.length - 1));
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format("\"%s\" %dms, %d/%d",
+                                              entry.getName(),
+                                              sw.getTime(),
+                                              nInClass, scores.length - 1));
+                }
             }
         }
     }
 
     public int assembleResults(float[] scores,
-            String modelName, String resultField,
-            Map<String, ClassificationResult> results) {
+                               String modelName, String resultField,
+                               Map<String, ClassificationResult> results) {
 
         //
         // Assemble the results
@@ -383,8 +386,8 @@ public class ClassifierDiskPartition extends DiskPartition {
                 nInClass++;
                 cr.add(j, scores[j], modelName);
             } else {
-                if(manager.getIndexConfig().storeNonClassified() &&
-                        scores[j] < 0) {
+                if(manager.getIndexConfig().storeNonClassified() && scores[j]
+                        < 0) {
                     cr.add(j, scores[j], modelName);
                 }
             }
@@ -441,12 +444,12 @@ public class ClassifierDiskPartition extends DiskPartition {
      * Merges the model specific data for these classifiers.
      */
     protected void mergeCustom(int newPartNumber,
-            DiskPartition[] sortedParts,
-            int[][] idMaps,
-            int newMaxDocID,
-            int[] docIDStart,
-            int[] nUndel,
-            int [][] docIDMaps)
+                               DiskPartition[] sortedParts,
+                               int[][] idMaps,
+                               int newMaxDocID,
+                               int[] docIDStart,
+                               int[] nUndel,
+                               int[][] docIDMaps)
             throws Exception {
 
         //
@@ -481,9 +484,9 @@ public class ClassifierDiskPartition extends DiskPartition {
                 // If there are no deleted documents in the partition we're
                 // merging, do a straight channel transfer.
                 ChannelUtil.transferFully(cdp.msd.getChannel(),
-                        cdp.dataStart,
-                        cdp.msd.length() - cdp.dataStart,
-                        mmsd.getChannel());
+                                          cdp.dataStart,
+                                          cdp.msd.length() - cdp.dataStart,
+                                          mmsd.getChannel());
                 //
                 // Now, write new offsets from the ones in the buffer in
                 // the partition that we're merging.  We'll start by
