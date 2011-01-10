@@ -481,14 +481,19 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
     }
 
     public float checkThreshold(float score) {
-        return score < threshold ? -score : score;
-    //        float diff = threshold - score;
-    //        if(diff < 0) {
-    //            return score;
-    //        }
-    //        return diff < 0.01f ? score : -score;
+        return checkThreshold(score, 0);
+    }
+    
+    public float checkThreshold(float score, float classificationThresholdDelta) {
+        if(score >= threshold ||
+                threshold - score < classificationThresholdDelta) {
+            return score;
+        }
+
+        return -score;
     }
 
+    @Override
     public float similarity(String key) {
 
         DocKeyEntry dke =
@@ -972,8 +977,15 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         return scores;
     }
 
+    @Override
     public float[][] classify(String fromField, ClassifierDiskPartition cdp,
             DiskPartition sdp) {
+        return classify(fromField, cdp, sdp, 0);
+    }
+    
+    @Override
+    public float[][] classify(String fromField, ClassifierDiskPartition cdp,
+            DiskPartition sdp, double threshold) {
         StopWatch sw = new StopWatch();
         sw.start();
         Map<String, ClassificationFeature> cfeat = cdp.invert();

@@ -116,6 +116,8 @@ public class ClassifierDiskPartition extends DiskPartition {
         dataStart = 4 + nModels * 8;
     }
 
+
+
     protected ClassifierModel getClassifier(String cname) {
         if(modelMap != null) {
             return modelMap.get(cname);
@@ -287,8 +289,9 @@ public class ClassifierDiskPartition extends DiskPartition {
                 }
             }
 
+            double classifierThresholdDelta = ((ClassifierManager) manager).getClassificationThresholdDelta();
             float[][] scores = ((BulkClassifier) modelInstance).classify(
-                    fromField, this, sdp);
+                    fromField, this, sdp, classifierThresholdDelta);
 
             int neval = 0;
             for(int i = 0; i < scores.length; i++) {
@@ -302,8 +305,8 @@ public class ClassifierDiskPartition extends DiskPartition {
             }
 
             sw.stop();
-            logger.info(String.format("Evaluated %d classifiers in %dms",
-                    neval, sw.getTime()));
+            logger.info(String.format("Evaluated %d classifiers using a threshold delta of %.3f in %dms",
+                    neval, classifierThresholdDelta, sw.getTime()));
             return;
         }
 

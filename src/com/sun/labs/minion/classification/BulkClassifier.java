@@ -40,8 +40,20 @@ public interface BulkClassifier {
      * @param cdp A partition of classifiers to evaluate
      * @param sdp A partition of documents to evaluate the classifiers against
      * @return a two dimensional array of evaluation scores.  Element i,j
-     * of the array is the score for document with ID j in the new partition for 
+     * of the array is the score for document with ID j in the new partition for
      * the classifier with document ID i in the classifier partition.
      */
     public float[][] classify(String fromField, ClassifierDiskPartition cdp, DiskPartition sdp);
+
+    /**
+     * Evaluates all of the classifiers in the given classifier disk partition
+     * against all of the new documents in the given disk partition.
+     * @param fromField the field from which the terms should be gathered.
+     * @param cdp A partition of classifiers to evaluate
+     * @param sdp A partition of documents to evaluate the classifiers against
+     * @return a two dimensional array of evaluation scores.  Element i,j
+     * of the array is the score for document with ID j in the new partition for
+     * the classifier with document ID i in the classifier partition.
+     */
+    public float[][] classify(String fromField, ClassifierDiskPartition cdp, DiskPartition sdp, double classificationThreshold);
 }

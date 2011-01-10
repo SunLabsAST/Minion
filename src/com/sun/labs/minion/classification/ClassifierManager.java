@@ -35,6 +35,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponentList;
+import com.sun.labs.util.props.ConfigDouble;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.ConfigString;
 import java.io.IOException;
@@ -317,12 +318,20 @@ public class ClassifierManager extends PartitionManager {
         ClassifierDiskPartition.reap(this, partNumber);
     }
 
+    public double getClassificationThresholdDelta() {
+        return classificationThresholdDelta;
+    }
+
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
+
         doClassification = ps.getBoolean(PROP_DO_CLASSIFICATION);
         selectorClassName = ps.getString(PROP_SELECTOR_CLASS_NAME);
         clustererClassName = ps.getString(PROP_CLUSTERER_CLASS_NAME);
         modelClassName = ps.getString(PROP_MODEL_CLASS_NAME);
         splitterClassName = ps.getString(PROP_SPLITTER_CLASS_NAME);
+        classificationThresholdDelta = ps.getDouble(PROP_CLASSIFICATION_THRESHOLD_DELTA);
+
         try {
             selectorInstance = (FeatureSelector) Class.forName(selectorClassName).
                     newInstance();
@@ -348,6 +357,7 @@ public class ClassifierManager extends PartitionManager {
                     PROP_MODEL_CLASS_NAME, "Unable to load class: " +
                     modelClassName);
         }
+
         try {
             splitterInstance = (ResultSplitter) Class.forName(splitterClassName).
                     newInstance();
@@ -356,7 +366,6 @@ public class ClassifierManager extends PartitionManager {
                     PROP_SPLITTER_CLASS_NAME, "Unable to load class: " +
                     splitterClassName);
         }
-        super.newProperties(ps);
         classesField = ps.getString(PROP_CLASSES_FIELD);
         numClassifierFeatures = ps.getInt(PROP_NUM_CLASSIFIER_FEATURES);
 
@@ -367,6 +376,8 @@ public class ClassifierManager extends PartitionManager {
 
         extraClassifications =
                 (List<ExtraClassification>) ps.getComponentList(PROP_EXTRA_CLASSIFICATIONS);
+        
+        super.newProperties(ps);
     }
 
     private Map<String, HumanSelected> parseHumanSelected(String instanceName,
@@ -433,6 +444,11 @@ public class ClassifierManager extends PartitionManager {
     public static final String PROP_CLASSES_FIELD = "classes_field";
 
     private String classesField;
+
+    @ConfigDouble(defaultValue=0)
+    public static final String PROP_CLASSIFICATION_THRESHOLD_DELTA = "classification_threshold_delta";
+
+    private double classificationThresholdDelta;
 
     /**
      * A property for an optional set of from fields to use for each classifier.
