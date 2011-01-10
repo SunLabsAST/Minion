@@ -31,10 +31,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
  
-import java.io.*;
 
 /**
  *
@@ -127,6 +125,7 @@ public class CDateParser {
 	    "y-M-d",
 	    "M d y",
 	    "y M d",
+            "MMM y",
 	};
 
     public CDateParser() {

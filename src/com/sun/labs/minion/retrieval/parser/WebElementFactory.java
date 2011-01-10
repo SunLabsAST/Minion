@@ -71,10 +71,11 @@ public class WebElementFactory
                     // in its own term node and make a phrase
                     // that contains them
                     List terms = new ArrayList();
-                    
+
                     for (int i = 0; i < tokens.length; i++) {
                         DictTerm t = new DictTerm(tokens[i]);
                         setMods(t, mods);
+                        t.setOrder(i);
                         terms.add(t);
                     }
                     qe = new Phrase(terms);
@@ -97,6 +98,7 @@ public class WebElementFactory
                     for (int i = 0; i < phraseTokens.length; i++) {
                         DictTerm t = new DictTerm(phraseTokens[i]);
                         setMods(t, mods);
+                        t.setOrder(i);
                         terms.add(t);
                     }
                     qe = new Phrase(terms);
@@ -115,6 +117,7 @@ public class WebElementFactory
                     for (int i = 0; i < passageTokens.length; i++) {
                         DictTerm t = new DictTerm(passageTokens[i]);
                         setMods(t, mods);
+                        t.setOrder(i);
                         pTerms.add(t);
                     }
                     qe = new PAnd(pTerms);

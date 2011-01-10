@@ -124,5 +124,9 @@
         <property name="stop_words" value="stopwords"/>
     </component>
     
-    <component name="stopwords" type="com.sun.labs.minion.pipeline.StopWords"/>
+    <component name="stopwords" type="com.sun.labs.minion.pipeline.StopWords">
+        <propertylist name="stopwords_files">
+            <item>/com/sun/labs/minion/pipeline/stopwords</item>
+        </propertylist>
+    </component>
 </config>
