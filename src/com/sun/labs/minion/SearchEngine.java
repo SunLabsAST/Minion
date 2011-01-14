@@ -356,18 +356,18 @@ public interface SearchEngine extends Searcher, Classifier {
      * other operator is provided between terms in the query.  Valid values are
      * defined in the {@link Searcher} interface
      * @param grammar specifies the grammar to use to parse the query.  Valid values
-     * ar edefined in the {@link com.sun.labs.minion.Searcher} interface
+     * are defined in the {@link com.sun.labs.minion.Searcher} interface
      * @return a set of results for this search.
      * @throws com.sun.labs.minion.SearchEngineException if there is any error during
      * the search.
      */
     public ResultSet search(String query, String sortOrder,
                             int defaultOperator, int grammar)
-            throws SearchEngineException;
+            throws ParseException, SearchEngineException;
 
     /**
      * Runs a query against the index, returning a set of results.
-     * @param el the query, expressed using the programattic query API
+     * @param el the query, expressed using the programmatic query API
      * @return the set of documents that match the query
      * @throws com.sun.labs.minion.SearchEngineException if there are any errors
      * evaluating the query
