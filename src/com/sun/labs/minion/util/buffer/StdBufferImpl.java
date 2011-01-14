@@ -502,7 +502,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      */
     public String toString(int mode) {
 
-        StringBuffer b = new StringBuffer(16);
+        StringBuilder b = new StringBuilder(16);
 
         int start;
         int end;
@@ -538,9 +538,9 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      */
     public String toString(int start, int end) {
 
-        StringBuffer b = new StringBuffer((end - start + 1) * 8);
+        StringBuilder b = new StringBuilder((end - start + 1) * 8);
 
-	b.append(countBits(start, end) + " bits set\n");
+	b.append(countBits(start, end)).append(" bits set\n");
         for(int i = start, j = 0; i < end; i++, j+=8) {
             b.append(String.format("%s %4d %4d %s", 
                     i > start ? "\n" : "",

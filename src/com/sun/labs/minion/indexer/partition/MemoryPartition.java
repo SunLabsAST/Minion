@@ -218,7 +218,7 @@ public abstract class MemoryPartition extends Partition {
         dictFile.close();
         dictPostStream.close();
         sw.stop();
-        logger.fine("Document dictionary dump: " + sw.getTime());
+        logger.fine(String.format("Document dictionary dump: %dms",sw.getTime()));
         sw.reset();
 
         //

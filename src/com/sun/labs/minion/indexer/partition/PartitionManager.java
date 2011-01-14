@@ -521,7 +521,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
             //
             // Delete the keys we updated.
-            if(keys != null && keys.size() > 0) {
+            if(keys != null &&  keys.size() > 0) {
                 deleteKeys(keys);
             }
 
@@ -775,7 +775,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
     /**
      * Gets a set of results ordered by similarity to the given document, calculated
-     * by computing the euclidean distance based on the feature vector stored in the
+     * by computing the Euclidean distance based on the feature vector stored in the
      * given field.
      *
      * @param key the key of the document to which we'll compute similarity.
@@ -901,7 +901,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      *
      * @param field The name of the field who's values we need an iterator
      * for.
-     * @param ignoreCase whether the iterator should ignore case when returing
+     * @param ignoreCase whether the iterator should ignore case when returning
      * results
      * @return An iterator for the given field.  If the field is not a
      * saved field, then an iterator that will return no values will be

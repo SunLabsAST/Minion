@@ -144,7 +144,7 @@ public class QuestioningStage extends StageAdapter implements
                 //log.log(logTag, MinionLog.LOG, "In a question");
                 buffer(t);
                 if(tokenBuffer.size() > MAX_BUFFER_SIZE) {
-                    logger.warning("buffer size exceeded");
+                    logger.fine("buffer size exceeded");
                     //outputBuffer();
                     brokenQuestion();
                 }
@@ -267,7 +267,7 @@ public class QuestioningStage extends StageAdapter implements
                 }
             }
             if(tokenBuffer.size() > MAX_BUFFER_SIZE) {
-                logger.warning("buffer size exceeded");
+                logger.fine("buffer size exceeded");
                 //outputBuffer();
                 brokenQuestion();
             }
@@ -292,7 +292,7 @@ public class QuestioningStage extends StageAdapter implements
 
     private void sendTokens() {
         if(tokenBuffer.size() < 1) {
-            logger.warning("no tokens to send");
+            logger.fine("no tokens to send");
         }
         super.startField(questionField);
         flushTokens(true);

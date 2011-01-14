@@ -481,14 +481,19 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
     }
 
     public float checkThreshold(float score) {
-        return score < threshold ? -score : score;
-    //        float diff = threshold - score;
-    //        if(diff < 0) {
-    //            return score;
-    //        }
-    //        return diff < 0.01f ? score : -score;
+        return checkThreshold(score, 0);
+    }
+    
+    public float checkThreshold(float score, float classificationThresholdDelta) {
+        if(score >= threshold ||
+                threshold - score < classificationThresholdDelta) {
+            return score;
+        }
+
+        return -score;
     }
 
+    @Override
     public float similarity(String key) {
 
         DocKeyEntry dke =
@@ -583,7 +588,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
 
         StringBuilder exp = new StringBuilder();
         if(includeDocTerms) {
-            exp.append("|Document terms |");
+            exp.append("Document terms: ");
         }
         while(pi.next()) {
             QueryEntry qe =
@@ -594,9 +599,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
                 exp.append(String.format(" (%s,%d)", qe.getName(), pi.getFreq()));
             }
         }
-        if(includeDocTerms) {
-            exp.append("|\n\n");
-        }
+        exp.append("\n");
 
         WeightingFunction wf =
                 ((SearchEngineImpl) e).getPM().getQueryConfig().
@@ -610,8 +613,8 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         // then figuring out cluster weights.
         float sum = 0;
         int nTerms = 0;
-        exp.append(String.format("|%-20s |%9s|%9s|%9s|\n", "*Feature Name*",
-                "*Document Weight*", "*Feature Weight*", "*Product*"));
+        exp.append(String.format("%-20s%15s%15s%15s\n", "Feature Name",
+                "Document Weight", "Feature Weight", "Product"));
         for(Iterator i = features.getContents().iterator(); i.hasNext();) {
             FeatureCluster fc = (FeatureCluster) i.next();
             TermStatsImpl clusterStats = new TermStatsImpl(fc.getName());
@@ -632,7 +635,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
                 wc.setTerm(clusterStats);
                 wf.initTerm(wc);
                 wc.fdt = fdt;
-                exp.append(String.format("|%-20s |%9.5f|%9.5f|%9.5f|\n",
+                exp.append(String.format("%-20s%15.5f%15.5f%15.5f\n",
                         fc.getName(), wf.termWeight(wc),
                         fc.getWeight(), wf.termWeight(wc) * fc.getWeight()));
                 sum += wf.termWeight(wc) * fc.getWeight();
@@ -645,10 +648,10 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
             return null;
         }
         sum /= dke.getDocumentVectorLength();
-        exp.append(String.format("|%-20s |||%27.5f|\n", "Normalized sum:", sum));
+        exp.append(String.format("%-20s%45.5f (%.5f)\n", "Normalized sum:", sum, threshold - sum));
 
         exp.append("Document is" + (checkThreshold(sum) > 0 ? " " : " not ") +
-                "in class<br>\n");
+                "in class\n");
         return exp.toString();
     }
 
@@ -893,6 +896,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
      * absolute value of the element indicates the similarity of that
      * document to the classifier model.
      */
+    @Override
     public float[] classify(DiskPartition sdp) {
 
         //
@@ -918,6 +922,9 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
                 sdp.getManager().getQueryConfig().getWeightingFunction();
         WeightingComponents wc =
                 sdp.getManager().getQueryConfig().getWeightingComponents();
+        //
+        // If this is the first partition that we've dumped, then we need some
+        // value for the number of documents in the collection.
         if(wc.N == 0) {
             wc.N = sdp.getNDocs();
         }
@@ -925,9 +932,8 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         //
         // If we have a defined from field, then we need to make postings
         // iterator features to get data just from that field.
-        PostingsIteratorFeatures feat = null;
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
         if(fromField != null) {
-            feat = new PostingsIteratorFeatures(wf, wc);
             feat.setFields(sdp.getManager().getMetaFile().getFieldArray(
                     fromField));
         }
@@ -971,8 +977,15 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         return scores;
     }
 
+    @Override
     public float[][] classify(String fromField, ClassifierDiskPartition cdp,
             DiskPartition sdp) {
+        return classify(fromField, cdp, sdp, 0);
+    }
+    
+    @Override
+    public float[][] classify(String fromField, ClassifierDiskPartition cdp,
+            DiskPartition sdp, double threshold) {
         StopWatch sw = new StopWatch();
         sw.start();
         Map<String, ClassificationFeature> cfeat = cdp.invert();
@@ -993,12 +1006,12 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         //
         // If we have a defined from field, then we need to make postings
         // iterator features to get data just from that field.
-        PostingsIteratorFeatures feat = null;
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
         if(fromField != null) {
-            feat = new PostingsIteratorFeatures(wf, wc);
             feat.setFields(sdp.getManager().getMetaFile().getFieldArray(
                     fromField));
         }
+        
         //
         // Handle all the features at once.
         for(ClassificationFeature cf : cfeat.values()) {
@@ -1088,7 +1101,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
 
             PostingsIterator pi = e.iterator(feat);
             while(pi.next()) {
-                if(feat != null) {
+                if(fields != null) {
                     int[] ff = ((FieldedPostingsIterator) pi).getFieldFreq();
                     int sum = 0;
                     for(int j = 0; j < fields.length && j < ff.length; j++) {

@@ -41,9 +41,12 @@ import java.util.logging.Logger;
 public class StopWordsStage extends StageAdapter implements
         com.sun.labs.util.props.Configurable {
 
-    static Logger logger = Logger.getLogger(StopWordsStage.class.getName());
+    static final Logger logger = Logger.getLogger(StopWordsStage.class.getName());
 
-    protected static String logTag = "SWS";
+    @ConfigComponent(type = StopWords.class)
+    public static final String PROP_STOPWORDS = "stopwords";
+
+    private StopWords stopwords;
 
     protected boolean inVectoredField = false;
 
@@ -120,9 +123,4 @@ public class StopWordsStage extends StageAdapter implements
         super.newProperties(ps);
         stopwords = (StopWords) ps.getComponent(PROP_STOPWORDS);
     }
-    @ConfigComponent(type = StopWords.class)
-    public static final String PROP_STOPWORDS = "stopwords";
-
-    private StopWords stopwords;
-
 } // StopWordsStage

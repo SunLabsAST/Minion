@@ -84,7 +84,7 @@ public class FieldIterator implements Iterator {
      */
     public Object next() {
         freq = 0;
-        if(h.size() == 0) {
+        if(h.isEmpty()) {
             throw new NoSuchElementException("No more values");
         }
         
@@ -111,7 +111,7 @@ public class FieldIterator implements Iterator {
      * <code>false</code> otherwise.
      */
     public boolean hasNext() {
-        return h.size() > 0;
+        return !h.isEmpty();
     }
 
     /**

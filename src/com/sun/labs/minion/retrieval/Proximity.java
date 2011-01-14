@@ -84,7 +84,7 @@ public abstract class Proximity extends Operator {
      */
     protected boolean storePassages;
 
-    static Logger logger = Logger.getLogger(Proximity.class.getName());
+    static final Logger logger = Logger.getLogger(Proximity.class.getName());
 
     protected static String logTag = "PRX";
 

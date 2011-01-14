@@ -83,6 +83,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.FieldValue;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
+import com.sun.labs.minion.ParseException;
 import com.sun.labs.minion.Passage;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.PassageHighlighter;
@@ -264,7 +265,8 @@ public class QueryTest extends SEMain {
                 ":pclusters              Prints all clusters, by partition\n" +
                 ":csim <class> <dockey>  Compute similarity between a classifier and a doc\n" +
                 "\nGeneral:\n" +
-                ":gram [web|strict]      Print or set the grammar to use\n" +
+                ":gram [web|strict|lucene] Print or set the grammar to use\n" +
+                ":qop [and|or|pand]      Specify the default operator to use\n" +
                 ":bq <query>             Batch query, prints results 100 at a time\n" +
                 ":term <term>            Look up a term entry in each partition\n" +
                 ":termi <term>           Case-insensitive version of ':term'\n" +
@@ -463,6 +465,8 @@ public class QueryTest extends SEMain {
                 ResultSet r = searcher.search(q, sortSpec,
                         queryOp, grammar);
                 displayResults(r);
+            } catch (ParseException pe) {
+                logger.log(Level.WARNING, "", pe);
             } catch(SearchEngineException se) {
                 logger.log(Level.SEVERE, "Error running search", se);
             }
@@ -506,6 +510,8 @@ public class QueryTest extends SEMain {
                 queryOp = Searcher.OP_OR;
             } else if(op.equalsIgnoreCase("pand")) {
                 queryOp = Searcher.OP_PAND;
+            } else {
+                output.println("Didn't recognize operator, valid options are: and, or, pand");
             }
         } else if(q.startsWith(":qstats")) {
             queryStats();
@@ -945,7 +951,7 @@ public class QueryTest extends SEMain {
                     grammar = Searcher.GRAMMAR_LUCENE;
                 } else {
                     output.println(
-                            "Unrecognized grammar, valid values are \"full\", \"web\" or \"lucene\"");
+                            "Unrecognized grammar, valid values are \"strict\", \"web\" or \"lucene\"");
                 }
             }
         } else if(q.startsWith(":q")) {
@@ -1201,12 +1207,20 @@ public class QueryTest extends SEMain {
             } catch(NumberFormatException nfe) {
             }
 
-            output.println(field + " " + pn);
+            if(pn > 0) {
+                output.println(field + " " + pn);
+            }
 
             if(pn == -1) {
-                for(Iterator i = manager.getFieldIterator(field); i.hasNext();) {
-                    output.println("value: " + i.next());
+                int nv = 0;
+                for(FieldFrequency ff : manager.getTopFieldValues(field, -1,
+                                                                  false)) {
+                    output.format(
+                            "%s: %d\n",
+                            ff.getVal(), ff.getFreq());
+                    nv++;
                 }
+                output.format("%s has %d values\n", field, nv);
             } else {
                 for(Iterator l = manager.getActivePartitions().iterator(); l.
                         hasNext();) {

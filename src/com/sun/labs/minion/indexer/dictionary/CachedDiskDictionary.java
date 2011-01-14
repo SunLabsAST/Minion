@@ -149,8 +149,8 @@ public class CachedDiskDictionary extends DiskDictionary {
         DictionaryIterator di = super.iterator();
         di.setUnbufferedPostings(true);
 
-        for(DictionaryIterator i = super.iterator(); i.hasNext();) {
-            QueryEntry e = i.next();
+        while(di.hasNext()) {
+            QueryEntry e = di.next();
             entries[e.getID() - 1] = e;
             entriesByName.put(e.getName(), e);
             if(dictOrderEntries != null) {

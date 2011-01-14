@@ -428,7 +428,7 @@ public class DiskFieldStore extends FieldStore {
         }
         
         QueryEntry e = f.get(value, caseSensitive);
-        
+
         if(e == null) {
             
             //

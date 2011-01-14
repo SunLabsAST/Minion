@@ -33,8 +33,6 @@ import com.sun.labs.minion.pipeline.Stage;
 
 /**
  * A dumper that will dump partitions synchronously.
- *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public class SyncDumper implements Dumper {
 
