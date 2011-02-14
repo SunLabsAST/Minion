@@ -80,7 +80,7 @@ public class WebTransformer extends Transformer {
      */
     public QueryElement transformTree(SimpleNode root)
             throws ParseException {
-        return transformTree(root, Searcher.OP_PAND);
+        return transformTree(root, Searcher.Operator.PAND);
     }
 
     /**
@@ -93,7 +93,7 @@ public class WebTransformer extends Transformer {
      * defined in the {@link com.sun.labs.minion.Searcher} interface
      * @return the root node of a tree describing a query
      */
-    public QueryElement transformTree(SimpleNode root, int defaultOperator)
+    public QueryElement transformTree(SimpleNode root, Searcher.Operator defaultOperator)
             throws ParseException {
         QueryElement result = null;
         //
@@ -128,11 +128,12 @@ public class WebTransformer extends Transformer {
                     ands.add(qe);
                 } else {
                     switch(defaultOperator) {
-                        case Searcher.OP_AND:
-                        case Searcher.OP_PAND:
+                        case AND:
+                        case PAND:
                             ands.add(qe);
                             break;
-                        case Searcher.OP_OR:
+                        case OR:
+                        case PASSAGE:
                             ors.add(qe);
                             break;
                         default:
@@ -163,7 +164,7 @@ public class WebTransformer extends Transformer {
         if (!andsHandled) {
             //
             // Now determine which kind of AND to make
-            if(defaultOperator == Searcher.OP_PAND) {
+            if(defaultOperator == Searcher.Operator.PAND) {
                 result = new PAnd(ands);
             } else {
                 result = new And(ands);

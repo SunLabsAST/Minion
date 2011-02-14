@@ -128,6 +128,7 @@ import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
 import com.sun.labs.util.LabsLogFormatter;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -170,9 +171,7 @@ import java.util.logging.Logger;
  */
 public class QueryTest extends SEMain {
 
-    protected static Logger logger = Logger.getLogger(QueryTest.class.getName());
-
-    protected static final String logTag = "QT";
+    protected static final Logger logger = Logger.getLogger(QueryTest.class.getName());
 
     protected final static boolean DEBUG = false;
 
@@ -204,9 +203,9 @@ public class QueryTest extends SEMain {
 
     protected long totalTime,  nQueries;
 
-    protected int grammar = Searcher.GRAMMAR_STRICT;
+    protected Searcher.Grammar grammar = Searcher.Grammar.STRICT;
 
-    protected int queryOp = Searcher.OP_AND;
+    protected Searcher.Operator queryOp = Searcher.Operator.AND;
 
     protected boolean ttyInput = true;
 
@@ -501,14 +500,11 @@ public class QueryTest extends SEMain {
             }
         } else if(q.startsWith(":qop")) {
             String op = q.substring(q.indexOf(' ') + 1).trim();
-            if(op.equalsIgnoreCase("and")) {
-                queryOp = Searcher.OP_AND;
-            } else if(op.equalsIgnoreCase("or")) {
-                queryOp = Searcher.OP_OR;
-            } else if(op.equalsIgnoreCase("pand")) {
-                queryOp = Searcher.OP_PAND;
-            } else {
-                output.println("Didn't recognize operator, valid options are: and, or, pand");
+            try {
+                queryOp = Searcher.Operator.valueOf(op);
+            } catch (IllegalArgumentException ex) {
+                output.format("Didn't recognize operator, valid options are: %s\n",
+                        Arrays.toString(Searcher.Operator.values()));
             }
         } else if(q.startsWith(":qstats")) {
             queryStats();
@@ -530,7 +526,7 @@ public class QueryTest extends SEMain {
 
             try {
                 ResultSet r = searcher.search(fields[0], sortSpec,
-                        Searcher.OP_AND, grammar);
+                        Searcher.Operator.AND, grammar);
                 output.println("Clustering " + r.size() + " results");
                 Set<ResultsCluster> cs = r.cluster(field, K);
                 for(ResultsCluster rc : cs) {
@@ -936,19 +932,15 @@ public class QueryTest extends SEMain {
         } else if(q.startsWith(":gram")) {
             if(q.indexOf(' ') < 0) {
                 output.println("Currently using " +
-                        Searcher.GRAMMARS[grammar] + " grammar");
+                        grammar + " grammar");
             } else {
-                String g = q.substring(q.indexOf(' ') + 1).trim();
-
-                if(g.toLowerCase().equals("web")) {
-                    grammar = Searcher.GRAMMAR_WEB;
-                } else if(g.toLowerCase().equals("strict")) {
-                    grammar = Searcher.GRAMMAR_STRICT;
-                } else if(g.toLowerCase().equals("lucene")) {
-                    grammar = Searcher.GRAMMAR_LUCENE;
-                } else {
-                    output.println(
-                            "Unrecognized grammar, valid values are \"strict\", \"web\" or \"lucene\"");
+                String g = q.substring(q.indexOf(' ') + 1).trim().toUpperCase();
+                try {
+                    grammar = Searcher.Grammar.valueOf(g);
+                } catch (IllegalArgumentException ex) {
+                    output.format(
+                            "Unrecognized grammar, valid values are: %s\n",
+                            Arrays.toString(Searcher.Grammar.values()));
                 }
             }
         } else if(q.startsWith(":q")) {
@@ -1313,7 +1305,7 @@ public class QueryTest extends SEMain {
                 //
                 // Run the query
                 ResultSet rs = searcher.search(q, sortSpec,
-                        Searcher.OP_PAND, grammar);
+                        Searcher.Operator.AND, grammar);
                 displayResults(rs);
                 BufferedReader br =
                         new BufferedReader(new InputStreamReader(System.in));

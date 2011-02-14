@@ -362,7 +362,8 @@ public interface SearchEngine extends Searcher, Classifier {
      * the search.
      */
     public ResultSet search(String query, String sortOrder,
-                            int defaultOperator, int grammar)
+                            Searcher.Operator defaultOperator,
+                            Searcher.Grammar grammar)
             throws SearchEngineException;
 
     /**

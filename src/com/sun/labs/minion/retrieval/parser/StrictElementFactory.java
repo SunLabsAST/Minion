@@ -56,7 +56,7 @@ public class StrictElementFactory
      * @return the query element for this node.
      */
     public static QueryElement make(SimpleNode node, ArrayList children,
-                                    int defaultOperator)
+                                    Searcher.Operator defaultOperator)
         throws ParseException
     {
         switch (node.id) {
@@ -126,6 +126,8 @@ public class StrictElementFactory
                 return new Or(children);
             case StrictParserConstants.TOR:
                 return makeTor(node, children);
+            case StrictParserConstants.PASSAGE:
+                return new Passage(children);
             default:
                 throw new ParseException("Unknown type of OR encountered", 0);
         }
@@ -352,20 +354,26 @@ public class StrictElementFactory
     }
     
     private static QueryElement makeUndefined(SimpleNode node, ArrayList children,
-                                              int defaultOperator)
+                                              Searcher.Operator defaultOperator)
         throws ParseException
     {
         QueryElement res = null;
         switch (defaultOperator) {
-            case Searcher.OP_AND:
+            case AND:
                 node.operator = StrictParserConstants.AND;
                 res = makeAnd(node, children);
                 break;
-            case Searcher.OP_PAND:
+            case PAND:
                 node.operator = StrictParserConstants.PAND;
                 res = makeAnd(node, children);
                 break;
-            case Searcher.OP_OR:
+                
+            case PASSAGE:
+                node.operator = StrictParserConstants.PASSAGE;
+                res = makeAnd(node, children);
+                break;
+
+            case OR:
                 node.operator = StrictParserConstants.OR;
                 res = makeOr(node, children);
                 break;

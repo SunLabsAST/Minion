@@ -541,10 +541,22 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         StringBuilder b = new StringBuilder((end - start + 1) * 8);
 
 	b.append(countBits(start, end)).append(" bits set\n");
+        long currDecode = 0;
+        int shift = 0;
         for(int i = start, j = 0; i < end; i++, j+=8) {
+            byte curr = get(i);
             b.append(String.format("%s %4d %4d %s", 
                     i > start ? "\n" : "",
-                    i, j, byteToBinaryString(get(i))));
+                    i, j, byteToBinaryString(curr)));
+            currDecode |= ((long) (curr & 0x7F)) << shift;
+            if((curr & 0x80) == 0) {
+                b.append(String.format(" %d", currDecode));
+                currDecode = 0;
+                shift = 0;
+            } else {
+                shift += 7;
+            }
+
         }
         return b.toString();
     }

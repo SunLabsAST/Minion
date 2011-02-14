@@ -460,8 +460,8 @@ public class QueryRunner implements Runnable {
      */
     private void runQuery(String query) {
         try {
-            ResultSet r = ENGINE.search(query, "-score", Searcher.OP_AND,
-                    Searcher.GRAMMAR_STRICT);
+            ResultSet r = ENGINE.search(query, "-score", Searcher.Operator.AND,
+                    Searcher.Grammar.STRICT);
             message(query + " took " + r.getQueryTime() + "ms and returned " +
                     r.size() + " documents");
             totalTime += r.getQueryTime();

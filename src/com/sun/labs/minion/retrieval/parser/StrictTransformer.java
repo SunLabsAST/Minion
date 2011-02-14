@@ -88,7 +88,7 @@ public class StrictTransformer extends Transformer
     public QueryElement transformTree(SimpleNode root)
         throws ParseException
     {
-        return transformTree(root, Searcher.OP_PAND);
+        return transformTree(root, Searcher.Operator.PAND);
     }
     
     /** 
@@ -101,7 +101,7 @@ public class StrictTransformer extends Transformer
      * defined in the {@link com.sun.labs.minion.Searcher} interface
      * @return the root node of a tree describing a query
      */
-    public QueryElement transformTree(SimpleNode root, int defaultOperator)
+    public QueryElement transformTree(SimpleNode root, Searcher.Operator defaultOperator)
         throws ParseException
     {
         // Perform all the clean-up operations, then create
@@ -137,7 +137,7 @@ public class StrictTransformer extends Transformer
      * defined in the {@link com.sun.labs.minion.Searcher} interface
      * @return the top-level query element.
      */
-    protected static QueryElement makeQueryElements(SimpleNode node, int defaultOperator)
+    protected static QueryElement makeQueryElements(SimpleNode node, Searcher.Operator defaultOperator)
         throws ParseException
     {
         ArrayList theKids = new ArrayList();
