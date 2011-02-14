@@ -360,9 +360,11 @@ public class StrictElementFactory
         QueryElement res = null;
         switch (defaultOperator) {
             case AND:
+                
                 node.operator = StrictParserConstants.AND;
                 res = makeAnd(node, children);
                 break;
+                
             case PAND:
                 node.operator = StrictParserConstants.PAND;
                 res = makeAnd(node, children);
@@ -370,7 +372,7 @@ public class StrictElementFactory
                 
             case PASSAGE:
                 node.operator = StrictParserConstants.PASSAGE;
-                res = makeAnd(node, children);
+                res = makeOr(node, children);
                 break;
 
             case OR:
