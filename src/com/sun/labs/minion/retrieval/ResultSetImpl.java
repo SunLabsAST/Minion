@@ -786,6 +786,11 @@ public class ResultSetImpl implements ResultSet {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "ResultSetImpl{" + "results=" + results + '}';
+    }
+
     public class AGDocs {
 
         protected int[] docIDs;

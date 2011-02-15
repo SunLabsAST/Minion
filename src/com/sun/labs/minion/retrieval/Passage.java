@@ -25,6 +25,7 @@
 package com.sun.labs.minion.retrieval;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -54,6 +55,7 @@ public class Passage extends Proximity {
      * sum of the sizes of the terms and the minimum size of any operators
      * that are operands, since these will be anded with the set.
      */
+    @Override
     protected int calculateEstimatedSize() {
         int tsz = 0;
         int osz = Integer.MAX_VALUE;
@@ -71,6 +73,7 @@ public class Passage extends Proximity {
     /**
      * Evaluates this passage operator, returning the results.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
 
         //
@@ -108,9 +111,7 @@ public class Passage extends Proximity {
         //
         // Now make a list of the terms and pass it through.
         List tl = new ArrayList();
-        for(int i = 0; i < terms.length; i++) {
-            tl.add(terms[i]);
-        }
+        tl.addAll(Arrays.asList(terms));
         return evalTerms(candidates, tl);
     }
 
@@ -128,9 +129,7 @@ public class Passage extends Proximity {
         //
         // Now make a list of the terms and pass it through.
         List tl = new ArrayList();
-        for(int i = 0; i < terms.length; i++) {
-            tl.add(terms[i]);
-        }
+        tl.addAll(Arrays.asList(terms));
         return evalTerms(candidates, tl);
     }
     

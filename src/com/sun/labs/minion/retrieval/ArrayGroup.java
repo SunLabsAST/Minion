@@ -824,6 +824,7 @@ public class ArrayGroup implements Cloneable {
      * @return <code>true</code> if the groups contain the same documents,
      * <code>false</code> otherwise.
      */
+    @Override
     public boolean equals(Object o) {
         if(!(o instanceof ArrayGroup)) {
             return false;

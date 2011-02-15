@@ -599,7 +599,7 @@ public class QueryConfig implements Cloneable,
         this.allUpperIsCI = allUpperIsCI;
     }
 
-    private void setBoostPerfectProximity(boolean boostPerfectProx) {
+    public void setBoostPerfectProximity(boolean boostPerfectProx) {
         this.boostPerfectProx = boostPerfectProx;
     }
 
