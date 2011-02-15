@@ -842,14 +842,15 @@ public class ArrayGroup implements Cloneable {
         return true;
     }
 
+    @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer(size * 3);
-        sb.append("[");
+        StringBuilder sb = new StringBuilder(size * 3);
+        sb.append('[');
         for(int i = 0; i < size; i++) {
-            sb.append((i == 0 ? "" : ", ") + docs[i]);
+            sb.append(i == 0 ? "" : ", ").append(docs[i]);
         }
 
-        sb.append("] " + size + " docs");
+        sb.append("] ").append(size).append(" docs");
         return sb.toString();
     }
 
