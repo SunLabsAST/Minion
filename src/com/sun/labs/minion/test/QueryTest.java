@@ -499,7 +499,7 @@ public class QueryTest extends SEMain {
                 logger.log(Level.SEVERE, "Error finding all terms", see);
             }
         } else if(q.startsWith(":qop")) {
-            String op = q.substring(q.indexOf(' ') + 1).trim();
+            String op = q.substring(q.indexOf(' ') + 1).trim().toUpperCase();
             try {
                 queryOp = Searcher.Operator.valueOf(op);
             } catch (IllegalArgumentException ex) {
