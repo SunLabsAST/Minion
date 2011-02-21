@@ -83,6 +83,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.FieldValue;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
+import com.sun.labs.minion.ParseException;
 import com.sun.labs.minion.Passage;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.PassageHighlighter;
@@ -463,6 +464,8 @@ public class QueryTest extends SEMain {
                 ResultSet r = searcher.search(q, sortSpec,
                         queryOp, grammar);
                 displayResults(r);
+            } catch (ParseException pe) {
+                logger.log(Level.WARNING, "", pe);
             } catch(SearchEngineException se) {
                 logger.log(Level.SEVERE, "Error running search", se);
             }

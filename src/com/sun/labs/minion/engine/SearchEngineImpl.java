@@ -571,11 +571,18 @@ public class SearchEngineImpl implements SearchEngine,
 
         try {
             parseTree = (SimpleNode) p.doParse();
-        } catch(ParseException ex) {
-            logger.log(Level.SEVERE, "Error parsing query", ex);
-            String msg = ex.getMessage().substring(0, ex.getMessage().indexOf(
-                    '\n'));
-            throw new SearchEngineException("Error parsing query: " + msg);
+        } catch(com.sun.labs.minion.retrieval.parser.ParseException ex) {
+            logger.log(Level.FINE, "Error parsing query", ex);
+
+            com.sun.labs.minion.retrieval.parser.Token badToken =
+                    ex.currentToken;
+            while (badToken.next != null) {
+                badToken = badToken.next;
+            }
+            
+            throw new com.sun.labs.minion.ParseException(
+                    badToken.image,
+                    badToken.beginColumn);
         } catch(TokenMgrError tme) {
             logger.log(Level.SEVERE, "Error parsing query", tme);
             throw new SearchEngineException("Error parsing query: " + tme);
