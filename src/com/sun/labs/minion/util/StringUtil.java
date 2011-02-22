@@ -58,6 +58,9 @@ public class StringUtil {
     }
 
     public static String toString(String[] s, String join) {
+        if(s == null) {
+            return "null";
+        }
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < s.length; i++) {
             if(i > 0) {
