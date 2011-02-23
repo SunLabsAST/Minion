@@ -225,22 +225,30 @@ public class ResultSetImpl implements ResultSet {
     /**
      * Gets the search engine that generated this results set.
      */
+    @Override
     public SearchEngine getEngine() {
         return e;
     }
 
+    @Override
     public void setSortSpec(String sortSpec) {
         this.sortSpec = new SortSpec(e.getManager(), sortSpec);
     }
 
+    @Override
     public void setResultsFilter(ResultsFilter rf) {
         this.rf = rf;
     }
 
+    @Override
     public void setScoreModifier(ScoreModifier sm) {
         this.sm = sm;
     }
 
+    public QueryElement getQuery() {
+        return query;
+    }
+    
     /**
      * Gets the results from this result set ranked using a score field that is associated
      * with another field.  This is useful, for example, when trying to sort a 
