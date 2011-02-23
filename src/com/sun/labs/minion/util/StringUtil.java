@@ -31,6 +31,9 @@ public class StringUtil {
     }
 
     public static String wrap(String s, String prefix, int len) {
+        if(s == null) {
+            return null;
+        }
         StringBuilder sb = new StringBuilder();
         String[] ws = s.split("\\s+");
         sb.append(prefix);
