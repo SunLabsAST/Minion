@@ -39,8 +39,6 @@ import java.util.logging.Logger;
 
 /**
  * A configurable set of stop words.
- *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public class StopWords implements Configurable {
 
@@ -48,7 +46,7 @@ public class StopWords implements Configurable {
 
     private Set<String> stopwords;
 
-    static Logger logger = Logger.getLogger(StopWords.class.getName());
+    static final Logger logger = Logger.getLogger(StopWords.class.getName());
 
     /**
      * Creates a StopMap

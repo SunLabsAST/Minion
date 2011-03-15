@@ -524,6 +524,7 @@ public class FieldInfo implements Cloneable,
      * @see com.sun.labs.util.props.Configurable#newProperties(com.sun.labs.util.props.PropertySheet)
      *
      */
+    @Override
     public void newProperties(PropertySheet ps)
             throws PropertyException {
 
