@@ -58,10 +58,10 @@
     <!-- A stage to lowercase terms as they come in. -->
     <component name="lower_case" type="com.sun.labs.minion.pipeline.LowerCaseStage"/>
     
-<!--     A stage to remove stop words.
+    <!--     A stage to remove stop words. -->
     <component name="stopper" type="com.sun.labs.minion.pipeline.StopWordsStage">
         <property name="stopwords" value="stopwords"/>
-    </component>-->
+    </component>
     
     <component name="stopwords" type="com.sun.labs.minion.pipeline.StopWords">
         <propertylist name="stopwords_files">
@@ -185,6 +185,25 @@
         <property name="dumper" value="${dumper}"/>
     </component>
     
+    <!-- A pipeline factory that lowercases things, removes stop words and stems 
+        the remaining words.  This requires a memory partition that doesn't use 
+        cased entries! -->
+    <component name="lc_stop_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>lower_case</item>
+            <item>stopper</item>
+            <item>simple_memory_partition</item>
+        </propertylist>
+        
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct_and_white</item>
+            <item>highlight_stage</item>
+        </propertylist>
+        <property name="dumper" value="${dumper}"/>
+    </component>
     <component name="dropper_pipeline" type="com.sun.labs.minion.pipeline.PipelineFactory">
         <!-- The stages in the main indexing pipeline -->
         <propertylist name="stages">
