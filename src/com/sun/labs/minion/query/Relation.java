@@ -161,10 +161,12 @@ public class Relation extends Element implements Serializable {
         return value;
     }
 
+    @Override
     public QueryElement getQueryElement() {
         return new FieldTerm(field, operator, value);
     }
 
+    @Override
     public String toString() {
         return "(" + operator.getRep() + " " + field + " " + value + ")";
     }

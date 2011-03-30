@@ -1,0 +1,36 @@
+package com.sun.labs.minion.query;
+
+import com.sun.labs.minion.retrieval.QueryElement;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * A passage retrieval operator.
+ */
+public class PAnd extends Proximity implements Serializable {
+
+    public PAnd(Collection<Element> elements) {
+        super(elements);
+    }
+
+    public PAnd(Element[] elements) {
+        super(elements);
+    }
+
+    public PAnd() {
+        super();
+    }
+
+    @Override
+    public QueryElement getQueryElement() {
+        return new com.sun.labs.minion.retrieval.Passage(getQueryElements());
+    }
+    
+    @Override
+    public String toString() {
+        return String.format("(PAnd %s)", elements);
+    }
+
+}

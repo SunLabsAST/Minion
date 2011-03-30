@@ -114,6 +114,7 @@ public class Term extends Element implements Serializable {
         return ret;
     }
 
+    @Override
     public String toString() {
         return "Term: " + term + " mods: " + modifiers;
     }
