@@ -2,9 +2,7 @@ package com.sun.labs.minion.query;
 
 import com.sun.labs.minion.retrieval.QueryElement;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * A passage retrieval operator.
@@ -25,7 +23,7 @@ public class PAnd extends Proximity implements Serializable {
 
     @Override
     public QueryElement getQueryElement() {
-        return new com.sun.labs.minion.retrieval.Passage(getQueryElements());
+        return new com.sun.labs.minion.retrieval.PAnd(getQueryElements());
     }
     
     @Override
