@@ -536,8 +536,12 @@ public abstract class AbstractPipelineImpl implements Pipeline {
      * so that dumps may proceed asynchronously, if required.
      */
     protected void realDump() {
-        dumper.dump(getIndexer());
-        setIndexer(factory.getIndexingStage());
+        if (dumper != null) {
+            dumper.dump(getIndexer());
+            setIndexer(factory.getIndexingStage());
+        } else {
+            logger.finer("Dumper for pipeline is null in realDump()");
+        }
     }
 
     /**

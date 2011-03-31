@@ -50,6 +50,7 @@ import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.Progress;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryException;
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
@@ -70,7 +71,6 @@ import com.sun.labs.minion.classification.ClassifierManager;
 import com.sun.labs.minion.classification.ClusterManager;
 import com.sun.labs.minion.classification.ClusterMemoryPartition;
 import com.sun.labs.minion.retrieval.parser.LuceneTransformer;
-import com.sun.labs.minion.retrieval.parser.ParseException;
 import com.sun.labs.minion.retrieval.parser.Parser;
 import com.sun.labs.minion.retrieval.parser.SimpleNode;
 import com.sun.labs.minion.retrieval.parser.StrictTransformer;
@@ -589,7 +589,10 @@ public class SearchEngineImpl implements SearchEngine,
         }
 
         try {
-            qe = xer.transformTree(parseTree, defaultOperator);
+            qe = xer.transformTree(parseTree, defaultOperator, queryPipeline);
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.finest("Processing Query\n" + qe.toString());
+            }
         } catch(java.text.ParseException ex) {
             logger.log(Level.SEVERE, "Error transforming query", ex);
             throw new SearchEngineException("Error transforming query", ex);
@@ -611,7 +614,7 @@ public class SearchEngineImpl implements SearchEngine,
     }
 
     private ResultSet search(QueryElement qe, String sortOrder) throws SearchEngineException {
-
+        System.out.println(qe.toString());
         try {
             CollectionStats cs =
                     new CollectionStats(invFilePartitionManager);
@@ -641,7 +644,7 @@ public class SearchEngineImpl implements SearchEngine,
 
     public ResultSet search(Element el, String sortOrder) throws SearchEngineException {
         checkQuery(null, el);
-        return search(el.getQueryElement(), sortOrder);
+        return search(el.getQueryElement(queryPipeline), sortOrder);
     }
 
     /**
@@ -736,7 +739,7 @@ public class SearchEngineImpl implements SearchEngine,
                 break;
         }
     }
-
+    
     public QueryStats getQueryStats() {
         return qs;
     }
@@ -1403,6 +1406,17 @@ public class SearchEngineImpl implements SearchEngine,
     }
 
     /**
+     * Gets a pipeline that is used for processing query terms, as defined
+     * in the configuration file.  The last stage in this pipeline must be
+     * a TokenCollectorStage
+     * 
+     * @return a query pipeline or null if no pipeline was supplied
+     */
+    public QueryPipeline getQueryPipeline() {
+        return pipelineFactory.getQueryPipeline(this);
+    }
+    
+    /**
      * Gets a string description of the search engine.
      * @return a string description of the search engine.
      */
@@ -1692,6 +1706,11 @@ public class SearchEngineImpl implements SearchEngine,
         }
 
         //
+        // Get a pipeline that we'll use internally for transforming query
+        // text.
+        queryPipeline = getQueryPipeline();
+        
+        //
         // Define all of our fields.
         indexConfig =
                 (IndexConfig) ps.getComponent(PROP_INDEX_CONFIG);
@@ -1891,6 +1910,12 @@ public class SearchEngineImpl implements SearchEngine,
 
     private QueryStats qs;
 
+    /**
+     * A query pipeline that we'll use internally for processing the free text
+     * in queries.
+     */
+    private QueryPipeline queryPipeline;
+    
     public List getProfilers() {
         return profilers;
     }

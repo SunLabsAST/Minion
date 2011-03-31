@@ -313,7 +313,7 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements
 
         //
         // Check if we need to dump data based on our memory usage.
-        if(((SearchEngineImpl) engine).checkLowMemory()) {
+        if((engine != null) && ((SearchEngineImpl) engine).checkLowMemory()) {
             flush();
         }
         inDoc = false;

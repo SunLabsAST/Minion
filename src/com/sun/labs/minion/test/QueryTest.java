@@ -89,6 +89,7 @@ import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.PassageHighlighter;
 import com.sun.labs.minion.Posting;
 import com.sun.labs.minion.Progress;
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
@@ -124,6 +125,7 @@ import com.sun.labs.minion.pipeline.PrintStage;
 import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.pipeline.SyncPipelineImpl;
 import com.sun.labs.minion.query.Relation;
+import com.sun.labs.minion.query.Term;
 import com.sun.labs.minion.retrieval.FieldEvaluator;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
 import com.sun.labs.util.LabsLogFormatter;
@@ -279,7 +281,7 @@ public class QueryTest extends SEMain {
                 ":cvl [<part> ...]       Calculate and dump vector lengths for a given partition\n" +
                 ":rts                    Re-generates term stats using all active partitions\n" +
                 ":tok <file>             Tokenize a file, useful inside the debugger\n" +
-                "\nWild Card, etc:\n" +
+                "\nWild Card, Variants, etc:\n" +
                 ":sw                     Toggles case-sensitivity for wild cards\n" +
                 ":wild <pattern>         Prints matching terms from each partition\n" +
                 ":morph <term>           Prints matching variants from each partition\n" +
@@ -287,6 +289,7 @@ public class QueryTest extends SEMain {
                 ":variants <term>        Prints the LiteMorph variants of a term\n" +
                 ":stem <term>            Prints stem-matched terms from each partition\n" +
                 ":spell <term>           Prints the top 10 spelling variants of the term\n" +
+                ":pipe <term>            Sends term through query pipeline and prints matches\n" +
                 "\nTaxonomy:\n" +
                 ":child <term>           Prints taxonomic children of a term\n" +
                 ":par <term>             Prints taxonomic parents of a term\n" +
@@ -1186,7 +1189,32 @@ public class QueryTest extends SEMain {
             }
             output.println("Total document frequency: " + docFreq);
             output.println("Total variants: " + totalVariants);
-
+        } else if(q.startsWith(":pipe ")) {
+            String term = CharUtils.decodeUnicode(q.substring(
+                    q.indexOf(' ') + 1).trim());
+            QueryPipeline qp = engine.getQueryPipeline();
+            IndexableMap docMap = new IndexableMap("query");
+            docMap.put(null, term);
+            try {
+                qp.index(docMap);
+            } catch (SearchEngineException ex) {
+                Logger.getLogger(Term.class.getName()).log(
+                        Level.INFO, "Exception in QueryPipeline", ex);
+            }
+            qp.flush();
+            String[] tokens = qp.getTokens();
+            if (tokens.length == 0) {
+                output.println("No tokens were returned from the pipeline");
+            }
+            output.println("Finding term " + tokens[0]);
+            Iterator l = manager.getActivePartitions().iterator();
+            while(l.hasNext()) {
+                DiskPartition p = (DiskPartition) l.next();
+                Entry e = p.getTerm(tokens[0], false);
+                output.println("Partition " + p.getPartitionNumber() + ": " + (e == null
+                        ? "No entries" : (e.toString() + " " + e.getID() + " " +
+                        e.getN())));
+            }
         } else if(q.startsWith(":fi ")) {
             StringTokenizer tok = new StringTokenizer(q.substring(
                     q.indexOf(' ') + 1).trim());

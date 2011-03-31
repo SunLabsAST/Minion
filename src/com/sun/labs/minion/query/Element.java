@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.query;
 
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.retrieval.QueryElement;
 import java.io.Serializable;
 import java.util.Collection;
@@ -160,8 +161,9 @@ public abstract class Element implements Serializable {
      * Transduces this query element into a "real" query element, one that can
      * be evaluated by the search engine.
      * 
+     * @param pipeline a pipeline for processing text in Term elements
      * @return an evaluatable query element.
      */
-    public abstract QueryElement getQueryElement();
+    public abstract QueryElement getQueryElement(QueryPipeline pipeline);
 
 }

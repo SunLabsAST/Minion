@@ -1,5 +1,6 @@
 package com.sun.labs.minion.query;
 
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.retrieval.QueryElement;
 import java.io.Serializable;
 import java.util.Collection;
@@ -22,8 +23,8 @@ public class PAnd extends Proximity implements Serializable {
     }
 
     @Override
-    public QueryElement getQueryElement() {
-        return new com.sun.labs.minion.retrieval.PAnd(getQueryElements());
+    public QueryElement getQueryElement(QueryPipeline pipeline) {
+        return new com.sun.labs.minion.retrieval.PAnd(getQueryElements(pipeline));
     }
     
     @Override

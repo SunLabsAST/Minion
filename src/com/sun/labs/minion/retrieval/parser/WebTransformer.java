@@ -23,11 +23,15 @@
  */
 package com.sun.labs.minion.retrieval.parser;
 
+import com.sun.labs.minion.QueryPipeline;
 import java.text.ParseException;
 
 import com.sun.labs.minion.pipeline.TokenCollectorStage;
 
 import com.sun.labs.minion.Searcher;
+import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
+import com.sun.labs.minion.pipeline.QueryPipelineImpl;
+import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.retrieval.And;
 import com.sun.labs.minion.retrieval.DictTerm;
 import com.sun.labs.minion.retrieval.Not;
@@ -36,6 +40,7 @@ import com.sun.labs.minion.retrieval.PAnd;
 import com.sun.labs.minion.retrieval.QueryElement;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -55,7 +60,19 @@ public class WebTransformer extends Transformer {
         SimpleNode n = p.doParse();
         n.dump(":");
         WebTransformer t = new WebTransformer();
-        QueryElement e = t.transformTree(n);
+        
+        //
+        // Create the pipeline, pushing on stages back to front
+        LinkedList<Stage> stages = new LinkedList<Stage>();
+        TokenCollectorStage tcs = new TokenCollectorStage();
+        stages.push(tcs);
+
+        UniversalTokenizer tokStage = new UniversalTokenizer(stages.peek());
+        tokStage.noBreakCharacters = "*?";
+        stages.push(tokStage);
+            
+        QueryPipelineImpl pipeline = new QueryPipelineImpl(null, null, stages);
+        QueryElement e = t.transformTree(n, Searcher.Operator.PAND, pipeline);
         e.dump("!");
         // and check getQueryTerms implementation
         List l = e.getQueryTerms();
@@ -71,18 +88,6 @@ public class WebTransformer extends Transformer {
     public WebTransformer() {
     }
 
-    /** 
-     * Transforms an abstract syntax tree provided by JJTree+JavaCC into
-     * a tree of QueryElements that can be used by the query evaluator.
-     * 
-     * @param root the root node of the tree returned from the Parser
-     * @return the root node of a tree describing a query
-     */
-    public QueryElement transformTree(SimpleNode root)
-            throws ParseException {
-        return transformTree(root, Searcher.Operator.PAND);
-    }
-
     /**
      * Transforms an abstract syntax tree provided by JJTree+JavaCC into
      * a tree of QueryElements that can be used by the query evaluator.
@@ -93,14 +98,16 @@ public class WebTransformer extends Transformer {
      * defined in the {@link com.sun.labs.minion.Searcher} interface
      * @return the root node of a tree describing a query
      */
-    public QueryElement transformTree(SimpleNode root, Searcher.Operator defaultOperator)
+    public QueryElement transformTree(
+            SimpleNode root,
+            Searcher.Operator defaultOperator,
+            QueryPipeline pipeline)
             throws ParseException {
         QueryElement result = null;
         //
         // The AST should be pretty simple for the web query language.  There
         // should be a single root "q" element, containing a set of "qe"s, each
         // containing a single term node
-        TokenCollectorStage tcs = new TokenCollectorStage();
         int order = 0;
 
         //
@@ -116,7 +123,7 @@ public class WebTransformer extends Transformer {
             String term = curr.value.substring(mods.length(),
                     curr.value.length());
             curr.value = term;
-            QueryElement qe = WebElementFactory.make(curr, mods, tcs);
+            QueryElement qe = WebElementFactory.make(curr, mods, pipeline);
 
             if(qe != null) {
                 qe.setOrder(order++);

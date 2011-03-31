@@ -24,6 +24,9 @@
 
 package com.sun.labs.minion.retrieval.parser;
 
+import com.sun.labs.minion.IndexableMap;
+import com.sun.labs.minion.QueryPipeline;
+import com.sun.labs.minion.SearchEngineException;
 import java.util.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -35,6 +38,11 @@ import com.sun.labs.minion.pipeline.TokenCollectorStage;
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 
 import com.sun.labs.minion.Searcher;
+import com.sun.labs.minion.pipeline.QueryPipelineImpl;
+import com.sun.labs.minion.pipeline.Stage;
+import com.sun.labs.minion.pipeline.StemStage;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This class transforms the output of JavaCC into a tree of
@@ -55,7 +63,24 @@ public class StrictTransformer extends Transformer
             SimpleNode n = (SimpleNode)p.doParse();
             n.dump(":");
             StrictTransformer t = new StrictTransformer();
-            QueryElement e = t.transformTree(n);
+
+            //
+            // Create the pipeline, pushing on stages back to front
+            LinkedList<Stage> stages = new LinkedList<Stage>();
+            TokenCollectorStage tcs = new TokenCollectorStage();
+            stages.push(tcs);
+            
+            StemStage stemStage = new StemStage(stages.peek());
+            stages.push(stemStage);
+            
+            UniversalTokenizer tokStage = new UniversalTokenizer(stages.peek());
+            tokStage.noBreakCharacters = "*?";
+            stages.push(tokStage);
+            
+            QueryPipelineImpl pipeline =
+                    new QueryPipelineImpl(null, null, stages);
+            QueryElement e =
+                    t.transformTree(n, Searcher.Operator.PAND, pipeline);
             n.dump("+");
             if (e != null) {
                 e.dump("!");
@@ -72,23 +97,11 @@ public class StrictTransformer extends Transformer
         }
     }
 
+    protected static Logger logger = Logger.getLogger(ScoredQuickOr.class.getName());
+
 
     public StrictTransformer() {
         
-    }
-
-
-    /** 
-     * Transforms an abstract syntax tree provided by JJTree+JavaCC into
-     * a tree of QueryElements that can be used by the query evaluator.
-     * 
-     * @param root the root node of the tree returned from the Parser
-     * @return the root node of a tree describing a query
-     */
-    public QueryElement transformTree(SimpleNode root)
-        throws ParseException
-    {
-        return transformTree(root, Searcher.Operator.PAND);
     }
     
     /** 
@@ -101,7 +114,10 @@ public class StrictTransformer extends Transformer
      * defined in the {@link com.sun.labs.minion.Searcher} interface
      * @return the root node of a tree describing a query
      */
-    public QueryElement transformTree(SimpleNode root, Searcher.Operator defaultOperator)
+    public QueryElement transformTree(
+            SimpleNode root,
+            Searcher.Operator defaultOperator,
+            QueryPipeline pipeline)
         throws ParseException
     {
         // Perform all the clean-up operations, then create
@@ -114,8 +130,7 @@ public class StrictTransformer extends Transformer
         collapseAnds(root, false, SimpleNode.INVALID, SimpleNode.INVALID);
         collapsePassages(root, false);
 
-        TokenCollectorStage tcs = new TokenCollectorStage();
-        collapsePhrases(root, tcs);
+        collapsePhrases(root, pipeline);
         
         // Figure out the root element, then seed the recursive call:
         QueryElement rootQE = null;
@@ -415,14 +430,13 @@ public class StrictTransformer extends Transformer
      * 
      * @param node
      */
-    protected static void collapsePhrases(SimpleNode node, TokenCollectorStage tcs) {
+    protected static void collapsePhrases(
+                SimpleNode node,
+                QueryPipeline pipeline)
+            throws ParseException {
         // Start at the bottom, and pull the ORs up
         ArrayList kidsToRemove = new ArrayList();
         ArrayList myNewKids = new ArrayList();
-
-        UniversalTokenizer tok = new UniversalTokenizer(tcs, false);
-        // Don't break strings on the wildcard chars
-        tok.noBreakCharacters = "*?";
         
         // First deal with the base case, then the recursive call downwards:
         Iterator cit = node.getChildren().iterator();
@@ -458,15 +472,28 @@ public class StrictTransformer extends Transformer
                     curr.doWild = true;
                 }
                 
-                // This child is a leaf term node
-                // See if it needs splitting
-                // If so, add it to kidsToRemove and put
+                //
+                // This child is a leaf term node so see if it needs splitting
+                // into a phrase.  If so, add it to kidsToRemove and put
                 // the result phrase in myNewKids
-                char[] vals = curr.value.toCharArray();
-                tcs.reset();
-                tok.text(vals, 0, vals.length);
-                tok.flush();
-                com.sun.labs.minion.pipeline.Token[] tokens = tcs.getTokens();
+                
+                //
+                // Start by throwing the term into a dummy document that we'll
+                // feed through a pipeline to process the text
+                IndexableMap docMap = new IndexableMap("query");
+                docMap.put(null, curr.value);
+                try {
+                    pipeline.index(docMap);
+                } catch (SearchEngineException ex) {
+                    logger.log(Level.INFO, "Exception in QueryPipeline", ex);
+                    throw new ParseException("Failed to tokenize query text",
+                            -1);
+                }
+                pipeline.flush();
+                String[] tokens = pipeline.getTokens();
+                
+                //
+                // See what came out the other end othe pipeline
                 if (tokens.length > 1) {
                     // We split the string, so put each token
                     // in its own term node and make a phrase
@@ -477,7 +504,7 @@ public class StrictTransformer extends Transformer
                     
                     for (int i = 0; i < tokens.length; i++) {
                         SimpleNode currTerm = (SimpleNode)curr.clone();
-                        currTerm.value = tokens[i].getToken();
+                        currTerm.value = tokens[i];
                         phrase.jjtAddChild(currTerm, i);
                     }
                     myNewKids.add(phrase);
@@ -487,7 +514,7 @@ public class StrictTransformer extends Transformer
                     // This was just one token, but reassign the text anyway
                     // in case the tokenizer removed a leading or trailing
                     // non-word character (like "-5" with or without quotes)
-                    curr.value = tokens[0].getToken();
+                    curr.value = tokens[0];
                 } else if (tokens.length == 0) {
                     //
                     // No valid tokens were found in the string, so all we
@@ -496,7 +523,7 @@ public class StrictTransformer extends Transformer
                 }
             } else {
                 // Make the recursive call to traverse downwards
-                collapsePhrases(curr, tcs);
+                collapsePhrases(curr, pipeline);
             }
 
         }

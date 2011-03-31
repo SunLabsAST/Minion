@@ -209,17 +209,8 @@ public class DictTerm extends QueryTerm implements Comparator {
 
         //
         // Stemological variants.
-        if(doStem) {
-            QueryEntry[] e = ((InvFileDiskPartition) part).getStemMatches(val,
-                    matchCase,
-                    qc.getMaxDictTerms(),
-                    qc.getMaxDictLookupTime());
-            if(e != null) {
-                for(int i = 0; i < e.length; i++) {
-                    variants.add(e[i]);
-                }
-            }
-        }
+        // Terms are already stemmed.  This code has been removed and instead
+        // stemming is handled before the query is evaluated.
 
         //
         // Find wildcards.
