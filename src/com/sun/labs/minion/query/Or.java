@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.query;
 
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.retrieval.QueryElement;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -47,10 +48,10 @@ public class Or extends Operator implements Serializable {
         super(elements);
     }
     
-    public QueryElement getQueryElement() {
+    public QueryElement getQueryElement(QueryPipeline pipeline) {
         List<QueryElement> operands = new ArrayList();
         for(Element e : elements) {
-            operands.add(e.getQueryElement());
+            operands.add(e.getQueryElement(pipeline));
         }
         return new com.sun.labs.minion.retrieval.Or(operands);
     }

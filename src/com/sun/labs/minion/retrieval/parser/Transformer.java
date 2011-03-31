@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.retrieval.parser;
 
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.Searcher;
 import java.text.ParseException;
 
@@ -40,15 +41,6 @@ import com.sun.labs.minion.retrieval.QueryElement;
 
 public abstract class Transformer
 {
-    /** 
-     * Transforms an abstract syntax tree provided by JJTree+JavaCC into
-     * a tree of QueryElements that can be used by the query evaluator.
-     * 
-     * @param root the root node of the tree returned from the Parser
-     * @return the root node of a tree describing a query
-     */
-    public abstract QueryElement transformTree(SimpleNode root)
-        throws ParseException;
 
     /** 
      * Transforms an abstract syntax tree provided by JJTree+JavaCC into
@@ -58,10 +50,12 @@ public abstract class Transformer
      * @param defaultOperator specified the default operator to use when no
      * other operator is provided between terms in the query.  Valid values are
      * defined in the {@link com.sun.labs.minion.Searcher} interface
+     * @param pipeline a pipeline for transforming free text in the query
      * @return the root node of a tree describing a query
      */
     public abstract QueryElement transformTree(SimpleNode root,
-            Searcher.Operator defaultOperator)
+            Searcher.Operator defaultOperator,
+            QueryPipeline pipeline)
         throws ParseException;
 
     /** 

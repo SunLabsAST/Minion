@@ -31,6 +31,9 @@ import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.pipeline.Token;
 
 import com.sun.labs.minion.util.Util;
+import com.sun.labs.util.props.ConfigString;
+import com.sun.labs.util.props.PropertyException;
+import com.sun.labs.util.props.PropertySheet;
 import java.util.logging.Logger;
 
 /**
@@ -235,6 +238,9 @@ public class UniversalTokenizer extends Tokenizer {
      */
     public String noBreakCharacters = "";
 
+    @ConfigString(defaultValue = "")
+    public static final String PROP_NO_BREAK_CHARACTERS = "noBreakChars";
+    
     /**
      * Causes each break char to generate its own punctuation event, rather
      * than generating a single punctuation event for a sequence of
@@ -1464,6 +1470,15 @@ public class UniversalTokenizer extends Tokenizer {
         return output;
     }
 
+    /**
+     * Gather any properties specific to the UniversalTokenizer
+     */
+    @Override
+    public void newProperties(PropertySheet ps) throws PropertyException {
+        noBreakCharacters = ps.getString(PROP_NO_BREAK_CHARACTERS);
+        super.newProperties(ps);
+    }
+    
     static public void main(String[] args) throws java.io.IOException {
 
         PrintTokenStage pts = new PrintTokenStage();

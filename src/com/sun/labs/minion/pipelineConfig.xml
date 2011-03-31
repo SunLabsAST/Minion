@@ -46,6 +46,10 @@
         <property name="send_white" value="true"/>
     </component>
 
+    <component name="query_tokenizer" type="com.sun.labs.minion.document.tokenizer.UniversalTokenizer">
+        <property name="noBreakChars" value="*?"/>
+    </component>
+
     <!-- The JavaCC-based tokenizer, with and without punctuation. -->
     <component name="jcc_tokenizer" type="com.sun.labs.minion.document.tokenizer.JCCTokenizer"/>
     <component name="jcc_tokenizer_with_punct" type="com.sun.labs.minion.document.tokenizer.JCCTokenizer">
@@ -54,6 +58,9 @@
 
     <!-- A stage used when highlighting documents. -->
     <component name="highlight_stage" type="com.sun.labs.minion.retrieval.HighlightStage"/>
+
+    <!-- A stage that collects processed query terms -->
+    <component name="query_collector_stage" type="com.sun.labs.minion.pipeline.TokenCollectorStage"/>
     
     <!-- A stage to lowercase terms as they come in. -->
     <component name="lower_case" type="com.sun.labs.minion.pipeline.LowerCaseStage"/>
@@ -103,6 +110,12 @@
             <item>highlight_stage</item>
         </propertylist>
         
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+        
         <property name="dumper" value="${dumper}"/>
     </component>
     
@@ -121,7 +134,14 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
-        
+
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+
         <property name="dumper" value="${dumper}"/>
     </component>
 
@@ -142,6 +162,14 @@
             <item>highlight_stage</item>
         </propertylist>
         
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>stopper</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+
         <property name="dumper" value="${dumper}"/>
     </component>
 
@@ -160,6 +188,13 @@
         <propertylist name="hl_stages">
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
+        </propertylist>
+        
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>query_collector_stage</item>
         </propertylist>
         
         <property name="dumper" value="${dumper}"/>
@@ -182,6 +217,15 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
+
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>stemmer</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+
         <property name="dumper" value="${dumper}"/>
     </component>
     
@@ -202,6 +246,15 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
+        
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>stopper</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+
         <property name="dumper" value="${dumper}"/>
     </component>
     <component name="dropper_pipeline" type="com.sun.labs.minion.pipeline.PipelineFactory">
@@ -216,6 +269,13 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
+
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+
         <property name="dumper" value="${dumper}"/>
     </component>
 
@@ -236,6 +296,15 @@
         <propertylist name="hl_stages">
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
+        </propertylist>
+
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>stopper</item>
+            <item>stemmer</item>
+            <item>query_collector_stage</item>
         </propertylist>
         <property name="dumper" value="${dumper}"/>
     </component>

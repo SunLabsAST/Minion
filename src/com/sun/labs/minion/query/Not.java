@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.query;
 
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.retrieval.QueryElement;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -60,8 +61,8 @@ public class Not extends Operator implements Serializable {
         elements.add(element);
     }
 
-    public QueryElement getQueryElement() {
-        return new com.sun.labs.minion.retrieval.Not(element.getQueryElement());
+    public QueryElement getQueryElement(QueryPipeline pipeline) {
+        return new com.sun.labs.minion.retrieval.Not(element.getQueryElement(pipeline));
     }
 
     public String toString() {

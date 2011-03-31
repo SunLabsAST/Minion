@@ -26,7 +26,9 @@ package com.sun.labs.minion.pipeline;
 import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.Pipeline;
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigComponentList;
 import com.sun.labs.util.props.Configurable;
@@ -38,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import com.sun.labs.minion.indexer.partition.Dumper;
+import java.util.LinkedList;
 import java.util.logging.Logger;
 
 /**
@@ -95,6 +98,24 @@ public class PipelineFactory implements Configurable {
      */
     public HLPipeline getHLPipeline(SearchEngine engine) {
         return new HLPipelineImpl(this, engine, getPipeline(hlStages));
+    }
+    
+    public QueryPipeline getQueryPipeline(SearchEngine engine) {
+        if (queryStages == null || queryStages.isEmpty()) {
+            logger.info("No QueryPipeline defined, using default") ;
+            // Legacy config files won't have a query pipeline, so if we
+            // don't get one, make a simple one that would do what the old
+            // code used to do.
+            LinkedList<Stage> stages = new LinkedList<Stage>();
+            TokenCollectorStage tcs = new TokenCollectorStage();
+            stages.push(tcs);
+            
+            UniversalTokenizer tokStage = new UniversalTokenizer(stages.peek());
+            tokStage.noBreakCharacters = "*?";
+            stages.push(tokStage);
+            return new QueryPipelineImpl(this, engine, stages);
+        }
+        return new QueryPipelineImpl(this, engine, getPipeline(queryStages));
     }
 
     /**
@@ -156,6 +177,7 @@ public class PipelineFactory implements Configurable {
         cm = ps.getConfigurationManager();
         stages = ps.getComponentList(PROP_STAGES);
         hlStages = ps.getComponentList(PROP_HL_STAGES);
+        queryStages = ps.getComponentList(PROP_QUERY_STAGES);
         dumper = (Dumper) ps.getComponent(PROP_DUMPER);
     }
 
@@ -172,6 +194,11 @@ public class PipelineFactory implements Configurable {
 
     private List hlStages;
 
+    @ConfigComponentList(type = com.sun.labs.minion.pipeline.Stage.class)
+    public static final String PROP_QUERY_STAGES = "query_stages";
+    
+    private List queryStages;
+    
     @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Dumper.class)
     public static final String PROP_DUMPER = "dumper";
 

@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.query;
 
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.retrieval.FieldTerm;
 import com.sun.labs.minion.retrieval.QueryElement;
 import java.io.Serializable;
@@ -161,7 +162,7 @@ public class Relation extends Element implements Serializable {
         return value;
     }
 
-    public QueryElement getQueryElement() {
+    public QueryElement getQueryElement(QueryPipeline pipeline) {
         return new FieldTerm(field, operator, value);
     }
 

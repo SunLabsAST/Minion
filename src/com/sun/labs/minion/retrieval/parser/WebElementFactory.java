@@ -24,14 +24,16 @@
 
 package com.sun.labs.minion.retrieval.parser;
 
+import com.sun.labs.minion.IndexableMap;
+import com.sun.labs.minion.QueryPipeline;
+import com.sun.labs.minion.SearchEngineException;
 import java.util.*;
 import java.text.ParseException;
-import com.sun.labs.minion.pipeline.TokenCollectorStage;
-import com.sun.labs.minion.document.tokenizer.Tokenizer;
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.minion.retrieval.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import com.sun.labs.minion.Searcher;
 
 /**
  * Creates QueryElements based on SimpleNodes generated from the parser
@@ -42,7 +44,8 @@ import com.sun.labs.minion.Searcher;
 
 public class WebElementFactory
 {
-
+    protected static final Logger logger =
+            Logger.getLogger(WebElementFactory.class.getName());
     /** 
      * Makes a query element for the provided node.  This will only be
      * called on term (leaf) nodes for the web query language.
@@ -50,7 +53,7 @@ public class WebElementFactory
      * @param node the node to turn into a query element
      * @return the query element for this node.
      */
-    public static QueryElement make(SimpleNode node, String mods, TokenCollectorStage tcs)
+    public static QueryElement make(SimpleNode node, String mods, QueryPipeline pipeline)
         throws ParseException
     {
         QueryElement qe = null;
@@ -65,7 +68,7 @@ public class WebElementFactory
                 // would cause the tokenizer to split it up.
                 // In this case, make a phrase of however many
                 // terms the string gets tokenized into.
-                String[] tokens = tokenize(node.value, tcs);
+                String[] tokens = tokenize(node.value, pipeline);
                 if (tokens.length > 1) {
                     // We split the string, so put each token
                     // in its own term node and make a phrase
@@ -80,7 +83,7 @@ public class WebElementFactory
                     }
                     qe = new Phrase(terms);
                 } else if (tokens.length == 1) {
-                    DictTerm t = new DictTerm(node.value);
+                    DictTerm t = new DictTerm(tokens[0]);
                     setMods(t, mods);
                     qe = t;
                 } else {
@@ -92,7 +95,7 @@ public class WebElementFactory
                 // Strip off the quotes and turn the phrase
                 // into a bunch of terms under a phrase node
                 node.value = node.value.substring(1, node.value.length() - 1);
-                String[] phraseTokens = tokenize(node.value, tcs);
+                String[] phraseTokens = tokenize(node.value, pipeline);
                 if (phraseTokens.length >= 1) {
                     List terms = new ArrayList();
                     for (int i = 0; i < phraseTokens.length; i++) {
@@ -111,7 +114,7 @@ public class WebElementFactory
                 // Strip off the brackets and turn the
                 // passage into a bunch of terms under a pand node
                 node.value = node.value.substring(1, node.value.length() - 1);
-                String[] passageTokens = tokenize(node.value, tcs);
+                String[] passageTokens = tokenize(node.value, pipeline);
                 if (passageTokens.length >= 1) {
                     List pTerms = new ArrayList();
                     for (int i = 0; i < passageTokens.length; i++) {
@@ -132,23 +135,22 @@ public class WebElementFactory
         return qe;
     }
 
-    public static String[] tokenize(String term, TokenCollectorStage tcs) {
-        String[] results;
-        
-        UniversalTokenizer tok = new UniversalTokenizer(tcs, false);
-        // Don't break strings on the wildcard chars
-        tok.noBreakCharacters = "*?";
-        char[] vals = term.toCharArray();
-        tcs.reset();
-        tok.text(vals, 0, vals.length);
-        tok.flush();
-        com.sun.labs.minion.pipeline.Token[] tokens = tcs.getTokens();
-        // Put each token in the results
-        results = new String[tokens.length];
-        for (int i = 0; i < tokens.length; i++) {
-            results[i] = tokens[i].getToken();
+    public static String[] tokenize(String term, QueryPipeline pipeline)
+            throws ParseException {
+        //
+        // Start by throwing the term into a dummy document that we'll
+        // feed through a pipeline to process the text
+        IndexableMap docMap = new IndexableMap("query");
+        docMap.put(null, term);
+        try {
+            pipeline.index(docMap);
+        } catch (SearchEngineException ex) {
+            logger.log(Level.INFO, "Exception in QueryPipeline", ex);
+            throw new ParseException("Failed to tokenize query text",
+                    -1);
         }
-        return results;
+        pipeline.flush();
+        return pipeline.getTokens();
     }
     
     public static void setMods(DictTerm theTerm, String mods) {

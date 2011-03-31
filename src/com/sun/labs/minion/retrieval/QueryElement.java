@@ -282,7 +282,11 @@ public abstract class QueryElement implements Comparable {
     }
 
     public void setSearchFields(Collection<String> fieldNames) {
-        searchFieldNames = fieldNames.toArray(new String[0]);
+        if (fieldNames == null) {
+            searchFieldNames = null;
+        } else {
+            searchFieldNames = fieldNames.toArray(new String[0]);
+        }
     }
 
     /** 
