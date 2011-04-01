@@ -614,7 +614,6 @@ public class SearchEngineImpl implements SearchEngine,
     }
 
     private ResultSet search(QueryElement qe, String sortOrder) throws SearchEngineException {
-        System.out.println(qe.toString());
         try {
             CollectionStats cs =
                     new CollectionStats(invFilePartitionManager);
