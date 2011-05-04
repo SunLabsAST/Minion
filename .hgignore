@@ -1,0 +1,23 @@
+syntax: glob
+build/*
+dist/*
+nbproject/private/*
+*.orig
+
+retrieval/parser/Token*.java
+retrieval/parser/Node.java
+retrieval/parser/SimpleCharStream.java
+retrieval/parser/ParseException.java
+retrieval/parser/JavaCharStream.java
+document/tokenizer/JCC*.java
+document/tokenizer/ParseException.java
+document/tokenizer/SimpleCharStream.java
+document/tokenizer/Token.java
+document/tokenizer/TokenMgrError.java
+retrieval/parser/*AST*.java
+retrieval/parser/WebParse*
+retrieval/parser/StrictParse*
+retrieval/parser/LuceneParse*
+retrieval/parser/grammar-*.jj
+retrieval/parser/JJT*ParserState.java
+
