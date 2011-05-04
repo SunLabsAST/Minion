@@ -595,7 +595,7 @@ public class QueryConfig implements Cloneable,
         defaultFields = (List<FieldInfo>) ps.getComponentList(PROP_DEFAULT_FIELDS);
     }
 
-    private void setAllUpperIsCI(boolean allUpperIsCI) {
+    public void setAllUpperIsCI(boolean allUpperIsCI) {
         this.allUpperIsCI = allUpperIsCI;
     }
 

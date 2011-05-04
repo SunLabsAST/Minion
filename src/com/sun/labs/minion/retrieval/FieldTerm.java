@@ -174,6 +174,7 @@ public class FieldTerm extends QueryTerm {
         return val;
     }
 
+    @Override
     public void setPartition(DiskPartition part) {
 
         InvFileDiskPartition ifpart = (InvFileDiskPartition) part;
@@ -213,14 +214,8 @@ public class FieldTerm extends QueryTerm {
         // 1. If we're supposed to match case, then we do it.
         // 2. If the query configuration says that we need to match case,
         //    then we do it.
-        matchCase = qc.caseSensitive(val);
-
-        //
-        // Setup for getting a range of terms.
-        //Object lowerBound = null;
-        //boolean includeLower = false;
-        //Object upperBound = null;
-        //boolean includeUpper = false;
+        matchCase = sfi.getType() == FieldInfo.Type.STRING && 
+                (sfi.isCaseSensitive() ||  qc.caseSensitive(val));
 
         //
         // We may need a date.

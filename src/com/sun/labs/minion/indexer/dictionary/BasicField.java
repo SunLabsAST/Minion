@@ -282,9 +282,8 @@ public class BasicField implements SavedField {
             case STRING:
                 return new StringNameHandler();
             default:
-                logger.warning("Field: " + field.getName() + " " +
-                        "has unknown SAVED type: " + field.getType() +
-                        ", using VARCHAR.");
+                logger.warning(String.format("Field: %s has unknown SAVED type: %s, using STRING",
+                        field.getName(), field.getType()));
                 return new StringNameHandler();
         }
     }
@@ -386,8 +385,7 @@ public class BasicField implements SavedField {
         header = new SavedFieldHeader();
         header.write(dictFile);
 
-        logger.finer("Dump values dictionary for field: " +
-                field.getName());
+        logger.finer(String.format("Dump values dictionary for field: %s", field.getName()));
 
         header.nDocs = maxID;
         header.valOffset = dictFile.getFilePointer();
@@ -588,7 +586,7 @@ public class BasicField implements SavedField {
     public QueryEntry get(Object v, boolean caseSensitive) {
 
         Object name = getEntryName(v);
-
+        
         //
         // If this is a character field and we're supposed to do a case
         // insensitive lookup, do so now.

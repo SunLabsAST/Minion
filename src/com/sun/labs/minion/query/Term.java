@@ -77,18 +77,31 @@ public class Term extends Element implements Serializable {
     private String term;
 
     private EnumSet<Modifier> modifiers;
+    
+    private float termWeight;
 
     public Term(String term) {
-        this(term, EnumSet.of(Modifier.MORPH));
+        this(term, EnumSet.of(Modifier.MORPH), 0);
     }
 
     public Term(String term, EnumSet<Modifier> mods) {
+        this(term, mods, 0);
+    }
+    
+    /**
+     * Creates a term with a given set of modifiers and a given term weight.
+     * @param term the name of the term
+     * @param mods modifiers for how the term should be handled at query time
+     * @param termWeight a weight to be used for the term when computing similarity
+     */
+    public Term(String term, EnumSet<Modifier> mods, float termWeight) {
         this.term = term;
         if(mods != null) {
             this.modifiers = EnumSet.copyOf(mods);
         } else {
             this.modifiers = EnumSet.noneOf(Modifier.class);
         }
+        this.termWeight = termWeight;
     }
 
     public void addModifier(Modifier modifier) {
@@ -103,6 +116,7 @@ public class Term extends Element implements Serializable {
         return modifiers;
     }
 
+    @Override
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         //
         // If we don't want to match case, then downcase the string, so that 
@@ -136,6 +150,7 @@ public class Term extends Element implements Serializable {
             for (String t : tokens) {
                 DictTerm dt = new DictTerm(t);
                 setModifiers(dt);
+                dt.setTermWeight(termWeight);
                 qes.add(dt);
             }
             ret = new Phrase(qes);

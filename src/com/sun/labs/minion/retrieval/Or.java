@@ -29,8 +29,6 @@ import java.util.List;
 
 public class Or extends Operator {
     
-    protected static String logTag = "OR";
-
     /**
      * Constructs an <tt>AND</tt> operator that takes a list of operands.
      */
@@ -43,6 +41,7 @@ public class Or extends Operator {
      * Estimates the size of the results set. This is the sum of the
      * estimated sizes for each of the operands.
      */
+    @Override
     protected int calculateEstimatedSize() {
         estSize = 0;
         for(Iterator i = operands.iterator(); i.hasNext(); ) {
@@ -54,6 +53,7 @@ public class Or extends Operator {
     /**
      * Evaluates this operator, returning the results.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
         ArrayGroup ret = null;
         for(Iterator i = operands.iterator(); i.hasNext(); ) {

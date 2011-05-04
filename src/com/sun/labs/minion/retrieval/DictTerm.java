@@ -23,7 +23,6 @@
  */
 package com.sun.labs.minion.retrieval;
 
-import com.sun.labs.minion.indexer.dictionary.DiskDictionary.LookupState;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -88,10 +87,15 @@ public class DictTerm extends QueryTerm implements Comparator {
      * given out when anyone asks for positions.
      */
     protected int[][] posns;
+    
+    /**
+     * A weight associated with the query term, which can be used during the
+     * similarity computation.  If this is not specified by the user, then we'll
+     * compute a weight by assuming that the query term has a freqeuncy of 1.
+     */
+    private float termWeight;
 
-    protected static Logger logger = Logger.getLogger(DictTerm.class.getName());
-
-    protected static String logTag = "DT";
+    protected static final Logger logger = Logger.getLogger(DictTerm.class.getName());
 
     /**
      * Creates a dictionary term for a given query term.  This query term
@@ -104,12 +108,21 @@ public class DictTerm extends QueryTerm implements Comparator {
         this.val = val;
     } // DictTerm constructor
 
+    public float getTermWeight() {
+        return termWeight;
+    }
+
+    public void setTermWeight(float termWeight) {
+        this.termWeight = termWeight;
+    }
+
     /**
      * Sets the partition that this term will be operating on.  Does any
      * dictionary lookups required.
      *
      * @param part The partition that we will be evaluating against.
      */
+    @Override
     public void setPartition(DiskPartition part) {
 
         //
@@ -262,6 +275,7 @@ public class DictTerm extends QueryTerm implements Comparator {
     /**
      * Returns the already calculated estimated size.
      */
+    @Override
     protected int calculateEstimatedSize() {
         return estSize;
     }
@@ -278,6 +292,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      * evaluating the term against the given group.  The static type of the
      * returned group depends on the query status parameter.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
 
         //
@@ -309,7 +324,12 @@ public class DictTerm extends QueryTerm implements Comparator {
             or.setQueryStats(qs);
             for(QueryEntry qe : dictEntries) {
                 wc.setTerm((String) qe.getName());
-                float qw = wf.initTerm(wc);
+                float qw;
+                if(termWeight == 0) {
+                    qw = wf.initTerm(wc);
+                } else {
+                    qw = termWeight;
+                }
                 or.add(qe.iterator(feat), qw);
             }
             return or.getGroup();
