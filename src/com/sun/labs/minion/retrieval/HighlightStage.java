@@ -60,7 +60,7 @@ public class HighlightStage extends StageAdapter {
      * A map from field names that we're supposed to highlight to a list of
      * the passages that should be highlighted for that field.
      */
-    protected Map hPass;
+    protected Map<String,List<PassageImpl>> hPass;
 
     /**
      * The fields that we're currently working on.
@@ -83,9 +83,7 @@ public class HighlightStage extends StageAdapter {
      */
     protected String[] qt;
 
-    static Logger logger = Logger.getLogger(HighlightStage.class.getName());
-
-    protected static String logTag = "HS";
+    private static final Logger logger = Logger.getLogger(HighlightStage.class.getName());
 
     public HighlightStage() {
         hPass = new HashMap();
@@ -149,7 +147,7 @@ public class HighlightStage extends StageAdapter {
         // handle it if there was a request for the whole field.
         if(ps == null) {
             if(context == -1) {
-                List l = new ArrayList();
+                List<PassageImpl> l = new ArrayList<PassageImpl>();
                 l.add(new PassageImpl(null, 0, qt, context, maxSize));
                 hPass.put(fieldName, l);
             }
@@ -160,7 +158,7 @@ public class HighlightStage extends StageAdapter {
         // We have some passages.  We'll treat them differently depending
         // on the type.
         if(type == com.sun.labs.minion.Passage.Type.JOIN) {
-            List l = new ArrayList();
+            List<PassageImpl> l = new ArrayList();
             l.add(new PassageImpl(ps.getAllPassages(doc),
                     ps.getPenalty(doc),
                     qt,
@@ -170,7 +168,7 @@ public class HighlightStage extends StageAdapter {
         } else if(type == com.sun.labs.minion.Passage.Type.UNIQUE) {
             int[][] p = ps.getUniquePassages(doc);
             float[] pen = ps.getPenalties(doc);
-            List l = new ArrayList();
+            List<PassageImpl> l = new ArrayList();
             for(int i = 0; i < p.length; i++) {
                 l.add(new PassageImpl(p[i], pen[i],
                         qt, context, maxSize));
@@ -218,7 +216,7 @@ public class HighlightStage extends StageAdapter {
                 old = new ArrayList();
             }
             for(Iterator i = bodyFields.iterator(); i.hasNext();) {
-                Object k = i.next();
+                String k = (String) i.next();
                 List l = (List) hPass.remove(k);
                 if(l != null) {
                     old.addAll(l);
@@ -255,6 +253,7 @@ public class HighlightStage extends StageAdapter {
      * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
      * the field that is starting.
      */
+    @Override
     public void startField(FieldInfo fi) {
 
         //
@@ -267,8 +266,9 @@ public class HighlightStage extends StageAdapter {
      *
      * @param t The token to process.
      */
+    @Override
     public void token(Token t) {
-        if(fields.size() == 0) {
+        if(fields.isEmpty()) {
             addToAll(null, t);
             return;
         }
@@ -285,7 +285,7 @@ public class HighlightStage extends StageAdapter {
      * name.
      */
     protected void addToAll(Object key, Token t) {
-        Object o = hPass.get(key);
+        List<PassageImpl> o = hPass.get((String) key);
         if(o == null) {
             return;
         }
@@ -299,6 +299,7 @@ public class HighlightStage extends StageAdapter {
      *
      * @param p The punctuation to process.
      */
+    @Override
     public void punctuation(Token p) {
         token(p);
     }
@@ -309,6 +310,7 @@ public class HighlightStage extends StageAdapter {
      * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
      * the field that is ending.
      */
+    @Override
     public void endField(FieldInfo fi) {
 
         //
