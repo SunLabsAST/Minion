@@ -136,9 +136,7 @@ public class PassageImpl implements Passage, Comparable {
      */
     protected String elidedUnHLValue;
 
-    static Logger logger = Logger.getLogger(PassageImpl.class.getName());
-
-    protected static String logTag = "PI";
+    private static final Logger logger = Logger.getLogger(PassageImpl.class.getName());
 
     /**
      * Creates a passage for the given set of positions.
@@ -208,6 +206,7 @@ public class PassageImpl implements Passage, Comparable {
     /**
      * Gets the penalty score associated with this passage.
      */
+    @Override
     public float getScore() {
         return penalty;
     }
@@ -311,7 +310,7 @@ public class PassageImpl implements Passage, Comparable {
         tokenEnds = new int[tokenPosns.length];
         int startEndCnt = 0;
 
-        StringBuffer uhl = new StringBuffer();
+        StringBuilder uhl = new StringBuilder();
         b.append(highlighter.startContext());
         for(int i = 0; i < size; i++) {
 
@@ -370,18 +369,22 @@ public class PassageImpl implements Passage, Comparable {
         return elidedHLValue;
     }
 
+    @Override
     public String highlight(PassageHighlighter highlighter) {
         return highlight(highlighter, false);
     }
 
+    @Override
     public String getHLValue() {
         return getHLValue(true);
     }
 
+    @Override
     public String getHLValue(boolean elided) {
         return elided ? elidedHLValue : fullHLValue;
     }
 
+    @Override
     public String getUnHLValue(boolean elided) {
         return elided ? elidedUnHLValue : fullUnHLValue;
     }
@@ -466,10 +469,10 @@ public class PassageImpl implements Passage, Comparable {
                 //
                 // Watch for places with no tokens, and watch for the
                 // overlap between words!
-                if(after[i] >= before[i + 1]) {
+                if(after[i] > before[i + 1]) {
                     continue;
                 }
-
+                
                 //
                 // Append the token after this position and the one before
                 // the next position.
@@ -479,6 +482,12 @@ public class PassageImpl implements Passage, Comparable {
                 }
                 chunks[i].append(a);
                 currSize += a.length();
+                
+                //
+                // Watch for the overlap when two hit terms are adjacent!
+                if(after[i]-1 == before[i+1]) {
+                    continue;
+                }
 
                 String b = tokens[before[i + 1]--].getToken();
                 if(currSize + b.length() >= maxSize) {
