@@ -95,9 +95,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      */
     protected QueryStats qs;
 
-    static Logger logger = Logger.getLogger(ResultImpl.class.getName());
-
-    protected static String logTag = "RI";
+    private static final Logger logger = Logger.getLogger(ResultImpl.class.getName());
 
     /**
      * Creates an empty search result.
@@ -172,6 +170,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * Gets the document key associated with the document represented by
      * this result.
      */
+    @Override
     public String getKey() {
         return (String) ag.part.getDocumentTerm(doc).getName();
     }
@@ -181,16 +180,19 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      *
      * @return an <code>Object</code> of the appropriate type.
      */
+    @Override
     public List getField(String name) {
         return (List) ((InvFileDiskPartition) ag.part).getSavedFieldData(name,
                 doc, true);
     }
 
+    @Override
     public Object getSingleFieldValue(String name) {
         return ((InvFileDiskPartition) ag.part).getSavedFieldData(name, doc,
                 false);
     }
 
+    @Override
     public Document getDocument() {
         DocKeyEntry dke = ag.part.getDocumentTerm(doc);
 
@@ -214,6 +216,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * vector will be built from data for all the vectored fields in the document.
      * 
      */
+    @Override
     public DocumentVector getDocumentVector() {
         return new DocumentVectorImpl(this, null);
     }
@@ -221,10 +224,12 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     /**
      * Gets the document vector corresponding to this result.
      */
+    @Override
     public DocumentVector getDocumentVector(String field) {
         return new DocumentVectorImpl(this, field);
     }
 
+    @Override
     public DocumentVector getDocumentVector(WeightedField[] fields) {
         if(fields.length == 1) {
             return new DocumentVectorImpl(this, fields[0].getFieldName());
@@ -236,6 +241,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     /**
      * Returns an iterator for all of the field values in a result.
      */
+    @Override
     public Iterator getFieldIterator() {
         return null;
     }
@@ -243,6 +249,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     /**
      * Gets the score associated with this result.
      */
+    @Override
     public float getScore() {
         return score;
     }
@@ -264,6 +271,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * @return the euclidean distance between the two results based on the
      * give field.
      */
+    @Override
     public double getDistance(Result r, String name) {
 
         //
@@ -320,6 +328,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     /**
      * Gets the number of passages associated with this result.
      */
+    @Override
     public int getNPassages() {
         return 0;
     }
@@ -329,6 +338,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * configuration parameter that is passed to the
      * <code>SearchEngine</code> at startup time.
      */
+    @Override
     public String getIndexName() {
         return set.getEngine().getName();
     }
@@ -340,10 +350,10 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * @return <code>null</code> if there are no query terms suitable for
      * passage highlighting.
      */
+    @Override
     public PassageBuilder getPassageBuilder() {
 
-        if(ag.queryTerms == null ||
-                ag.queryTerms.size() == 0) {
+        if(ag.queryTerms == null || ag.queryTerms.isEmpty()) {
             return null;
         }
 
@@ -420,6 +430,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         }
     }
 
+    @Override
     public int compareTo(Result o) {
 
         ResultImpl r = (ResultImpl) o;
@@ -472,6 +483,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * @param o the object to test for equality
      * @return true if the receiver and the argument are equal, false otherwise
      */
+    @Override
     public boolean equals(Object o) {
         if(!(o instanceof ResultImpl)) {
             return false;
@@ -481,9 +493,10 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         return ag.part == other.ag.part && doc == other.doc;
     }
 
+    @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
-        sb.append("(" + ag.part + ", " + doc + ", " + score + ", [");
+        StringBuilder sb = new StringBuilder();
+        sb.append("(").append(ag.part).append(", ").append(doc).append(", ").append(score).append(", [");
         for(int i = 0; i < fields.length; i++) {
             if(i > 0) {
                 sb.append(", ");
@@ -515,6 +528,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      *
      * @return a clone of this group.  We will clone the internal arrays.
      */
+    @Override
     public Object clone() {
         ResultImpl result = null;
         try {
