@@ -53,6 +53,7 @@ public class SEMain  {
                                      FieldInfo.Attribute.TOKENIZED,
                                      FieldInfo.Attribute.VECTORED);
         engine.defineField(new FieldInfo("file", regular));
+        engine.defineField(new FieldInfo("filename", saved, FieldInfo.Type.STRING));
     }
 
     /**
@@ -79,6 +80,7 @@ public class SEMain  {
         // Finally, put in the file to index.  We won't be saving the
         // data into an explicit field, but that is possible.
         document.put("file", f);
+        document.put("filename", f.toString());
 
         return document;
     }

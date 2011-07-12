@@ -502,7 +502,7 @@ public abstract class Proximity extends Operator {
         float[] topTermPens = new float[columns.length];
         float minPenalty = Float.MAX_VALUE;
         boolean addedPassages = false;
-
+        
         //
         // Fill the columns for the first go-round.
         int prevTop = -1;

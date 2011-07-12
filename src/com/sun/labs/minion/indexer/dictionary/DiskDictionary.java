@@ -1073,7 +1073,7 @@ public class DiskDictionary implements Dictionary {
                                      boolean starts,
                                      boolean ends, int maxEntries,
                                      long timeLimit) {
-
+        
         //
         // Get a set of candidate strings. We'll set up a timer first...
         QueryTimerTask qtt = new QueryTimerTask();
@@ -1117,11 +1117,11 @@ public class DiskDictionary implements Dictionary {
                 (!qtt.timedOut) &&
                 ((maxEntries <= 0) || (res.size() < maxEntries)); i++) {
             QueryEntry curr = getByID(entryIds[i]);
-            String name = curr.getName().toString();
+            String currName = curr.getName().toString();
             if(!caseSensitive) {
-                name = CharUtils.toLowerCase(name);
+                currName = CharUtils.toLowerCase(currName);
             }
-            int pos = name.indexOf(substring);
+            int pos = currName.indexOf(substring);
 
             //
             // If we found the substring and it meets any start/end

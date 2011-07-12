@@ -256,16 +256,7 @@ public class IndexTest extends SEMain {
 
                     try {
                         long len = f.length();
-                        boolean longFile = len > 400000;
-//                        if(longFile) {
-//                        logger.info("Long: " + f.length());
-//                            engine.flush();
-//                        }
                         engine.index(document);
-//                        if(longFile) {
-//                            engine.flush();
-//                        }
-
                         nDocs++;
                         totalLen += len;
 

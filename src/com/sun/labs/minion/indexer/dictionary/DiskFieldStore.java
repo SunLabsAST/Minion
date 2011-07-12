@@ -397,8 +397,8 @@ public class DiskFieldStore extends FieldStore {
         }
         
         if(f.getField().getType() != FieldInfo.Type.STRING) {
-            logger.warning("MATCHES is an invalid operator for a " +
-                    "non-character field: " + name);
+            logger.warning(String.format("SUBSTRING is an invalid operator for a " +
+                    "non-string field: %s", name));
             return null;
         }
         

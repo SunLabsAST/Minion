@@ -245,8 +245,8 @@ public class FieldTerm extends QueryTerm {
                 dayResolution = isDayResolution(d);
                 o = new Date(time);
             } catch(java.text.ParseException pe) {
-                logger.warning("Invalid date format: \"" + val +
-                        "\" for date field: " + name);
+                logger.warning(String.format("Invalid date format: \"%s\" for date field %s", 
+                        val, name));
                 return;
             }
         }
