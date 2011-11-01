@@ -155,7 +155,7 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
                 }
                 top = heap.peek();
             }
-            f.setWeight(f.getWeight() / fvs.size());
+            modifySummedWeights(f, fvs);
             ret.add(f);
         }
         
@@ -170,6 +170,11 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
         return ret.toArray(new WeightedFeature[0]);
     }
 
+    protected void modifySummedWeights(WeightedFeature f,
+                                       List<WeightedFeature[]> fvs) {
+        f.setWeight(f.getWeight() / fvs.size());
+    }
+    
     class HE implements Comparable<HE> {
         int i = -1;
         

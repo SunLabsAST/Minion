@@ -540,7 +540,7 @@ public abstract class AbstractPipelineImpl implements Pipeline {
             dumper.dump(getIndexer());
             setIndexer(factory.getIndexingStage());
         } else {
-            logger.finer("Dumper for pipeline is null in realDump()");
+            logger.finest("Dumper for pipeline is null in realDump()");
         }
     }
 
