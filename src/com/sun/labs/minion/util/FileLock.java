@@ -168,6 +168,7 @@ public class FileLock {
                     lockState.put(ct, state);
                     return;
                 } else {
+                    state.close();
                     throw new FileLockException("Unable to acquire lock: " +
                             lockFile);
                 }
