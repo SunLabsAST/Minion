@@ -32,6 +32,7 @@ import java.util.PriorityQueue;
 import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
+import java.util.Collection;
 
 /**
  * An implementation of a document vector that combines the vectors for
@@ -41,7 +42,14 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
     
     List<DocKeyEntry> keys;
     
-    public MultiDocumentVectorImpl(List<DocumentVector> dvs) {
+    /**
+     * Default constructor to allow subclassing without default initialization
+     */
+    protected MultiDocumentVectorImpl() {
+        
+    }
+    
+    public MultiDocumentVectorImpl(Collection<DocumentVector> dvs) {
         List<WeightedFeature[]> fvs = new ArrayList<WeightedFeature[]>(dvs.size());
         for(DocumentVector dv : dvs) {
             fvs.add(((DocumentVectorImpl) dv).getFeatures());
@@ -49,11 +57,11 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
         v = combineFeatures(fvs);
     }
     
-    public MultiDocumentVectorImpl(List<DocumentVector> dvs, String field) {
+    public MultiDocumentVectorImpl(Collection<DocumentVector> dvs, String field) {
         this(dvs, null, field);
     }
 
-    public MultiDocumentVectorImpl(List<DocumentVector> dvs, SearchEngine e, String field) {
+    public MultiDocumentVectorImpl(Collection<DocumentVector> dvs, SearchEngine e, String field) {
         List<WeightedFeature[]> fvs = new ArrayList<WeightedFeature[]>(dvs.size());
         for(DocumentVector dv : dvs) {
             fvs.add(((DocumentVectorImpl) dv).getFeatures());
@@ -175,12 +183,12 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
         f.setWeight(f.getWeight() / fvs.size());
     }
     
-    class HE implements Comparable<HE> {
+    protected class HE implements Comparable<HE> {
         int i = -1;
         
-        WeightedFeature[] fv;
+        public WeightedFeature[] fv;
         
-        WeightedFeature f;
+        public WeightedFeature f;
         
         public HE(WeightedFeature[] fv) {
             this.fv = fv;
