@@ -594,7 +594,7 @@ public class StrictTransformer extends Transformer
     }
 
 
-    public static String getFieldName(SimpleNode field)
+    public static String[] getFieldNames(SimpleNode field)
         throws ParseException
     {
         if (!(field instanceof StrictASTqif)) {
@@ -624,7 +624,7 @@ public class StrictTransformer extends Transformer
         if (name == null) {
             throw new ParseException("Failed to locate field name for field", 0);
         }
-        return name.value;
+        return name.value.split(",");
     }
 
     public static String getFieldValue(SimpleNode field)

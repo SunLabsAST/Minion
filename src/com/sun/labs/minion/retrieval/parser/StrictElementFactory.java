@@ -294,11 +294,14 @@ public class StrictElementFactory
                 throw new ParseException("Encountered field with multiple values " + children.size(), 0);
             }
             QueryElement kid = (QueryElement)children.get(0);
-            kid.addSearchFieldName(StrictTransformer.getFieldName(node));
+            String[] fields = StrictTransformer.getFieldNames(node);
+            for (String field : fields) {
+                kid.addSearchFieldName(field);
+            }
             result = kid;
         } else {
             // This is a saved field, grab the operands
-            String name = StrictTransformer.getFieldName(node);
+            String name = StrictTransformer.getFieldNames(node)[0];
             String value = StrictTransformer.getFieldValue(node);
             if (StrictTransformer.isQuoted(value)) {
                 value = value.substring(1, value.length() - 1);
