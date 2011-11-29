@@ -52,6 +52,11 @@ public class Undefined extends Operator implements Serializable {
     }
 
     @Override
+    public String toQueryString() {
+        return String.format("<undefined> %s", field);
+    }
+
+    @Override
     public String toString() {
         return String.format("(<undefined> %s)", field);
     }

@@ -26,6 +26,11 @@ public class PAnd extends Proximity implements Serializable {
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         return new com.sun.labs.minion.retrieval.PAnd(getQueryElements(pipeline));
     }
+
+    @Override
+    public String toQueryString() {
+        return Proximity.getPrefixOperatorQueryString("<pand>", elements, fields);
+    }
     
     @Override
     public String toString() {

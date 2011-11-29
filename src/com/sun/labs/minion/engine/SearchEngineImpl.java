@@ -540,12 +540,11 @@ public class SearchEngineImpl implements SearchEngine,
     }
 
 
-
-    @Override
-    public ResultSet search(String query, String sortOrder,
-            Searcher.Operator defaultOperator, Searcher.Grammar grammar)
+    public static QueryElement parseQuery(String query, 
+            Searcher.Operator defaultOperator, 
+            Searcher.Grammar grammar, 
+            QueryPipeline queryPipeline)
             throws SearchEngineException {
-
         QueryElement qe = null;
         SimpleNode parseTree = null;
 
@@ -565,8 +564,8 @@ public class SearchEngineImpl implements SearchEngine,
                 xer = new LuceneTransformer();
                 break;
             default:
-                throw new SearchEngineException("Unknown grammar specified: " +
-                        grammar);
+                throw new SearchEngineException("Unknown grammar specified: "
+                        + grammar);
         }
 
         try {
@@ -576,10 +575,10 @@ public class SearchEngineImpl implements SearchEngine,
 
             com.sun.labs.minion.retrieval.parser.Token badToken =
                     ex.currentToken;
-            while (badToken.next != null) {
+            while(badToken.next != null) {
                 badToken = badToken.next;
             }
-            
+
             throw new com.sun.labs.minion.ParseException(
                     badToken.image,
                     badToken.beginColumn);
@@ -590,8 +589,8 @@ public class SearchEngineImpl implements SearchEngine,
 
         try {
             qe = xer.transformTree(parseTree, defaultOperator, queryPipeline);
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.finest("Processing Query\n" + qe.toString());
+            if(logger.isLoggable(Level.FINEST)) {
+                logger.finest(String.format("Processing Query\n %s", qe.toString()));
             }
         } catch(java.text.ParseException ex) {
             logger.log(Level.SEVERE, "Error transforming query", ex);
@@ -608,8 +607,15 @@ public class SearchEngineImpl implements SearchEngine,
         //
         // Try to optimize the query some.
         QueryOptimizer opti = new QueryOptimizer();
-        qe = opti.optimize(qe);
+        return opti.optimize(qe);
+    }
 
+    @Override
+    public ResultSet search(String query, String sortOrder,
+            Searcher.Operator defaultOperator, Searcher.Grammar grammar)
+            throws SearchEngineException {
+
+        QueryElement qe = parseQuery(query, defaultOperator, grammar, queryPipeline);
         return search(qe, sortOrder);
     }
 

@@ -26,10 +26,14 @@ public class Phrase extends Proximity implements Serializable {
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         return new com.sun.labs.minion.retrieval.Phrase(getQueryElements(pipeline));
     }
+
+    @Override
+    public String toQueryString() {
+        return Proximity.getPrefixOperatorQueryString("<phrase>", elements, fields);
+    }
     
     @Override
     public String toString() {
         return String.format("(Phrase %s)", elements);
     }
-
 }

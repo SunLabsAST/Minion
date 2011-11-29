@@ -41,6 +41,11 @@ public class Near extends Proximity implements Serializable {
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         return new com.sun.labs.minion.retrieval.Near(getQueryElements(pipeline), n);
     }
+
+    @Override
+    public String toQueryString() {
+        return Proximity.getPrefixOperatorQueryString(String.format("<near/%d>", n), elements, fields);
+    }
     
     @Override
     public String toString() {

@@ -28,6 +28,11 @@ public class Passage extends Proximity implements Serializable {
     }
 
     @Override
+    public String toQueryString() {
+        return Proximity.getPrefixOperatorQueryString("<passage>", elements, fields);
+    }
+
+    @Override
     public String toString() {
         return String.format("(Passage %s)", elements);
     }

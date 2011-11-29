@@ -26,6 +26,7 @@ package com.sun.labs.minion.query;
 import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.retrieval.FieldTerm;
 import com.sun.labs.minion.retrieval.QueryElement;
+import com.sun.labs.minion.util.StringUtil;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -167,7 +168,16 @@ public class Relation extends Element implements Serializable {
     }
 
     @Override
+    public String toQueryString() {
+        if(value.indexOf(' ') > 0) {
+            return String.format("%s %s \"%s\"", field, operator.getRep(), StringUtil.escapeQuotes(value));
+            
+        }
+        return String.format("%s %s %s", field, operator.getRep(), StringUtil.escapeQuotes(value));
+    }
+
+    @Override
     public String toString() {
-        return "(" + operator.getRep() + " " + field + " " + value + ")";
+        return String.format("(%s %s %s)", operator.getRep(), field, value);
     }
 }

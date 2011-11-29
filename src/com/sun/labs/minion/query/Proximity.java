@@ -2,10 +2,12 @@ package com.sun.labs.minion.query;
 
 import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.retrieval.QueryElement;
+import com.sun.labs.minion.util.StringUtil;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A base class for proximity operators.

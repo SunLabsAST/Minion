@@ -49,6 +49,13 @@ public class Weight extends Unary implements Serializable {
         return new com.sun.labs.minion.retrieval.Weight(
                 element.getQueryElement(pipeline), factor);
     }
+
+    @Override
+    public String toQueryString() {
+        return String.format("<weight> %f %s", factor, element.toQueryString());
+    }
+    
+    
     
     @Override
     public String toString() {

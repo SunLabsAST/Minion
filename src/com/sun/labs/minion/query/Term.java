@@ -51,27 +51,40 @@ public class Term extends Element implements Serializable {
          * Indicates that only terms with the exact case provided should be
          * returned.
          */
-        CASE,
+        CASE("<case>"),
 
         /**
          * Indicates that terms that are morphological variations may be returned.
          */
-        MORPH,
+        MORPH("<morph>"),
 
         /**
          * Indicates that semantic or other term variations may be returned.
          */
-        EXPAND,
+        EXPAND("<expand>"),
 
         /**
          * Indicates that stem matches may be returned.
          */
-        STEM,
+        STEM("<stem>"),
 
         /**
          * Indicates that wildcard matches may be returned.
          */
-        WILDCARD,
+        WILDCARD("<wild>");
+        
+        private String rep;
+        
+        Modifier() {
+        }
+        
+        Modifier(String rep) {
+            this.rep = rep;
+        }
+        
+        public String getRep() {
+            return rep;
+        }
     }
 
     private String term;
@@ -175,6 +188,21 @@ public class Term extends Element implements Serializable {
         term.setDoWild(modifiers.contains(Modifier.WILDCARD));
         term.setSearchFields(fields);
         term.strictEval = strict;
+    }
+
+    @Override
+    public String toQueryString() {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for(Modifier modifier : modifiers) {
+            if(!first) {
+                sb.append(' ');
+            }
+            sb.append(modifier.getRep());
+            first = false;
+        }
+        sb.append(term);
+        return sb.toString();
     }
 
     @Override

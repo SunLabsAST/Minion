@@ -156,6 +156,13 @@ public abstract class Element implements Serializable {
         }
         return new HashSet<String>(fields);
     }
+    
+    /**
+     * Generates a parseable query string from this query element.
+     * 
+     * @return A parseable representation of this query element.
+     */
+    public abstract String toQueryString();
 
     /**
      * Transduces this query element into a "real" query element, one that can
