@@ -615,7 +615,7 @@ public class SearchEngineImpl implements SearchEngine,
             Searcher.Operator defaultOperator, Searcher.Grammar grammar)
             throws SearchEngineException {
 
-        QueryElement qe = parseQuery(query, defaultOperator, grammar, queryPipeline);
+        QueryElement qe = parseQuery(query, defaultOperator, grammar, pipelineFactory.getQueryPipeline(this));
         return search(qe, sortOrder);
     }
 
@@ -649,7 +649,7 @@ public class SearchEngineImpl implements SearchEngine,
 
     public ResultSet search(Element el, String sortOrder) throws SearchEngineException {
         checkQuery(null, el);
-        return search(el.getQueryElement(queryPipeline), sortOrder);
+        return search(el.getQueryElement(pipelineFactory.getQueryPipeline(this)), sortOrder);
     }
 
     /**
@@ -1711,11 +1711,6 @@ public class SearchEngineImpl implements SearchEngine,
         }
 
         //
-        // Get a pipeline that we'll use internally for transforming query
-        // text.
-        queryPipeline = getQueryPipeline();
-        
-        //
         // Define all of our fields.
         indexConfig =
                 (IndexConfig) ps.getComponent(PROP_INDEX_CONFIG);
@@ -1915,12 +1910,6 @@ public class SearchEngineImpl implements SearchEngine,
 
     private QueryStats qs;
 
-    /**
-     * A query pipeline that we'll use internally for processing the free text
-     * in queries.
-     */
-    private QueryPipeline queryPipeline;
-    
     public List getProfilers() {
         return profilers;
     }
