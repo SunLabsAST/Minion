@@ -40,7 +40,14 @@ public class ParsedElement extends Element {
     @Override
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         try {
-            return SearchEngineImpl.parseQuery(query, defaultOperator, queryGrammar, pipeline);
+            QueryElement qel = SearchEngineImpl.parseQuery(query, defaultOperator, queryGrammar, pipeline);
+            if(fields != null && !fields.isEmpty()) {
+                for(String field : fields) {
+                    qel.addSearchFieldName(field);
+                }
+            }
+            qel.strictEval = strict;
+            return qel;
         } catch(SearchEngineException ex) {
             Throwable cause = ex.getCause();
             if(cause == null) {
