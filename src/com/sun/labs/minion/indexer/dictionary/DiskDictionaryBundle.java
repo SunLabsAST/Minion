@@ -14,8 +14,6 @@ import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.MergeState;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
-import com.sun.labs.minion.indexer.postings.IDFreqPostings;
-import com.sun.labs.minion.indexer.postings.IDPostings;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -367,28 +365,28 @@ public class DiskDictionaryBundle<N extends Comparable> {
             return null;
         }
 
-        Comparable val = MemoryDictionaryBundle.getEntryName(stringVal, info,
-                dateParser);
+        Comparable val = 
+                MemoryDictionaryBundle.getEntryName(stringVal, info, dateParser);
 
         if(field.getInfo().getType() != FieldInfo.Type.STRING) {
             return dicts[Type.RAW_SAVED.ordinal()].get(val);
         } else {
 
             if(caseSensitive) {
-                if(field.isCased()) {
                     return dicts[Type.RAW_SAVED.ordinal()].get(val);
+            } else {
+                if(dicts[Type.UNCASED_SAVED.ordinal()] != null) {
+                    return dicts[Type.UNCASED_SAVED.ordinal()].get(val);
                 } else {
                     logger.warning(
                             String.format(
-                            "Case sensitive request for field value %s in field %s, "
-                            + "but this field only has case insensitive values.",
+                            "Case insensitive request for field value %s in field %s, "
+                            + "but this field only has case sensitive values.",
                             val, field.getInfo().getName()));
-                    return dicts[Type.RAW_SAVED.ordinal()].get(val);
+                    return null;
                 }
             }
         }
-
-        return null;
     }
 
     /**
