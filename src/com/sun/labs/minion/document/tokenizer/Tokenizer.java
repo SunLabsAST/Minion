@@ -128,9 +128,24 @@ public abstract class Tokenizer extends StageAdapter implements
 
     @Override
     public void process(String text) {
-        char[] tc = text.toCharArray();
-        text(tc, 0, tc.length);
+        text(text);
     }
+
+    @Override
+    public int getLastWordPosition() {
+        return wordNum;
+    }
+
+    @Override
+    public void setNextWordPosition(int wordPosition) {
+        this.wordNum = wordPosition;
+    }
+    
+    /**
+     * Tokenize the given character sequence.
+     * @param s the sequence to tokenize.
+     */
+    public abstract void text(CharSequence s);
 
     /**
      * Tokenize the given text.  Output tokens will be placed on the output
@@ -141,16 +156,6 @@ public abstract class Tokenizer extends StageAdapter implements
      * @param e The ending position in the text buffer.
      */
     public abstract void text(char[] text, int b, int e);
-
-    /**
-     * Handles a character that takes up more than one character in a
-     * file.  For example, a character entity in an HTML file.
-     *
-     * @param c The character
-     * @param b The beginning position of the character in the document.
-     * @param l The length of the character in the document.
-     */
-    public abstract void handleLongChar(char c, int b, int l);
 
     /**
      * Reset state of tokenizer to clean slate.

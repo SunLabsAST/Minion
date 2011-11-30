@@ -65,6 +65,16 @@ public interface Stage extends Configurable, PipelineStage {
      * Gets the downstream stage of this stage.
      */
     public Stage getDownstream();
+            
+    /**
+     * Gets the last word position assigned in this pipeline.
+     */
+    public int getLastWordPosition();
+    
+    /**
+     * Sets the next word position that will be used by this pipeline.
+     */
+    public void setNextWordPosition(int wordPosition);
     
     /**
      * Processes text, passing the results downstream.

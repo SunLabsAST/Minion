@@ -93,6 +93,9 @@ public class JCCTokenizer extends Tokenizer {
         for (int i = 0; i < 1; i++) jj_la1[i] = -1;
   }
 
+    public void text(CharSequence s) {
+    }
+
     public void text(char[] text, int b, int e) {
 
         //
@@ -107,20 +110,6 @@ public class JCCTokenizer extends Tokenizer {
         // re-initialize the lexer.
         reader.reset(text, b, e);
         ReInit(reader);
-        try {
-            while(next());
-        } catch (ParseException pe) {
-            logger.log(Level.WARNING, "Tokenizer parse exception", pe);
-        }
-    }
-
-    public void handleLongChar(char c, int b, int l) {
-        //
-        // Tokenizing a single character is dumb, but we don't want to have to
-        // recreate all of the rules!
-        char[] temp = new char[1];
-        temp[0] = c;
-        reader.reset(temp, 0, 1);
         try {
             while(next());
         } catch (ParseException pe) {

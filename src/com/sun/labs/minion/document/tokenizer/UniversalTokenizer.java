@@ -246,6 +246,53 @@ public class UniversalTokenizer extends Tokenizer {
     }
 
     @Override
+    public void text(CharSequence s) {
+
+        //
+        // We no longer care about character position - only word position.
+        // For now, we'll just make "p" zero.  Next pass through this code
+        // should include removing p and the character position pos.
+        int p = 0;
+
+        //
+        // If we're not supposed to make tokens, then just add all of
+        // this text to the current token.
+        if(!makeTokens) {
+            int newLen = tokLen + s.length();
+            if(newLen >= token.length) {
+                token = Arrays.copyOf(token, newLen + 32);
+                lengths = Arrays.copyOf(lengths, newLen + 32);
+            }
+            // Add new characters into the token buffer.
+            if(s instanceof String) {
+                ((String) s).getChars(0, s.length(), token, tokLen);
+            } else {
+                for(int i = 0; i < s.length(); i++) {
+                    token[tokLen++] = s.charAt(i);
+                }
+            }
+            tokLen = newLen;
+            return;
+        }
+
+        //
+        // If we're collecting, adjust the end position of the current
+        // token to be the position just before this text.
+        if((state >= COLLECTING && state <= ASIAN) || whiteCount > 0) {
+            end = p - 1;
+        }
+        pos = p;
+
+        // Character length is 1 for all chars in a text block.
+        cl = 1;
+        for(int i = 0; i < s.length(); i++) {
+            c = s.charAt(i);
+            handleChar();
+            pos++;
+        }
+    }
+
+    @Override
     public void text(char[] text, int b, int e) {
         
         //
@@ -287,25 +334,6 @@ public class UniversalTokenizer extends Tokenizer {
             handleChar();
             pos++;
         }
-    }
-
-    /**
-     * Handles a character that takes up more than one character in a
-     * file.  For example, a character entity in an HTML file.
-     *
-     * @param c The character
-     * @param b The beginning position of the character in the document.
-     * @param l The length of the character in the document.
-     */
-    public void handleLongChar(char c, int b, int l) {
-
-        this.c = c;
-        cl = l;
-        pos = b;
-
-        // Now, handle the character as if it were in text.
-        handleChar();
-        return;
     }
 
     /**

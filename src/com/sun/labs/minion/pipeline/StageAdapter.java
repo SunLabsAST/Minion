@@ -101,6 +101,19 @@ public class StageAdapter implements Stage {
         }
     }
 
+    public int getLastWordPosition() {
+        if(downstream != null) {
+            return downstream.getLastWordPosition();
+        }
+        return 0;
+    }
+
+    public void setNextWordPosition(int wordPosition) {
+        if(downstream != null) {
+            downstream.setNextWordPosition(wordPosition);
+        }
+    }
+
     public Pipeline getPipeline() {
         return pipeline;
     }
