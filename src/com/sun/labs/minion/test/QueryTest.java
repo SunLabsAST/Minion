@@ -56,7 +56,6 @@ import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
-import com.sun.labs.minion.ParseException;
 import com.sun.labs.minion.Passage;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.PassageHighlighter;
@@ -783,7 +782,7 @@ public class QueryTest extends SEMain {
                             DiskField df = ((InvFileDiskPartition) p).getDF(
                                     args[i]);
                             Object v = df.getFetcher().fetch(d);
-                            shell.out.format("%s: %s", args[i], v);
+                            shell.out.format("%s: %s\n", args[i], v);
                         }
                     }
                 }
