@@ -443,10 +443,10 @@ public class PositionPostings implements Postings {
 
             //
             // Now fix up the other skips.
-            for(int i = 1; i <= other.nSkips; i++, nSkips++) {
+            for(int i = 1; i <= other.nSkips; i++) {
                addSkip(other.skipID[i] + start - 1, 
-                        other.skipIDOffsets[i] - other.dataStart + idOffset + adj, 
-                        other.skipPosnOffsets[i] + mPosnOffset);
+                       other.skipIDOffsets[i] - other.dataStart + idOffset + adj, 
+                       other.skipPosnOffsets[i] + mPosnOffset);
             }
         }
     }

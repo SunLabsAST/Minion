@@ -1,7 +1,6 @@
 package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.indexer.postings.io.RAMPostingsInput;
-import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.RAMPostingsOutput;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.util.NanoWatch;
@@ -15,9 +14,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.Random;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -45,14 +42,14 @@ public class PositionPostingsTest {
 
     Random rand = new Random();
 
-    Zipf zipf = new Zipf(32768, rand);
+    Zipf zipf = new Zipf(1024, rand);
 
     private static String[] previousData = new String[]{
         "/com/sun/labs/minion/indexer/postings/resource/position/positionpostings.1.gz",
         "/var/folders/zq/8xrjbcx915118brpx0pz9l34002wrf/T/random6926995377196554799.data"};
 
     private static String[] previousAppends = new String[]{
-        "/var/folders/zq/8xrjbcx915118brpx0pz9l34002wrf/T/randomappend740367155629235166.data",
+        "/var/folders/zq/8xrjbcx915118brpx0pz9l34002wrf/T/randomappend2869275918609327210.data",
     };
     
     public PositionPostingsTest() {
@@ -85,6 +82,26 @@ public class PositionPostingsTest {
         }
     }
 
+    private BufferedReader getInputReader(String resourceName) throws IOException {
+        InputStream pdis = getClass().getResourceAsStream(resourceName);
+        if(pdis == null) {
+            try {
+                pdis = new FileInputStream(resourceName);
+            } catch(FileNotFoundException ex) {
+                logger.info(String.format("Couldn't find %s", resourceName));
+                return null;
+            }
+        }
+        logger.info(String.format("Opening test data %s", resourceName));
+        InputStream is;
+        if(resourceName.endsWith(".gz")) {
+            is = new GZIPInputStream(pdis);
+        } else {
+            is = pdis;
+        }
+        return new BufferedReader(new InputStreamReader(is));
+    }
+
     /**
      * Tests encoding our random data, dumping the data to a file if a failure occurs.
      * @throws Exception if there is an error
@@ -95,7 +112,7 @@ public class PositionPostingsTest {
             NanoWatch nw = new NanoWatch();
             TestData testData = null;
             try {
-                logger.info(String.format("randomAdd iteration %d/%d max %d", i + 1, nIter, n));
+                logger.fine(String.format("randomAdd iteration %d/%d max %d", i + 1, nIter, n));
                 testData = new TestData(rand.nextInt(n) + 1);
                 testData.paces();
             } catch(AssertionError ex) {
@@ -114,7 +131,7 @@ public class PositionPostingsTest {
      * @param p the postings we want to test
      * @param data the data that we're testing
      */
-    private void postingsEncodingCheck(PositionPostings posnPostings, TestData data) throws IOException {
+    private void checkPostingsEncoding(PositionPostings posnPostings, TestData data, long[] offsets, int[] sizes) throws IOException {
 
         ReadableBuffer idBuff = postOut[0].asInput().read(offsets[0], sizes[0]);
         ReadableBuffer posnBuff = postOut[1].asInput().read(offsets[1], sizes[1]);
@@ -190,11 +207,9 @@ public class PositionPostingsTest {
     }
 
     private void randomAppend(int size) throws java.io.IOException {
-        for(int i = 0; i < 128; i++) {
-            TestData d1 = new TestData(rand.nextInt(size));
-            TestData d2 = new TestData(rand.nextInt(size));
-            checkAppend(d1, d2, true);
-        }
+        TestData d1 = new TestData(rand.nextInt(size)+20);
+        TestData d2 = new TestData(rand.nextInt(size)+20);
+        checkAppend(d1, d2, true);
     }
 
     private void checkAppend(TestData d1, TestData d2, boolean dump) throws java.io.IOException {
@@ -224,7 +239,8 @@ public class PositionPostingsTest {
             int s3[] = new int[2];
             append.write(postOut, o3, s3);
             append = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, o3, s3);
-            atd.iteration(append);
+            checkPostingsEncoding(append, atd, o3, s3);
+            atd.iteration(append);  
         } catch(AssertionError er) {
             if(dump) {
                 File f = File.createTempFile("randomappend", ".data");
@@ -313,26 +329,6 @@ public class PositionPostingsTest {
         randomAdd(1024 * 1024, 128);
     }
     
-    private BufferedReader getInputReader(String resourceName) throws IOException {
-        InputStream pdis = getClass().getResourceAsStream(resourceName);
-        if(pdis == null) {
-            try {
-                pdis = new FileInputStream(resourceName);
-            } catch(FileNotFoundException ex) {
-                logger.info(String.format("Couldn't find %s", resourceName));
-                return null;
-            }
-        }
-        logger.info(String.format("Opening test data %s", resourceName));
-        InputStream is;
-        if(resourceName.endsWith(".gz")) {
-            is = new GZIPInputStream(pdis);
-        } else {
-            is = pdis;
-        }
-        return new BufferedReader(new InputStreamReader(is));
-    }
-
     /**
      * Tests encoding data that has had problems before, ensuring that we
      * don't re-introduce old problems.
@@ -371,9 +367,12 @@ public class PositionPostingsTest {
         }
     }
     
-//    @Test
+    @Test
     public void testAppend() throws java.io.IOException {
-        randomAppend(8192);
+        for(int i = 0; i < 256; i++) {
+            logger.fine(String.format("Random append %d/%d", i+1, 256));
+            randomAppend(8196);
+        }
     }
     
 //    @Test
@@ -492,23 +491,29 @@ public class PositionPostingsTest {
             logger.fine(String.format("Read %d ids", ids.length));
         }
 
-        public TestData(TestData d1, TestData d2) {
-            ids = new int[d1.ids.length + d2.ids.length];
-            freqs = new int[ids.length];
-            posns = new int[d1.numPosns + d2.numPosns];
-            int lastID = d1.ids[d1.ids.length -1];
+        public TestData(TestData... tds) {
+            int tids = 0;
+            int tnp = 0;
+            for(TestData td : tds) {
+                tids += td.ids.length;
+                tnp += td.numPosns;
+            }
+            ids = new int[tids];
+            freqs = new int[tids];
+            posns = new int[tnp];
+            int lastID = 0;
             int p = 0;
-            for(int i = 0; i < d1.ids.length; i++, p++) {
-                ids[p] = d1.ids[i];
+            int pp = 0;
+            for(TestData td : tds) {
+                for(int i = 0; i < td.ids.length; i++, p++) {
+                    int m = td.ids[i] + lastID;
+                    ids[p] = m;
+                    freqs[p] = td.freqs[i];
+                }
+                lastID = ids[p-1];
+                System.arraycopy(td.posns, 0, posns, pp, td.numPosns);
+                pp += td.numPosns;
             }
-            System.arraycopy(d1.freqs, 0, freqs, 0, d1.freqs.length);
-            System.arraycopy(d1.posns, 0, posns, 0, d1.numPosns);
-            for(int i = 0; i < d2.ids.length; i++, p++) {
-                int m = d2.ids[i] + lastID;
-                ids[p] = m;
-            }
-            System.arraycopy(d2.freqs, 0, freqs, d1.freqs.length, d2.freqs.length);
-            System.arraycopy(d2.posns, 0, posns, d1.numPosns, d2.numPosns);
             numPosns = posns.length;
         }
         
@@ -531,7 +536,7 @@ public class PositionPostingsTest {
             nw.stop();
             logger.fine(String.format(" Encoding and writing %.3f", nw.getLastTimeMillis()));
             nw.start();
-            postingsEncodingCheck(p, this);
+            checkPostingsEncoding(p, this, offsets, sizes);
             nw.stop();
             logger.fine(String.format(" Encoding check %.3f", nw.getLastTimeMillis()));
             nw.start();
@@ -599,10 +604,11 @@ public class PositionPostingsTest {
                 for(int j = 0; j < expectedFreq; j++, pp++) {
                     if(posns[pp] != piPosn[j]) {
                         assertTrue(String.format(
-                                "Incorrect position for id %d at %d, freq %d, expected %d, got %d",
+                                "Incorrect position for id %d at %d, freq %d, freq # %d, expected %d, got %d",
                                 expectedID,
                                 i,
                                 expectedFreq,
+                                j,
                                 posns[pp], piPosn[j]),
                                 posns[pp] == piPosn[j]);
                     }
@@ -613,7 +619,7 @@ public class PositionPostingsTest {
         }
 
         public void dump(PrintWriter out) throws java.io.IOException {
-            logger.info(String.format("Dumping %d ids", ids.length));
+            logger.fine(String.format("Dumping %d ids", ids.length));
             for(int id : ids) {
                 out.format("%d ", id);
             }
