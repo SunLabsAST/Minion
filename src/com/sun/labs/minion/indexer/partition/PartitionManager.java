@@ -1604,7 +1604,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         FileLock ourMergeLock = new FileLock(mergeLock, 200, TimeUnit.SECONDS);
         Merger m = getMerger((List<DiskPartition>) getActivePartitions(), ourMergeLock);
         if(m == null) {
-            return activeParts.peek();
+            logger.warning(String.format("Unable to get merge lock for optimize"));
+            return null;
         }
         return m.merge();
     }
