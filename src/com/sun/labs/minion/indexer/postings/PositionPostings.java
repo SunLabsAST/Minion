@@ -538,6 +538,14 @@ public class PositionPostings implements Postings {
         posPos = 0;
     }
     
+    public String toString() {
+        if(idBuff != null) {
+            return idBuff.toString(dataStart, dataStart + 10, Buffer.DecodeMode.BYTE_ENCODED);
+        } else {
+            return null;
+        }
+    }
+    
     /**
      * A postings iterator than can be used for in-memory data.
      */

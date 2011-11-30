@@ -49,8 +49,7 @@ public class PositionPostingsTest implements PostingsTest {
     private static String[] previousData = new String[]{};
 
     private static String[] previousAppends = new String[]{
-        "/var/folders/zq/8xrjbcx915118brpx0pz9l34002wrf/T/randomappend81817644036518208.data",
-    };
+        "/var/folders/zq/8xrjbcx915118brpx0pz9l34002wrf/T/randomappend81817644036518208.data",};
 
     public PositionPostingsTest() {
         for(int i = 0; i < postOut.length; i++) {
@@ -158,7 +157,7 @@ public class PositionPostingsTest implements PostingsTest {
         assertTrue(String.format("Wrong number of IDs: %d, expected %d", n, data.ids.length),
                 n == data.ids.length);
         n = idBuff.byteDecode();
-        assertTrue(String.format("Wrong last ID: %d, expected %d", n, data.ids[data.ids.length -1]),
+        assertTrue(String.format("Wrong last ID: %d, expected %d", n, data.ids[data.ids.length - 1]),
                 n == data.ids[data.ids.length - 1]);
         n = idBuff.byteDecode();
         assertTrue(String.format("Wrong last position offset: %d", n),
@@ -223,7 +222,6 @@ public class PositionPostingsTest implements PostingsTest {
 
     private PositionPostings checkAppend(boolean dump, TestData... tds) throws java.io.IOException {
 
-        cleanUp();
         PositionPostings[] ps = new PositionPostings[tds.length];
         long[][] tdOffsets = new long[tds.length][2];
         int[][] tdSizes = new int[tds.length][2];
@@ -412,9 +410,9 @@ public class PositionPostingsTest implements PostingsTest {
             }
         }
     }
-    
+
 //    @Test
-    public void testTestDataAppned() {
+    public void testTestDataAppend() {
         TestData[] mltd = new TestData[5];
         for(int i = 0; i < mltd.length; i++) {
             TestData[] tds = new TestData[3];
@@ -429,36 +427,33 @@ public class PositionPostingsTest implements PostingsTest {
     @Test
     public void testMultiLevelAppend() throws java.io.IOException {
         int nIter = 128;
-        for(int i = 0; i < nIter; i++) {
-            logger.fine(String.format("Multiappend iteration %d/%d", i+1, nIter));
-            for(int j = 3; j < 10; j++) {
-                TestData[] mltd = new TestData[5];
-                PositionPostings[] mlp = new PositionPostings[5];
-                logger.fine(String.format(" Using %d postings per chunk", j));
-                for(int k = 0; k < mltd.length; k++) {
-                    TestData[] tds = new TestData[j];
-                    for(int l = 0; l < tds.length; l++) {
-                        tds[l] = new TestData(rand, zipf, 8196);
-                    }
-                    mlp[k] = checkAppend(true, tds);
-                    mltd[k] = new TestData(tds);
+        for(int iter = 0; iter < nIter; iter++) {
+            cleanUp();
+            logger.fine(String.format("Iter %d/%d", iter + 1, nIter));
+            PositionPostings[] pp = new PositionPostings[5];
+            TestData[] mltd = new TestData[5];
+            for(int i = 0; i < 5; i++) {
+                TestData[] td = new TestData[5];
+                for(int j = 0; j < 5; j++) {
+                    td[j] = new TestData(rand, zipf, 1024);
                 }
-                logger.fine(String.format(" Appending %d chunks of %d postings", mltd.length, j));
-                PositionPostings mlAppend = new PositionPostings();
-                int start = 1;
-                for(int k = 0; k < mlp.length; k++) {
-                    mlAppend.append(mlp[k], start);
-                    start += mltd[k].maxDocID;
-                }
-                long ao[] = new long[2];
-                int as[] = new int[2];
-                mlAppend.write(postOut, ao, as);
-                mlAppend = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, ao, as);
-                TestData atd = new TestData(mltd);
-                checkPostingsEncoding(mlAppend, atd, ao, as);
-                atd.iteration(mlAppend, true, true);
-                cleanUp();
+                pp[i] = checkAppend(true, td);
+                mltd[i] = new TestData(td);
             }
+
+            PositionPostings mlAppend = new PositionPostings();
+            int start = 1;
+            for(int i = 0; i < pp.length; i++) {
+                mlAppend.append(pp[i], start);
+                start += mltd[i].maxDocID;
+            }
+            long ao[] = new long[2];
+            int as[] = new int[2];
+            mlAppend.write(postOut, ao, as);
+            mlAppend = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, ao, as);
+            TestData atd = new TestData(mltd);
+            checkPostingsEncoding(mlAppend, atd, ao, as);
+            atd.iteration(mlAppend, true, true);
         }
     }
 
@@ -484,5 +479,4 @@ public class PositionPostingsTest implements PostingsTest {
             logger.log(Level.SEVERE, String.format("Error getting d2 back"), ex);
         }
     }
-
 }
