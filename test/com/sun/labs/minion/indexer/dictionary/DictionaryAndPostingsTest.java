@@ -8,10 +8,20 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
 import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.indexer.postings.Postings.Type;
+import com.sun.labs.minion.indexer.postings.io.ChannelPostingsInput;
+import com.sun.labs.minion.indexer.postings.io.PostingsInput;
+import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,14 +66,14 @@ public class DictionaryAndPostingsTest {
     public void tearDown() {
     }
 
-    private MemoryDictionary<String> generateDictionary(Postings.Type type, int nDocs) {
+    private MemoryDictionary<String> generateDictionary(Postings.Type type,
+                                                        int nDocs) {
         MemoryDictionary<String> md =
                 new MemoryDictionary<String>(new EntryFactory(type));
         OccurrenceImpl o = new OccurrenceImpl();
         for(int i = 0; i < nDocs; i++) {
-            int size = all.r.nextInt(4096) + 1;
-            o.setID(i+1);
-            logger.info(String.format("Doc: %d size: %d", i+1, size));
+            int size = all.rand.nextInt(1024) + 1;
+            o.setID(i + 1);
             for(int j = 0; j < size; j++) {
                 String w = all.getNextWord();
                 IndexEntry e = md.put(w);
@@ -71,6 +81,34 @@ public class DictionaryAndPostingsTest {
             }
         }
         return md;
+    }
+
+    private DiskDictionary<String> generateDiskDictionary(Postings.Type type,
+                                                          int nDocs) throws
+            Exception {
+        MemoryDictionary<String> md = generateDictionary(type, nDocs);
+        File dictFile = File.createTempFile("all", ".dict");
+        dictFile.deleteOnExit();
+        RandomAccessFile raf = new RandomAccessFile(dictFile, "rw");
+        File postFile = File.createTempFile("all", ".post");
+        postFile.deleteOnExit();
+        OutputStream os = new BufferedOutputStream(
+                new FileOutputStream(postFile));
+        md.dump(DictionaryTest.tmpDir,
+                new StringNameHandler(), raf,
+                new PostingsOutput[]{new StreamPostingsOutput(os)},
+                MemoryDictionary.Renumber.NONE,
+                MemoryDictionary.IDMap.NONE, null);
+
+        raf.close();
+        os.close();
+
+        raf = new RandomAccessFile(dictFile, "r");
+        RandomAccessFile praf = new RandomAccessFile(postFile, "r");
+
+        return new DiskDictionary<String>(new EntryFactory<String>(
+                Postings.Type.NONE), new StringNameHandler(), raf,
+                                          new RandomAccessFile[]{praf});
     }
 
     @Test
@@ -91,6 +129,20 @@ public class DictionaryAndPostingsTest {
     @Test
     public void testSmallIDFreqDictionary() {
         generateDictionary(Postings.Type.ID_FREQ, 20);
+    }
+
+    @Test
+    public void testIDDump() throws Exception {
+        DiskDictionary dd = generateDiskDictionary(Postings.Type.ID, 50);
+        dd.dictFile.close();
+        dd.postFiles[0].close();
+    }
+
+    @Test
+    public void testIDFreqDump() throws Exception {
+        DiskDictionary dd = generateDiskDictionary(Postings.Type.ID_FREQ, 50);
+        dd.dictFile.close();
+        dd.postFiles[0].close();
     }
 
     static protected class WordFreq implements Comparable<WordFreq> {
@@ -115,7 +167,7 @@ public class DictionaryAndPostingsTest {
 
         double[] model;
 
-        Random r = new Random();
+        Random rand = new Random();
 
         long totalFreq;
 
@@ -155,9 +207,6 @@ public class DictionaryAndPostingsTest {
                 } catch(NumberFormatException ex) {
                     logger.warning(String.format("Bad number at %d: %s", n, w));
                 }
-                if(n % 1000 == 0) {
-                    logger.info(String.format("%d: %s", n, w));
-                }
             }
             r.close();
             logger.info(String.format("sorting %d", words.size()));
@@ -176,7 +225,7 @@ public class DictionaryAndPostingsTest {
          * @return
          */
         public String getNextWord() {
-            double p = r.nextDouble();
+            double p = rand.nextDouble();
             for(int i = 0; i < model.length; i++) {
                 p -= model[i];
                 if(p <= 0) {

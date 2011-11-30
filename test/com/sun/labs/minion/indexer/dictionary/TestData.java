@@ -86,9 +86,7 @@ public class TestData {
     }
 
     private void init() throws Exception {
-        md =
-                new MemoryDictionary<String>(
-                new EntryFactory(Postings.Type.NONE));
+        md = new MemoryDictionary<String>(new EntryFactory(Postings.Type.NONE));
         for(String w : words) {
             md.put(w);
             uniq.add(w);
@@ -104,8 +102,8 @@ public class TestData {
         raf = new RandomAccessFile(dictFile, "r");
         dd = new DiskDictionary<String>(new EntryFactory<String>(
                 Postings.Type.NONE),
-                                           new StringNameHandler(), raf,
-                                           new RandomAccessFile[0]);
+                                        new StringNameHandler(), raf,
+                                        new RandomAccessFile[0]);
     }
 
     public File dump() throws Exception {
