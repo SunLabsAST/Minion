@@ -33,6 +33,8 @@ import java.util.logging.Logger;
 public abstract class Tokenizer extends StageAdapter implements
         com.sun.labs.util.props.Configurable {
 
+    protected static final Logger logger = Logger.getLogger(Tokenizer.class.getName());
+
     @ConfigBoolean(defaultValue = false)
     public static final String PROP_SEND_PUNCT = "send_punct";
 
@@ -96,10 +98,6 @@ public abstract class Tokenizer extends StageAdapter implements
      * The length of the longest token that we will generate.
      */
     protected int maxTokLen = 256;
-
-    protected static Logger logger = Logger.getLogger(Tokenizer.class.getName());
-
-    protected static String logTag = "TOK";
 
     public Tokenizer() {
     }
