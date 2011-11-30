@@ -173,7 +173,7 @@ public class DocumentVectorLengths {
         }
 
         float[] vl = new float[maxDocID + 1];
-
+        
         //
         // Iterate until there are no more entries in either of the dictionaries.
         while(mde != null || gte != null) {

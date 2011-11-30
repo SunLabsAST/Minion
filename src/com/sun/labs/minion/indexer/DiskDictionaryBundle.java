@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -108,6 +107,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         this.field = field;
         this.entryFactory = entryFactory;
         info = field.getInfo();
+        
         header = new FieldHeader(dictFile);
         dicts = new DiskDictionary[MemoryDictionaryBundle.Type.values().length];
         
@@ -886,13 +886,12 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         new StringNameHandler(),
                         mergeState.dictRAF,
                         mPostRAF);
-                logger.info(String.format("max: %d", mergeState.maxDocID));
                 DocumentVectorLengths.calculate(mergeState.info, 
                                                 mergeState.maxDocID,
                                                 mergeState.maxDocID,  
                                                 mergeState.manager,
                                                 newMainDict.iterator(),
-                                                mergeState.termStatsRAF,
+                                                null,  // no term stats calculation during merges.
                                                 mergeState.vectorLengthRAF,
                                                 mergeState.manager.getTermStatsDict());
                 for(RandomAccessFile mprf : mPostRAF) {

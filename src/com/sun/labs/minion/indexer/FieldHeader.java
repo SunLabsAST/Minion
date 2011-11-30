@@ -25,12 +25,15 @@ package com.sun.labs.minion.indexer;
 
 import java.io.RandomAccessFile;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 
 /**
  * A header for saved field information.
  */
 class FieldHeader {
+    
+    private static final Logger logger = Logger.getLogger(FieldHeader.class.getName());
 
     /**
      * The ID of the field.
@@ -93,6 +96,7 @@ class FieldHeader {
      * Reads a field header from the given channel.
      */
     public void read(RandomAccessFile f) throws java.io.IOException {
+        long initoff = f.getFilePointer();
         fieldID = f.readInt();
         maxDocID = f.readInt();
         int n = f.readInt();

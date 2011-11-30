@@ -340,16 +340,9 @@ public class InvFileDiskPartition extends DiskPartition {
     protected void mergeCustom(MergeState mergeState)
             throws Exception {
 
-        File vlf = manager.makeVectorLengthFile(partNumber);
+        File vlf = manager.makeVectorLengthFile(mergeState.partNumber);
         mergeState.vectorLengthRAF = new RandomAccessFile(vlf, "rw");
-        mergeState.termStatsNumber = manager.getMetaFile().getTermStatsNumber();
-        File mtsf = manager.makeTermStatsFile(mergeState.termStatsNumber);
-        mergeState.termStatsRAF = new RandomAccessFile(mtsf, "rw");
-        //
-        // Remember where the header for the term stats should go.
-        mergeState.termStatsRAF.writeLong(0);
-        TermStatsHeader tsh = new TermStatsHeader();
-
+        
         for(FieldInfo fi : manager.getMetaFile()) {
             DiskField[] mFields = new DiskField[mergeState.partitions.length];
             DiskField merger = null;
@@ -360,39 +353,19 @@ public class InvFileDiskPartition extends DiskPartition {
                 }
             }
             
-            long fieldOffset = dictFile.getFilePointer();
-            long termStatsOff = mergeState.termStatsRAF.getFilePointer();
-
+            long fieldOffset = mergeState.dictRAF.getFilePointer();
+            
             if(merger == null) {
-                logger.info(String.format("No merger for %s", fi.getName()));
+                logger.fine(String.format("No merger for %s", fi.getName()));
                 fieldOffset = -1;
-                termStatsOff = -1;
             } else {
                 mergeState.info = fi;
-                mergeState.header.addOffset(fi.getID(), mergeState.dictRAF.getFilePointer());
                 DiskField.merge(mergeState, mFields);
             }
             mergeState.header.addOffset(fi.getID(), fieldOffset);
-            tsh.addOffset(fi.getID(), termStatsOff);
-        }
-
-        try {
-            //
-            // Finish off the term stats dictionary, especially writing the
-            // header.
-            if (mergeState.termStatsRAF != null) {
-                long hpos = mergeState.termStatsRAF.getFilePointer();
-                tsh.write(mergeState.termStatsRAF);
-                mergeState.termStatsRAF.seek(0);
-                mergeState.termStatsRAF.writeLong(hpos);
-            }
-        } catch (Exception ex) {
-            logger.log(Level.SEVERE,
-                    String.format("Error setting term stats %d", mergeState.termStatsNumber), ex);
         }
 
         mergeState.vectorLengthRAF.close();
-        mergeState.termStatsRAF.close();
     }
 
     /**
@@ -425,7 +398,7 @@ public class InvFileDiskPartition extends DiskPartition {
         File[] files = getMainFiles(m, n);
         for (File f : files) {
             if ((!f.delete()) && (f.exists())) {
-                logger.warning("Failed to delete: " + f);
+                logger.warning(String.format("Failed to delete %s", f));
             }
         }
 
@@ -438,10 +411,10 @@ public class InvFileDiskPartition extends DiskPartition {
         //
         // Remove the deletion bitmap and the removed partition files.
         if (!m.makeDeletedDocsFile(n).delete()) {
-            logger.severe("Failed to reap partition " + n);
+            logger.severe(String.format("Failed to reap partition %d", n));
         }
         if (!m.makeRemovedPartitionFile(n).delete()) {
-            logger.severe("Failed to reap partition " + n);
+            logger.severe(String.format("Failed to reap partition %d", n));
         }
     }
 

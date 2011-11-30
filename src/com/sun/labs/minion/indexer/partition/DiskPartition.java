@@ -606,6 +606,7 @@ public class DiskPartition extends Partition implements Closeable {
         // A honkin' big try, so that we can get rid of any failed merges.
         try {
             NanoWatch mw = new NanoWatch();
+            mw.start();
             logger.info(String.format("Merging %s into DP: %d", partCopy,
                                       mergeState.partNumber));
 
@@ -744,12 +745,6 @@ public class DiskPartition extends Partition implements Closeable {
                 mergeState.postStreams[i].close();
             }
             
-            if (mergeState.termStatsNumber != 0) {
-                manager.getMetaFile().setTermStatsNumber(
-                        mergeState.termStatsNumber);
-                manager.updateTermStats();
-            }
-
             DiskPartition ndp = manager.newDiskPartition(mergeState.partNumber, manager);
             mw.stop();
             logger.info(String.format("Merge took %.3fms", mw.getTimeMillis()));
@@ -807,7 +802,7 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Clean up the unfinished partition.
-//            DiskPartition.reap(manager, mergeState.partNumber);
+            DiskPartition.reap(manager, mergeState.partNumber);
             throw e;
         }
     }
