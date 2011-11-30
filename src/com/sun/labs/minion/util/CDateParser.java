@@ -31,10 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Locale;
- 
-import java.io.*;
 
 /**
  *
@@ -47,6 +44,7 @@ public class CDateParser {
     
 	static String[] USFormatStrings = {
 	    "E, d MMM y h:m:s.S a z",
+            "yyyy-MM-dd'T'H:m:s'Z'",
 	    "E, d MMM y h:m:s a z",
 	    "E, d MMM y h:m:s a",
 	    "E, d MMM y H:m:s z",
