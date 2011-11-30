@@ -470,7 +470,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      */
     protected void dump() throws SearchEngineException {
         for(int i = 0; i < indexers.length; i++) {
-            indexers[i].dump();
+            indexers[i].marshall();
         }
     }
 
@@ -490,8 +490,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         //
         // One indexer will drain the queue, so let's do that.
         indexers[0].flush();
-        for(int i = 0; i < indexers.length; i++) {
-            indexers[i].dump();
+        for(int i = 1; i < indexers.length; i++) {
+            indexers[i].marshall();
         }
 
         if(metaDataStore != null) {
@@ -1608,10 +1608,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 if(part == null) {
                     throw new IllegalStateException("Can't index without a partition");
                 }
+                logger.info(String.format("%s index %s", Thread.currentThread().getName(), doc.getKey()));
                 part.index(doc);
                 nIndexed++;
                 if(docsPerPart > 0 && nIndexed == docsPerPart) {
-                    dump();
+                    marshall();
                     nIndexed = 0;
                 }
             }
@@ -1623,15 +1624,14 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             for(Indexable doc : l) {
                 index(doc);
             }
-            marshaller.dump(part);
         }
 
         public void purge() {
             part = new InvFileMemoryPartition(invFilePartitionManager);
         }
 
-        public void dump() {
-            marshaller.dump(part);
+        public void marshall() {
+            marshaller.marshall(part);
             try {
                 part = mpPool.take();
                 part.start();
@@ -1647,7 +1647,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             // If we're being used as a simple indexer, then we need to dump
             // our data.
             if(!runningInThread) {
-                marshaller.dump(part);
+                marshaller.marshall(part);
             }
         }
 
