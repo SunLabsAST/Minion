@@ -40,6 +40,7 @@ import com.sun.labs.minion.indexer.postings.PosPostingsIterator;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.util.Util;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -135,7 +136,11 @@ public class DictTerm extends QueryTerm implements Comparator {
         //
         // A set to hold term variants from morphology or other sources.
         Set<QueryEntry> variants = new HashSet<QueryEntry>();
-
+        
+        if(searchFields == null) {
+            searchFields = part.getPartitionManager().getEngine().getQueryConfig().getDefaultFields().toArray(new FieldInfo[0]);
+        }
+        
         for(FieldInfo sfi : searchFields) {
             DiskField df = ifdp.getDF(sfi);
             if(df == null) {

@@ -113,7 +113,9 @@ public class SortSpec {
             } else {
                 fields[i] = manager.getFieldInfo(fn);
                 if(fields[i] == null) {
-                    logger.warning("Unknown field in sort spec: " + fn);
+                    logger.warning(String.format("Unknown field in sort spec: %s", fn));
+                } else if(!fields[i].hasAttribute(FieldInfo.Attribute.SAVED)) {
+                    logger.warning(String.format("Can't sort on field %s that doesn't have SAVED attribute", fn));
                 }
             }
         }
@@ -130,7 +132,7 @@ public class SortSpec {
         directions = (boolean[]) ss.directions.clone();
         fetchers = new Fetcher[size];
         for(int i = 0; i < size; i++) {
-            if(fields[i] != null) {
+            if(fields[i] != null && fields[i].getID() != 0) {
                 fetchers[i] = part.getDF(fields[i]).getFetcher();
             }
         }

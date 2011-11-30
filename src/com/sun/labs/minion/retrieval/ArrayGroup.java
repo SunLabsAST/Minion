@@ -856,6 +856,7 @@ public class ArrayGroup implements Cloneable {
         return true;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(size * 3);
         sb.append("[");
