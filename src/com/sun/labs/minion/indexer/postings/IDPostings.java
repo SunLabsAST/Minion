@@ -141,7 +141,6 @@ public class IDPostings implements Postings, MergeablePostings {
      *
      */
     public IDPostings() {
-        ids = new int[4];
     }
 
     /**
@@ -245,8 +244,8 @@ public class IDPostings implements Postings, MergeablePostings {
     public void add(Occurrence o) {
         int oid = o.getID();
         if(oid != curr) {
-            if(nIDs + 1 >= ids.length) {
-                ids = Util.expandInt(ids, ids.length * 2);
+            if(ids == null || nIDs + 1 >= ids.length) {
+                ids = Util.expandInt(ids, (nIDs + 1) * 2);
             }
             ids[nIDs++] = oid;
             curr = oid;
@@ -324,7 +323,7 @@ public class IDPostings implements Postings, MergeablePostings {
         // Return the buffers.
         return new WriteableBuffer[]{
                     temp,
-                    encodeIDs(),
+                    post == null ? encodeIDs() : (WriteableBuffer) post,
                 };
     }
 
@@ -375,6 +374,10 @@ public class IDPostings implements Postings, MergeablePostings {
         // Check for empty postings on the other side.
         if(other.nIDs == 0) {
             return;
+        }
+
+        if(post == null) {
+            post = new ArrayBuffer(other.post.limit());
         }
 
         //
@@ -677,7 +680,7 @@ public class IDPostings implements Postings, MergeablePostings {
          */
         public CompressedIDIterator(PostingsIteratorFeatures features) {
             this.features = features;
-            rp = (ReadableBuffer) post;
+            rp = ((ReadableBuffer) post).duplicate();
             rp.position(dataStart);
             done = nIDs == 0;
         }

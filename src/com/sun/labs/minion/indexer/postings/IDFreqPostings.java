@@ -28,7 +28,6 @@ import com.sun.labs.minion.indexer.postings.Postings.Type;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
-import com.sun.labs.minion.util.buffer.ArrayBuffer;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
@@ -74,14 +73,11 @@ public class IDFreqPostings extends IDPostings {
      */
     protected int maxfdt;
 
-    protected static String logTag = "IDFP";
-
     /**
      * Makes a postings entry that is useful during indexing.
      */
     public IDFreqPostings() {
         super();
-        freqs = new int[ids.length];
     }
 
     /**
@@ -122,8 +118,8 @@ public class IDFreqPostings extends IDPostings {
             if(curr != 0) {
                 nIDs++;
             }
-            if(nIDs >= ids.length) {
-                ids = Util.expandInt(ids, ids.length * 2);
+            if(ids == null || nIDs >= ids.length) {
+                ids = Util.expandInt(ids, (nIDs+1) * 2);
                 freqs = Util.expandInt(freqs, ids.length);
             }
             ids[nIDs] = o.getID();
@@ -243,9 +239,9 @@ public class IDFreqPostings extends IDPostings {
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
 
         if(ids != null) {
-            return new CompressedIDFreqIterator(features);
+            return new UncompressedIDFreqIterator(features);
         }
-        return new UncompressedIDFreqIterator(features);
+        return new CompressedIDFreqIterator(features);
     }
 
     public class UncompressedIDFreqIterator extends UncompressedIDIterator {

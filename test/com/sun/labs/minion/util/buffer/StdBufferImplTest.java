@@ -35,48 +35,4 @@ public class StdBufferImplTest {
     public void tearDown() {
     }
 
-    /**
-     * Tests bytes that should be single byte encodings.
-     */
-    private void doByteEncode(int b, int e, int n) {
-        logger.info(String.format("b: %d e: %d t: %d", b, e, e-b));
-        for(int i = b; i < e; i++) {
-            WriteableBuffer buff = new ArrayBuffer(16);
-            buff.byteEncode(i);
-            assertTrue(String.format("Weird position: %d for %d", buff.position(),
-                                     i),
-                       buff.position() == n);
-        }
-    }
-
-    private void doMultipleByteEncode(int b, int e, int n, int r) {
-        Random rand = new Random();
-        for(int i = 0; i < r; i++) {
-
-        }
-    }
-
-
-    /**
-     * Tests bytes that should be single byte encodings.
-     */
-    @Test
-    public void testSingleByteEncode() {
-        doByteEncode(0, 1 << 7, 1);
-    }
-
-    @Test
-    public void testDoubleByteEncode() {
-        doByteEncode(1 << 7, 1 << 14, 2);
-    }
-
-    @Test
-    public void testTripleByteEncode() {
-        doByteEncode(1 << 14, 1 << 21, 3);
-    }
-
-    @Test
-    public void testQuadByteEncode() {
-        doByteEncode(1 << 21, 1 << 28, 4);
-    }
 }

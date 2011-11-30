@@ -14,13 +14,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
@@ -36,20 +34,14 @@ import static org.junit.Assert.*;
 /**
  * Tests for the ID-only postings.
  */
-public class IDPostingsTest {
+public class IDFreqPostingsTest {
 
     private static Logger logger = Logger.getLogger(
-            IDPostingsTest.class.getName());
+            IDFreqPostingsTest.class.getName());
 
-    public IDPostingsTest() {
+    public IDFreqPostingsTest() {
     }
-    private static String[] previousData = new String[]{
-        "/com/sun/labs/minion/indexer/postings/resource/2.data.gz",
-        "/com/sun/labs/minion/indexer/postings/resource/1.data.gz",};
-
-    private static String[] previousAppends = new String[]{
-        "/com/sun/labs/minion/indexer/postings/resource/1.append.gz"
-    };
+    private static String[] previousData = new String[]{};
 
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -76,8 +68,8 @@ public class IDPostingsTest {
         for(int i = 0; i < 128; i++) {
             TestData r = null;
             try {
-                r = new TestData(rand.nextInt(n) + 1);
-                IDPostings p = r.encode();
+                r = new TestData(rand.nextInt(n) + 1, 64000);
+                IDFreqPostings p = r.encode();
                 r.iteration(p);
                 testPostingsEncoding(p, r);
             } catch(AssertionError ex) {
@@ -96,7 +88,8 @@ public class IDPostingsTest {
      */
     @Test
     public void testSimpleAdd() throws Exception {
-        TestData simple = new TestData(new int[]{1, 4, 7, 10});
+        TestData simple = new TestData(new int[]{1, 4, 7, 10},
+                                       new int[]{1, 1, 1, 1});
         simple.encode();
     }
 
@@ -105,18 +98,17 @@ public class IDPostingsTest {
      */
     @Test
     public void testSimpleMultipleAdd() throws Exception {
-        TestData simple = new TestData(new int[]{1, 1, 1,
-                                                 1, 4, 4, 4, 7, 7, 8,
-                                                 10, 11, 11, 17});
+        TestData simple = new TestData(new int[]{1, 4, 7, 8, 10, 11, 17},
+                                       new int[]{4, 3, 2, 1, 1, 2, 1});
         simple.encode();
     }
 
     /**
      * Tests the encoding of the IDs by decoding them ourselves.
-     * @param idp the postings we want to test
+     * @param p the postings we want to test
      * @param data the data that we're testing
      */
-    private void testPostingsEncoding(IDPostings idp, TestData data) {
+    private void testPostingsEncoding(IDFreqPostings idp, TestData data) {
         WriteableBuffer[] buffs = idp.getBuffers();
         assertTrue(String.format("Wrong number of buffers: %d", buffs.length),
                    buffs.length == 2);
@@ -136,7 +128,7 @@ public class IDPostingsTest {
                 size());
         n = rb.byteDecode();
         assertTrue(String.format("Wrong last ID: %d", n),
-                   n == data.rawData[data.rawData.length - 1]);
+                   n == data.ids[data.ids.length - 1]);
         rb = buffs[1].getReadableBuffer();
 
         int prev = 0;
@@ -166,7 +158,7 @@ public class IDPostingsTest {
         randomAddTest(8192);
     }
 
-    @Test
+//    @Test
     public void extraLargeRandomAddTest() throws Exception {
         randomAddTest(1024 * 1024);
     }
@@ -188,13 +180,13 @@ public class IDPostingsTest {
             GZIPInputStream gzis = new GZIPInputStream(pdis);
             TestData td = new TestData(gzis);
             gzis.close();
-            IDPostings p = td.encode();
+            IDFreqPostings p = td.encode();
             td.iteration(p);
             testPostingsEncoding(p, td);
         }
     }
 
-    private long writePostings(File of, IDPostings p) throws java.io.IOException {
+    private long writePostings(File of, IDFreqPostings p) throws java.io.IOException {
         OutputStream os = new FileOutputStream(of);
         PostingsOutput postOut = new StreamPostingsOutput(os);
         long ret = postOut.write(p);
@@ -203,11 +195,11 @@ public class IDPostingsTest {
         return ret;
     }
 
-    private IDPostings readPostings(File f, long size) throws
+    private IDFreqPostings readPostings(File f, long size) throws
             java.io.IOException {
         RandomAccessFile raf = new RandomAccessFile(f, "r");
         PostingsInput postIn = new StreamPostingsInput(raf, 8192);
-        return (IDPostings) postIn.read(Postings.Type.ID, 0L, (int) size);
+        return (IDFreqPostings) postIn.read(Postings.Type.ID_FREQ, 0L, (int) size);
     }
 
     /**
@@ -215,122 +207,96 @@ public class IDPostingsTest {
      */
     @Test
     public void testWriteAndRead() throws java.io.IOException {
-        TestData td = new TestData(8192);
-        IDPostings p = td.encode();
+        TestData td = new TestData(8192, 64000);
+        IDFreqPostings p = td.encode();
         File of = File.createTempFile("single", ".post");
         of.deleteOnExit();
         long size = writePostings(of, p);
-        IDPostings idp2 = readPostings(of, size);
-        td.iteration(p);
+        IDFreqPostings p2 = readPostings(of, size);
+        td.iteration(p2);
     }
 
     /**
-     * Test of merge method, of class IDPostings.
+     * Test of merge method, of class IDFreqPostings.
      */
     @Test
-    public void testRandomAppends() throws java.io.IOException {
+    public void testAppend() throws java.io.IOException {
         Random rand = new Random();
         for(int i = 0; i < 128; i++) {
 
-            TestData d1 = new TestData(rand.nextInt(1024 * 16));
-            TestData d2 = new TestData(rand.nextInt(1024 * 16));
-            testAppend(d1, d2);
-        }
-    }
+            TestData d1 = new TestData(rand.nextInt(8192));
+            IDFreqPostings idp1 = d1.encode();
+            TestData d2 = new TestData(rand.nextInt(8192));
+            IDFreqPostings idp2 = d2.encode();
 
-    @Test
-    public void previousAppendTest() throws Exception {
-        for(String s : previousAppends) {
+            int lastID = idp1.getLastID();
 
-            InputStream pdis = getClass().getResourceAsStream(s);
-            if(pdis == null) {
-                logger.info(String.format("Couldn't find %s", s));
-                continue;
-            }
-            logger.info(String.format("Testing data %s", s));
-            GZIPInputStream gzis = new GZIPInputStream(pdis);
-            TestData td1 = new TestData(gzis);
-            TestData td2 = new TestData(gzis);
-            TestData atd = new TestData(gzis);
-            testAppend(td1, td2);
-            gzis.close();
-        }
-    }
-
-    private void testAppend(TestData d1, TestData d2) throws java.io.IOException {
+            File of = File.createTempFile("single", ".post");
+            of.deleteOnExit();
+            StreamPostingsOutput po = new StreamPostingsOutput(new FileOutputStream(
+                    of));
+            long s1 = po.write(idp1);
+            long s2 = po.write(idp2);
+            po.close();
 
 
-        IDPostings p1 = d1.encode();
-        IDPostings p2 = d2.encode();
-        int lastID = p1.getLastID();
-
-        File of = File.createTempFile("single", ".post");
-        of.deleteOnExit();
-        StreamPostingsOutput po = new StreamPostingsOutput(new FileOutputStream(
-                of));
-        long s1 = po.write(p1);
-        long s2 = po.write(p2);
-        po.close();
-
-        TestData atd = new TestData(d1, d2, lastID + 1);
-
-        try {
             RandomAccessFile raf = new RandomAccessFile(of, "r");
             StreamPostingsInput pi = new StreamPostingsInput(raf, 8192);
-            IDPostings append = new IDPostings();
-            p1 = (IDPostings) pi.read(Postings.Type.ID, 0, (int) s1);
-            d1.iteration(p1);
-            append.append(p1, 1);
-            p2 = (IDPostings) pi.read(Postings.Type.ID, s1, (int) s2);
-            d2.iteration(p2);
-            append.append(p2, lastID + 1);
+            IDFreqPostings append = new IDFreqPostings();
+            idp1 = (IDFreqPostings) pi.read(Postings.Type.ID, 0, (int) s1);
+            append.append(idp1, 1);
+            idp2 = (IDFreqPostings) pi.read(Postings.Type.ID, s1, (int) s2);
+            append.append(idp2, lastID + 1);
+            TestData atd = new TestData(d1, d2, lastID + 1);
             atd.iteration(append);
             raf.close();
-        } catch(AssertionError er) {
-            File f = File.createTempFile("randomappend", ".data");
-            PrintWriter out = new PrintWriter(new FileWriter(f));
-            d1.dump(out);
-            d2.dump(out);
-            atd.dump(out);
-            out.close();
-            logger.severe(String.format("Random data in %s", f));
-            throw (er);
         }
     }
 
     private static class TestData {
 
-        int[] rawData;
+        int[] ids;
+
+        int[] freqs;
 
         Set<Integer> unique;
 
         public TestData(int n) {
-            rawData = new int[n];
+            this(n, 64000);
+        }
+
+        public TestData(int n, int maxFreq) {
+            ids = new int[n];
+            freqs = new int[n];
             unique = new LinkedHashSet<Integer>();
 
             //
             // Generate some random data.  We need to account for gaps of zero, so
             // keep track of the unique numbers with some sets.
             Random r = new Random();
+            Zipf z = new Zipf(maxFreq, r);
             int prev = 0;
-            for(int i = 0; i < rawData.length; i++) {
+            for(int i = 0; i < ids.length; i++) {
 
                 //
                 // We'll use random gaps to make sure we get appropriately increasing
                 // postings.
-                rawData[i] = prev + r.nextInt(256);
-                if(i == 0 && rawData[i] == 0) {
-                    rawData[i] = 1;
-                }
-                prev = rawData[i];
+                ids[i] = prev + r.nextInt(256) + 1;
+
+                //
+                // A zipf outcome for the frequency, which will skew towards low
+                // numbers, as we would see in practice.
+                freqs[i] = z.getOutcome();
+                prev = ids[i];
                 unique.add(prev);
             }
         }
 
-        public TestData(int[] d) {
-            rawData = d;
+        public TestData(int[] ids, int[] freqs) {
+            this.ids = ids;
+            this.freqs = freqs;
             unique = new LinkedHashSet<Integer>();
-            for(int x : d) {
+            for(int x : ids) {
                 unique.add(x);
             }
         }
@@ -340,68 +306,80 @@ public class IDPostingsTest {
             String line = r.readLine();
             unique = new LinkedHashSet<Integer>();
             if(line == null) {
-                rawData = new int[0];
+                ids = new int[0];
                 return;
             }
             String[] nums = line.split("\\s");
-            rawData = new int[nums.length];
-            for(int i = 0; i < rawData.length; i++) {
-                rawData[i] = Integer.parseInt(nums[i]);
-                unique.add(rawData[i]);
+            ids = new int[nums.length];
+            for(int i = 0; i < ids.length; i++) {
+                ids[i] = Integer.parseInt(nums[i]);
+                unique.add(ids[i]);
             }
         }
 
         public TestData(TestData d1, TestData d2, int start) {
-            rawData = new int[d1.rawData.length + d2.rawData.length];
+            ids = new int[d1.ids.length + d2.ids.length];
+            freqs = new int[ids.length];
             unique = new LinkedHashSet<Integer>();
             int p = 0;
-            for(int x : d1.rawData) {
-                rawData[p++] = x;
-                unique.add(x);
+            for(int i = 0; i < d1.ids.length; i++) {
+                ids[p] = d1.ids[i];
+                freqs[p++] = d1.freqs[i];
+                unique.add(d1.ids[i]);
             }
-            for(int x : d2.rawData) {
-                int m = x + start - 1;
-                rawData[p++] = m;
+            for(int i = 0; i < d2.ids.length; i++) {
+                int m = d2.ids[i] + start - 1;
+                ids[p] = m;
+                freqs[p++] = d2.freqs[i];
                 unique.add(m);
             }
-            logger.info(String.format("p: %d unique: %d", p, unique.size()));
         }
 
-        public IDPostings encode() {
-            IDPostings idp = new IDPostings();
+        public IDFreqPostings encode() {
+            IDFreqPostings p = new IDFreqPostings();
             OccurrenceImpl o = new OccurrenceImpl();
             logger.info(String.format("Encoding %d ids (%d unique)",
-                                      rawData.length,
+                                      ids.length,
                                       unique.size()));
-            for(int i = 0; i < rawData.length; i++) {
-                o.setID(rawData[i]);
-                idp.add(o);
+            for(int i = 0; i < ids.length; i++) {
+                o.setID(ids[i]);
+                for(int j = 0; j < freqs[i]; j++) {
+                    p.add(o);
+                }
             }
-            return idp;
+            return p;
         }
 
-        public void iteration(IDPostings p) {
+        public void iteration(IDFreqPostings p) {
             PostingsIterator pi = p.iterator(null);
-            Iterator<Integer> ui = unique.iterator();
 
             assertNotNull("Null postings iterator", pi);
 
-            assertTrue(String.format("Expected %d ids got %d",
-                                   unique.size(), pi.getN()),
-                                   unique.size() == pi.getN());
+            if(ids.length != pi.getN()) {
+                fail(String.format("Expected %d ids got %d",
+                                   ids.length, pi.getN()));
+            }
+
+            int i = 0;
             while(pi.next()) {
-                int expected = ui.next();
+                int expectedID = ids[i];
+                int expectedFreq = freqs[i];
                 assertTrue(String.format(
                             "Couldn't match id %d, got %d",
-                            expected, pi.getID()),
-                            pi.getID() == expected);
+                            expectedID, pi.getID()), expectedID == pi.getID());
+                assertTrue(String.format(
+                            "Incorrect freq %d, got %d",
+                            expectedFreq, pi.getFreq()), expectedFreq == pi.getFreq());
             }
-            
         }
-
+        
         public void dump(PrintWriter out) throws java.io.IOException {
-            for(int i = 0; i < rawData.length; i++) {
-                out.format("%d ", rawData[i]);
+            for(int id : ids) {
+                out.format("%d ", id);
+            }
+            out.println("");
+            for(int freq : freqs) {
+                out.format("%d ", freq);
             }
             out.println("");
         }
