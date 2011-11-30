@@ -105,8 +105,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
         header = new FieldHeader(dictFile);
         dicts = new DiskDictionary[MemoryDictionaryBundle.Type.values().length];
         
-        logger.info(String.format("%s header: %s", info.getName(), header));
-
         for(Type type : Type.values()) {
             int ord = type.ordinal();
             NameDecoder decoder;
@@ -773,12 +771,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             entryIDMaps[Type.RAW_SAVED.ordinal()] != null
                             ? entryIDMaps[Type.RAW_SAVED.ordinal()]
                             : entryIDMaps[Type.UNCASED_SAVED.ordinal()];
-                        DiskBiGramDictionary.merge(mergeState, bgDicts);
                     for(int i = 0; i < mDicts.length; i++) {
                         bgDicts[i] = (DiskBiGramDictionary) mDicts[i];
                     }
+                    DiskBiGramDictionary.merge(mergeState, bgDicts);
                     continue;
-                    
             }
 
             entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),

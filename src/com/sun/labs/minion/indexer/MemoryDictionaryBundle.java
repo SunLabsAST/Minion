@@ -417,7 +417,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                         partOut.setPostingsIDMap(null);
                     } else {
-                        logger.info(String.format("null tokens for %s", field.info.getName()));
                         header.dictOffsets[ord] = -1;
                         continue;
                     }
@@ -436,7 +435,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                         partOut.setPostingsIDMap(null);
                     } else {
-                        logger.info(String.format("null saved for %s", field.info.getName()));
                         header.dictOffsets[ord] = -1;
                         continue;
                     }

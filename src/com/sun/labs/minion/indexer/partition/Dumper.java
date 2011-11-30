@@ -327,7 +327,7 @@ public class Dumper implements Configurable {
                             if(!poPool.offer(partOut, 3, TimeUnit.SECONDS)) {
                                 if(!flushDone) {
                                     logger.log(Level.SEVERE, String.format("Couldn't return partition output to pool"));
-                                }
+                                } 
                             }
                         } catch(IOException ex) {
                             logger.log(Level.SEVERE, String.format("Error writing %d to disk", partOut.getPartitionNumber()), ex);

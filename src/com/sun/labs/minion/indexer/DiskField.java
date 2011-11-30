@@ -12,7 +12,6 @@ import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import java.io.RandomAccessFile;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
