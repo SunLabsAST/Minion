@@ -51,6 +51,10 @@ public class PositionPostingsTest {
         "/com/sun/labs/minion/indexer/postings/resource/position/positionpostings.1.gz",
         "/var/folders/zq/8xrjbcx915118brpx0pz9l34002wrf/T/random6926995377196554799.data"};
 
+    private static String[] previousAppends = new String[]{
+        "/var/folders/zq/8xrjbcx915118brpx0pz9l34002wrf/T/randomappend740367155629235166.data",
+    };
+    
     public PositionPostingsTest() {
         for(int i = 0; i < postOut.length; i++) {
             postOut[i] = new RAMPostingsOutput(2048);
@@ -117,7 +121,7 @@ public class PositionPostingsTest {
 
         if(logger.isLoggable(Level.FINE)) {
             long bsize = sizes[0] + sizes[1];
-            long nb = 8 * data.unique.size() + 4 * data.numPosns;
+            long nb = 8 * data.ids.length+ 4 * data.numPosns;
 
             logger.fine(String.format(" %d bytes for %d bytes of data,"
                     + " Compression: %.2f%%", bsize,
@@ -126,7 +130,7 @@ public class PositionPostingsTest {
 
         int n = idBuff.byteDecode();
         assertTrue(String.format("Wrong number of IDs: %d", n),
-                n == data.unique.size());
+                n == data.ids.length);
         n = idBuff.byteDecode();
         assertTrue(String.format("Wrong last ID: %d", n),
                 n == data.ids[data.ids.length - 1]);
@@ -189,13 +193,14 @@ public class PositionPostingsTest {
         for(int i = 0; i < 128; i++) {
             TestData d1 = new TestData(rand.nextInt(size));
             TestData d2 = new TestData(rand.nextInt(size));
-            checkAppend(d1, d2);
+            checkAppend(d1, d2, true);
         }
     }
 
-    private void checkAppend(TestData d1, TestData d2) throws java.io.IOException {
+    private void checkAppend(TestData d1, TestData d2, boolean dump) throws java.io.IOException {
 
 
+        cleanUp();
         PositionPostings p1 = d1.addData();
         PositionPostings p2 = d2.addData();
         int lastID = p1.getLastID();
@@ -207,7 +212,7 @@ public class PositionPostingsTest {
         p1.write(postOut, o1, s1);
         p2.write(postOut, o2, s2);
 
-        TestData atd = new TestData(d1, d2, lastID + 1);
+        TestData atd = new TestData(d1, d2);
 
         try {
             PositionPostings append = new PositionPostings();
@@ -221,14 +226,25 @@ public class PositionPostingsTest {
             append = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, o3, s3);
             atd.iteration(append);
         } catch(AssertionError er) {
-            File f = File.createTempFile("randomappend", ".data");
-            PrintWriter out = new PrintWriter(new FileWriter(f));
-            d1.dump(out);
-            d2.dump(out);
-            atd.dump(out);
-            out.close();
-            logger.severe(String.format("Random data in %s", f));
+            if(dump) {
+                File f = File.createTempFile("randomappend", ".data");
+                logger.severe(String.format("Random data in %s", f));
+                PrintWriter out = new PrintWriter(new FileWriter(f));
+                d1.dump(out);
+                d2.dump(out);
+                out.close();
+            }
             throw (er);
+        } catch(RuntimeException ex) {
+            if(dump) {
+                File f = File.createTempFile("randomappend", ".data");
+                logger.severe(String.format("Random data in %s", f));
+                PrintWriter out = new PrintWriter(new FileWriter(f));
+                d1.dump(out);
+                d2.dump(out);
+                out.close();
+            }
+            throw (ex);
         }
     }
 
@@ -277,24 +293,44 @@ public class PositionPostingsTest {
         simple.iteration(p);
     }
 
-    @Test
-    public void smallRandomAddTest() throws Exception {
+//    @Test
+    public void testSmallRandomAdds() throws Exception {
         randomAdd(16, 256);
     }
 
-    @Test
-    public void mediumRandomAddTest() throws Exception {
+//    @Test
+    public void testMediumRandomAdds() throws Exception {
         randomAdd(256, 256);
     }
 
-    @Test
-    public void largeRandomAddTest() throws Exception {
+//    @Test
+    public void testLargeRandomAdds() throws Exception {
         randomAdd(8192, 256);
     }
 
-    @Test
-    public void extraLargeRandomAddTest() throws Exception {
+//    @Test
+    public void testExtraLargeRandomAdds() throws Exception {
         randomAdd(1024 * 1024, 128);
+    }
+    
+    private BufferedReader getInputReader(String resourceName) throws IOException {
+        InputStream pdis = getClass().getResourceAsStream(resourceName);
+        if(pdis == null) {
+            try {
+                pdis = new FileInputStream(resourceName);
+            } catch(FileNotFoundException ex) {
+                logger.info(String.format("Couldn't find %s", resourceName));
+                return null;
+            }
+        }
+        logger.info(String.format("Opening test data %s", resourceName));
+        InputStream is;
+        if(resourceName.endsWith(".gz")) {
+            is = new GZIPInputStream(pdis);
+        } else {
+            is = pdis;
+        }
+        return new BufferedReader(new InputStreamReader(is));
     }
 
     /**
@@ -304,33 +340,64 @@ public class PositionPostingsTest {
 //    @Test
     public void testPreviousData() throws Exception {
         for(String s : previousData) {
-
-            InputStream pdis = getClass().getResourceAsStream(s);
-            if(pdis == null) {
-                try {
-                    pdis = new FileInputStream(s);
-                } catch(FileNotFoundException ex) {
-                    logger.info(String.format("Couldn't find %s", s));
-                    continue;
-                }
-            }
-            logger.info(String.format("Testing data %s", s));
-            InputStream is;
-            if(s.endsWith(".gz")) {
-                is = new GZIPInputStream(pdis);
-            } else {
-                is = pdis;
+            BufferedReader r = getInputReader(s);
+            if(r == null) {
+                continue;
             }
             cleanUp();
-            TestData testData = new TestData(is);
-            is.close();
+            TestData testData = new TestData(r);
+            r.close();
             testData.paces();
         }
     }
 
+    /**
+     * Tests encoding data that has had problems before, ensuring that we
+     * don't re-introduce old problems.
+     */
     @Test
+    public void testPreviousAppends() throws Exception {
+        for(String s : previousAppends) {
+
+            BufferedReader r = getInputReader(s);
+            if(r == null) {
+                continue;
+            }
+            cleanUp();
+            TestData d1 = new TestData(r);
+            TestData d2 = new TestData(r);
+            r.close();
+            checkAppend(d1, d2, false);
+        }
+    }
+    
+//    @Test
     public void testAppend() throws java.io.IOException {
         randomAppend(8192);
+    }
+    
+//    @Test
+    public void testDataDump() throws java.io.IOException {
+        TestData d1 = new TestData(rand.nextInt(8192));
+        TestData d2 = new TestData(rand.nextInt(8192));
+        TestData ad = new TestData(d1, d2);
+        File f = File.createTempFile("testdata", ".data");
+        logger.info(String.format("Random data in %s", f));
+        PrintWriter out = new PrintWriter(new FileWriter(f));
+        d1.dump(out);
+        d2.dump(out);
+        out.close();
+        BufferedReader r = getInputReader(f.getAbsolutePath());
+        try {
+            TestData nd1 = new TestData(r);
+        } catch(IOException ex) {
+            logger.log(Level.SEVERE, String.format("Error getting d1 back"), ex);
+        }
+        try {
+            TestData nd2 = new TestData(r);
+        } catch(IOException ex) {
+            logger.log(Level.SEVERE, String.format("Error getting d2 back"), ex);
+        }
     }
 
     private class TestData {
@@ -343,13 +410,10 @@ public class PositionPostingsTest {
         
         int numPosns;
 
-        Set<Integer> unique;
-
         public TestData(int n) {
             ids = new int[n];
             freqs = new int[n];
             posns = new int[n];
-            unique = new LinkedHashSet<Integer>();
 
             //
             // Generate some random data.  We need to account for gaps of zero, so
@@ -380,7 +444,6 @@ public class PositionPostingsTest {
                     posns[numPosns++] = pos;
                     prevPos = pos;
                 }
-                unique.add(ids[i]);
                 prev = ids[i];
             }
         }
@@ -389,16 +452,10 @@ public class PositionPostingsTest {
             this.ids = ids;
             this.freqs = freqs;
             this.posns = posns;
-            unique = new LinkedHashSet<Integer>();
-            for(int x : ids) {
-                unique.add(x);
-            }
         }
 
-        public TestData(InputStream s) throws java.io.IOException {
-            BufferedReader r = new BufferedReader(new InputStreamReader(s));
+        public TestData(BufferedReader r) throws java.io.IOException {
             String line = r.readLine();
-            unique = new LinkedHashSet<Integer>();
             if(line == null) {
                 ids = new int[0];
                 return;
@@ -407,7 +464,6 @@ public class PositionPostingsTest {
             ids = new int[nums.length];
             for(int i = 0; i < ids.length; i++) {
                 ids[i] = Integer.parseInt(nums[i]);
-                unique.add(ids[i]);
             }
             line = r.readLine();
             nums = line.split("\\s");
@@ -425,25 +481,35 @@ public class PositionPostingsTest {
             for(int i = 0; i < nums.length; i++) {
                 posns[i] = Integer.parseInt(nums[i]);
             }
-
+            int tf = 0;
+            for(int f : freqs) {
+                tf += f;
+            }
+            if(tf != posns.length) {
+                throw new IOException(String.format("Error in input data: expected %d positions, got %d", tf, posns.length));
+            }
+            numPosns = posns.length;
+            logger.fine(String.format("Read %d ids", ids.length));
         }
 
-        public TestData(TestData d1, TestData d2, int start) {
+        public TestData(TestData d1, TestData d2) {
             ids = new int[d1.ids.length + d2.ids.length];
             freqs = new int[ids.length];
-            unique = new LinkedHashSet<Integer>();
+            posns = new int[d1.numPosns + d2.numPosns];
+            int lastID = d1.ids[d1.ids.length -1];
             int p = 0;
-            for(int i = 0; i < d1.ids.length; i++) {
+            for(int i = 0; i < d1.ids.length; i++, p++) {
                 ids[p] = d1.ids[i];
-                freqs[p++] = d1.freqs[i];
-                unique.add(d1.ids[i]);
             }
-            for(int i = 0; i < d2.ids.length; i++) {
-                int m = d2.ids[i] + start - 1;
+            System.arraycopy(d1.freqs, 0, freqs, 0, d1.freqs.length);
+            System.arraycopy(d1.posns, 0, posns, 0, d1.numPosns);
+            for(int i = 0; i < d2.ids.length; i++, p++) {
+                int m = d2.ids[i] + lastID;
                 ids[p] = m;
-                freqs[p++] = d2.freqs[i];
-                unique.add(m);
             }
+            System.arraycopy(d2.freqs, 0, freqs, d1.freqs.length, d2.freqs.length);
+            System.arraycopy(d2.posns, 0, posns, d1.numPosns, d2.numPosns);
+            numPosns = posns.length;
         }
         
         /**
@@ -533,7 +599,10 @@ public class PositionPostingsTest {
                 for(int j = 0; j < expectedFreq; j++, pp++) {
                     if(posns[pp] != piPosn[j]) {
                         assertTrue(String.format(
-                                "Incorrect position, expected %d, got %d",
+                                "Incorrect position for id %d at %d, freq %d, expected %d, got %d",
+                                expectedID,
+                                i,
+                                expectedFreq,
                                 posns[pp], piPosn[j]),
                                 posns[pp] == piPosn[j]);
                     }
@@ -549,13 +618,11 @@ public class PositionPostingsTest {
                 out.format("%d ", id);
             }
             out.println("");
-            int tf = 0;
             for(int freq : freqs) {
                 out.format("%d ", freq);
-                tf += freq;
             }
             out.println("");
-            for(int i = 0; i < tf; i++) {
+            for(int i = 0; i < numPosns; i++) {
                 out.format("%d ", posns[i]);
             }
             out.println("");
