@@ -8,9 +8,6 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.Postings.Type;
-import com.sun.labs.minion.indexer.postings.io.ChannelPostingsInput;
-import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import java.io.BufferedOutputStream;
@@ -24,7 +21,9 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
@@ -66,83 +65,42 @@ public class DictionaryAndPostingsTest {
     public void tearDown() {
     }
 
-    private MemoryDictionary<String> generateDictionary(Postings.Type type,
-                                                        int nDocs) {
-        MemoryDictionary<String> md =
-                new MemoryDictionary<String>(new EntryFactory(type));
-        OccurrenceImpl o = new OccurrenceImpl();
-        for(int i = 0; i < nDocs; i++) {
-            int size = all.rand.nextInt(1024) + 1;
-            o.setID(i + 1);
-            for(int j = 0; j < size; j++) {
-                String w = all.getNextWord();
-                IndexEntry e = md.put(w);
-                e.add(o);
-            }
-        }
-        return md;
-    }
-
-    private DiskDictionary<String> generateDiskDictionary(Postings.Type type,
-                                                          int nDocs) throws
-            Exception {
-        MemoryDictionary<String> md = generateDictionary(type, nDocs);
-        File dictFile = File.createTempFile("all", ".dict");
-        dictFile.deleteOnExit();
-        RandomAccessFile raf = new RandomAccessFile(dictFile, "rw");
-        File postFile = File.createTempFile("all", ".post");
-        postFile.deleteOnExit();
-        OutputStream os = new BufferedOutputStream(
-                new FileOutputStream(postFile));
-        md.dump(DictionaryTest.tmpDir,
-                new StringNameHandler(), raf,
-                new PostingsOutput[]{new StreamPostingsOutput(os)},
-                MemoryDictionary.Renumber.NONE,
-                MemoryDictionary.IDMap.NONE, null);
-
-        raf.close();
-        os.close();
-
-        raf = new RandomAccessFile(dictFile, "r");
-        RandomAccessFile praf = new RandomAccessFile(postFile, "r");
-
-        return new DiskDictionary<String>(new EntryFactory<String>(
-                Postings.Type.NONE), new StringNameHandler(), raf,
-                                          new RandomAccessFile[]{praf});
-    }
-
     @Test
     public void testSingleIDDictionary() {
-        generateDictionary(Postings.Type.ID, 1);
+        TestDictionary dt = new TestDictionary(all);
+        dt.generateDictionary(Postings.Type.ID, 1);
     }
 
     @Test
     public void testSingleIDFreqDictionary() {
-        generateDictionary(Postings.Type.ID_FREQ, 1);
+        TestDictionary dt = new TestDictionary(all);
+        dt.generateDictionary(Postings.Type.ID_FREQ, 1);
     }
 
     @Test
     public void testSmallIDDictionary() {
-        generateDictionary(Postings.Type.ID, 20);
+        TestDictionary dt = new TestDictionary(all);
+        dt.generateDictionary(Postings.Type.ID, 20);
     }
 
     @Test
     public void testSmallIDFreqDictionary() {
-        generateDictionary(Postings.Type.ID_FREQ, 20);
+        TestDictionary dt = new TestDictionary(all);
+        dt.generateDictionary(Postings.Type.ID_FREQ, 20);
     }
 
     @Test
     public void testIDDump() throws Exception {
-        DiskDictionary dd = generateDiskDictionary(Postings.Type.ID, 50);
-        dd.dictFile.close();
-        dd.postFiles[0].close();
+        TestDictionary td = new TestDictionary(all);
+        DiskDictionary dd = td.generateDiskDictionary(Postings.Type.ID, 50);
+        td.close();
     }
 
     @Test
     public void testIDFreqDump() throws Exception {
-        DiskDictionary dd = generateDiskDictionary(Postings.Type.ID_FREQ, 50);
-        dd.dictFile.close();
-        dd.postFiles[0].close();
+        TestDictionary td = new TestDictionary(all);
+        DiskDictionary dd = td.generateDiskDictionary(Postings.Type.ID_FREQ, 50);
+        td.close();
     }
 
     static protected class WordFreq implements Comparable<WordFreq> {
@@ -159,6 +117,102 @@ public class DictionaryAndPostingsTest {
         public int compareTo(WordFreq o) {
             return (int) (freq - o.freq);
         }
+    }
+
+    static protected class DocPosting {
+        int freq;
+        String word;
+        public DocPosting(String word) {
+            this.word = word;
+        }
+    }
+
+    static protected class TestDictionary {
+
+        private TestData td;
+
+        private Map<String,List<DocPosting>> m = new HashMap<String,List<DocPosting>>();
+
+        private MemoryDictionary<String> md;
+
+        private DiskDictionary dd;
+
+
+        public TestDictionary(TestData td) {
+            this.td = td;
+        }
+
+        public MemoryDictionary<String> generateDictionary(Postings.Type type,
+                                                            int nDocs) {
+            md = new MemoryDictionary<String>(new EntryFactory(type));
+            OccurrenceImpl o = new OccurrenceImpl();
+            Map<String,DocPosting> doc = new HashMap<String,DocPosting>();
+            for(int i = 0; i < nDocs; i++) {
+                int size = td.rand.nextInt(1024) + 1;
+                o.setID(i + 1);
+                for(int j = 0; j < size; j++) {
+                    String w = td.getNextWord();
+                    IndexEntry e = md.put(w);
+                    DocPosting p = doc.get(w);
+                    if(p == null) {
+                        p = new DocPosting(w);
+                        doc.put(w, p);
+                    }
+                    p.freq++;
+                    e.add(o);
+                }
+                for(Map.Entry<String, DocPosting> e : doc.entrySet()) {
+                    List<DocPosting> l = m.get(e.getKey());
+                    if(l == null) {
+                        l = new ArrayList<DocPosting>();
+                        m.put(e.getKey(), l);
+                    }
+                    l.add(e.getValue());
+                }
+            }
+            return md;
+        }
+
+        public DiskDictionary<String> generateDiskDictionary(Postings.Type type,
+                                                              int nDocs) throws
+                Exception {
+            generateDictionary(type, nDocs);
+            File dictFile = File.createTempFile("all", ".dict");
+            dictFile.deleteOnExit();
+            RandomAccessFile raf = new RandomAccessFile(dictFile, "rw");
+            File postFile = File.createTempFile("all", ".post");
+            postFile.deleteOnExit();
+            OutputStream os = new BufferedOutputStream(
+                    new FileOutputStream(postFile));
+            md.dump(DictionaryTest.tmpDir,
+                    new StringNameHandler(), raf,
+                    new PostingsOutput[]{new StreamPostingsOutput(os)},
+                    MemoryDictionary.Renumber.NONE,
+                    MemoryDictionary.IDMap.NONE, null);
+
+            raf.close();
+            os.close();
+
+            raf = new RandomAccessFile(dictFile, "r");
+            RandomAccessFile praf = new RandomAccessFile(postFile, "r");
+
+            dd = new DiskDictionary<String>(new EntryFactory<String>(
+                    Postings.Type.NONE), new StringNameHandler(), raf,
+                                              new RandomAccessFile[]{praf});
+            return dd;
+        }
+
+        public void close() throws java.io.IOException {
+            if(dd != null) {
+                dd.dictFile.close();
+                if(dd.postFiles != null && dd.postFiles.length > 0) {
+                    for(RandomAccessFile raf : dd.postFiles) {
+                        raf.close();
+                    }
+                }
+            }
+        }
+        
     }
 
     static protected class TestData {
@@ -209,9 +263,7 @@ public class DictionaryAndPostingsTest {
                 }
             }
             r.close();
-            logger.info(String.format("sorting %d", words.size()));
             Collections.sort(words);
-            logger.info(String.format("sorted %d", words.size()));
             model = new double[words.size()];
             //
             // Normalize the frequency.
