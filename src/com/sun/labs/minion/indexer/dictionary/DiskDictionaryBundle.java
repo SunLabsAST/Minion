@@ -13,6 +13,7 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.MergeState;
+import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -1040,7 +1041,16 @@ public class DiskDictionaryBundle<N extends Comparable> {
         //
         // Remember where the vector lengths start.
         header.vectorLengthOffset = partOut.getVectorLengthsBuffer().position();
-        DocumentVectorLengths.calculate(field, partOut, null);
+        DiskPartition p = (DiskPartition) field.getPartition();
+        DocumentVectorLengths.calculate(field.getInfo(), 
+                p.getNDocs(), 
+                p.getMaxDocumentID(),
+                p.getPartitionManager(),
+                field.getTermDictionary(false).iterator(),
+                null,
+                partOut.getVectorLengthsBuffer(), 
+                p.getPartitionManager().getTermStatsDict());
+        
         //
         // Re-write our header.
         dictFile.seek(headerPos);

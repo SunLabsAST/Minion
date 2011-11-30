@@ -78,6 +78,7 @@ public class InvFileDiskPartition extends DiskPartition {
             throws java.io.IOException {
         super(partNumber, manager, Postings.Type.NONE);
 
+        this.partNumber = partNumber;
         File vlf = manager.makeVectorLengthFile(partNumber);
         vectorLengths = new RandomAccessFile(vlf, "rw");
 
@@ -414,6 +415,10 @@ public class InvFileDiskPartition extends DiskPartition {
         partOut.setPartitionNumber(partNumber);
         for(DiskField df : fields) {
 
+            if(df == null) {
+                continue;
+            }
+            
             if(!df.getInfo().hasAttribute(FieldInfo.Attribute.INDEXED)) {
                 //
                 // Skip fields that don't have term information.
@@ -424,6 +429,11 @@ public class InvFileDiskPartition extends DiskPartition {
         }
         
         partOut.flushVectorLengths();
+        
+        //
+        // Open our new vector lengths.
+        vectorLengths.close();
+        vectorLengths = new RandomAccessFile(manager.makeVectorLengthFile(partNumber), "rw");
     }
 
     /**

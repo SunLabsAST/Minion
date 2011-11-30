@@ -2080,6 +2080,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         metaFile.setTermStatsNumber(tsn);
         updateTermStats();
     }
+    
+    public void recalculateVectorLengths() throws java.io.IOException {
+        for(DiskPartition dp : getActivePartitions()) {
+            ((InvFileDiskPartition) dp).calculateVectorLengths(mergePartitionOutput);
+        }
+    }
 
     /**
      * A threadable class used for merging a list of partitions.

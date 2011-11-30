@@ -747,6 +747,18 @@ public class QueryTest extends SEMain {
             }
         });
 
+        shell.add("rvl", "Maintenance", new CommandInterface() {
+
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                manager.recalculateVectorLengths();
+                return "Vector lengths recalculated";
+            }
+
+            public String getHelp() {
+                return "Recalculate vector lengths for all partitions";
+            }
+        });
+
         shell.add("fields", "Info", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {

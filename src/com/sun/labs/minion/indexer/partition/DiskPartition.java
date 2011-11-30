@@ -165,7 +165,7 @@ public class DiskPartition extends Partition implements Closeable {
         //
         // Open the dictionary and postings files.
         File[] files = getMainFiles();
-        dictFile = new RandomAccessFile(files[0], "r");
+        dictFile = new RandomAccessFile(files[0], "rw");
         postFiles = new RandomAccessFile[files.length - 1];
         for(int i = 1; i < files.length; i++) {
             postFiles[i - 1] = new RandomAccessFile(files[i], "r");

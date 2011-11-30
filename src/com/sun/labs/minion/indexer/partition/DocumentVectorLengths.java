@@ -136,7 +136,10 @@ public class DocumentVectorLengths {
         
         //
         // Get iterators for our two dictionaries and a place to write the new term stats.
-        DictionaryIterator gti = gts.iterator(fi);
+        DictionaryIterator gti = null;
+        if(gts != null) {
+            gti = gts.iterator(fi);
+        }
         boolean adjustStats = termStatsOut != null;
 
         if(adjustStats) {
