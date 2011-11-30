@@ -215,7 +215,7 @@ public class Marshaller implements Configurable {
         marshallThreads = new Thread[ndt];
         for(int i = 0; i < marshallThreads.length; i++) {
             marshallThreads[i] = new Thread(new MarshallThread());
-            marshallThreads[i].setName("Dump-" + i);
+            marshallThreads[i].setName("Marshall-" + i);
             marshallThreads[i].start();
         }
 

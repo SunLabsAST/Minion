@@ -31,6 +31,16 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  */
 public interface PostingsOutput {
     
+    /**
+     * Gets a temporary buffer that we can use to encode postings header data,
+     * avoiding creating thousands of buffers during marshalling.
+     * @return a temporary buffer that can be used when writing postings data.
+     * This buffer should be cleared before use and not be retained past 
+     * a single call to write.
+     */
+    public WriteableBuffer getTempBuffer();
+    
+    
     public int write(WriteableBuffer buff) throws java.io.IOException;
 
     /**

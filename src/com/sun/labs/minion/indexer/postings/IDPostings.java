@@ -300,33 +300,32 @@ public class IDPostings implements Postings, MergeablePostings {
         // Write the buffers.
         offset[0] = out[0].position();
         encodeIDs();
+        WriteableBuffer headerBuff = out[0].getTempBuffer();
+        encodeHeaderData(headerBuff);
         size[0] = out[0].write(
                  new WriteableBuffer[]{
-                    encodeHeaderData(),
+                     headerBuff,
                     (WriteableBuffer) idBuff});
     }
     
-    protected WriteableBuffer encodeHeaderData() {
-        WriteableBuffer temp = new ArrayBuffer((nSkips + 1) * 4 + 16);
+    protected void encodeHeaderData(WriteableBuffer headerBuff) {
 
         //
         // Encode the number of IDs and the last ID
-        temp.byteEncode(nIDs);
-        temp.byteEncode(lastID);
+        headerBuff.byteEncode(nIDs);
+        headerBuff.byteEncode(lastID);
 
         //
         // Encode the skip table.
-        temp.byteEncode(nSkips);
+        headerBuff.byteEncode(nSkips);
         int prevSkipID = 0;
         int prevPos = 0;
         for(int i = 0; i < nSkips; i++) {
-            temp.byteEncode(skipID[i] - prevSkipID);
-            temp.byteEncode(skipPos[i] - prevPos);
+            headerBuff.byteEncode(skipID[i] - prevSkipID);
+            headerBuff.byteEncode(skipPos[i] - prevPos);
             prevSkipID = skipID[i];
             prevPos = skipPos[i];
         }
-
-        return temp;
     }
 
     protected WriteableBuffer encodeIDs() {
@@ -647,7 +646,7 @@ public class IDPostings implements Postings, MergeablePostings {
         }
 
         public PostingsIteratorFeatures getFeatures() {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return features;
         }
     }
 

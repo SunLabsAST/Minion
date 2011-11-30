@@ -24,7 +24,6 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
-import com.sun.labs.minion.indexer.postings.Postings;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -37,7 +36,7 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * An implementation of <code>PostingsOutput</code> that buffers the
  * postings, eventually writing them to a channel.
  */
-public class ChannelPostingsOutput implements PostingsOutput {
+public class ChannelPostingsOutput extends AbstractPostingsOutput {
 
     /**
      * A buffer.

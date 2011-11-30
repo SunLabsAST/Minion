@@ -560,10 +560,16 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             // Write out our document vector lengths.
             WriteableBuffer vlb = partOut.getVectorLengthsBuffer();
             header.vectorLengthOffset = vlb.position();
+            
+            try {
             DocumentVectorLengths.calculate(field, partOut,
                     field.getPartition().getPartitionManager().
                     getTermStatsDict());
             ret = MemoryField.MarshallResult.EVERYTHING_DUMPED;
+            } catch (RuntimeException ex) {
+                logger.log(Level.SEVERE, String.format("Exception calculating document vector lengths for %s", info.getName()));
+                throw(ex);
+            }
         } else {
             header.vectorLengthOffset = -1;
         }

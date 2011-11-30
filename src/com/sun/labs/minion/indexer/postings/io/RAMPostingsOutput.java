@@ -11,7 +11,7 @@ import java.util.logging.Logger;
  * An implementation of postings output that writes the postings into a RAM
  * buffer for later dumping.
  */
-public class RAMPostingsOutput implements PostingsOutput {
+public class RAMPostingsOutput extends AbstractPostingsOutput {
     
     private static final Logger logger = Logger.getLogger(RAMPostingsOutput.class.getName());
     

@@ -34,6 +34,7 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
+import com.sun.labs.minion.indexer.postings.PositionPostings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.Util;
 import java.util.HashMap;
@@ -374,17 +375,17 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     public IndexEntry[] marshall(PartitionOutput partOut) throws java.io.IOException {
         logger.fine(String.format("Marshalling %d entries", map.size()));
 
-        DictionaryOutput dout = partOut.getPartitionDictionaryOutput();
+        DictionaryOutput dictOut = partOut.getPartitionDictionaryOutput();
         PostingsOutput[] postOut = partOut.getPostingsOutput();
 
         //
         // Start the dump.
-        dout.start(this, 
+        dictOut.start(this, 
                 partOut.getDictionaryEncoder(),
                 partOut.getDictionaryRenumber(),
                 postOut.length);
 
-        DictionaryHeader dh = dout.getHeader();
+        DictionaryHeader dh = dictOut.getHeader();
         dh.maxEntryID = id;
 
         //
@@ -405,7 +406,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         for(int i = 0 ; i < nUsed; i++) {
             IndexEntry entry = sortedEntries[i];
             if(entry.writePostings(postOut, postingsIDMap)) {
-                dout.write(entry);
+                dictOut.write(entry);
             }
         }
 
@@ -418,7 +419,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
 
         //
         // We're done dumping this dictionary.
-        dout.finish();
+        dictOut.finish();
 
         return sortedEntries;
     }
