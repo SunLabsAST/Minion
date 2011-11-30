@@ -92,6 +92,7 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         // Set the elements of the term information, so that they can
         // be encoded later.
         n = post.getN();
+        maxFDT = post.getMaxFDT();
         offset = out[0].position();
         size = (int) out[0].write(post);
         return true;
@@ -106,6 +107,7 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
      */
     public void encodeEntryInfo(WriteableBuffer b) {
         b.byteEncode(n);
+        b.byteEncode(maxFDT);
         b.byteEncode(id);
         b.byteEncode(size);
         b.byteEncode(offset);

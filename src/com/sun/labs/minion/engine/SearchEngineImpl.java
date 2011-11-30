@@ -1203,13 +1203,13 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * Merges all of the partitions in the index into a single partition.
      * @throws com.sun.labs.minion.SearchEngineException If there is any error during the merge.
      */
-    public void optimize()
-            throws SearchEngineException {
+    public void optimize() throws SearchEngineException {
         if(invFilePartitionManager == null) {
             return;
         }
         try {
             invFilePartitionManager.mergeAll();
+            invFilePartitionManager.recalculateTermStats();
         } catch(Exception e) {
             throw new SearchEngineException("Error optimizing index", e);
         }
@@ -1276,6 +1276,18 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         // Shutdown the dumper for our partitions.
         dumper.finish();
         
+        //
+        // If we didn't do it while we were indexing, then calculate the document
+        // vectors and term stats now.
+        if(longIndexingRun) {
+            try {
+                logger.info(String.format("Optimizing after indexing run"));
+                optimize();
+            } catch(Exception ex) {
+                logger.log(Level.SEVERE, String.format("Error optimizing after long indexing run"), ex);
+            }
+        }
+        
         try {
             invFilePartitionManager.close();
 
@@ -1296,6 +1308,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                                 e);
             }
         }
+        
     }
 
     /**

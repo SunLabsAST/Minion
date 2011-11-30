@@ -31,11 +31,12 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
+import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
-import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -341,7 +342,7 @@ public class InvFileDiskPartition extends DiskPartition {
     protected void mergeCustom(MergeState mergeState)
             throws Exception {
 
-        for(FieldInfo fi : manager.getMetaFile()) {
+        for(FieldInfo fi : mergeState.partOut.getPartitionManager().getMetaFile()) {
             DiskField[] mFields = new DiskField[mergeState.partitions.length];
             DiskField merger = null;
             for (int j = 0; j < mergeState.partitions.length; j++) {
@@ -364,6 +365,66 @@ public class InvFileDiskPartition extends DiskPartition {
             mergeState.partOut.getPartitionHeader().addOffset(fi.getID(), fieldOffset);
         }
     }
+    
+    public static void regenerateTermStats(DiskPartition[] partitions,
+            PartitionOutput partOut) throws java.io.IOException {
+        
+        DictionaryOutput termStatsDictOut = partOut.getTermStatsDictionaryOutput();
+        TermStatsHeader tsh = partOut.getTermStatsHeader();
+        //
+        // Remember where the header goes.
+        termStatsDictOut.byteEncode(0, 8);
+
+        for(FieldInfo fi : partOut.getPartitionManager().getMetaFile()) {
+            
+            if(!fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
+                //
+                // Skip fields that don't have term information.
+                tsh.addOffset(fi.getID(), -1);
+                continue;
+            }
+            
+            DiskField[] fields = new DiskField[partitions.length];
+            DiskField regen = null;
+            for(int j = 0; j < partitions.length; j++) {
+                fields[j] = ((InvFileDiskPartition) partitions[j]).getDF(fi);
+                if(fields[j] != null) {
+                    regen = fields[j];
+                }
+            }
+            
+            if(regen == null) {
+                tsh.addOffset(fi.getID(), -1);
+                continue;
+            }
+            tsh.addOffset(fi.getID(), termStatsDictOut.position());
+            DiskField.regenerateTermStats(fields, partOut);
+        }
+        int tshpos = termStatsDictOut.position();
+        tsh.write(termStatsDictOut);
+        int end = termStatsDictOut.position();
+        termStatsDictOut.position(0);
+        termStatsDictOut.byteEncode(tshpos, 8);
+        termStatsDictOut.position(end);
+
+    }
+    
+    public void calculateVectorLengths(PartitionOutput partOut) throws IOException {
+        
+        partOut.setPartitionNumber(partNumber);
+        for(DiskField df : fields) {
+
+            if(!df.getInfo().hasAttribute(FieldInfo.Attribute.INDEXED)) {
+                //
+                // Skip fields that don't have term information.
+                continue;
+            }
+            
+            df.calculateVectorLengths(partOut);
+        }
+        
+        partOut.flushVectorLengths();
+    }
 
     /**
      * Close the files associated with this partition.
@@ -381,7 +442,6 @@ public class InvFileDiskPartition extends DiskPartition {
         }
 
         return true;
-
     }
 
     /**

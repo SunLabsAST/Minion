@@ -10,8 +10,10 @@ import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.MergeState;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -19,6 +21,7 @@ import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.CDateParser;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Util;
@@ -40,6 +43,16 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
     private static final Logger logger =
             Logger.getLogger(DiskDictionaryBundle.class.getName());
+
+    /**
+     * Where the header was read from.
+     */
+    protected long headerPos;
+
+    /**
+     * The file our dictionaries were read from.
+     */
+    protected RandomAccessFile dictFile;
 
     /**
      * The header for this field.
@@ -90,9 +103,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
             EntryFactory entryFactory) throws
             java.io.IOException {
         this.field = field;
+        this.dictFile = dictFile;
         this.entryFactory = entryFactory;
         info = field.getInfo();
 
+        headerPos = dictFile.getFilePointer();
         header = new FieldHeader(dictFile);
         dicts = new DiskDictionary[MemoryDictionaryBundle.Type.values().length];
 
@@ -921,6 +936,115 @@ public class DiskDictionaryBundle<N extends Comparable> {
         fieldDictOut.position(headerPos);
         mergeHeader.write(fieldDictOut);
         fieldDictOut.position(endPos);
+    }
+
+    public static void regenerateTermStats(DiskDictionaryBundle[] bundles,
+            PartitionOutput partOut) {
+
+        //
+        // Special case of a single partition, we just need to iterate through
+        // the entries and copy out the data, so no need for messing with the heap.
+        int nMerged = 0;
+        int tsid = 1;
+        DictionaryOutput termStatsDictOut = partOut.getTermStatsDictionaryOutput();
+        termStatsDictOut.start(null, new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, 0);
+
+        if(bundles.length == 1) {
+            DictionaryIterator di = null;
+            if(bundles[0].dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
+                di = bundles[0].dicts[Type.UNCASED_TOKENS.ordinal()].iterator();
+            } else if(bundles[0].dicts[Type.CASED_TOKENS.ordinal()] != null) {
+                di = bundles[0].dicts[Type.CASED_TOKENS.ordinal()].iterator();
+            }
+            while(di.hasNext()) {
+                QueryEntry qe = (QueryEntry) di.next();
+                TermStatsIndexEntry tse = new TermStatsIndexEntry((String) qe.getName(), tsid++);
+                tse.getTermStats().add(qe);
+                termStatsDictOut.write(tse);
+                nMerged++;
+                if(nMerged % 50000 == 0) {
+                    logger.info(String.format("Regenerated %d", nMerged));
+                }
+            }
+
+            if(nMerged % 50000 == 0) {
+                logger.info(String.format("Regenerated %d", nMerged));
+            }
+        } else {
+
+            //
+            // We need to handle data from a number of partitions, which
+            // we'll do with a heap.
+            class HE implements Comparable<HE> {
+
+                DictionaryIterator di;
+
+                QueryEntry curr;
+
+                public HE(DictionaryIterator di) {
+                    this.di = di;
+                }
+
+                public boolean next() {
+                    if(di.hasNext()) {
+                        curr = (QueryEntry) di.next();
+                        return true;
+                    }
+                    return false;
+                }
+
+                public int compareTo(HE o) {
+                    return ((Comparable) curr.getName()).compareTo(o.curr.getName());
+                }
+            }
+
+            PriorityQueue<HE> h = new PriorityQueue<HE>();
+            for(DiskDictionaryBundle bundle : bundles) {
+                HE el = null;
+                if(bundle.dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
+                    el = new HE(bundle.dicts[Type.UNCASED_TOKENS.ordinal()].iterator());
+                } else if(bundle.dicts[Type.CASED_TOKENS.ordinal()] != null) {
+                    el = new HE(bundle.dicts[Type.CASED_TOKENS.ordinal()].iterator());
+                }
+                if(el != null && el.next()) {
+                    h.offer(el);
+                }
+            }
+
+            while(h.size() > 0) {
+                HE top = h.peek();
+                TermStatsIndexEntry tse = new TermStatsIndexEntry((String) top.curr.getName(), tsid++);
+                TermStatsImpl ts = tse.getTermStats();
+                while(top != null && top.curr.getName().equals(tse.getName())) {
+                    top = h.poll();
+                    ts.add(top.curr);
+                    if(top.next()) {
+                        h.offer(top);
+                    }
+                    top = h.peek();
+                }
+                termStatsDictOut.write(tse);
+                nMerged++;
+                if(nMerged % 100000 == 0) {
+                    logger.info(String.format("Regenerated %d", nMerged));
+                }
+            }
+            if(nMerged % 100000 != 0) {
+                logger.info(String.format("Regenerated %d", nMerged));
+            }
+        }
+        termStatsDictOut.finish();
+    }
+
+    public void calculateVectorLengths(PartitionOutput partOut) throws java.io.IOException {
+        //
+        // Remember where the vector lengths start.
+        header.vectorLengthOffset = partOut.getVectorLengthsBuffer().position();
+        DocumentVectorLengths.calculate(field, partOut, null);
+        //
+        // Re-write our header.
+        dictFile.seek(headerPos);
+        header.write(dictFile);
     }
 
     /**

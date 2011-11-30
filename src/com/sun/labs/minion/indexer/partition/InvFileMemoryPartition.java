@@ -188,7 +188,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         //
         // Dump the fields.  Keep track of the offsets of the field and of the
         // offsets for the term statistics dictionaries for the fields.
-        TermStatsHeader tsh = new TermStatsHeader();
+        TermStatsHeader tsh = partOut.getTermStatsHeader();
         for(MemoryField mf : fields) {
             if(mf == null) {
                 continue;

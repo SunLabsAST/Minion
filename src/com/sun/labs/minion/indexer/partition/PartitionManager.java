@@ -1689,7 +1689,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // Catch an empty list.
-        if(parts.size() == 0) {
+        if(parts.isEmpty()) {
             return null;
         }
 
@@ -1716,7 +1716,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     /**
-     * Breakss a list of partitions into blocks of
+     * Breaks a list of partitions into blocks of
      * <code>mergeBlockSize</code>, and merges those.  This method will work
      * recursively if there are enough blocks to justify it.
      *
@@ -1768,7 +1768,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // If there were no new partitions created, then we can just return
         // now, indicating that we didn't generate a partition.
-        if(newParts.size() == 0) {
+        if(newParts.isEmpty()) {
             return null;
         }
 
@@ -2039,6 +2039,29 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     public Merger getMergerFromNumbers(List<Integer> l) {
         return getMerger(getPartitions(l));
+    }
+    
+    /**
+     * Regenerates the term stats for the currently active partitions.  This can
+     * be used after modifications have been made to an index manually.
+     * @throws java.io.IOException if there is any error writing the new term
+     * stats.
+     * @throws com.sun.labs.minion.util.FileLockException if there is an error
+     * locking the meta file to get the number for the next term stats dictionary.
+     */
+    public void recalculateTermStats() throws java.io.IOException,
+            FileLockException {
+        
+        PartitionOutput partOut = new DiskPartitionOutput(this);
+        InvFileDiskPartition.regenerateTermStats(getActivePartitions().toArray(new DiskPartition[0]), partOut);
+        int tsn = metaFile.getNextTermStatsNumber();
+        File newTSF = makeTermStatsFile(tsn);
+        RandomAccessFile raf = new RandomAccessFile(newTSF, "rw");
+        partOut.getTermStatsDictionaryOutput().flush(raf);
+        raf.close();
+        partOut.close();
+        metaFile.setTermStatsNumber(tsn);
+        updateTermStats();
     }
 
     /**

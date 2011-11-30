@@ -66,6 +66,7 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
         this.name = name;
         this.type = type;
         n = b.byteDecode();
+        maxFDT = b.byteDecode();
         id = b.byteDecode();
         size = b.byteDecode();
         offset = b.byteDecodeLong();

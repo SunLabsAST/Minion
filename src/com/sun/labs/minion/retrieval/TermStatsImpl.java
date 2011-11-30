@@ -25,13 +25,9 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.TermStats;
-import java.util.Iterator;
-import java.util.List;
 
 import com.sun.labs.minion.indexer.entry.Entry;
 
-import com.sun.labs.minion.indexer.partition.PartitionManager;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 

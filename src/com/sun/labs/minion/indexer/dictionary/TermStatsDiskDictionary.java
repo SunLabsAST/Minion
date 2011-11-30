@@ -41,7 +41,7 @@ import java.util.logging.Logger;
  */
 public class TermStatsDiskDictionary implements Closeable {
 
-    private static Logger logger = Logger.getLogger(TermStatsDiskDictionary.class.getName());
+    private static final Logger logger = Logger.getLogger(TermStatsDiskDictionary.class.getName());
 
     private int dictNumber;
 

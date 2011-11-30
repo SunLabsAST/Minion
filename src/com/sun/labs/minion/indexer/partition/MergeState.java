@@ -96,8 +96,8 @@ public class MergeState implements Cloneable {
      */
     public OutputStream[] postStreams;
     
-    public MergeState(PartitionManager manager, PartitionOutput partOut) {
-        this.manager = manager;
+    public MergeState(PartitionOutput partOut) {
+        this.manager = partOut.getPartitionManager();
         this.partOut = partOut;
     }
 }

@@ -40,7 +40,6 @@ import com.sun.labs.minion.indexer.entry.DuplicateKeyException;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
-import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.FileLock;
@@ -596,7 +595,8 @@ public class DiskPartition extends Partition implements Closeable {
         
         //
         // A place to store state and pass it around while we're merging.
-        MergeState mergeState = new MergeState(manager, partOut);
+        MergeState mergeState = new MergeState(partOut);
+        PartitionManager pm = partOut.getPartitionManager();
         mergeState.partOut.startPartition(null);
 
         //
@@ -694,7 +694,7 @@ public class DiskPartition extends Partition implements Closeable {
             // Merge the document dictionaries.  We'll need to remap the
             logger.fine("Merge document dictionary");
             mergeState.partOut.getPartitionHeader().setDocDictOffset(fieldDictOut.position());
-            DiskDictionary.merge(manager.getIndexDir(),
+            DiskDictionary.merge(pm.getIndexDir(),
                     new StringNameHandler(),
                            dicts,
                            mappers,
@@ -716,7 +716,7 @@ public class DiskPartition extends Partition implements Closeable {
             
             mergeState.partOut.flush();
             
-            DiskPartition ndp = manager.newDiskPartition(mergeState.partOut.getPartitionNumber(), manager);
+            DiskPartition ndp = pm.newDiskPartition(mergeState.partOut.getPartitionNumber(), pm);
             mw.stop();
             logger.info(String.format("Merge took %.3fms", mw.getTimeMillis()));
             return ndp;
@@ -763,7 +763,7 @@ public class DiskPartition extends Partition implements Closeable {
             }
             //
             // OK, try the merge again.
-            DiskPartition.reap(manager, mergeState.partOut.getPartitionNumber());
+            DiskPartition.reap(pm, mergeState.partOut.getPartitionNumber());
             return merge(partitions, delMaps, mergeState.partOut, calculateDVL, depth + 1);
 
         } catch(Exception e) {
@@ -773,7 +773,7 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Clean up the unfinished partition.
-            DiskPartition.reap(manager, mergeState.partOut.getPartitionNumber());
+            DiskPartition.reap(pm, mergeState.partOut.getPartitionNumber());
             throw e;
         }
     }
@@ -782,15 +782,6 @@ public class DiskPartition extends Partition implements Closeable {
      * Provides a place to merge data that is specific to a subclass of disk
      * partition.  This method will be called after the disk partition data
      * is merged, but inside the try block for the whole merge.
-     *
-     * @param newPartNumber the number of the new partition
-     * @param sortedParts the sorted list of partitions
-     * @param idMaps a set of maps from old entry ids in the main dictionary
-     * to new entry ids in the merged dictionary
-     * @param newMaxDocID the new maximum document id
-     * @param docIDStart the starting doc ids
-     * @param nUndel the number of undeleted documents in each partition
-     * @param docIDMaps doc id maps (see merge)
      */
     protected void mergeCustom(MergeState mergeState)
             throws Exception {

@@ -4,6 +4,7 @@ import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.IDMap;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.Renumber;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
+import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionHeader;
@@ -38,12 +39,12 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     /**
      * The partition manager for the partition that is being dumped.
      */
-    protected PartitionManager manager;
+    protected PartitionManager partitionManager;
 
     /**
      * A header for the partition being dumped.
      */
-    protected PartitionHeader partHeader;
+    protected PartitionHeader partitionHeader;
     
     /**
      * The document keys for the partition that we're dumping.
@@ -53,7 +54,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     /**
      * The number of the partition that is being dumped.
      */
-    protected int partNumber;
+    protected int partitionNumber;
 
     /**
      * An encoder for names during a dictionary dump.
@@ -94,7 +95,12 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      * A dictionary output for the term stats for the entire collection.
      */
     protected DictionaryOutput termStatsDictOut;
-
+    
+    /**
+     * A header for the term stats dictionary.
+     */
+    protected TermStatsHeader termStatsHeader;
+    
     /**
      * A buffer for writing vector lengths.
      */
@@ -110,13 +116,13 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     private boolean started = false;
 
     public AbstractPartitionOutput(PartitionManager manager) throws IOException {
-        this.manager = manager;
+        this.partitionManager = manager;
         vectorLengthsBuffer = new ArrayBuffer(8 * 1024);
         deletionsBuffer = new ArrayBuffer(8 * 1024);
     }
     
     public AbstractPartitionOutput(File outputDir) throws IOException {
-        manager = new PartitionManager(outputDir);
+        partitionManager = new PartitionManager(outputDir);
     }
 
     public String getName() {
@@ -127,21 +133,29 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         this.name = name;
     }
 
+    public PartitionManager getPartitionManager() {
+        return partitionManager;
+    }
+
     public int startPartition(MemoryPartition partition) throws IOException {
         if(started) {
             throw new IllegalStateException("Already outputting a partition, can't start another");
         }
         try {
             this.partition = partition;
-            partHeader = new PartitionHeader();
-            partNumber = manager.getMetaFile().getNextPartitionNumber();
-            File[] files = MemoryPartition.getMainFiles(manager, partNumber);
+            partitionHeader = new PartitionHeader();
+            partitionNumber = partitionManager.getMetaFile().getNextPartitionNumber();
+            File[] files = MemoryPartition.getMainFiles(partitionManager, partitionNumber);
             postOutFiles = Arrays.copyOfRange(files, 1, files.length);
         } catch(FileLockException ex) {
             throw new IOException("Error getting partition number", ex);
         }
         keys = null;
-        return partNumber;
+        return partitionNumber;
+    }
+
+    public void setPartitionNumber(int partitionNumber) {
+        this.partitionNumber = partitionNumber;
     }
 
     public void setKeys(Set<String> keys) {
@@ -153,11 +167,11 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     }
 
     public int getMaxDocID() {
-        return partHeader.getMaxDocID();
+        return partitionHeader.getMaxDocID();
     }
 
     public int getNDocs() {
-        return partHeader.getnDocs();
+        return partitionHeader.getnDocs();
     }
 
     public DictionaryOutput getPartitionDictionaryOutput() {
@@ -165,11 +179,11 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     }
 
     public PartitionHeader getPartitionHeader() {
-        return partHeader;
+        return partitionHeader;
     }
 
     public int getPartitionNumber() {
-        return partNumber;
+        return partitionNumber;
     }
 
     public File[] getPostingsFiles() {
@@ -184,8 +198,11 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         this.postOut = postOut;
     }
 
-    public DictionaryOutput getTermStatsDictionaryOutput() {
-        return termStatsDictOut;
+    public TermStatsHeader getTermStatsHeader() {
+        if(termStatsHeader == null) {
+            termStatsHeader = new TermStatsHeader();
+        }
+        return termStatsHeader;
     }
 
     public MemoryPartition getPartition() {
@@ -221,11 +238,11 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     }
 
     public void setMaxDocID(int maxDocID) {
-        partHeader.setMaxDocID(maxDocID);
+        partitionHeader.setMaxDocID(maxDocID);
     }
 
     public void setNDocs(int nDocs) {
-        partHeader.setnDocs(nDocs);
+        partitionHeader.setnDocs(nDocs);
     }
 
     public void setPostingsIDMap(int[] postingsIDMap) {
@@ -243,12 +260,23 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     public void setLongIndexingRun(boolean longIndexingRun) {
         this.longIndexingRun = longIndexingRun;
     }
+    
+    public void flushVectorLengths() throws IOException {
+        if(vectorLengthsBuffer.position() > 0) {
+            //
+            // The vector lengths.
+            RandomAccessFile vectorLengthsFile = new RandomAccessFile(partitionManager.makeVectorLengthFile(partitionNumber), "rw");
+            vectorLengthsBuffer.write(vectorLengthsFile.getChannel());
+            vectorLengthsBuffer.clear();
+            vectorLengthsFile.close();
+        }
+    }
 
     public void flush() throws IOException {
 
         //
         // Flush the main dictionary output to our dictionary file.
-        RandomAccessFile dictFile = new RandomAccessFile(manager.makeDictionaryFile(partNumber), "rw");
+        RandomAccessFile dictFile = new RandomAccessFile(partitionManager.makeDictionaryFile(partitionNumber), "rw");
         partDictOut.flush(dictFile);
         dictFile.close();
 
@@ -261,7 +289,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         if(vectorLengthsBuffer.position() > 0) {
             //
             // The vector lengths.
-            RandomAccessFile vectorLengthsFile = new RandomAccessFile(manager.makeVectorLengthFile(partNumber), "rw");
+            RandomAccessFile vectorLengthsFile = new RandomAccessFile(partitionManager.makeVectorLengthFile(partitionNumber), "rw");
             vectorLengthsBuffer.write(vectorLengthsFile.getChannel());
             vectorLengthsBuffer.clear();
             vectorLengthsFile.close();
@@ -270,7 +298,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         //
         // Deleted docs.
         if(deletionsBuffer.countBits() > 0) {
-            RandomAccessFile delFile = new RandomAccessFile(manager.makeDeletedDocsFile(partNumber), "rw");
+            RandomAccessFile delFile = new RandomAccessFile(partitionManager.makeDeletedDocsFile(partitionNumber), "rw");
             deletionsBuffer.write(delFile);
             deletionsBuffer.clear();
             delFile.close();
@@ -281,22 +309,22 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         // this partition output was used for merging.
         if(termStatsDictOut != null && termStatsDictOut.position() > 0) {
             try {
-                int tsn = manager.getMetaFile().getNextTermStatsNumber();
+                int tsn = partitionManager.getMetaFile().getNextTermStatsNumber();
 
-                RandomAccessFile termStatsFile = new RandomAccessFile(manager.makeTermStatsFile(tsn), "rw");
+                RandomAccessFile termStatsFile = new RandomAccessFile(partitionManager.makeTermStatsFile(tsn), "rw");
                 termStatsDictOut.flush(termStatsFile);
                 termStatsFile.close();
 
-                manager.getMetaFile().setTermStatsNumber(tsn);
-                manager.updateTermStats();
+                partitionManager.getMetaFile().setTermStatsNumber(tsn);
+                partitionManager.updateTermStats();
             } catch(FileLockException ex) {
                 throw new IOException(String.format(
-                        "Error dumping flushing term stats %d", partNumber), ex);
+                        "Error dumping flushing term stats %d", partitionNumber), ex);
             }
 
         }
         if(keys != null && !keys.isEmpty()) {
-            manager.addNewPartition(partNumber, keys);
+            partitionManager.addNewPartition(partitionNumber, keys);
         }
         started = false;
     }
@@ -317,7 +345,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
 
     @Override
     public String toString() {
-        return "APO: " + name + ' ' + partition + " partition number: " + partNumber;
+        return "APO: " + name + ' ' + partition + " partition number: " + partitionNumber;
     }
     
     

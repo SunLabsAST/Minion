@@ -67,7 +67,7 @@ public class DiskDictionaryOutput extends AbstractDictionaryOutput {
     /**
      * Default output buffer size.
      */
-    protected static final int DEFAULT_OUT_BUFFER_SIZE = 64 * 1024;
+    protected static final int DEFAULT_OUT_BUFFER_SIZE = 128 * 1024;
 
     public DiskDictionaryOutput(File path) throws java.io.IOException {
         this(path, DEFAULT_OUT_BUFFER_SIZE);

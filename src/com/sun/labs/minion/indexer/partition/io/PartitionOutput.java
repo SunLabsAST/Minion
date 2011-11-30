@@ -2,9 +2,11 @@ package com.sun.labs.minion.indexer.partition.io;
 
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
+import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionHeader;
+import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
@@ -16,6 +18,8 @@ import java.util.Set;
  */
 public interface PartitionOutput {
     
+    public PartitionManager getPartitionManager();
+    
     public int startPartition(MemoryPartition partition) throws IOException;
     
     public void setKeys(Set<String> keys);
@@ -23,6 +27,8 @@ public interface PartitionOutput {
     public MemoryPartition getPartition();
 
     public int getPartitionNumber();
+    
+    public void setPartitionNumber(int partitionNumber);
     
     public PartitionHeader getPartitionHeader();
     
@@ -60,11 +66,15 @@ public interface PartitionOutput {
     
     public DictionaryOutput getTermStatsDictionaryOutput();
     
+    public TermStatsHeader getTermStatsHeader();
+    
     public WriteableBuffer getDeletionsBuffer();
 
     public WriteableBuffer getVectorLengthsBuffer();
     
     public boolean isLongIndexingRun();
+    
+    public void flushVectorLengths() throws IOException;
     
     public void flush() throws IOException;
 

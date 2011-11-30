@@ -38,7 +38,7 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
     public DictionaryOutput getTermStatsDictionaryOutput() {
         if(termStatsDictOut == null) {
             try {
-                termStatsDictOut = new RAMDictionaryOutput(manager.getIndexDir());
+                termStatsDictOut = new RAMDictionaryOutput(partitionManager.getIndexDir());
             } catch(IOException ex) {
                 logger.log(Level.SEVERE, String.format("Error getting term stats dictionary"), ex);
                 return null;

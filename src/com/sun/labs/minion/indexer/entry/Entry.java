@@ -70,7 +70,12 @@ public abstract class Entry<N extends Comparable> implements Comparable<Entry>, 
      * The number of postings associated with this entry.
      */
     protected int n;
-
+    
+    /**
+     * The maximum frequency for this term in the documents.
+     */
+    protected int maxFDT = 1;
+    
     /**
      * The size of the postings, in bytes.
      */
@@ -141,7 +146,7 @@ public abstract class Entry<N extends Comparable> implements Comparable<Entry>, 
      * @return the maximum frequency.
      */
     public int getMaxFDT() {
-        return post.getMaxFDT();
+        return maxFDT;
     }
 
     /**

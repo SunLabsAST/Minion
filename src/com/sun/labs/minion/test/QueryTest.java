@@ -874,6 +874,12 @@ public class QueryTest extends SEMain {
                     }
                 }
             }
+        } else if(q.startsWith(":rts")) {
+            try {
+            manager.recalculateTermStats();
+            } catch (Exception ex) {
+                logger.log(Level.SEVERE, String.format("Error regenerating term stats"), ex);
+            }
 
         } else if(q.startsWith(":fs ")) {
             StringTokenizer tok = new StringTokenizer(q.substring(

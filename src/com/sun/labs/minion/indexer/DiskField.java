@@ -9,6 +9,7 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.indexer.partition.MergeState;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import java.io.RandomAccessFile;
@@ -21,6 +22,7 @@ import java.util.logging.Logger;
 public class DiskField extends Field {
 
     static final Logger logger = Logger.getLogger(DiskField.class.getName());
+
     private DiskDictionaryBundle bundle;
 
     public DiskField(DiskPartition partition,
@@ -68,7 +70,7 @@ public class DiskField extends Field {
     public QueryEntry getTerm(int id, boolean caseSensitive) {
         return bundle.getTerm(id, caseSensitive);
     }
-    
+
     public List<QueryEntry> getWildcardMatches(String name, boolean caseSensitive,
             int maxEntries,
             long timeLimit) {
@@ -258,17 +260,42 @@ public class DiskField extends Field {
             throws java.io.IOException {
 
         DiskDictionaryBundle[] bundles = new DiskDictionaryBundle[fields.length];
-        for (int i = 0; i < fields.length; i++) {
+        for(int i = 0; i < fields.length; i++) {
             //
             // We can encounter a partition that has no instances of a field, 
             // but we need to account for that!
-            if (fields[i] == null) {
+            if(fields[i] == null) {
                 bundles[i] = null;
             } else {
                 bundles[i] = fields[i].bundle;
             }
         }
         DiskDictionaryBundle.merge(mergeState, bundles);
+    }
+
+    public static void regenerateTermStats(DiskField[] fields,
+            PartitionOutput partOut) {
+
+        DiskDictionaryBundle[] bundles = new DiskDictionaryBundle[fields.length];
+        boolean found = false;
+        for(int i = 0; i < fields.length; i++) {
+            //
+            // We can encounter a partition that has no instances of a field, 
+            // but we need to account for that!
+            if(fields[i] == null) {
+                bundles[i] = null;
+            } else {
+                bundles[i] = fields[i].bundle;
+                found = true;
+            }
+        }
+        if(found) {
+            DiskDictionaryBundle.regenerateTermStats(bundles, partOut);
+        }
+    }
+
+    public void calculateVectorLengths(PartitionOutput partOut) throws java.io.IOException {
+        bundle.calculateVectorLengths(partOut);
     }
 
     /**
