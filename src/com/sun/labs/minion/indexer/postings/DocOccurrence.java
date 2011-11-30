@@ -29,8 +29,6 @@ import com.sun.labs.minion.indexer.entry.Entry;
 /**
  * An occurrence to use for document dictionaries.  Such an occurrence includes
  * the entry from the main dictionary that is to be added to a document vector.
- *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public class DocOccurrence extends OccurrenceImpl {
     

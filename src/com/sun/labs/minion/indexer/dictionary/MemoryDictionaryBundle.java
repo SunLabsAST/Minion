@@ -10,6 +10,7 @@ import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.DocOccurrence;
+import com.sun.labs.minion.indexer.postings.DocumentVectorPostings;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
 import com.sun.labs.minion.indexer.postings.Postings;
@@ -116,7 +117,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
     private List[] ucdv;
 
-    private EntryFactory vectorEntryFactory = new EntryFactory(Postings.Type.ID_FREQ);
+    private EntryFactory vectorEntryFactory = new EntryFactory(Postings.Type.DOC_VECTOR);
 
     private EntryFactory savedEntryFactory = new EntryFactory(Postings.Type.ID);
 
@@ -147,6 +148,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 dicts[Type.STEMMED_VECTOR.ordinal()] = new MemoryDictionary<String>(
                         vectorEntryFactory);
             }
+            ddo = new DocOccurrence();
         }
 
         if(field.isSaved()) {
@@ -172,7 +174,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 dicts[Type.RAW_VECTOR.ordinal()].remove(key);
                 rawVector = dicts[Type.RAW_VECTOR.ordinal()].put(key);
             }
-            if(field.isUncased()) {
+            if(field.isStemmed()) {
                 dicts[Type.STEMMED_VECTOR.ordinal()].remove(key);
                 stemmedVector = dicts[Type.STEMMED_VECTOR.ordinal()].put(key);
             }
@@ -201,7 +203,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             ce = dicts[Type.CASED_TOKENS.ordinal()].put(t.getToken());
             ce.add(t);
         }
-
+        
         //
         // If we're storing uncased terms or stemming, then we need to downcase
         // the term, since stemming will likely break on a mixed case term.
@@ -221,17 +223,13 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
 
         if(field.isVectored()) {
-            if(field.isUncased()) {
-                ddo.setEntry(uce);
-                rawVector.add(ddo);
-            }
+            ddo.setEntry(uce);
+            ddo.setCount(1);
+            rawVector.add(ddo);
 
-            if(field.isCased()) {
-                if(se != null) {
-                    ddo.setEntry(se);
-                } else {
-                    ddo.setEntry(ce);
-                }
+            if(field.isStemmed()) {
+                ddo.setEntry(se);
+                ddo.setCount(1);
                 stemmedVector.add(ddo);
             }
         }
@@ -319,12 +317,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         header.fieldID = info.getID();
         header.maxDocID = partOut.getMaxDocID();
-        
-        
+
+
         //
         // The ID maps from each of the dictionaries.
         int[][] entryIDMaps = new int[Type.values().length][];
-        
+
         //
         // Dump the dictionaries in this bundle.  This loop is a little gross, what
         // with the pre-dump and post-dump switches based on the type of dictionary
@@ -336,7 +334,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 header.dictOffsets[ord] = -1;
                 continue;
             }
-            
+
             //
             // Figure out the encoder for the type of dictionary.
             partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
@@ -346,10 +344,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
                 case CASED_TOKENS:
                     partOut.setDictionaryEncoder(new StringNameHandler());
+                    partOut.setDictionaryIDMap(MemoryDictionary.IDMap.OLD_TO_NEW);
                     break;
 
                 case UNCASED_TOKENS:
                     partOut.setDictionaryEncoder(new StringNameHandler());
+                    partOut.setDictionaryIDMap(MemoryDictionary.IDMap.OLD_TO_NEW);
                     break;
 
                 case RAW_SAVED:
@@ -370,7 +370,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                             }
                         }
                     }
-                    
+
                     break;
 
                 case UNCASED_SAVED:
@@ -434,7 +434,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         continue;
                     }
                     break;
-                    
+
                 case SAVED_VALUE_BIGRAMS:
                     if(field.getInfo().getType() == FieldInfo.Type.STRING) {
                         if(dicts[ord] == null) {
@@ -461,8 +461,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
             header.dictOffsets[ord] = partDictOut.position();
             dicts[ord].marshall(partOut);
-       }
-        
+        }
+
         if(field.isSaved()) {
 
             //
@@ -483,7 +483,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     continue;
                 }
                 List<IndexEntry> dvs = (List<IndexEntry>) dv[i];
-                
+
                 if(debug) {
 //                    logger.info(String.format("doc: %d n: %d", i, dvs.size()));
                 }
@@ -509,6 +509,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
 
         if(getTermDictionary(false) != null && !partOut.isLongIndexingRun()) {
+            
             //
             // Write out our document vector lengths.
             WriteableBuffer vlb = partOut.getVectorLengthsBuffer();

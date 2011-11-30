@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.indexer.entry;
 
+import com.sun.labs.minion.indexer.postings.DocumentVectorPostings;
 import com.sun.labs.minion.indexer.postings.MergeablePostings;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 
@@ -33,6 +34,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Logger;
 
 /**
  * An entry that is used in dictionaries that are built while indexing
@@ -40,6 +42,8 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * @param <N> the type of the name in this entry
  */
 public class IndexEntry<N extends Comparable> extends Entry<N> {
+    
+    private static final Logger logger = Logger.getLogger(IndexEntry.class.getName());
     
     private boolean used = false;
 
@@ -80,8 +84,12 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
      */
     public boolean writePostings(PostingsOutput[] out, int[] idMap)
             throws java.io.IOException {
-        if(post == null || post.getN() == 0) {
-            return type == Postings.Type.NONE;
+        if(!used) {
+            return false;
+        }
+        
+        if(post == null || post.getType() == Postings.Type.NONE) {
+            return true;
         }
 
         //

@@ -40,6 +40,7 @@ public interface Postings {
         ID,
         ID_FREQ,
         ID_FREQ_POS,
+        DOC_VECTOR,
         NONE;
 
         public static Postings getPostings(Type type) {
@@ -50,6 +51,8 @@ public interface Postings {
                     return new IDFreqPostings();
                 case ID_FREQ_POS:
                     return new IDFreqPostings();
+                case DOC_VECTOR:
+                    return new DocumentVectorPostings();
                 default:
                     return null;
             }
@@ -63,6 +66,8 @@ public interface Postings {
                     return new IDFreqPostings(b);
                 case ID_FREQ_POS:
                     return new IDFreqPostings(b);
+                case DOC_VECTOR:
+                    return new DocumentVectorPostings(b);
                 default:
                     return null;
             }

@@ -36,9 +36,8 @@ import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.Util;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.logging.Level;
 
 /**
  * A dictionary that will be used during indexing.  The entries will be
@@ -150,11 +149,11 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         /**
          * A map from the old IDs to the new IDs should be kept.
          */
-        OLDTONEW,
+        OLD_TO_NEW,
         /**
          * A map from the new IDs to the old IDs should be kept.
          */
-        NEWTOOLD,}
+        NEW_TO_OLD,}
 
     protected MemoryDictionary() {
     }
@@ -278,8 +277,11 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         // Make sure that we've the space for them.
         if(sortedEntries == null || sortedEntries.length < nUsed) {
             sortedEntries = new IndexEntry[nUsed];
-            if(idMapType != IDMap.NONE) {
-                idMap = new int[nUsed];
+        }
+        
+        if(idMapType != IDMap.NONE) {
+            if(idMap == null || idMap.length < getMaxID()) {
+                idMap = new int[getMaxID()+1];
             }
         }
         
@@ -289,8 +291,6 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
                 sortedEntries[nUsed++] = e;
             }
         }
-        
-        logger.fine(String.format("nUsed: %d", nUsed));
         
         //
         // Sort.
@@ -310,13 +310,14 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
                             e.setID(newID++);
                         }
                         break;
-                    case OLDTONEW:
+                    case OLD_TO_NEW:
                         for(int i = 0; i < nUsed; i++) {
                             Entry e = sortedEntries[i];
                             idMap[e.getID()] = newID;
                             e.setID(newID++);
                         }
-                    case NEWTOOLD:
+                        break;
+                    case NEW_TO_OLD:
                         for(int i = 0; i < nUsed; i++) {
                             Entry e = sortedEntries[i];
                             idMap[newID] = e.getID();

@@ -218,13 +218,16 @@ public class DocumentVectorLengths {
             }
 
             //
-            // Write the entry to the new global term stats dictionary.
+            // Write the entry to the new global term stats dictionary.  Note
+            // that we're only writing entries that have more than on occurrence,
+            // mostly just to keep the size of the dictionary down.  We should
+            // probably make this configurable.
             if(adjustStats && we.getN() > 1) {
                 termStatsOut.write(we);
             }
 
             //
-            // Pump whichever iterators are necessary.
+            // Advance whichever iterators are necessary.
             if(gte == null && gti != null && gti.hasNext()) {
                 gte = (TermStatsQueryEntry) gti.next();
             }

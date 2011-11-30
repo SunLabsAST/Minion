@@ -49,6 +49,7 @@ public abstract class Field {
         saved = info.hasAttribute(FieldInfo.Attribute.SAVED);
         cased = info.hasAttribute(FieldInfo.Attribute.CASED);
         uncased = info.hasAttribute(FieldInfo.Attribute.UNCASED);
+        vectored = info.hasAttribute(FieldInfo.Attribute.VECTORED);
 
         if(info.getType() != FieldInfo.Type.STRING && info.getType()
                 != FieldInfo.Type.NONE && uncased) {

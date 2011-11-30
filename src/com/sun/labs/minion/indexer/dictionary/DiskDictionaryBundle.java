@@ -322,7 +322,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         return ret;
     }
 
-    public QueryEntry getVector(String key, boolean caseSensitive) {
+    public QueryEntry getVector(String key) {
         QueryEntry ret = null;
         if(!field.isVectored()) {
             logger.warning(
@@ -330,7 +330,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     info.getName()));
             return null;
         }
-        if(caseSensitive) {
+        if(!field.isStemmed()) {
             ret = dicts[Type.RAW_VECTOR.ordinal()].get(key);
         } else {
             ret = dicts[Type.STEMMED_VECTOR.ordinal()].get(key);

@@ -55,6 +55,11 @@ public class TermStatsIndexEntry extends IndexEntry {
     public void setTermStats(TermStatsImpl termStats) {
         this.termStats = termStats;
     }
+
+    @Override
+    public int getN() {
+        return termStats.getDocFreq();
+    }
     
     @Override
     public void add(Occurrence o) {

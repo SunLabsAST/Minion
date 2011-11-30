@@ -87,11 +87,7 @@ public class DiskField extends Field {
     }
 
     public QueryEntry getVector(String key) {
-        return getVector(key, false);
-    }
-
-    public QueryEntry getVector(String key, boolean caseSensitive) {
-        return bundle.getVector(key, caseSensitive);
+        return bundle.getVector(key);
     }
 
     /**
