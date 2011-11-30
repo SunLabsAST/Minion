@@ -250,7 +250,6 @@ public class UniversalTokenizer extends Tokenizer {
     @Override
     public void text(char[] text, int b, int e) {
         
-        logger.info(String.format("Text: %s", new String(text, b, Math.min(24, e - b))));
         //
         // We no longer care about character position - only word position.
         // For now, we'll just make "p" zero.  Next pass through this code

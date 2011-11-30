@@ -34,8 +34,6 @@ import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.pipeline.Token;
-import com.sun.labs.minion.util.buffer.ArrayBuffer;
-import java.io.File;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
@@ -176,6 +174,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         int tsn = 0;
         try {
             dumpState.termStatsDictOut = new DiskDictionaryOutput(dumpState.indexDir);
+            dumpState.termStatsDictOut.byteEncode(0, 8);
         } catch(Exception ex) {
             logger.severe(String.format(
                     "Error making term stats dictionary file for %s", this));
@@ -220,10 +219,15 @@ public class InvFileMemoryPartition extends MemoryPartition {
         try {
             if(dumpState.termStatsDictOut != null) {
                 tsn = manager.getMetaFile().getNextTermStatsNumber();
-                RandomAccessFile tsRAF = new RandomAccessFile(manager.makeTermStatsFile(tsn), "rw");
-                tsRAF.writeLong(dumpState.termStatsDictOut.position() + 8);
-                dumpState.termStatsDictOut.flush(tsRAF);
+                int tshpos = dumpState.termStatsDictOut.position();
                 tsh.write(dumpState.termStatsDictOut);
+                int end = dumpState.termStatsDictOut.position();
+                dumpState.termStatsDictOut.position(0);
+                dumpState.termStatsDictOut.byteEncode(tshpos, 8);
+                dumpState.termStatsDictOut.position(end);
+                
+                RandomAccessFile tsRAF = new RandomAccessFile(manager.makeTermStatsFile(tsn), "rw");
+                dumpState.termStatsDictOut.flush(tsRAF);
                 dumpState.termStatsDictOut.close();
                 tsRAF.close();
                 manager.getMetaFile().setTermStatsNumber(tsn);
