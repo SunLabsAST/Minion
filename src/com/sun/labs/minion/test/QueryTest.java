@@ -686,7 +686,7 @@ public class QueryTest extends SEMain {
                 output.println("model:" + currModel.toString());
                 String[] labels = currModel.getSenseLabels();
                 for(String l : labels) {
-                    logger.info("label: " + l);
+                    logger.info(String.format("label: %s", l));
                 }
             } catch(Exception e) {
                 System.err.println("Exception during disambiguation");
@@ -724,6 +724,41 @@ public class QueryTest extends SEMain {
                 for(DiskPartition p : manager.getActivePartitions()) {
                     for(DiskField df :
                             ((InvFileDiskPartition) p).getDiskFields()) {
+                        
+                        if(!df.getInfo().hasAttribute(
+                                FieldInfo.Attribute.TOKENIZED)) {
+                            continue;
+                        }
+                        output.format("Field: %s\n", df.getInfo().getName());
+                        List<QueryEntry> entries = df.getWildcardMatches(pat,
+                                                                  wildCaseSensitive,
+                                                                  -1, -1);
+                        if(entries.isEmpty()) {
+                            output.println("No matches");
+                        } else {
+                            output.format("%d token matches\n", entries.size());
+                            for(QueryEntry e : entries) {
+                                output.format(" %s (%d)\n", e.getName(),
+                                              e.getN());
+                            }
+                        }
+                    }
+                }
+
+            } catch(Exception e) {
+                logger.log(Level.SEVERE, "Exception in :wild", e);
+                return 0;
+            }
+        } else if(q.startsWith(":fwild ")) {
+
+            try {
+                String pat = q.substring(q.indexOf(' ') + 1).trim();
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    for(DiskField df :
+                            ((InvFileDiskPartition) p).getDiskFields()) {
+                        if(df.getInfo().getType() !=  FieldInfo.Type.STRING) {
+                            continue;
+                        }
                         output.format("Field: %s\n", df.getInfo().getName());
                         output.flush();
                         List<QueryEntry> entries = df.getMatching(pat,
@@ -732,9 +767,8 @@ public class QueryTest extends SEMain {
                         if(entries.isEmpty()) {
                             output.println("No matches");
                         } else {
-                            output.format("%d matches\n", entries.size());
+                            output.format("%d saved value matches\n", entries.size());
                             for(QueryEntry e : entries) {
-                                output.println("");
                                 output.format(" %s (%d)\n", e.getName(),
                                               e.getN());
                             }

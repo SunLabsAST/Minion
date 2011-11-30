@@ -36,6 +36,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.logging.Logger;
@@ -145,9 +146,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
         if(header.tokenBGOffset > 0) {
             dictFile.seek(header.tokenBGOffset);
             DiskDictionary tokenDict = 
-                    dicts[Type.UNCASED_TOKENS.ordinal()] != null ?
-                    dicts[Type.UNCASED_TOKENS.ordinal()] :
-                    dicts[Type.CASED_TOKENS.ordinal()];
+                    dicts[Type.CASED_TOKENS.ordinal()] != null ?
+                    dicts[Type.CASED_TOKENS.ordinal()] :
+                    dicts[Type.UNCASED_TOKENS.ordinal()];
             tokenBigrams = new DiskBiGramDictionary(dictFile, postIn[0],
                                                     DiskDictionary.PostingsInputType.FILE_PART_POST,
                                                     DiskDictionary.BufferType.FILEBUFFER,
@@ -159,20 +160,12 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         if(header.savedBGOffset > 0) {
             dictFile.seek(header.savedBGOffset);
-            DiskDictionary savedValueDict = 
-                    dicts[Type.UNCASED_SAVED.ordinal()] != null ?
-                    dicts[Type.UNCASED_SAVED.ordinal()] :
-                    dicts[Type.RAW_SAVED.ordinal()];
-                    
             savedBigrams = new DiskBiGramDictionary(dictFile, postIn[0],
                                                     DiskDictionary.PostingsInputType.FILE_PART_POST,
                                                     DiskDictionary.BufferType.FILEBUFFER,
                                                     256, 2048, 2048, 2048, 2048,
                                                     null,
-                                                    savedValueDict);
-            logger.info(String.format("field: %s", info.getName()));
-            logger.info(String.format("savedBG header: %s", savedBigrams.getHeader()));
-            logger.info(String.format("savedUN header: %s", savedValueDict.getHeader()));
+                                                    dicts[Type.RAW_SAVED.ordinal()]);
             savedBigrams.setPartition(field.partition);
         }
 
@@ -285,7 +278,33 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
         return ret;
     }
+    
+    public List<QueryEntry> getWildcardMatches(String pat, boolean caseSensitive, 
+            int maxEntries, long timeLimit) {
+        
+        DiskDictionary tokenDict = 
+                dicts[Type.CASED_TOKENS.ordinal()] != null ?
+                dicts[Type.CASED_TOKENS.ordinal()] :
+                dicts[Type.UNCASED_TOKENS.ordinal()];
+        
+        if(tokenDict == null) {
+            return Collections.EMPTY_LIST;
+        }
+        
+        QueryEntry[] qes = tokenDict.getMatching(
+                tokenBigrams, pat,
+                caseSensitive,
+                maxEntries,
+                timeLimit);
 
+        if(qes == null) {
+            return Collections.EMPTY_LIST;
+        }
+        
+        return Arrays.asList(qes);
+        
+    }
+    
     public QueryEntry getStem(String stem) {
         QueryEntry ret = null;
         if(dicts[Type.STEMMED_TOKENS.ordinal()] != null) {
@@ -424,25 +443,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     getName()));
             return null;
         }
-        QueryEntry[] qes;
-        if (caseSensitive) {
-            qes = dicts[Type.RAW_SAVED.ordinal()].getMatching(savedBigrams, val,
-                    true,
-                    maxEntries,
-                    timeLimit);
-        } else {
-            if (dicts[Type.UNCASED_SAVED.ordinal()] == null) {
-                logger.warning(String.format(
-                        "Can't get uncased matches for string field %s",
-                        info.getName()));
-                return null;
-            }
-            qes = dicts[Type.UNCASED_SAVED.ordinal()].getMatching(savedBigrams,
-                    val.toLowerCase(),
-                    false,
-                    maxEntries,
-                    timeLimit);
-        }
+        QueryEntry[] qes = dicts[Type.RAW_SAVED.ordinal()].getMatching(
+                savedBigrams, val,
+                caseSensitive,
+                maxEntries,
+                timeLimit);
         return new ArrayDictionaryIterator(qes);
     }
 
@@ -471,8 +476,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
             DictionaryIterator di = getMatchingIterator(pattern, caseSensitive,
                                                         maxEntries, timeLimit);
-            while(di.hasNext()) {
-                ret.add((QueryEntry) di.next());
+            if (di != null) {
+                while (di.hasNext()) {
+                    ret.add((QueryEntry) di.next());
+                }
             }
         }
         return ret;

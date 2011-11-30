@@ -67,6 +67,13 @@ public class DiskField extends Field {
     public QueryEntry getTerm(int id, boolean caseSensitive) {
         return bundle.getTerm(id, caseSensitive);
     }
+    
+    public List<QueryEntry> getWildcardMatches(String name, boolean caseSensitive,
+            int maxEntries,
+            long timeLimit) {
+        return bundle.getWildcardMatches(name, caseSensitive, maxEntries,
+                timeLimit);
+    }
 
     public TermStatsImpl getTermStats(String name) {
         return partition.getPartitionManager().getTermStats(name, info);

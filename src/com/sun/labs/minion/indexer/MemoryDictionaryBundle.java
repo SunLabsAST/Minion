@@ -417,15 +417,15 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         // If we have tokens or saved values, then output any bigrams that we
         // need for accelerating wildcards.
         IndexEntry[] sortedTokens = 
-                sortedEntries[Type.UNCASED_TOKENS.ordinal()] != null ?
-                sortedEntries[Type.UNCASED_TOKENS.ordinal()] :
-                sortedEntries[Type.CASED_TOKENS.ordinal()];
+                sortedEntries[Type.CASED_TOKENS.ordinal()] != null ?
+                sortedEntries[Type.CASED_TOKENS.ordinal()] :
+                sortedEntries[Type.UNCASED_TOKENS.ordinal()];
         
         if(sortedTokens != null) {
             MemoryBiGramDictionary tbg = new MemoryBiGramDictionary(
                     new EntryFactory(Postings.Type.ID_FREQ));
             for(IndexEntry e : sortedTokens) {
-                tbg.add(e.getName().toString(), e.getID());
+                tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
             }
             header.tokenBGOffset = fieldDictFile.getFilePointer();
             tbg.dump(path, new StringNameHandler(),
@@ -438,30 +438,19 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
 
         if(field.info.getType() == FieldInfo.Type.STRING) {
-            IndexEntry[] sortedSaved =
-                    sortedEntries[Type.UNCASED_SAVED.ordinal()] != null ? 
-                    sortedEntries[Type.UNCASED_SAVED.ordinal()] : 
-                    sortedEntries[Type.RAW_SAVED.ordinal()];
-            if(sortedSaved != null) {
-                MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
-                        new EntryFactory(Postings.Type.ID_FREQ));
-                for(IndexEntry e : sortedSaved) {
-                    sbg.add(e.getName().toString(), e.getID());
-                }
-                header.savedBGOffset = fieldDictFile.getFilePointer();
-//                Logger dl = Logger.getLogger(MemoryDictionary.class.getName());
-//                Logger wl = Logger.getLogger(DictionaryWriter.class.getName());
-//                dl.setLevel(Level.FINE);
-//                wl.setLevel(Level.FINE);
-                sbg.dump(path, new StringNameHandler(), fieldDictFile, postOut,
-                         MemoryDictionary.Renumber.NONE,
-                         MemoryDictionary.IDMap.NONE,
-                         null);
-//                dl.setLevel(Level.INFO);
-//                wl.setLevel(Level.INFO);
-            } else {
-                header.savedBGOffset = -1;
+            MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
+                    new EntryFactory(Postings.Type.ID_FREQ));
+            for (IndexEntry e : sortedEntries[Type.RAW_SAVED.ordinal()]) {
+                sbg.add(CharUtils.toLowerCase(e.getName().toString()),
+                        e.getID());
             }
+            header.savedBGOffset = fieldDictFile.getFilePointer();
+            sbg.dump(path, new StringNameHandler(), fieldDictFile, postOut,
+                    MemoryDictionary.Renumber.NONE,
+                    MemoryDictionary.IDMap.NONE,
+                    null);
+        } else {
+            header.savedBGOffset = -1;
         }
 
       

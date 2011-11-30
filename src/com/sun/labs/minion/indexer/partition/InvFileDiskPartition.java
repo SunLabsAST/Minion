@@ -239,7 +239,7 @@ public class InvFileDiskPartition extends DiskPartition {
             return f.fetchOne(docID);
         }
     }
-
+    
     /**
      * Gets an iterator for all of the values in a field.
      *

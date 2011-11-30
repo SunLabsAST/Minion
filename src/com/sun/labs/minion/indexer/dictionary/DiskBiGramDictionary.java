@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import java.io.RandomAccessFile;
@@ -55,29 +54,29 @@ public class DiskBiGramDictionary extends DiskDictionary {
     private DiskDictionary mainDict;
 
     public DiskBiGramDictionary(RandomAccessFile dictFile,
-                                 RandomAccessFile postFile,
-                                 PostingsInputType postInType,
-                                 BufferType fileBufferType,
-                                 int cacheSize,
-                                 int nameBufferSize,
-                                 int offsetsBufferSize,
-                                 int infoBufferSize,
-                                 int infoOffsetsBufferSize,
-                                 Partition part,
-                                 DiskDictionary mainDict)
+            RandomAccessFile postFile,
+            PostingsInputType postInType,
+            BufferType fileBufferType,
+            int cacheSize,
+            int nameBufferSize,
+            int offsetsBufferSize,
+            int infoBufferSize,
+            int infoOffsetsBufferSize,
+            Partition part,
+            DiskDictionary mainDict)
             throws java.io.IOException {
         super(new EntryFactory(Type.ID_FREQ),
-              new StringNameHandler(),
-              dictFile,
-              new RandomAccessFile[]{postFile},
-              postInType,
-              fileBufferType,
-              cacheSize,
-              nameBufferSize,
-              offsetsBufferSize,
-              infoBufferSize,
-              infoOffsetsBufferSize,
-              part);
+                new StringNameHandler(),
+                dictFile,
+                new RandomAccessFile[]{postFile},
+                postInType,
+                fileBufferType,
+                cacheSize,
+                nameBufferSize,
+                offsetsBufferSize,
+                infoBufferSize,
+                infoOffsetsBufferSize,
+                part);
         this.mainDict = mainDict;
     } // DiskBiGramDictionary constructor
 
@@ -116,11 +115,11 @@ public class DiskBiGramDictionary extends DiskDictionary {
      * tested.
      */
     public int[] getMatching(String wc,
-                              boolean starts,
-                              boolean ends) {
+            boolean starts,
+            boolean ends) {
         //
         // Quick sanity check.
-        if(wc.length() == 0 || size() == 0) {
+        if (wc.length() == 0 || size() == 0) {
             return null;
         }
 
@@ -142,7 +141,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
         // calculating bigrams will depend on whether the string has to be
         // anchored at one end of the pattern or another.
         int b, e;
-        if(starts) {
+        if (starts) {
             bg[0] = (char) 0;
             b = 0;
         } else {
@@ -151,20 +150,19 @@ public class DiskBiGramDictionary extends DiskDictionary {
         }
 
         int l = wc.length();
-        if(ends) {
+        if (ends) {
             e = l;
         } else {
             e = l - 1;
         }
 
-        for(int i = b; i <= e; i++) {
+        for (int i = b; i <= e; i++) {
 
             bg[1] = (ends && i == e) ? (char) 0 : wc.charAt(i);
 
             //
             // If there's any wildcard character, we can't have a bigram!
-            if(bg[0] == '*' || bg[0] == '?' ||
-                    bg[1] == '*' || bg[1] == '?') {
+            if (bg[0] == '*' || bg[0] == '?' || bg[1] == '*' || bg[1] == '?') {
                 bg[0] = bg[1];
                 continue;
             }
@@ -175,7 +173,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
             // dictionary we're associated with won't contain any entry
             // whose name contains this bigram!
             Entry bigram = get(new String(bg));
-            if(bigram == null) {
+            if (bigram == null) {
                 return null;
             }
             bigrams.add(bigram);
@@ -188,7 +186,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
 
         //
         // If we have bigrams, then make our ID list.
-        if(bigrams.size() > 0) {
+        if (bigrams.size() > 0) {
             ag = intersect(bigrams);
         } else {
 
@@ -196,14 +194,14 @@ public class DiskBiGramDictionary extends DiskDictionary {
             // Pull out any unigrams and use those.
             char[] ug = new char[wc.length()];
             int nu = 0;
-            for(int i = 0; i < wc.length(); i++) {
+            for (int i = 0; i < wc.length(); i++) {
                 char c = wc.charAt(i);
-                if(c != '*' && c != '?') {
+                if (c != '*' && c != '?') {
                     ug[nu++] = c;
                 }
             }
 
-            if(nu == 0) {
+            if (nu == 0) {
                 //
                 // No unigrams, no bigrams.  It's all wildcards, so we need to check
                 // everything.
@@ -217,7 +215,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
             // all the occurrences of the unigram.  We'll union together
             // the postings for these and then intersect the resulting
             // unions.
-            for(int i = 0; i < nu; i++) {
+            for (int i = 0; i < nu; i++) {
 
                 //
                 // Get this character and the next greater one.
@@ -225,7 +223,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
                 String upper = Character.toString((char) ((int) ug[i] + 1));
                 ArrayGroup curr = getUnigrams(lower, upper);
 
-                if(ag == null) {
+                if (ag == null) {
                     ag = curr;
                 } else {
                     ag = ag.intersect(curr);
@@ -233,7 +231,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
 
                 //
                 // If we ever drop to zero size, we're done.
-                if(ag.getSize() == 0) {
+                if (ag.getSize() == 0) {
                     return null;
                 }
             }
@@ -243,7 +241,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
 
         //
         // At this point, no hits means no matches.
-        if(ret.length == 0) {
+        if (ret.length == 0) {
             return null;
         }
         return ret;
@@ -264,7 +262,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
     public int[] getAllVariants(String wc, boolean allowPartial) {
         //
         // Quick sanity check.
-        if(wc.length() == 0 || size() == 0) {
+        if (wc.length() == 0 || size() == 0) {
             return null;
         }
 
@@ -285,7 +283,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
         // bigrams.
         bg[0] = wc.charAt(0);
 
-        for(int i = 1; i < wc.length(); i++) {
+        for (int i = 1; i < wc.length(); i++) {
 
             bg[1] = wc.charAt(i);
 
@@ -296,8 +294,8 @@ public class DiskBiGramDictionary extends DiskDictionary {
             // dictionary we're associated with won't contain any entry
             // whose name contains this bigram!
             Entry bigram = get(new String(bg));
-            if(bigram == null) {
-                if(allowPartial) {
+            if (bigram == null) {
+                if (allowPartial) {
                     bg[0] = bg[1];
                     continue;
                 } else {
@@ -314,7 +312,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
 
         //
         // If we have bigrams, then make our ID list.
-        if(bigrams.size() > 0) {
+        if (bigrams.size() > 0) {
             ag = union(bigrams);
         } else {
 
@@ -324,7 +322,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
         }
 
         int[] ret = ag.getDocs();
-        if(ret.length == 0) {
+        if (ret.length == 0) {
             return null;
         }
         return ret;
@@ -343,9 +341,9 @@ public class DiskBiGramDictionary extends DiskDictionary {
         Collections.sort(entries, new EntrySizeComparator());
         ArrayGroup ag = null;
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
-        for(Iterator i = entries.iterator(); i.hasNext();) {
+        for (Iterator i = entries.iterator(); i.hasNext();) {
             QueryEntry e = (QueryEntry) i.next();
-            if(ag == null) {
+            if (ag == null) {
                 ag = new ArrayGroup(e.iterator(feat));
             } else {
                 ag = ag.destructiveIntersect(e.iterator(feat));
@@ -366,14 +364,14 @@ public class DiskBiGramDictionary extends DiskDictionary {
         // Throw all the entries into a ScoredQuickOr, possibly tossing
         // out entries below a particular score?
         ScoredQuickOr qor = new ScoredQuickOr((DiskPartition) part,
-                                              mainDict.getMaxID());
+                mainDict.getMaxID());
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
-        for(Iterator it = entries.iterator(); it.hasNext();) {
+        for (Iterator it = entries.iterator(); it.hasNext();) {
             QueryEntry e = (QueryEntry) it.next();
             qor.add(e.iterator(feat));
         }
         ScoredGroup sg = (ScoredGroup) qor.getGroup();
-        if(sg.getSize() >= 1000) {
+        if (sg.getSize() >= 1000) {
             sg.sort(true);
             float nthScore = sg.getScore(1000);
             sg.discardBelow(nthScore);
@@ -386,27 +384,27 @@ public class DiskBiGramDictionary extends DiskDictionary {
      * the bigrams that have that character as a first character.
      */
     protected ArrayGroup getUnigrams(String lower,
-                                      String upper) {
+            String upper) {
         DictionaryIterator di = iterator(lower, true,
-                                         upper, false);
+                upper, false);
 
         int[] ids = new int[di.estimateSize()];
         int p = 0;
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
-        while(di.hasNext()) {
+        while (di.hasNext()) {
             PostingsIterator pi = ((QueryEntry) di.next()).iterator(feat);
-            if(pi == null) {
+            if (pi == null) {
                 continue;
             }
-            while(pi.next()) {
+            while (pi.next()) {
                 ids[p++] = pi.getID();
             }
         }
         java.util.Arrays.sort(ids, 0, p);
         int size = 0;
         int prev = -1;
-        for(int i = 0; i < p; i++) {
-            if(ids[i] != prev) {
+        for (int i = 0; i < p; i++) {
+            if (ids[i] != prev) {
                 ids[size++] = ids[i];
             }
             prev = ids[i];
@@ -414,10 +412,10 @@ public class DiskBiGramDictionary extends DiskDictionary {
         return new ArrayGroup(ids, size);
     }
 
-    public static void merge(MergeState mergeState, 
-            DiskBiGramDictionary[] dicts ) throws java.io.IOException {
+    public static void merge(MergeState mergeState,
+            DiskBiGramDictionary[] dicts) throws java.io.IOException {
         DiskDictionary.merge(
-                mergeState.manager.getIndexDir(), 
+                mergeState.manager.getIndexDir(),
                 new StringNameHandler(),
                 (DiskDictionary[]) dicts,
                 null,

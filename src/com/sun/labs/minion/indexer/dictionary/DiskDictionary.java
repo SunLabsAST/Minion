@@ -714,7 +714,9 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Bounds check.
         if(posn < 0 || posn >= dh.size) {
-            logger.info(String.format("posn: %d size: %d", posn, dh.size));
+            if(posn < 0) {
+            logger.log(Level.INFO, String.format("posn: %d size: %d", posn, dh.size), new Exception("Negative posn?"));
+            }
             return null;
         }
 
@@ -870,16 +872,14 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
         //
         // First, get the matching entry IDs from the bigram dictionary.
-        int[] entryIds = biDict.getMatching(pat);
+        int[] candidateEntryIDs = biDict.getMatching(pat);
         
-        logger.info(String.format("candidates: %s", Arrays.toString(entryIds)));
-
         if(qtt.timedOut) {
             // Operation timed out
             return new QueryEntry[0];
         }
 
-        if(entryIds == null) {
+        if(candidateEntryIDs == null) {
             // There's nothing that could match
             return null;
         }
@@ -895,7 +895,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
         //
         // Now check the entry IDs.
-        if(entryIds.length == 0) {
+        if(candidateEntryIDs.length == 0) {
             // There's no bigrams or unigrams to narrow down by.
             // Try everything:
             Iterator entryIt = iterator();
@@ -911,11 +911,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             //
             // Now look up each entry and see if it matches the
             // result.
-            for(int i = 0; (i < entryIds.length) && (entryIds[i] != 0) &&
+            for(int i = 0; (i < candidateEntryIDs.length) && (candidateEntryIDs[i] != 0) &&
                     (!qtt.timedOut) &&
                     ((maxEntries <= 0) || (res.size() < maxEntries)); i++) {
-                QueryEntry curr = getByID(entryIds[i]);
-                logger.info(String.format("%d: %s", entryIds[i], curr));
+                QueryEntry curr = getByID(candidateEntryIDs[i]);
                 if(Util.match(patArray, curr.toString().toCharArray(),
                               caseSensitive)) {
                     res.add(curr);
