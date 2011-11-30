@@ -304,7 +304,9 @@ public class PositionPostings implements Postings {
             prevID = ids[i];
             int prevPosn = 0;
             for(int j = 0; j < freqs[i]; j++, pp++) {
-                wPosnBuff.byteEncode(posns[pp] - prevPosn);
+                int currPosn = posns[pp];
+                wPosnBuff.byteEncode(currPosn - prevPosn);
+                prevPosn = currPosn;
             }
         }
     }
@@ -531,6 +533,7 @@ public class PositionPostings implements Postings {
         lastID = 0;
         nSkips = 0;
         pos = -1;
+        posPos = 0;
     }
     
     /**
@@ -546,7 +549,7 @@ public class PositionPostings implements Postings {
         
         private int currPosnPos = 0;
         
-        private int lastFreq = 0;
+        private int freqSum = 0;
         
         private boolean gettingPositions;
         
@@ -636,8 +639,8 @@ public class PositionPostings implements Postings {
             if(f >= currPosns.length) {
                 currPosns = new int[f];
             }
-            for(int i = 0; i < f; i++, currPosnPos++) {
-                currPosns[i] = posns[currPosnPos];
+            for(int i = 0, j = currPosnPos; i < f; i++, j++) {
+                currPosns[i] = posns[j];
             }
             return currPosns;
         }
