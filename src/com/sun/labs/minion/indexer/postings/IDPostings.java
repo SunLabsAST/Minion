@@ -141,6 +141,8 @@ public class IDPostings implements Postings, MergeablePostings {
      *
      */
     public IDPostings() {
+        ids = new int[4];
+        curr = -1;
     }
 
     /**

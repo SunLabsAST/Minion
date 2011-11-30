@@ -31,6 +31,7 @@ import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
+import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.pipeline.Token;
 import java.io.File;
@@ -114,7 +115,8 @@ public class InvFileMemoryPartition extends MemoryPartition {
             fields = Arrays.copyOf(fields, fid * 2);
         }
         if(fields[fid] == null) {
-            fields[fid] = new MemoryField(this, fi, null);
+            fields[fid] = new MemoryField(this, fi, new EntryFactory(
+                    Postings.Type.ID_FREQ));
         }
         return fields[fid];
     }

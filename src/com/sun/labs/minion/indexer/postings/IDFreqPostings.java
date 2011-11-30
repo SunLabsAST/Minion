@@ -82,6 +82,7 @@ public class IDFreqPostings extends IDPostings {
      */
     public IDFreqPostings() {
         super();
+        freqs = new int[ids.length];
     }
 
     /**
@@ -148,6 +149,7 @@ public class IDFreqPostings extends IDPostings {
      * @param lastID The last ID.
      * @param pi the iterator of another postings.
      */
+    @Override
     protected void recodeID(int currID, int lastID, PostingsIterator pi) {
         super.recodeID(currID, lastID, pi);
         to += pi.getFreq();
@@ -155,6 +157,7 @@ public class IDFreqPostings extends IDPostings {
         ((WriteableBuffer) post).byteEncode(pi.getFreq());
     }
 
+    @Override
     public void merge(MergeablePostings mp, int[] map) {
 
         int n = ((Postings) mp).getN();
@@ -221,6 +224,7 @@ public class IDFreqPostings extends IDPostings {
     /**
      * Gets the maximum frequency in the postings list.
      */
+    @Override
     public int getMaxFDT() {
         return maxfdt;
     }
