@@ -1,10 +1,14 @@
 package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.pipeline.Token;
+import com.sun.labs.util.props.PropertyException;
+import com.sun.labs.util.props.PropertySheet;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.logging.Logger;
@@ -15,11 +19,16 @@ import java.util.logging.Logger;
 public class MemoryField extends Field {
 
     static final Logger logger = Logger.getLogger(MemoryField.class.getName());
-
+    
     /**
      * The dictionaries for this field.
      */
     private MemoryDictionaryBundle<Comparable> dicts;
+    
+    /**
+     * The indexing pipeline for this field.
+     */
+    private Pipeline pipeline;
 
     /**
      * The maximum document ID for which we're storing data.
@@ -29,6 +38,8 @@ public class MemoryField extends Field {
     public MemoryField(FieldInfo info, EntryFactory factory) {
         super(info);
         dicts = new MemoryDictionaryBundle<Comparable>(this, factory);
+        pipeline = info.getPipeline();
+        pipeline.addStage(this);
     }
 
     public void startDocument(String key) {
@@ -42,6 +53,13 @@ public class MemoryField extends Field {
      * @param data the data to add
      */
     public void addData(int docID, Object data) {
+        if(saved) {
+            dicts.save(docID, data);
+        }
+        
+        if(pipeline != null) {
+            
+        }
     }
 
     /**
@@ -96,5 +114,53 @@ public class MemoryField extends Field {
 
     public MemoryDictionary getTermDictionary(boolean cased) {
         return dicts.getTermDictionary(cased);
+    }
+
+    private class FieldStage implements Stage {
+
+        public String getName() {
+            return "FieldStage";
+        }
+
+        public void setDownstream(Stage s) {
+
+        }
+
+        public Stage getDownstream() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void process(String text) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void token(Token t) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void punctuation(Token p) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void newProperties(PropertySheet ps) throws PropertyException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void startField(FieldInfo field) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void text(char[] t, int b, int e) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void savedData(Object sd) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        public void endField(FieldInfo field) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
     }
 }

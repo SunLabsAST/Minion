@@ -41,7 +41,7 @@ import java.util.logging.Logger;
  */
 public class InvFileMemoryPartition extends MemoryPartition {
 
-    private static Logger logger = Logger.getLogger(
+    private static final Logger logger = Logger.getLogger(
             InvFileMemoryPartition.class.getName());
 
     /**
@@ -50,6 +50,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
     private MemoryField[] fields;
 
     private IndexEntry dockey;
+    
+    public InvFileMemoryPartition() {
+        super();
+    }
 
     public InvFileMemoryPartition(PartitionManager manager) {
         super(manager, Postings.Type.NONE);
@@ -162,7 +166,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         }
 
         vlRAF.close();
-
-
     }
+    
+    
 }

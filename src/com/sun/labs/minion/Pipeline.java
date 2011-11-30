@@ -42,39 +42,16 @@ public interface Pipeline {
     public Stage getHead();
 
     /**
-     * Adds an indexable object to the pipeline for indexing.
+     * Adds a stage to the end of the pipeline.
      *
-     * @param doc a document to index.
-     * @throws SearchEngineException if there are any errors during indexing.
+     * @param s the stage to add
      */
-    public void index(Indexable doc) throws SearchEngineException;
-    
-    /**
-     * Dumps all of the data indexed by a given pipeline into the given dumper.
-     * Data currently in the pipeline will most likely <em>not</em> be indexed 
-     * before the dump is completed.
-     * @throws com.sun.labs.minion.SearchEngineException if the dump fails
-     */
-    public void dump() throws SearchEngineException;
+    public void addStage(Stage s);
 
     /**
-     * Purge the data currently in the pipeline.  The data is thrown out,
-     * not getting written out to disk.  It is best not to be indexing while
-     * a purge is in progress.
-     *
-     * @throws com.sun.labs.minion.SearchEngineException
+     * Processes the given textual data through the pipeline.
+     * @param text the text to process.
      */
-    public void purge();
+    public void process(String text);
 
-    /**
-     * Flushes all the data currently held in the queue.  If the pipeline
-     * is asynchronous, then the flush to disk will occur asynchronously
-     * when all of the data in the pipline has been indexed.
-     */
-    public void flush();
-
-    /**
-     * Shuts down the pipeline, flushing all data currently held in the queue.
-     */
-    public void shutdown();
 }

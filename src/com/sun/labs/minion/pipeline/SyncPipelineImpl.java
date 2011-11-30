@@ -42,7 +42,7 @@ import java.util.logging.Level;
  *
  * @author Stephen Green <stephen.green@sun.com>
  */
-public class SyncPipelineImpl extends AbstractPipelineImpl implements
+public class SyncPipelineImpl extends PipelineImpl implements
         SimpleIndexer {
 
     /**

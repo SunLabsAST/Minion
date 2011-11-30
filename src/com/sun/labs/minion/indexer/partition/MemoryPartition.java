@@ -69,6 +69,10 @@ public abstract class MemoryPartition extends Partition {
      * A deletion map.
      */
     protected DelMap deletions;
+    
+    public MemoryPartition() {
+        
+    }
 
     public MemoryPartition(PartitionManager manager, Postings.Type type) {
         this.manager = manager;

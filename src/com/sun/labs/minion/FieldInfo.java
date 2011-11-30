@@ -235,10 +235,10 @@ public class FieldInfo implements Cloneable, Configurable {
     /**
      * A factory for stemmers.
      */
-    @ConfigComponent(type=com.sun.labs.minion.StemmerFactory.class, mandatory=false)
-    public static final String PROP_STEMMER_FACTORY = "stemmerFactory";
+    @ConfigComponent(type=com.sun.labs.minion.Pipeline.class, mandatory=false)
+    public static final String PROP_PIPELINE_FACTORY = "pipelineFactory";
 
-    private StemmerFactory stemmerFactory;
+    private PipelineFactory pipelneFactory;
 
     /**
      * The name of this field.
@@ -449,7 +449,7 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     public Stemmer getStemmer() {
-        return stemmerFactory.getStemmer();
+        return pipelneFactory.getStemmer();
     }
 
     /**
@@ -485,7 +485,7 @@ public class FieldInfo implements Cloneable, Configurable {
         name = ps.getInstanceName();
         attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(PROP_ATTRIBUTES);
         type = (Type) ps.getEnum(PROP_TYPE);
-        stemmerFactory = (StemmerFactory) ps.getComponent(PROP_STEMMER_FACTORY);
+        pipelneFactory = (StemmerFactory) ps.getComponent(PROP_PIPELINE_FACTORY);
     }
 
     /**

@@ -89,7 +89,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
 import com.sun.labs.minion.indexer.partition.Dumper;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
-import com.sun.labs.minion.pipeline.AbstractPipelineImpl;
+import com.sun.labs.minion.pipeline.PipelineImpl;
 import com.sun.labs.minion.pipeline.AsyncPipelineImpl;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.query.And;
@@ -1030,7 +1030,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         //
         // Get the document key for the indexed document.
         IndexEntry dke =
-                ((MemoryPartition) ((AbstractPipelineImpl) si).getIndexer()).
+                ((MemoryPartition) ((PipelineImpl) si).getIndexer()).
                 getDocumentDictionary().get(doc.getKey());
 
         //
@@ -1070,7 +1070,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         //
         // Get the document key for the indexed document.
         IndexEntry dke =
-                ((MemoryPartition) ((AbstractPipelineImpl) si).getIndexer()).
+                ((MemoryPartition) ((PipelineImpl) si).getIndexer()).
                 getDocumentDictionary().get(doc.getKey());
 
         return null;
@@ -1389,7 +1389,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         // Make our indexing pipelines.
         numPipelines =
                 ps.getInt(PROP_NUM_PIPELINES);
-        pipes = new AbstractPipelineImpl[numPipelines];
+        pipes = new PipelineImpl[numPipelines];
         if(pipes.length == 1) {
             pipes[0] = pipelineFactory.getSynchronousPipeline(this);
         } else {

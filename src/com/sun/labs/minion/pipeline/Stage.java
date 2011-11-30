@@ -41,11 +41,9 @@ package com.sun.labs.minion.pipeline;
  * 
  */
 
-import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.minion.PipelineStage;
 import com.sun.labs.util.props.Configurable;
 
-import com.sun.labs.minion.FieldInfo;
 
 public interface Stage extends Configurable, PipelineStage {
 
@@ -68,39 +66,10 @@ public interface Stage extends Configurable, PipelineStage {
     public Stage getDownstream();
 
     /**
-     * Defines a field into which an application will index data.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field we want defined.
-     * @return A complete field information object, including the ID for
-     * the field.
+     * Processes text, passing the results downstream.
      */
-    public FieldInfo defineField(FieldInfo fi);
-
-    /**
-     * Process the event that occurs at the start of a document.
-     *
-     * @param key The document key for this document.
-     */
-    public void startDocument(String key);
-
-    /**
-     * Processes the event that occurs at the start of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is starting.
-     */
-    public void startField(FieldInfo fi);
+    public void process(String text);
     
-    /**
-     * Processes some text from further up the pipeline.
-     *
-     * @param t The text to tokenize.
-     * @param b The beginning position in the text buffer.
-     * @param e The ending position in the text buffer.
-     */
-    public void text(char[] t, int b, int e);
-
     /**
      * Processes a token from further up the pipeline.
      *
@@ -114,44 +83,5 @@ public interface Stage extends Configurable, PipelineStage {
      * @param p The punctuation to process.
      */
     public void punctuation(Token p);
-
-    /**
-     * Processes saved data from further up the pipeline.
-     *
-     * @param sd The data to process.
-     */
-    public void savedData(Object sd);
-
-    /**
-     * Processes the event that occurs at the end of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is ending.
-     */
-    public void endField(FieldInfo fi);
-
-    /**
-     * Processes the event that comes at the end of a document.
-     *
-     * @param size The size of the data that was processed for this file.
-     */
-    public void endDocument(long size);
-
-    /**
-     * Tells a stage that its data must be dumped to the index.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void dump(IndexConfig iC);
-
-    /**
-     * Tells a stage that it needs to shutdown, terminating any processing
-     * that it is doing first.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void shutdown(IndexConfig iC);
 
 } // Stage

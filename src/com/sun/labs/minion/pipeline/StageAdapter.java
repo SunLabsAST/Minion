@@ -24,11 +24,9 @@
 
 package com.sun.labs.minion.pipeline;
 
-import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 
-import com.sun.labs.minion.FieldInfo;
 
 /**
  * An adapter class for the stage interface, for those who don't want to
@@ -75,124 +73,21 @@ public class StageAdapter implements Stage {
         return downstream;
     }
 
-    /**
-     * Defines a field into which an application will index data.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field we want defined.
-     */
-    public FieldInfo defineField(FieldInfo fi) {
-        if(downstream == null) return fi;
-        return downstream.defineField(fi);
-    }
-
-    /**
-     * Process the event that occurs at the start of a document.
-     *
-     * @param key The document key for this document.
-     */
-    public void startDocument(String key) {
-        if(downstream == null) return;
-        downstream.startDocument(key);
-    }
-
-    /**
-     * Processes the event that occurs at the start of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is starting.
-     */
-    public void startField(FieldInfo fi) {
-        if(downstream == null) return;
-        downstream.startField(fi);
-    }
-
-    /**
-     * Processes a token from further up the pipeline.
-     *
-     * @param t The token to process.
-     */
     public void token(Token t) {
         if(downstream == null) return;
         downstream.token(t);
     }
 
-     /**
-     * Processes some text from further up the pipeline.
-     *
-     * @param t The text to tokenize.
-     * @param b The beginning position in the text buffer.
-     * @param e The ending position in the text buffer.
-     */
-    public void text(char[] t, int b, int e) {
-        if(downstream == null) {
-            return;
-        }
-        downstream.text(t, b, e);
-    }
-
-   /**
-     * Processes some punctuation from further up the pipeline.
-     *
-     * @param p The punctuation to process.
-     */
     public void punctuation(Token p) {
         if(downstream == null) return;
         downstream.punctuation(p);
     }
 
-    /**
-     * Processes saved data from further up the pipeline.
-     *
-     * @param sd The data to save.
-     */
-    public void savedData(Object sd) {
-        if(downstream == null) return;
-        downstream.savedData(sd);
-    }
-
-    /**
-     * Processes the event that occurs at the end of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is ending.
-     */
-    public void endField(FieldInfo fi) {
-        if(downstream == null) return;
-        downstream.endField(fi);
-    }
-
-    /**
-     * Processes the event that comes at the end of a document.
-     *
-     * @param size The size of the data that was processed for this file.
-     */
-    public void endDocument(long size) {
-        if(downstream == null) return;
-        downstream.endDocument(size);
-    }
-
-    /**
-     * Tells a stage that its data must be dumped to the index.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void dump(IndexConfig iC) {
-        if(downstream == null) return;
-        downstream.dump(iC);
-    }
-
-    /**
-     * Tells a stage that it needs to shutdown, terminating any processing
-     * that it is doing first.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void shutdown(IndexConfig iC) {
-        if(downstream == null) return;
-        downstream.shutdown(iC);
+    public void process(String text) {
+        if (downstream == null) {
+            return;
+        }
+        downstream.process(text);
     }
 
     public void newProperties(PropertySheet ps) throws PropertyException {

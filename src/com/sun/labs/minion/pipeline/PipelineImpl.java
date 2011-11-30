@@ -21,33 +21,51 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
+package com.sun.labs.minion.pipeline;
 
-package com.sun.labs.minion;
+import com.sun.labs.minion.Pipeline;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
- * The interface to a stage in the indexing pipeline.  When using a
- * CustomAnalyzer for indexing, these methods are available to
- * control the construction of a document.  Generally speaking,
- * your analyzer is called once for each field and the pipeline is
- * ready to receive the text contained in that field when the
- * {@link #text} method is called.  However, if your analyzer determines
- * that another field value is encountered during processing this
- * field, it may use {@link #startField} to effectively push a
- * new current field onto the stack.  Any text passed to the stage
- * will then be considered to be part of the new field.  Calling
- * {@link #endField} will pop the new field off the stack and
- * any further text will be considered to be part of the original
- * field for which the analyzer was invoked.
+ * An abstract implementation of pipeline.
  *
- * @author Jeff Alexander
+ * @author Stephen Green <stephen.green@sun.com>
  */
+public abstract class PipelineImpl implements Pipeline {
 
-public interface PipelineStage {
-    
     /**
-     * Send some text to be processed by the pipeline.
-     * @param text
+     * The log.
      */
-    public void process(String text);
-    
+    static final Logger logger = Logger.getLogger(PipelineImpl.class.getName());
+
+    /**
+     * The list of stages making up the pipeline.
+     */
+    protected List<Stage> pipeline;
+
+    /**
+     * Creates a AbstractPipelineImpl
+     */
+    public PipelineImpl() {
+        pipeline = new ArrayList<Stage>();
+    }
+
+    public void addStage(Stage s) {
+        pipeline.add(s);
+    }
+
+    public Stage getHead() {
+        if(!pipeline.isEmpty()) {
+        return pipeline.get(0);
+        }
+        return null;
+    }
+
+    public void process(String text) {
+        if(!pipeline.isEmpty()) {
+            pipeline.get(0).process(text);
+        }
+    }
 }
