@@ -52,11 +52,13 @@ public class InvFilePartitionFactory extends DiskPartitionFactory {
     public InvFilePartitionFactory() {
     }
     
+    @Override
     public DiskPartition getDiskPartition(int number, PartitionManager m) 
     throws java.io.IOException {
-         return new InvFileDiskPartition(number, m);
+         return new InvFileDiskPartition(number, m, entryFactory);
    }
     
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
         minStemLength = ps.getInt(PROP_MIN_STEM_LENGTH);

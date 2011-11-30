@@ -624,21 +624,21 @@ public class QueryConfig implements Cloneable,
         if(wfClass != null) {
             try {
                 wf = (WeightingFunction) Class.forName(wfClass).newInstance();
-            } catch(ClassNotFoundException cnf) {
-                logger.warning("Unable to load weighting function class: " +
-                        wfClass +
-                        " using default: " + wf.toString());
-            } catch(InstantiationException ine) {
+            } catch(ClassNotFoundException ex) {
+                logger.warning(String.format("Unable to load weighting function class: %s using default: %s", 
+                                             wfClass, wf.toString()));
+            } catch(InstantiationException ex) {
+                logger.log(Level.WARNING, 
+                           String.format("Error instantiating weighting function class: %s using default: %s", 
+                                         wfClass, wf.toString()), ex);
+            } catch(ClassCastException ex) {
+                logger.warning(
+                        String.format(
+                        "Weighting function class: %s does not appear to implement WeightingFunction using default: %s",
+                                      wfClass, wf.toString(), ex));
+            } catch(Exception ex) {
                 logger.log(Level.WARNING, "Error instantiating weighting function class: " +
-                        wfClass + " using default: " + wf.toString(), ine);
-            } catch(ClassCastException cce) {
-                logger.warning("Weighting function class: " + wfClass +
-                        " does not appear to implement WeightingFunction " +
-                         " using default: " +
-                        wf.toString());
-            } catch(Exception oe) {
-                logger.log(Level.WARNING, "Error instantiating weighting function class: " +
-                        wfClass + " using default: " + wf.toString(), oe);
+                        wfClass + " using default: " + wf.toString(), ex);
             }
         }
     }
@@ -656,7 +656,7 @@ public class QueryConfig implements Cloneable,
     public void addDefaultField(String field) {
         FieldInfo fi = e.getFieldInfo(field);
         if(fi == null) {
-            logger.warning("Field: " + field + " does not exist");
+            logger.warning(String.format("Field: %s does not exist", field));
         } else {
             defaultFields.add(fi);
         }
@@ -665,7 +665,7 @@ public class QueryConfig implements Cloneable,
     public void removeDefaultField(String field) {
         FieldInfo fi = e.getFieldInfo(field);
         if (fi == null) {
-            logger.warning("Field: " + field + " does not exist");
+            logger.warning(String.format("Field: %s does not exist", field));
         } else {
             defaultFields.remove(fi);
         }

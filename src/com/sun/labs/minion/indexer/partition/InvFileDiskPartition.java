@@ -70,11 +70,10 @@ public class InvFileDiskPartition extends DiskPartition {
      * @see com.sun.labs.minion.indexer.dictionary.Dictionary
      *
      */
-    public InvFileDiskPartition(int partNumber, PartitionManager manager)
+    public InvFileDiskPartition(int partNumber, PartitionManager manager, 
+                                                EntryFactory mainDictEntryFactory)
             throws java.io.IOException {
         super(partNumber, manager, Postings.Type.NONE);
-
-        logger.info(String.format("Loading partition %d", partNumber));
 
         File vlf = manager.makeVectorLengthFile(partNumber);
         vectorLengths = new RandomAccessFile(vlf, "rw");
@@ -90,7 +89,7 @@ public class InvFileDiskPartition extends DiskPartition {
             FieldInfo info = manager.getMetaFile().getFieldInfo(offset.getId());
             fields[offset.getId()] =
                     new DiskField(this, info, dictFile, vectorLengths,
-                    postFiles, new EntryFactory());
+                    postFiles, mainDictEntryFactory);
         }
     }
 

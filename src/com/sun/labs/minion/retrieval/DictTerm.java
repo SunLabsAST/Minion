@@ -109,6 +109,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      *
      * @param part The partition that we will be evaluating against.
      */
+    @Override
     public void setPartition(DiskPartition part) {
 
         super.setPartition(part);

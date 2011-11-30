@@ -7,11 +7,14 @@ import com.sun.labs.util.props.ConfigEnum;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
+import java.util.logging.Logger;
 
 /**
  * A factory for index entries.
  */
 public class EntryFactory<N extends Comparable> implements Configurable {
+    
+    private static final Logger logger = Logger.getLogger(EntryFactory.class.getName());
 
     @ConfigEnum(type=Postings.Type.class,defaultValue="ID_FREQ")
     public static final String POST_TYPE = "post_type";

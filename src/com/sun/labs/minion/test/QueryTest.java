@@ -66,6 +66,7 @@ import com.sun.labs.minion.Passage;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.PassageHighlighter;
 import com.sun.labs.minion.Posting;
+import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
@@ -469,6 +470,14 @@ public class QueryTest extends SEMain {
             } else if(op.equalsIgnoreCase("pand")) {
                 queryOp = Searcher.OP_PAND;
             }
+        } else if(q.startsWith(":deff")) {
+            QueryConfig qc = engine.getQueryConfig();
+            String[] fields =
+                    parseMessage(q.substring(q.indexOf(' ') + 1).trim());
+            for(String field : fields) {
+                qc.addDefaultField(field);
+            }
+            engine.setQueryConfig(qc);
         } else if(q.startsWith(":qstats")) {
             queryStats();
         } else if(q.startsWith(":nd")) {
