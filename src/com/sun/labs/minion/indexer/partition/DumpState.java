@@ -106,7 +106,6 @@ public class DumpState {
         postStream = new OutputStream[files.length - 1];
         postOut = new PostingsOutput[postStream.length];
         for(int i = 1; i < files.length; i++) {
-            logger.info(String.format("file: %s", files[i]));
             postStream[i - 1] =
                     new BufferedOutputStream(new FileOutputStream(files[i]),
                     32768);
