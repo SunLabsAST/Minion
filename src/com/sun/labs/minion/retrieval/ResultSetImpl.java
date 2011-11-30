@@ -37,7 +37,7 @@ import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.SearchEngine;
 
 import com.sun.labs.minion.SearchEngineException;
-import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.DiskDictionaryBundle.Fetcher;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.PriorityQueue;
@@ -279,9 +279,9 @@ public class ResultSetImpl implements ResultSet {
                 ArrayGroup ag = (ArrayGroup) i.next();
                 //
                 // Fetchers for our two fields. Huzzah!      
-                DiskField.Fetcher vf = ((InvFileDiskPartition) ag.part).
+                Fetcher vf = ((InvFileDiskPartition) ag.part).
                         getDF(vfi).getFetcher();
-                DiskField.Fetcher sf = ((InvFileDiskPartition) ag.part).
+                Fetcher sf = ((InvFileDiskPartition) ag.part).
                         getDF(sfi).getFetcher();
                 ArrayGroup.DocIterator iter = ag.iterator();
 

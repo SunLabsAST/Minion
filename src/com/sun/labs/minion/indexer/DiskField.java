@@ -217,7 +217,6 @@ public class DiskField extends Field {
     /**
      * Gets the values of a string field that are similar to the given field.
      *
-     * @param ag an array group agains
      * @param value
      * @param caseSensitive
      * @return
@@ -259,7 +258,7 @@ public class DiskField extends Field {
      * be more efficient than doing them one-by-one
      * @param docs the IDs of the documents
      * @param scores the scores to normalize
-     * @param n the number of actual docs and scores
+     * @param n the number of actual documents and scores
      * @param qw any query weight to apply when normalizing
      */
     public void normalize(int[] docs, float[] scores, int n, float qw) {

@@ -29,7 +29,7 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
-import com.sun.labs.minion.indexer.DiskField.Fetcher;
+import com.sun.labs.minion.indexer.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;

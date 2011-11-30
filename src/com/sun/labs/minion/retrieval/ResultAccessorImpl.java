@@ -2,6 +2,8 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultAccessor;
+import com.sun.labs.minion.indexer.DiskDictionaryBundle;
+import com.sun.labs.minion.indexer.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
@@ -25,7 +27,7 @@ public class ResultAccessorImpl implements ResultAccessor {
     /**
      * Fetchers for field values.
      */
-    private DiskField.Fetcher[] fetchers;
+    private Fetcher[] fetchers;
 
     public ResultAccessorImpl() {
     }
@@ -60,7 +62,7 @@ public class ResultAccessorImpl implements ResultAccessor {
         return dke.getName().toString();
     }
 
-    private DiskField.Fetcher getFetcher(String field) {
+    private Fetcher getFetcher(String field) {
         FieldInfo fi = dp.getPartitionManager().getMetaFile().getFieldInfo(field);
         if(fi == null) {
             return null;
@@ -70,9 +72,9 @@ public class ResultAccessorImpl implements ResultAccessor {
         }
         int fid = fi.getID();
         if(fetchers == null) {
-            fetchers = new DiskField.Fetcher[fid + 1];
+            fetchers = new Fetcher[fid + 1];
         } else if(fetchers.length < fid) {
-            DiskField.Fetcher[] temp = new DiskField.Fetcher[fid + 1];
+           Fetcher[] temp = new Fetcher[fid + 1];
             System.arraycopy(fetchers, 0, temp, 0, fetchers.length);
             fetchers = temp;
         }
@@ -84,7 +86,7 @@ public class ResultAccessorImpl implements ResultAccessor {
 
     @Override
     public List<Object> getField(String field) {
-        DiskField.Fetcher f = getFetcher(field);
+        Fetcher f = getFetcher(field);
         if(f != null) {
             return f.fetch(currDoc);
         }
@@ -93,7 +95,7 @@ public class ResultAccessorImpl implements ResultAccessor {
 
     @Override
     public Object getSingleFieldValue(String field) {
-        DiskField.Fetcher f = getFetcher(field);
+        Fetcher f = getFetcher(field);
         if(f != null) {
             return f.fetchOne(currDoc);
         }
