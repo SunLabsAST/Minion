@@ -97,9 +97,7 @@ public class DiskDictionaryOutput extends AbstractDictionaryOutput {
 
     @Override
     public void close() throws java.io.IOException {
-        if(started && !finished) {
-            throw new IllegalStateException("Can't close dictionary output while it's being used!");
-        }
+        super.close();
         namesRAF.close();
         namesFile.delete();
         nameOffsetsRAF.close();

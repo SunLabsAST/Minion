@@ -23,14 +23,13 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
 import com.sun.labs.minion.util.FileLockException;
-import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
+import com.sun.labs.minion.indexer.partition.io.RAMPartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.StopWatch;
 import java.util.logging.Level;
@@ -97,10 +96,10 @@ public abstract class MemoryPartition extends Partition {
         StopWatch sw = new StopWatch();
         sw.start();
         
-        DiskPartitionOutput partOut;
+        PartitionOutput partOut;
         
         try {
-            partOut = new DiskPartitionOutput(manager);
+            partOut = new RAMPartitionOutput(manager);
         } catch (FileLockException ex) {
             logger.log(Level.SEVERE, String.format("Error dumping partition"), ex);
             return null;

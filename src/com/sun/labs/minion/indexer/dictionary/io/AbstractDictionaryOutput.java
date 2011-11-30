@@ -218,8 +218,12 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.write(file.getChannel());
         completed.clear();
     }
-
-    public abstract void close() throws java.io.IOException;
+    
+    public void close() throws java.io.IOException {
+        if(started && !finished) {
+            throw new IllegalStateException("Can't close dictionary output while it's being used!");
+        }
+    }
 
     //
     // Implementation of WriteableBuffer
