@@ -896,8 +896,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     private boolean handleTooManyPartitions() {
 
-        logger.warning("Too many open partitions: " + activeParts.size());
-
         //
         // If we're doing async merges, then we need to acquire the merge lock
         // before we can do anything else.  Acquiring the lock will mean that there
@@ -906,8 +904,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // We need a lock that we can retry on to give the merge time to finish.
         // We're going to use a long timeout, because if we're in here, the indexer
         // is in trouble, and this needs to get taken care of!
-        FileLock ourMergeLock =
-                new FileLock(mergeLock, 60, TimeUnit.SECONDS);
+        FileLock ourMergeLock = new FileLock(mergeLock, 60, TimeUnit.SECONDS);
         try {
             ourMergeLock.acquireLock();
         } catch(IOException ex) {
@@ -919,14 +916,17 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     "Error getting merge lock when too many partitions", fle);
             return false;
         }
-
+        
+        if(activeParts.size() < openPartitionHighWaterMark) {
+            return true;
+        }
+        
         //
         // Get a list of partitions sorted by increasing size:  smaller partitions
         // will merge faster.
         List<DiskPartition> parts = new ArrayList<DiskPartition>(activeParts);
         Collections.sort(parts,
                 new Comparator<DiskPartition>() {
-
                     public int compare(DiskPartition o1, DiskPartition o2) {
                         return o1.getMaxDocumentID() - o2.getMaxDocumentID();
                     }
@@ -935,6 +935,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Take a sublist that will get us to the low water mark.
         parts = parts.subList(0, parts.size() - openPartitionLowWaterMark);
+        
+        if(parts.size() < maxMergeSize) {
+            return true;
+        }
+
+        logger.warning(String.format("Highwater merge: %s", parts));
+
         Merger m = getMerger(parts, ourMergeLock);
         m.merge();
 
@@ -2080,8 +2087,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             for(int i = 0; i < toMerge.size(); i++) {
                 preDelMaps.add((DelMap) toMerge.get(i).deletions.clone());
                 preMaps[i] = preDelMaps.get(i).getDelMap();
-//		log.debug(logTag, 0, toMerge.get(i) + " preMap:\n" +
-//			  preMaps[i]);
             }
         }
 

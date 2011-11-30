@@ -111,10 +111,8 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
                 throw new IllegalStateException(String.format("Can't start a dictionary with %s without a dictionary", renumber));
             } else {
                 if(idToPosn == null) {
-                    logger.info(String.format("Allocating %d idToPosn map", dict.getMaxID()+1));
                     idToPosn = new int[dict.getMaxID() + 1];
                 } else if(dict.getMaxID() >= idToPosn.length) {
-                    logger.info(String.format("Resizing to %d idToPosn map", dict.getMaxID() + 1));
                     idToPosn = Arrays.copyOf(idToPosn, dict.getMaxID() + 1);
                 }
             }
@@ -123,9 +121,6 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
     }
 
     public DictionaryHeader getHeader() {
-//        if(!started) {
-//            throw new IllegalStateException("Can't get a header when the dictionary has not been started");
-//        }
         return header;
     }
 
