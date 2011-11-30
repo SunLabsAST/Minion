@@ -50,7 +50,9 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         this.name = name;
         this.id = id;
         this.post = post;
-        this.type = post.getType();
+        if(post != null) {
+            this.type = post.getType();
+        }
     }
 
     public void add(Occurrence o) {
