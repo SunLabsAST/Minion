@@ -87,7 +87,7 @@ public class NIOFileReadableBuffer extends StdReadableImpl {
     /**
      * A log.
      */
-    protected static Logger logger = Logger.getLogger(NIOFileReadableBuffer.class.getName());
+    protected static final Logger logger = Logger.getLogger(NIOFileReadableBuffer.class.getName());
 
     /**
      * A tag for our log entries.
@@ -276,8 +276,11 @@ public class NIOFileReadableBuffer extends StdReadableImpl {
      * Gets a string representation of the buffer.
      * @return A string representation of the buffer.
      */
+    @Override
     public String toString() {
         return "buff: (" + bs + "," + be + ")" +
                 " mem: (" + ms + "," + me + ") " + buff.capacity();
     }
+
+    
 } // FileBackedBuffer

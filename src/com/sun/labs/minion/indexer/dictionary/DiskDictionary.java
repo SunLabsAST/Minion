@@ -49,6 +49,7 @@ import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsInput;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Util;
+import com.sun.labs.minion.util.buffer.Buffer;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -391,6 +392,12 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                                                   infoOffsetsBufferSize);
                 break;
         }
+        
+        if (logger.isLoggable(Level.FINE)) {
+            logger.fine(String.format("dh:%s\nnameOffsets:\n%s", dh,
+                    nameOffsets.toString(Buffer.Portion.ALL,
+                    Buffer.DecodeMode.INTEGER)));
+        }
 
 
     }
@@ -685,9 +692,16 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     private N getUncompressedName(int pos, LookupState lus) {
         //
         // Get the offset of the uncompressed entry.
+        
+        if(logger.isLoggable(Level.FINE)) {
+            logger.fine(String.format("nameOffsets:\n %s", 
+                    nameOffsets.toString(3524, 3556, Buffer.DecodeMode.INTEGER)));
+        }
         int offset =
                 lus.localNameOffsets.byteDecode(
                 dh.nameOffsetsBytes * pos, dh.nameOffsetsBytes);
+        
+        
         
         logger.fine(String.format("pos: %d no: %d buff: %s offset: %d", 
                                   pos, 
@@ -1348,6 +1362,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         if(mappers != null) {
             idMaps[0] = new int[postIDMaps[0][0] + 1];
         }
+        if (logger.isLoggable(Level.FINE)) {
+            Logger.getLogger(DictionaryWriter.class.getName()).setLevel(Level.FINE);
+        }
+
 
         //
         // We'll need a writer for the merged dictionary.
@@ -1357,7 +1375,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                                      keepIDToPosn
                 ? MemoryDictionary.Renumber.NONE
                 : MemoryDictionary.Renumber.RENUMBER);
-
+        
         int[] mapped = new int[idMaps.length];
 
         //
@@ -1492,6 +1510,9 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
         logger.fine(String.format("Merged dictionary has %d entries", dw.dh.size));
 
+        if (logger.isLoggable(Level.FINE)) {
+            Logger.getLogger(DictionaryWriter.class.getName()).setLevel(Level.INFO);
+        }
         //
         // Return the maps from old to new IDs.
         return idMaps;
@@ -2195,6 +2216,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 right.fill(lus, depth - 1);
             }
 
+            @Override
             public String toString() {
                 return String.format("[%s %d %d %d]",
                                      name,
@@ -2202,6 +2224,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             }
         }
 
+        @Override
         public String toString() {
             return String.format("%d nodes: %s", size, root.toString());
         }

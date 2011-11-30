@@ -70,15 +70,7 @@ public interface ReadableBuffer extends Buffer {
     public byte get();
 
     /**
-     * Gets a byte from this buffer at the given position.
-     * @param i The position from which we would like to read a byte.
-     * 
-     * @return The byte at the given position.
-     */
-    public byte get(int i);
-
-    /**
-     * Decodes a postive integer that was coded using a specific number of
+     * Decodes a positive integer that was coded using a specific number of
      * bytes.
      *
      * @param nBytes The number of bytes to use.
@@ -87,7 +79,7 @@ public interface ReadableBuffer extends Buffer {
     public int byteDecode(int nBytes);
 
     /**
-     * Decodes a postive integer that was coded using a specific number of
+     * Decodes a positive integer that was coded using a specific number of
      * bytes from a specific position in the buffer.
      *
      * @param pos The position to decode from.
@@ -97,7 +89,7 @@ public interface ReadableBuffer extends Buffer {
     public int byteDecode(int pos, int nBytes);
 
     /**
-     * Decodes a postive long that was coded using a specific number of
+     * Decodes a positive long that was coded using a specific number of
      * bytes.
      *
      * @param nBytes The number of bytes to use.
@@ -106,7 +98,7 @@ public interface ReadableBuffer extends Buffer {
     public long byteDecodeLong(int nBytes);
 
     /**
-     * Decodes a postive long that was coded using a specific number of
+     * Decodes a positive long that was coded using a specific number of
      * bytes from a given position.
      *
      * @param pos The position to decode from.
@@ -158,11 +150,5 @@ public interface ReadableBuffer extends Buffer {
      * @return true if the bit is 1, false if it is 0
      */
     public boolean test(int bitIndex);
-
-    /**
-     * Counts the number of bits that are on in the buffer.
-     * @return The number of 1 bits in the buffer.
-     */
-    public int countBits();
         
 }// ReadableBuffer

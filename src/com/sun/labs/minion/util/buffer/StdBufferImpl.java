@@ -37,67 +37,6 @@ package com.sun.labs.minion.util.buffer;
 public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
 
     /**
-     * The maximum values that can be encoded using a given number of
-     * bytes.
-     */
-    protected static long[] maxValues = {0,
-                                         (1L << 8),
-                                         (1L << 16),
-                                         (1L << 24),
-                                         (1L << 32),
-                                         (1L << 40),
-                                         (1L << 48),
-                                         (1L << 56),
-                                         Long.MAX_VALUE};
-
-    /**
-     * The number of bytes that are required for encoding a number given
-     * our 7 bit encoding strategy.
-     */
-    protected static long[] maxBEValues = {0,
-                                           (1L << 7),
-                                           (1L << 14),
-                                           (1L << 21),
-                                           (1L << 28),
-                                           (1L << 35),
-                                           (1L << 42),
-                                           (1L << 49),
-                                           (1L << 56),
-                                           (1L << 63),
-                                           Long.MAX_VALUE};
-
-    /**
-     * The number of 1 bits in a byte, as a lookup table.
-     */
-    protected static int[] nBits =
-    {
-        0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 
-        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
-        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
-        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
-        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
-        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
-        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
-        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
-        1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 
-        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
-        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
-        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
-        2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 
-        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
-        3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 
-        4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8
-    };
-
-    /**
-     * Bitmasks to add a single bit to a byte.
-     */
-    protected static int[] masks =
-    {
-        0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80
-    };
-
-    /**
      * Gets the number of bytes required to directly encode a given number.
      * @return The number of bytes required to directly encode the
      * number.
@@ -118,7 +57,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param n the number to test
      * @return the number of bytes require to byte encode the given number.
      */
-    public static final int bytesForByteEncoding(long n) {
+    public static int bytesForByteEncoding(long n) {
         int nBytes = 0;
         do {
             n >>>= 7;
@@ -136,7 +75,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
     // put/append/set are left for concrete subclasses.
 
     /**
-     * Encodes a positive long onto a writeable in a given number of bytes.
+     * Encodes a positive long onto a writable in a given number of bytes.
      * 
      * @return The buffer, to allow chained invocations.
      * @param n The number to encode.
@@ -443,23 +382,6 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         return i >= limit() ? false :
             ((get(i) & masks[bitIndex & 0x07]) != 0);
     }
-    
-
-    /**
-     * Counts the number of bits that are set in a buffer.
-     * @return The number of 1 bits in the buffer.
-     */
-    public int countBits() {
-	return countBits(0, limit());
-    }
-
-    protected int countBits(int start, int end) {
-        int n = 0;
-        for(int i = start; i < end; i++) {
-            n += nBits[(int) (get(i) & 0xff)];
-        }
-        return n;
-    }	
 
     /**
      * Gets a string from this buffer.
@@ -502,79 +424,105 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
     }
     
 
-    /**
-     * Gets a string representation of the bytes in this buffer.
-     * @return A string representation of the buffer.
-     */
+    @Override
     public String toString() {
-        return toString(0, position());
+        return toString(0, position(), DecodeMode.BYTE_ENCODED);
     }
 
-    /**
-     * Print the bits in the buffer in the order in which they actually
-     * occur.
-     * @param mode The type of print out required.
-     * @return A string representation of the buffer.
-     */
-    public String toString(int mode) {
+    public int countBits() {
+        return countBits(0, limit());
+    }
 
-        StringBuilder b = new StringBuilder(16);
+    public int countBits(int start, int end) {
+        int n = 0;
+        for (int i = start; i < end; i++) {
+            n += StdBufferImpl.nBits[(int) (get(i) & 0xff)];
+        }
+        return n;
+    }
+
+    public String toString(Portion portion, DecodeMode decode) {
 
         int start;
         int end;
 
-        switch(mode) {
-        case 0:
-            start = 0;
-            end = limit();
-            break;
-        case 1:
-            start = 0;
-            end = position();
-            break;
-        case 2:
-            start = position();
-            end = limit();
-            break;
-        default:
-            start = 0;
-            end = limit();
+        switch (portion) {
+            case ALL:
+                start = 0;
+                end = limit();
+                break;
+            case BEGINNING_TO_POSITION:
+                start = 0;
+                end = position();
+                break;
+            case FROM_POSITION_TO_END:
+                start = position();
+                end = limit();
+                break;
+            default:
+                start = 0;
+                end = limit();
         }
 
-        return toString(start, end);
+        return toString(start, end, decode);
     }
 
-    /**
-     * Print the bits in the buffer in the order in which they actually
-     * occur.
-     * @param start The starting position in the buffer from which to
-     * display the bytes.
-     * @param end The (exclusive) ending position in the buffer.
-     * @return A string representation of the buffer.
-     */
-    public String toString(int start, int end) {
-        
-        if(start < 0 || end < 0) {
-            return String.format("position: %d limit: %d", position(), limit());
-        }
+    public String toString(int start, int end, DecodeMode decode) {
 
         StringBuilder b = new StringBuilder((end - start + 1) * 8);
+        b.append(String.format("position: %d limit: %d", position(), limit()));
 
-	b.append(countBits(start, end)).append(" bits set\n");
+        if (start < 0 || end < 0) {
+            return b.toString();
+        }
+
+        b.append(countBits(start, end)).append(" bits set\n");
         long currDecode = 0;
+        long inCurr = 0;
+        
         int shift = 0;
-        for(int i = start, j = 0; i < end; i++, j+=8) {
+        for (int i = start, j = 0; i < end; i++, j += 8) {
             byte curr = get(i);
-            b.append(String.format("%s %4d %4d %s", 
+            b.append(String.format("%s %4d %4d %s",
                     i > start ? "\n" : "",
-                    i, j, byteToBinaryString(curr)));
-            currDecode |= ((long) (curr & 0x7F)) << shift;
-            if((curr & 0x80) == 0) {
-                b.append(String.format(" %d", currDecode));
-                currDecode = 0;
-                shift = 0;
-            } else {
-                shift += 7;
+                    i, j, StdBufferImpl.byteToBinaryString(curr)));
+            
+            //
+            // See if we need to dump an encoded integer that we've been collecting.
+            switch(decode) {
+                case BYTE_ENCODED:
+                    currDecode |= ((long) (curr & 0x7F)) << shift;
+                    if ((curr & 0x80) == 0) {
+                        b.append(String.format(" %8d", currDecode));
+                        currDecode = 0;
+                        shift = 0;
+                    } else {
+                        shift += 7;
+                    }
+                    break;
+                case INTEGER:
+                    currDecode |= ((long) (curr & 0xFF)) << shift;
+                    inCurr++;
+                    shift += 8;
+                    if(inCurr % 4 == 0) {
+                        b.append(String.format(" %8d", currDecode));
+                        currDecode = 0;
+                        shift = 0;
+                        inCurr = 0;
+                    }
+                    break;
+                case LONG:
+                    currDecode |= ((long) (curr & 0xFF)) << shift;
+                    inCurr++;
+                    shift += 8;
+                    if (inCurr % 8 == 0) {
+                        b.append(String.format(" %8d", currDecode));
+                        currDecode = 0;
+                        shift = 0;
+                        inCurr = 0;
+                    }
+                    break;
+                    
             }
 
         }
@@ -604,7 +552,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
             n <<= 1;
         }
 
-        b.append(" (" + ((int) (save & 0xff)) + ")");
+        b.append(String.format(" (%3d)", ((int) (save & 0xff))));
         return b.toString();
     }
 } // StdBufferImpl

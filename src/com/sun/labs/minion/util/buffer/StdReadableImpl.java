@@ -151,18 +151,6 @@ public abstract class StdReadableImpl implements ReadableBuffer {
     }
     
     /**
-     * Counts the number of bits that are set in a buffer.
-     * @return The number of 1 bits in the buffer.
-     */
-    public int countBits() {
-        int n = 0;
-        for(int i = 0; i < limit(); i++) {
-            n += StdBufferImpl.nBits[(int) (get(i) & 0xff)];
-        }
-        return n;
-    }
-
-    /**
      * Gets a string from this buffer.
      * @return A string representation of this buffer.
      */
@@ -203,77 +191,112 @@ public abstract class StdReadableImpl implements ReadableBuffer {
     }
 
     /**
-     * Gets a string representation of the bytes in this buffer.
-     * @return A string representation of the buffer.
+     * Counts the number of bits that are set in a buffer.
+     * @return The number of 1 bits in the buffer.
      */
-    public String toString() {
-        return toString(0, position());
+    public int countBits() {
+        int n = 0;
+        for (int i = 0; i < limit(); i++) {
+            n += StdBufferImpl.nBits[(int) (get(i) & 0xff)];
+        }
+        return n;
     }
 
-    /**
-     * Print the bits in the buffer in the order in which they actually
-     * occur.
-     * @param mode The type of print out required.
-     * @return A string representation of the buffer.
-     */
-    public String toString(int mode) {
+    public int countBits(int start, int end) {
+        int n = 0;
+        for (int i = start; i < end; i++) {
+            n += StdBufferImpl.nBits[(int) (get(i) & 0xff)];
+        }
+        return n;
+    }
+
+    public String toString(Portion portion, DecodeMode decode) {
 
         int start;
         int end;
 
-        switch(mode) {
-        case 0:
-            start = 0;
-            end = limit();
-            break;
-        case 1:
-            start = 0;
-            end = position();
-            break;
-        case 2:
-            start = position();
-            end = limit();
-            break;
-        default:
-            start = 0;
-            end = limit();
+        switch (portion) {
+            case ALL:
+                start = 0;
+                end = limit();
+                break;
+            case BEGINNING_TO_POSITION:
+                start = 0;
+                end = position();
+                break;
+            case FROM_POSITION_TO_END:
+                start = position();
+                end = limit();
+                break;
+            default:
+                start = 0;
+                end = limit();
         }
 
-        return toString(start, end);
+        return toString(start, end, decode);
     }
 
-    /**
-     * Print the bits in the buffer in the order in which they actually
-     * occur.
-     * @param start The starting position in the buffer from which to
-     * display the bytes.
-     * @param end The (exclusive) ending position in the buffer.
-     * @return A string representation of the buffer.
-     */
-    public String toString(int start, int end) {
-        
-        if(start < 0 || end < 0) {
-            return String.format("position: %d limit: %d", position(), limit());
-        }
-        
-        StringBuilder b = new StringBuilder((end - start + 1) * 8);
+    public String toString(int start, int end, DecodeMode decode) {
 
-        for(int i = start; i < end; i++) {
-            if(i > start) {
-                b.append('\n');
+        StringBuilder b = new StringBuilder((end - start + 1) * 8);
+        b.append(String.format("position: %d limit: %d", position(), limit()));
+
+        if (start < 0 || end < 0) {
+            return b.toString();
+        }
+
+        b.append(countBits(start, end)).append(" bits set\n");
+        long currDecode = 0;
+        long inCurr = 0;
+
+        int shift = 0;
+        for (int i = start, j = 0; i < end; i++, j += 8) {
+            byte curr = get(i);
+            b.append(String.format("%s %4d %4d %s",
+                    i > start ? "\n" : "",
+                    i, j, StdBufferImpl.byteToBinaryString(curr)));
+
+            //
+            // See if we need to dump an encoded integer that we've been collecting.
+            switch (decode) {
+                case BYTE_ENCODED:
+                    currDecode |= ((long) (curr & 0x7F)) << shift;
+                    if ((curr & 0x80) == 0) {
+                        b.append(String.format(" %d", currDecode));
+                        currDecode = 0;
+                        shift = 0;
+                    } else {
+                        shift += 7;
+                    }
+                    break;
+                case INTEGER:
+                    currDecode |= ((long) (curr & 0xFF)) << shift;
+                    inCurr++;
+                    shift += 8;
+                    if (inCurr % 4 == 0) {
+                        b.append(String.format(" %d", currDecode));
+                        currDecode = 0;
+                        shift = 0;
+                        inCurr = 0;
+                    }
+                    break;
+                case LONG:
+                    currDecode |= ((long) (curr & 0xFF)) << shift;
+                    inCurr++;
+                    shift += 8;
+                    if (inCurr % 8 == 0) {
+                        b.append(String.format(" %d", currDecode));
+                        currDecode = 0;
+                        shift = 0;
+                        inCurr = 0;
+                    }
+                    break;
+
             }
-            if(i < 10) {
-                b.append("   ");
-            } else if(i < 100) {
-                b.append("  ");
-            } else if(i < 1000) {
-                b.append(" ");
-            }
-            b.append(i).append(' ').append(StdBufferImpl.byteToBinaryString(get(i)));
+
         }
         return b.toString();
     }
-
 
     
 } // StdReadableImpl

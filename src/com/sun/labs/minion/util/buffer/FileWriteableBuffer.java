@@ -91,7 +91,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
     /**
      * A log.
      */
-    static Logger logger = Logger.getLogger(FileWriteableBuffer.class.getName());
+    static final Logger logger = Logger.getLogger(FileWriteableBuffer.class.getName());
 
     /**
      * A tag for our log entries.
@@ -532,5 +532,72 @@ public class FileWriteableBuffer implements WriteableBuffer {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "FileWriteableBuffer{" + "buff=" + buff + '}';
+    }
+
+    public int countBits() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    public byte get(int i) {
+        synchronized (raf) {
+            try {
+                raf.seek(off + i);
+                return raf.readByte();
+            } catch (IOException ex) {
+                logger.log(Level.SEVERE, String.format("Error reading buffer"),
+                        ex);
+                return -1;
+            }
+        }
+    }
+
+    public String toString(Portion portion, DecodeMode decode) {
+        int start;
+        int end;
+
+        switch (portion) {
+            case ALL:
+                start = 0;
+                end = limit();
+                break;
+            case BEGINNING_TO_POSITION:
+                start = 0;
+                end = position();
+                break;
+            case FROM_POSITION_TO_END:
+                start = position();
+                end = limit();
+                break;
+            default:
+                start = 0;
+                end = limit();
+        }
+
+        return toString(start, end, decode);
+    }
+
+    public String toString(int start, int end, DecodeMode decode) {
+
+        flush();
+        
+        byte[] tb = new byte[end - start + 1];
+        try {
+            long initPos = raf.getFilePointer();
+            raf.seek(off + start);
+            raf.readFully(tb);
+            raf.seek(initPos);
+        } catch (IOException ex) {
+            logger.log(Level.SEVERE, String.format("Error reading file"), ex);
+            return null;
+        }
+        
+        ArrayBuffer ab = new ArrayBuffer(tb);
+        return String.format("off: %d position: %d %s", ab.toString(start, end, decode));
+    }
+    
 } // FileWriteableBuffer
 

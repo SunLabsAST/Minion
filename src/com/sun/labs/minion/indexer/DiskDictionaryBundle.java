@@ -729,6 +729,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
             if(foundDict) {
                 mergeHeader.dictOffsets[ord] = mergeState.dictRAF.getFilePointer();
                 logger.info(String.format("%s: %d", type, mergeHeader.dictOffsets[ord]));
+                if(type == type.UNCASED_TOKENS) {
+                  Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINE);
+                }
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                                                   encoder, 
                                                   mDicts,
@@ -738,6 +741,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                   mergeState.dictRAF, 
                                                   mergeState.postOut, 
                                                   true);
+                if (type == type.UNCASED_TOKENS) {
+                    Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.INFO);
+                }
             } else {
                 mergeHeader.dictOffsets[ord] = -1;
             }

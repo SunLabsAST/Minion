@@ -240,11 +240,19 @@ public class DictionaryHeader {
         return maxEntryID;
     }
     
+    @Override
     public String toString() {
-        return "size: " + size + " maxEntryID: " + maxEntryID + 
-                " nos: " + nameOffsetsSize + " ns: " + namesSize + 
-                " ios: " + entryInfoOffsetsSize + 
-                " is: " + entryInfoSize + " id2p: " + idToPosnSize;
+        return "size: " + size + 
+                " maxEntryID: " + maxEntryID + 
+                " nameOffsetsPos: " + nameOffsetsPos +
+                " nameOffsetsSize: " + nameOffsetsSize + 
+                " namesPos: " + namesPos +
+                " namesSize: " + namesSize + 
+                " entryInfoOffsetsPos: " + entryInfoOffsetsPos +
+                " entryInfoOffsetsSize: " + entryInfoOffsetsSize + 
+                " entryInfoPos: " + entryInfoPos +
+                " entryInfoSize: " + entryInfoSize + 
+                " id2p: " + idToPosnSize;
     }
 
 } // DictionaryHeader
