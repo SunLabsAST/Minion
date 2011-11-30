@@ -39,7 +39,6 @@ public class ArrayBufferTest {
      * Tests bytes that should be single byte encodings.
      */
     private void doByteEncode(int b, int e, int n) {
-        logger.info(String.format("b: %d e: %d t: %d", b, e, e - b));
         for(int i = b; i < e; i++) {
             WriteableBuffer buff = new ArrayBuffer(16);
             buff.byteEncode(i);

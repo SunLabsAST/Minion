@@ -22,6 +22,7 @@ import java.io.RandomAccessFile;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import org.junit.After;
@@ -36,7 +37,7 @@ import static org.junit.Assert.*;
  */
 public class IDFreqPostingsTest {
 
-    private static Logger logger = Logger.getLogger(
+    private static final Logger logger = Logger.getLogger(
             IDFreqPostingsTest.class.getName());
 
     public IDFreqPostingsTest() {
@@ -63,11 +64,12 @@ public class IDFreqPostingsTest {
      * Tests encoding our random data, dumping the data to a file if a failure occurs.
      * @throws Exception if there is an error
      */
-    private void randomAddTest(int n) throws Exception {
+    private void randomAddTest(int n, int nIter) throws Exception {
         Random rand = new Random();
-        for(int i = 0; i < 128; i++) {
+        for(int i = 0; i < nIter; i++) {
             TestData r = null;
             try {
+                logger.info(String.format("Iteration %d", i));
                 r = new TestData(rand.nextInt(n) + 1, 64000);
                 IDFreqPostings p = r.encode();
                 r.iteration(p);
@@ -114,7 +116,7 @@ public class IDFreqPostingsTest {
                    buffs.length == 2);
 
         long bsize = buffs[0].position() + buffs[1].position();
-        long nb = 4 * data.unique.size();
+        long nb = 8 * data.unique.size();
 
         logger.info(String.format("%d bytes in buffers (%d + %d) for %d bytes of ids."
                 + " Compression: %.2f%%", bsize,
@@ -229,16 +231,22 @@ public class IDFreqPostingsTest {
      */
     @Test
     public void testAppend() throws java.io.IOException {
+        testAppend(8192);
+    }
+    
+    private void testAppend(int size) throws java.io.IOException {
         Random rand = new Random();
         for(int i = 0; i < 128; i++) {
 
-            TestData d1 = new TestData(rand.nextInt(8192));
+            TestData d1 = new TestData(rand.nextInt(size));
             IDFreqPostings idp1 = d1.encode();
-            TestData d2 = new TestData(rand.nextInt(8192));
+            TestData d2 = new TestData(rand.nextInt(size));
             IDFreqPostings idp2 = d2.encode();
 
             int lastID = idp1.getLastID();
-
+            
+            //
+            // Write out the data so it can be read in.
             File of = File.createTempFile("single", ".post");
             of.deleteOnExit();
             StreamPostingsOutput po = new StreamPostingsOutput(new FileOutputStream(
@@ -247,17 +255,32 @@ public class IDFreqPostingsTest {
             long s2 = po.write(idp2);
             po.close();
 
-
+            //
+            // Read the data and make sure that it's OK.
             RandomAccessFile raf = new RandomAccessFile(of, "r");
             StreamPostingsInput pi = new StreamPostingsInput(raf, 8192);
-            IDFreqPostings append = new IDFreqPostings();
             idp1 = (IDFreqPostings) pi.read(Postings.Type.ID_FREQ, 0, (int) s1);
-            append.append(idp1, 1);
+            d1.iteration(idp1);
             idp2 = (IDFreqPostings) pi.read(Postings.Type.ID_FREQ, s1, (int) s2);
+            d2.iteration(idp2);
+            raf.close();
+            
+            //
+            // Now append the data.
+            IDFreqPostings append = new IDFreqPostings();
+            append.append(idp1, 1);
             append.append(idp2, lastID + 1);
+            logger.info(String.format("Writing appended postings"));
+            po = new StreamPostingsOutput(new FileOutputStream(of));
+            s1 = po.write(append);
+            po.close();
+            logger.info(String.format("Postings written: %d", s1));
+            raf = new RandomAccessFile(of, "r");
+            pi = new StreamPostingsInput(raf, 8192);
+            append = (IDFreqPostings) pi.read(Postings.Type.ID_FREQ, 0, (int) s1);
+            raf.close();
             TestData atd = new TestData(d1, d2, lastID + 1);
             atd.iteration(append);
-            raf.close();
         }
     }
 
@@ -347,7 +370,7 @@ public class IDFreqPostingsTest {
             IDFreqPostings p = new IDFreqPostings();
             OccurrenceImpl o = new OccurrenceImpl();
             o.setCount(1);
-            logger.info(String.format("Encoding %d ids (%d unique)",
+            logger.fine(String.format("Encoding %d ids (%d unique)",
                                       ids.length,
                                       unique.size()));
             for(int i = 0; i < ids.length; i++) {

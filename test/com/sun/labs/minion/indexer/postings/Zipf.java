@@ -9,7 +9,7 @@ import java.util.Random;
 public class Zipf {
 
     /**
-     * The probability estimates for a
+     * The probability estimates for a Zipf distribution.
      */
     double[] estimates;
 

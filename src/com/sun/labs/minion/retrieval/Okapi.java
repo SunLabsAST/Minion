@@ -30,30 +30,19 @@ import java.util.logging.Logger;
  */
 public class Okapi implements WeightingFunction {
 
-    static Logger logger = Logger.getLogger(Okapi.class.getName());
+    static final Logger logger = Logger.getLogger(Okapi.class.getName());
 
     protected static String logTag = "OK";
 
-    /**
-     * Initializes the TFIDF weighting function for the given term,
-     * calculating the collection-level IDF component, which is returned.
-     * @param wc a set of weighting components.
-     */
     public float initTerm(WeightingComponents wc) {
         wc.wt = (float) Math.log(((2 * wc.N) - wc.ft + 0.5f) /
                 (wc.ft + 0.5f));
         return wc.wt;
     }
 
-    /**
-     * Calculates the weight for a particular term in a particular
-     * document, given a set of weighting components.
-     *
-     * @return the weight of the given term in the given document.
-     */
     public float termWeight(WeightingComponents wc) {
         return wc.wt * (wc.fdt /
                 ((1.2f * (0.25f + 0.75f * (wc.ld / wc.avgDocLen))) +
                 wc.fdt));
     }
-} // Okapi
+}

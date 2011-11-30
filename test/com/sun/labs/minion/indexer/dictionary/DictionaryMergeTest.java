@@ -5,7 +5,6 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
-import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -25,7 +24,7 @@ public class DictionaryMergeTest {
 
     static File tmpDir;
 
-    static Logger logger = Logger.getLogger(DictionaryTest.class.getName());
+    static final Logger logger = Logger.getLogger(DictionaryTest.class.getName());
 
     static String[] otherData = new String[]{
         "words1.gz",};

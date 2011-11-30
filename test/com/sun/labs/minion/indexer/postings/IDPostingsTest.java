@@ -38,7 +38,7 @@ import static org.junit.Assert.*;
  */
 public class IDPostingsTest {
 
-    private static Logger logger = Logger.getLogger(
+    private static final Logger logger = Logger.getLogger(
             IDPostingsTest.class.getName());
 
     public IDPostingsTest() {

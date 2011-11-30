@@ -30,7 +30,7 @@ public class DictionaryTest {
 
     static File tmpDir;
 
-    static Logger logger = Logger.getLogger(DictionaryTest.class.getName());
+    static final Logger logger = Logger.getLogger(DictionaryTest.class.getName());
 
     static String[] otherData = new String[]{
         "words1.gz",};
@@ -274,7 +274,6 @@ public class DictionaryTest {
             DictionaryIterator di = td.dd.iterator();
             for(String w : td.uniq) {
                 QueryEntry qe = (QueryEntry) di.next();
-                logger.info(String.format("w: %s e: %s", w, qe.getName()));
                 if(!w.equals(qe.getName())) {
                     assertTrue(String.format("Expected %s, got %s, words: %s", w, qe.
                             getName(), td.dump()), w.equals(qe.getName()));
