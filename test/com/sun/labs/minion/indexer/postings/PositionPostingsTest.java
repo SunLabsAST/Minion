@@ -320,17 +320,17 @@ public class PositionPostingsTest implements PostingsTest {
         simple.iteration(p, true, true);
     }
 
-    @Test
+//    @Test
     public void testSmallRandomAdds() throws Exception {
         randomAdd(16, 256);
     }
 
-    @Test
+//    @Test
     public void testMediumRandomAdds() throws Exception {
         randomAdd(256, 256);
     }
 
-    @Test
+//    @Test
     public void testLargeRandomAdds() throws Exception {
         randomAdd(8192, 256);
     }
@@ -344,7 +344,7 @@ public class PositionPostingsTest implements PostingsTest {
      * Tests encoding data that has had problems before, ensuring that we
      * don't re-introduce old problems.
      */
-    @Test
+//    @Test
     public void testPreviousData() throws Exception {
         for(String s : previousData) {
             BufferedReader r = getInputReader(s);
@@ -364,7 +364,7 @@ public class PositionPostingsTest implements PostingsTest {
      * Tests encoding data that has had problems before, ensuring that we
      * don't re-introduce old problems.
      */
-    @Test
+//    @Test
     public void testPreviousAppends() throws Exception {
         for(String s : previousAppends) {
 
@@ -379,7 +379,7 @@ public class PositionPostingsTest implements PostingsTest {
         }
     }
 
-    @Test
+//    @Test
     public void testAppend() throws java.io.IOException {
         for(int i = 0; i < 256; i++) {
             logger.fine(String.format("Random append %d/%d", i + 1, 256));
@@ -387,7 +387,7 @@ public class PositionPostingsTest implements PostingsTest {
         }
     }
 
-    @Test
+//    @Test
     public void testStepUpAppend() throws java.io.IOException {
         for(int i = 1; i < 256; i += 2) {
             TestData td1 = new TestData(rand, zipf, i);
@@ -399,7 +399,7 @@ public class PositionPostingsTest implements PostingsTest {
         }
     }
 
-    @Test
+//    @Test
     public void testMultiAppend() throws java.io.IOException {
         for(int i = 0; i < 128; i++) {
             for(int j = 3; j < 20; j++) {
@@ -412,36 +412,52 @@ public class PositionPostingsTest implements PostingsTest {
             }
         }
     }
-
+    
 //    @Test
+    public void testTestDataAppned() {
+        TestData[] mltd = new TestData[5];
+        for(int i = 0; i < mltd.length; i++) {
+            TestData[] tds = new TestData[3];
+            for(int j = 0; j < tds.length; j++) {
+                tds[j] = new TestData(rand, zipf, 8196);
+            }
+            mltd[i] = new TestData(tds);
+        }
+        TestData atd = new TestData(mltd);
+    }
+
+    @Test
     public void testMultiLevelAppend() throws java.io.IOException {
-        List<PositionPostings> postings = new ArrayList<PositionPostings>();
-        List<TestData> testData = new ArrayList<TestData>();
-        int[] starts = new int[0];
-        starts[0] = 1;
-        for(int i = 0; i < 1024; i++) {
-            for(int j = 3; j < 20; j++) {
-                logger.fine(String.format("multiAppend %d/%d iterations length %d", i + 1, 256, j));
-                TestData[] tds = new TestData[j];
-                for(int k = 0; k < tds.length; k++) {
-                    tds[k] = new TestData(rand, zipf, 8196);
-                }
-                postings.add(checkAppend(true, tds));
-                TestData atd = new TestData(tds);
-                testData.add(atd);
-                if(postings.size() == 5) {
-                    PositionPostings mlAppend = new PositionPostings();
-                    for(int k = 0; k < postings.size(); k++) {
-                        mlAppend.append(postings.get(k), starts[k]);
+        int nIter = 128;
+        for(int i = 0; i < nIter; i++) {
+            logger.fine(String.format("Multiappend iteration %d/%d", i+1, nIter));
+            for(int j = 3; j < 10; j++) {
+                TestData[] mltd = new TestData[5];
+                PositionPostings[] mlp = new PositionPostings[5];
+                logger.fine(String.format(" Using %d postings per chunk", j));
+                for(int k = 0; k < mltd.length; k++) {
+                    TestData[] tds = new TestData[j];
+                    for(int l = 0; l < tds.length; l++) {
+                        tds[l] = new TestData(rand, zipf, 8196);
                     }
-                    TestData mltd = new TestData(testData.toArray(new TestData[0]));
-                    mltd.paces(mlAppend, postOut, offsets, sizes, postIn, this, true, true);
-                    postings.clear();
-                    testData.clear();
-                    starts[0] = 1;
-                } else {
-                    starts[postings.size()] = starts[postings.size() - 1] + atd.maxDocID;
+                    mlp[k] = checkAppend(true, tds);
+                    mltd[k] = new TestData(tds);
                 }
+                logger.fine(String.format(" Appending %d chunks of %d postings", mltd.length, j));
+                PositionPostings mlAppend = new PositionPostings();
+                int start = 1;
+                for(int k = 0; k < mlp.length; k++) {
+                    mlAppend.append(mlp[k], start);
+                    start += mltd[k].maxDocID;
+                }
+                long ao[] = new long[2];
+                int as[] = new int[2];
+                mlAppend.write(postOut, ao, as);
+                mlAppend = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, ao, as);
+                TestData atd = new TestData(mltd);
+                checkPostingsEncoding(mlAppend, atd, ao, as);
+                atd.iteration(mlAppend, true, true);
+                cleanUp();
             }
         }
     }

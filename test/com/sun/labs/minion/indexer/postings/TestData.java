@@ -206,13 +206,13 @@ public class TestData {
         nw.stop();
         logger.fine(String.format(" Encoding and writing %.3f", nw.getLastTimeMillis()));
         nw.start();
-        test.checkPostingsEncoding(p, this, offsets, sizes);
-        nw.stop();
-        logger.fine(String.format(" Encoding check %.3f", nw.getLastTimeMillis()));
-        nw.start();
         p = test.getPostings(postIn, offsets, sizes);
         nw.stop();
         logger.fine(String.format(" Instantiation %.3f", nw.getLastTimeMillis()));
+        nw.start();
+        test.checkPostingsEncoding(p, this, offsets, sizes);
+        nw.stop();
+        logger.fine(String.format(" Encoding check %.3f", nw.getLastTimeMillis()));
         nw.start();
         iteration(p, getFrequencies, getPositions);
         nw.stop();
