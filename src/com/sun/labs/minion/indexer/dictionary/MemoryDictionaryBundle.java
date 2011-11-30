@@ -3,6 +3,7 @@ package com.sun.labs.minion.indexer.dictionary;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.MemoryField;
+import com.sun.labs.minion.indexer.dictionary.io.AbstractDictionaryOutput;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
@@ -306,7 +307,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      */
     public MemoryField.MarshallResult marshall(PartitionOutput partOut) throws
             java.io.IOException {
-        boolean debug = field.getInfo().getName().equals("timestamp");
+        boolean debug = field.getInfo().getName().equals("text");
 
         MemoryField.MarshallResult ret = MemoryField.MarshallResult.DICTS_DUMPED;
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
@@ -461,16 +462,17 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
             header.dictOffsets[ord] = partDictOut.position();
             try {
-            dicts[ord].marshall(partOut);
-            } catch (RuntimeException ex) {
+                dicts[ord].marshall(partOut);
+                entryIDMaps[ord] = dicts[ord].getIdMap();
+            } catch(RuntimeException ex) {
                 //
                 // It's nice to log what field and dictionary caused the problem
-                logger.log(Level.SEVERE, String.format("Exception %s marshalling %s from %s", 
+                logger.log(Level.SEVERE, String.format("Exception %s marshalling %s from %s",
                         ex.getMessage(), type, field.getInfo().getName()));
-                
+
                 //
                 // But we want the marshalling thread to ultimately catch the exception.
-                throw(ex);
+                throw (ex);
             }
         }
 
