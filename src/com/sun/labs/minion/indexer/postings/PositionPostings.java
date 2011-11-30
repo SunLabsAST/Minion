@@ -491,7 +491,16 @@ public class PositionPostings implements Postings {
     }
 
     public void clear() {
+        if(ids == null) {
+            return;
+        }
+        nIDs = 0;
+        currentID = -1;
+        lastID = 0;
+        nSkips = 0;
+        pos = -1;
     }
+    
     /**
      * A postings iterator that can be used for compressed data that's been
      * read from disk.
