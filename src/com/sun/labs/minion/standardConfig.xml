@@ -43,7 +43,7 @@
     
     <!-- The number of indexing pipelines to use.  This is a global property
     so that it may be set easily. -->
-    <property name="num_pipelines" value="1"/>
+    <property name="num_indexing_threads" value="1"/>
     
     <!-- Which dumping mechanism to use for new partitions.  This is a global
     property because it's needed in a few places. -->
@@ -55,7 +55,7 @@
         <property name="index_config" value="index_config"/>
         <property name="query_config" value="query_config"/>
         <property name="inv_file_partition_manager" value="partition_manager"/>
-        <property name="num_pipelines" value="${num_pipelines}"/>
+        <property name="num_indexing_threads" value="${num_indexing_threads}"/>
         <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
         <property name="pipeline_factory" value="pipeline_factory"/>
         <property name="dumper" value="${dumper}"/>

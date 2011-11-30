@@ -83,7 +83,6 @@
         <!-- The stages in the main indexing pipeline -->
         <propertylist name="stages">
             <item>universal_tokenizer</item>
-            <item>memory_partition</item>
         </propertylist>
         
         <!-- The stages in the highlighting pipeline -->
@@ -92,7 +91,6 @@
             <item>highlight_stage</item>
         </propertylist>
         
-        <property name="dumper" value="${dumper}"/>
     </component>
     
     <!-- A pipeline factory that lowercases things.  This requires a memory
@@ -102,7 +100,6 @@
         <propertylist name="stages">
             <item>universal_tokenizer</item>
             <item>lower_case</item>
-            <item>uncased_memory_partition</item>
         </propertylist>
         
         <!-- The stages in the highlighting pipeline -->
@@ -111,7 +108,6 @@
             <item>highlight_stage</item>
         </propertylist>
         
-        <property name="dumper" value="${dumper}"/>
     </component>
 
     <component name="dff_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
@@ -119,7 +115,6 @@
         <propertylist name="stages">
             <item>universal_tokenizer</item>
             <item>lower_case</item>
-            <item>dff_memory_partition</item>
         </propertylist>
 
         <!-- The stages in the highlighting pipeline -->
@@ -128,7 +123,6 @@
             <item>highlight_stage</item>
         </propertylist>
 
-        <property name="dumper" value="${dumper}"/>
     </component>
 
     <!-- A pipeline factory that lowercases things and removes stopwords.  This requires a memory
@@ -139,7 +133,6 @@
             <item>universal_tokenizer</item>
             <item>lower_case</item>
             <item>stopper</item>
-            <item>uncased_memory_partition</item>
         </propertylist>
         
         <!-- The stages in the highlighting pipeline -->
@@ -148,7 +141,6 @@
             <item>highlight_stage</item>
         </propertylist>
         
-        <property name="dumper" value="${dumper}"/>
     </component>
 
     <!-- A pipeline factory that lowercases things.  This indexes into a partition
@@ -168,7 +160,6 @@
             <item>highlight_stage</item>
         </propertylist>
         
-        <property name="dumper" value="${dumper}"/>
     </component>
 
     <!-- A pipeline factory that lowercases things and stems them.  This indexes into a partition
@@ -188,7 +179,6 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
-        <property name="dumper" value="${dumper}"/>
     </component>
     
     <component name="dropper_pipeline" type="com.sun.labs.minion.pipeline.PipelineFactory">
@@ -203,7 +193,6 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
-        <property name="dumper" value="${dumper}"/>
     </component>
 
     <!-- A pipeline factory that lowercases things, removes stop words and stems 
@@ -224,6 +213,5 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
-        <property name="dumper" value="${dumper}"/>
     </component>
 </config>

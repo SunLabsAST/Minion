@@ -193,7 +193,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     private Dumper dumper;
 
     @ConfigInteger(defaultValue = 1)
-    public static final String PROP_NUM_INDEXING_THREADS = "num_pipelines";
+    public static final String PROP_NUM_INDEXING_THREADS = "num_indexing_threads";
 
     private int numIndexingThreads;
 
