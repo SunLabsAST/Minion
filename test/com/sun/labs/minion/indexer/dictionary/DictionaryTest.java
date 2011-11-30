@@ -21,6 +21,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import org.junit.After;
@@ -39,13 +41,8 @@ public class DictionaryTest {
 
     static Logger logger = Logger.getLogger(DictionaryTest.class.getName());
 
-    static List<String> wordList;
-
-    static List<String> shuffleList;
-
-    static String[] otherData = new String[] {
-        "words1.gz",
-    };
+    static String[] otherData = new String[]{
+        "words1.gz",};
 
     static TestData all;
 
@@ -55,29 +52,12 @@ public class DictionaryTest {
     @BeforeClass
     public static void setUpClass() throws Exception {
         tmpDir = new File(System.getProperty("java.io.tmpdir"));
-        wordList = new ArrayList<String>();
-        InputStream pdis = DictionaryTest.class.getResourceAsStream(
-                "/com/sun/labs/minion/indexer/dictionary/resource/words.gz");
-        if(pdis == null) {
-            logger.severe(String.format("Couldn't find test data!"));
-            return;
-        }
-        BufferedReader r = new BufferedReader(new InputStreamReader(new GZIPInputStream(
-                pdis)));
-        String w;
-        while((w = r.readLine()) != null) {
-            wordList.add(w);
-        }
-        Collections.sort(wordList);
-
-        shuffleList = new ArrayList<String>(wordList);
-        Collections.shuffle(shuffleList);
-        logger.info(String.format("list: %d shuffle: %d", wordList.size(), shuffleList.
-                size()));
+        all = new TestData("words.gz");
     }
 
     @AfterClass
     public static void tearDownClass() throws Exception {
+        all.close();
     }
 
     @Before
@@ -213,47 +193,43 @@ public class DictionaryTest {
 
     @Test
     public void testAllWordsDump() throws Exception {
-        TestData td = new TestData(wordList);
-        td.close();
     }
 
     @Test
     public void testShuffleWordsDump() throws Exception {
-        TestData td = new TestData(shuffleList);
+        TestData td = new TestData(all.words.size());
         td.close();
     }
 
     @Test
     public void testDiskDictionarySize() throws Exception {
-        TestData td = new TestData(shuffleList);
-        ReadableBuffer rb = encodeDict(wordList);
+        ReadableBuffer rb = encodeDict(all.words);
         logger.info(String.format("Uncompressed: %d compressed: %d ratio: %.3f",
-                                  rb.position(), td.dd.dh.namesSize,
-                                  (double) td.dd.dh.namesSize / rb.position()));
+                                  rb.position(), all.dd.dh.namesSize,
+                                  (double) all.dd.dh.namesSize / rb.position()));
     }
 
     @Test
     public void testDiskDictionaryGet() throws Exception {
-        TestData td = new TestData(shuffleList);
         NanoWatch nw = new NanoWatch();
         nw.start();
-        for(String w : wordList) {
-            Entry e = td.dd.get(w);
+        for(String w : all.words) {
+            Entry e = all.dd.get(w);
             assertEquals(String.format("Requested %s got %s", w, e.getName()), e.
                     getName(), w);
         }
         nw.stop();
-        logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", wordList.
+        logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", all.words.
                 size(),
-                                  nw.getTimeMillis(), nw.getTimeMillis() / wordList.
+                                  nw.getTimeMillis(), nw.getTimeMillis() / all.words.
                 size()));
-        td.close();
     }
 
     @Test
     public void testDiskDictionaryGetFailure() throws Exception {
-        int nbad = Math.max((int) (shuffleList.size() * 0.25),
-                            1000);
+        List<String> shuffleList = new ArrayList<String>(all.words);
+        Collections.shuffle(shuffleList);
+        int nbad = Math.max((int) (shuffleList.size() * 0.25), 1000);
         TestData td =
                 new TestData(shuffleList.subList(nbad, shuffleList.size()));
         NanoWatch nw = new NanoWatch();
@@ -270,20 +246,19 @@ public class DictionaryTest {
 
     @Test
     public void testDiskIteration() throws Exception {
-        TestData td = new TestData(shuffleList);
-        DictionaryIterator di = td.dd.iterator();
+        DictionaryIterator di = all.dd.iterator();
         NanoWatch nw = new NanoWatch();
         nw.start();
-        for(String w : wordList) {
+        for(String w : all.words) {
             QueryEntry qe = (QueryEntry) di.next();
             assertTrue(String.format("Expected %s, got %s", w, qe.getName()), w.
                     equals(qe.getName()));
         }
         nw.stop();
         logger.info(String.format(
-                "Iterated through %d entries in %.3fms avg time: %.3fms", wordList.
+                "Iterated through %d entries in %.3fms avg time: %.3fms", all.words.
                 size(),
-                nw.getTimeMillis(), nw.getTimeMillis() / wordList.size()));
+                nw.getTimeMillis(), nw.getTimeMillis() / all.words.size()));
     }
 
     @Test
@@ -291,7 +266,7 @@ public class DictionaryTest {
 
         TestData td = new TestData();
         DictionaryIterator di = td.dd.iterator();
-        for(String w : td.words) {
+        for(String w : td.uniq) {
             QueryEntry qe = (QueryEntry) di.next();
             if(!w.equals(qe.getName())) {
                 assertTrue(String.format("Expected %s, got %s, words: %s", w, qe.
@@ -301,21 +276,30 @@ public class DictionaryTest {
         }
     }
 
-//    @Test
+    @Test
+    public void testOldIterations() throws Exception {
+        for(String r : otherData) {
+            TestData td = new TestData(r);
+            DictionaryIterator di = td.dd.iterator();
+            for(String w : td.uniq) {
+                QueryEntry qe = (QueryEntry) di.next();
+                logger.info(String.format("w: %s e: %s", w, qe.getName()));
+                if(!w.equals(qe.getName())) {
+                    assertTrue(String.format("Expected %s, got %s, words: %s", w, qe.
+                            getName(), td.dump()), w.equals(qe.getName()));
+
+                }
+            }
+        }
+    }
+
+    //    @Test
     public void testMerge() throws Exception {
 
-        List<String> d1w = new ArrayList<String>();
-        List<String> d2w = new ArrayList<String>();
-        int nw = Math.max((int) (shuffleList.size() * 0.5),
+        int nw = Math.max((int) (all.words.size() * 0.5),
                           1000);
-        Random r = new Random();
-        for(int i = 0; i < nw; i++) {
-            d1w.add(wordList.get(r.nextInt(wordList.size())));
-            d2w.add(wordList.get(r.nextInt(wordList.size())));
-        }
-
-        TestData td1 = new TestData();
-        TestData td2 = new TestData();
+        TestData td1 = new TestData(nw);
+        TestData td2 = new TestData(nw);
 
         File f = File.createTempFile("merge", ".dict");
         f.deleteOnExit();
@@ -343,7 +327,7 @@ public class DictionaryTest {
 
     private static class TestData {
 
-        private List<String> words;
+        private List<String> words = new ArrayList<String>();
 
         private MemoryDictionary md;
 
@@ -353,16 +337,17 @@ public class DictionaryTest {
 
         private RandomAccessFile raf;
 
+        private SortedSet<String> uniq = new TreeSet<String>();
+
         public TestData() throws Exception {
-            this(Math.max((int) (shuffleList.size() * 0.5),
+            this(Math.max((int) (all.words.size() * 0.5),
                           1000));
         }
 
         public TestData(int n) throws Exception {
-            words = new ArrayList<String>(n);
             Random r = new Random();
             for(int i = 0; i < n; i++) {
-                words.add(wordList.get(r.nextInt(wordList.size())));
+                words.add(all.words.get(r.nextInt(all.words.size())));
             }
             Collections.sort(words);
             init();
@@ -374,20 +359,23 @@ public class DictionaryTest {
         }
 
         public TestData(String resourceName) throws Exception {
-            InputStream is = DictionaryTest.class.getResourceAsStream(resourceName);
+            InputStream is = DictionaryTest.class.getResourceAsStream(
+                    resourceName);
             if(is == null) {
                 is = DictionaryTest.class.getResourceAsStream(
-                    "/com/sun/labs/minion/indexer/dictionary/resource/" + resourceName);
+                        "/com/sun/labs/minion/indexer/dictionary/resource/"
+                        + resourceName);
             }
             if(is == null) {
-                throw new java.io.IOException(String.format("Couldn't find resource %s", resourceName));
+                throw new java.io.IOException(String.format(
+                        "Couldn't find resource %s", resourceName));
             }
 
             BufferedReader r;
 
             if(resourceName.endsWith(".gz")) {
                 r = new BufferedReader(new InputStreamReader(new GZIPInputStream(
-                    is), "utf-8"));
+                        is), "utf-8"));
             } else {
                 r = new BufferedReader(new InputStreamReader(is, "utf-8"));
             }
