@@ -3,7 +3,6 @@ package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.DateNameHandler;
-import com.sun.labs.minion.indexer.dictionary.DictionaryWriter;
 import com.sun.labs.minion.indexer.dictionary.DoubleNameHandler;
 import com.sun.labs.minion.indexer.dictionary.LongNameHandler;
 import com.sun.labs.minion.indexer.dictionary.MemoryBiGramDictionary;
@@ -31,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
