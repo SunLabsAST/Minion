@@ -190,6 +190,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public static final String PROP_DUMPER = "dumper";
 
     private Dumper dumper;
+    
+    @ConfigInteger(defaultValue=-1)
+    public static final String PROP_DOCS_PER_PARTITION = "docs_per_partition";
+    
+    private int docsPerPartition;
 
     @ConfigInteger(defaultValue = 1)
     public static final String PROP_NUM_INDEXING_THREADS = "num_indexing_threads";
@@ -1266,7 +1271,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         //
         // Shutdown the dumper for our partitions.
         dumper.finish();
-
+        
         try {
             invFilePartitionManager.shutdown();
 
@@ -1449,21 +1454,23 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         // Make our indexing pipelines.
         numIndexingThreads =
                 ps.getInt(PROP_NUM_INDEXING_THREADS);
-        logger.info(String.format("Starting %d indexers", numIndexingThreads));
+        docsPerPartition = ps.getInt(PROP_DOCS_PER_PARTITION);
+
         indexers = new Indexer[numIndexingThreads];
         if(indexers.length == 1) {
-            indexers[0] = new Indexer();
+            indexers[0] = new Indexer(docsPerPartition);
         } else {
             //
             // Start threads for the indexers.
             indexingThreads = new Thread[indexers.length];
             for(int i = 0; i < indexers.length; i++) {
-                indexers[i] = new Indexer();
+                indexers[i] = new Indexer(docsPerPartition);
                 indexingThreads[i] = new Thread(indexers[i]);
+                indexingThreads[i].setName("Indexer-" + i);
                 indexingThreads[i].start();
             }
         }
-
+        
         //
         // Define all of our fields.
         indexConfig = (IndexConfig) ps.getComponent(PROP_INDEX_CONFIG);
@@ -1502,6 +1509,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public void setLongIndexingRun(boolean longIndexingRun) {
         this.longIndexingRun = longIndexingRun;
     }
+    
+    public void setDocsPerPartition(int docsPerPartition) {
+        for(Indexer indexer : indexers) {
+            indexer.setDocsPerPart(docsPerPartition);
+        }
+    }
 
     public void setQueryConfig(QueryConfig queryConfig) {
         this.queryConfig = queryConfig;
@@ -1521,6 +1534,25 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         private boolean runningInThread;
 
         private String key;
+        
+        private int nIndexed = 0;
+        
+        private int docsPerPart = -1;
+        
+        public Indexer() {
+        }
+        
+        public Indexer(int docsPerPart) {
+            this.docsPerPart = docsPerPart;
+        }
+
+        public int getDocsPerPart() {
+            return docsPerPart;
+        }
+
+        public void setDocsPerPart(int docsPerPart) {
+            this.docsPerPart = docsPerPart;
+        }
 
         public void run() {
             runningInThread = true;
@@ -1539,6 +1571,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         public synchronized void index(Indexable doc) {
             if(doc != null) {
                 part.index(doc);
+                nIndexed++;
+                if(docsPerPart > 0 && nIndexed == docsPerPart) {
+                    dump();
+                    nIndexed = 0;
+                }
             }
         }
 

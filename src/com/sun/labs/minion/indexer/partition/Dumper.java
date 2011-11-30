@@ -23,7 +23,6 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.indexer.partition.PartitionManager.Merger;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.partition.io.RAMPartitionOutput;
@@ -35,7 +34,6 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.Configurable;
 import java.io.IOException;
@@ -87,9 +85,14 @@ public class Dumper implements Configurable {
     protected int pollInterval;
 
     /**
-     * Whether we are done.
+     * Whether we are done dumping.
      */
-    protected boolean done;
+    protected boolean dumperDone;
+
+    /**
+     * Are we done flushing?
+     */
+    protected boolean flushDone;
 
     /**
      * Threads to do the dumping.
@@ -148,17 +151,20 @@ public class Dumper implements Configurable {
      * up.
      */
     public void finish() {
-        done = true;
+        dumperDone = true;
         for(int i = 0; i < dumpThreads.length; i++) {
             try {
                 dumpThreads[i].join();
             } catch(InterruptedException ex) {
             }
         }
+        
+        flushDone = true;
         try {
             flushThread.join();
         } catch(InterruptedException ex) {
         }
+        
         for(RAMPartitionOutput po : partOuts) {
             try {
                 po.close();
@@ -194,11 +200,13 @@ public class Dumper implements Configurable {
         dumpThreads = new Thread[ndt];
         for(int i = 0; i < dumpThreads.length; i++) {
             dumpThreads[i] = new Thread(new DumpThread());
+            dumpThreads[i].setName("Dump-" + i);
             dumpThreads[i].start();
         }
 
         toFlush = new ArrayBlockingQueue<PartitionOutput>(poolSize);
         flushThread = new Thread(new FlushThread());
+        flushThread.setName("Flusher");
         flushThread.start();
 
     }
@@ -222,7 +230,7 @@ public class Dumper implements Configurable {
     class DumpThread implements Runnable {
 
         public void run() {
-            while(!done) {
+            while(!dumperDone) {
                 try {
                     //
                     // We'll poll for a defined interval so that we can catch when
@@ -254,11 +262,8 @@ public class Dumper implements Configurable {
                             String.format("Dumper interrupted during poll, exiting with %d partitions waiting", toDump.size()));
                     return;
                 }
-                if(done) {
-                    break;
-                }
             }
-
+            
             //
             // Drain the list of partitions to dump and then dump them.
             List<MPHolder> l = new ArrayList<MPHolder>();
@@ -266,6 +271,7 @@ public class Dumper implements Configurable {
             if(l.isEmpty()) {
                 return;
             }
+            
             try {
                 PartitionOutput partOut = poPool.poll(pollInterval, TimeUnit.SECONDS);
                 if(partOut == null) {
@@ -302,7 +308,7 @@ public class Dumper implements Configurable {
     class FlushThread implements Runnable {
 
         public void run() {
-            while(!done) {
+            while(!flushDone) {
                 try {
                     PartitionOutput partOut = toFlush.poll(pollInterval, TimeUnit.SECONDS);
                     if(partOut != null) {
@@ -317,7 +323,7 @@ public class Dumper implements Configurable {
                     logger.log(Level.SEVERE, String.format("Interrupted getting partition output"), ex);
                 }
             }
-
+            
             List<PartitionOutput> l = new ArrayList<PartitionOutput>();
             toFlush.drainTo(l);
             if(l.isEmpty()) {
@@ -326,13 +332,6 @@ public class Dumper implements Configurable {
             for(PartitionOutput partOut : l) {
                 try {
                     partOut.flush();
-                    try {
-                        poPool.put(partOut);
-                    } catch(InterruptedException ex) {
-                        //
-                        // Not much to do here.  The dumper thread will cope if
-                        // there's no partition output available.
-                    }
                 } catch(IOException ex) {
                     logger.log(Level.SEVERE, String.format("Error writing %d to disk", partOut.getPartitionNumber()), ex);
                 }
