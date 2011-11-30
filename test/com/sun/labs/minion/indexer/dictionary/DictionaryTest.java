@@ -7,9 +7,10 @@ package com.sun.labs.minion.indexer.dictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.NanoWatch;
+import com.sun.labs.minion.util.buffer.ArrayBuffer;
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -219,6 +220,18 @@ public class DictionaryTest {
         return f;
     }
 
+    private DiskDictionary makeAndGet(List<String> l) throws Exception {
+        File f = makeAndDump(l);
+        RandomAccessFile dictFile = new RandomAccessFile(f, "r");
+        DiskDictionary<String> dd =
+                new DiskDictionary<String>(new EntryFactory<String>(
+                Postings.Type.NONE),
+                                           new StringNameHandler(),
+                                           dictFile,
+                                           new RandomAccessFile[0]);
+        return dd;
+    }
+
     @Test
     public void testAllWordsDump() throws Exception {
         makeAndDump(wordList);
@@ -228,17 +241,18 @@ public class DictionaryTest {
     public void testShuffleWordsDump() throws Exception {
         makeAndDump(shuffleList);
     }
+    
+    @Test
+    public void testDiskDictionarySize() throws Exception {
+        DiskDictionary dd = makeAndGet(shuffleList);
+        ReadableBuffer rb = encodeDict(wordList);
+        logger.info(String.format("Uncompressed: %d compressed: %d ratio: %.3f",
+                rb.position(), dd.dh.namesSize, (double) dd.dh.namesSize / rb.position()));
+    }
 
     @Test
     public void testDiskDictionaryGet() throws Exception {
-        File f = makeAndDump(shuffleList);
-        RandomAccessFile dictFile = new RandomAccessFile(f, "r");
-        DiskDictionary<String> dd =
-                new DiskDictionary<String>(new EntryFactory<String>(
-                Postings.Type.NONE),
-                                           new StringNameHandler(),
-                                           dictFile,
-                                           new RandomAccessFile[0]);
+        DiskDictionary dd = makeAndGet(shuffleList);
         NanoWatch nw = new NanoWatch();
         nw.start();
         for(String w : wordList) {
@@ -248,5 +262,53 @@ public class DictionaryTest {
         nw.stop();
         logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", wordList.size(),
                 nw.getTimeMillis(), nw.getTimeMillis() / wordList.size()));
+        dd.dictFile.close();
+    }
+
+    @Test
+    public void testDiskDictionaryGetFailure() throws Exception {
+        DiskDictionary dd = makeAndGet(shuffleList);
+        NanoWatch nw = new NanoWatch();
+        nw.start();
+        int nl = 0;
+        for(int i = 0; i < wordList.size(); i++) {
+            String w = wordList.get(i);
+            String mid;
+            if(i < wordList.size() - 1) {
+                String wn = wordList.get(i+1);
+                mid = middle(w, wn);
+            } else {
+                mid = w + "z";
+            }
+            if(mid != null) {
+            Entry e = dd.get(mid);
+            assertNull(String.format("Had %s, next: %s requested %s,  got %s", w, mid, e), e);
+            nl++;
+            }
+        }
+        nw.stop();
+        logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", nl,
+                                  nw.getTimeMillis(), nw.getTimeMillis() / nl));
+        dd.dictFile.close();
+    }
+
+    private String middle(String s1, String s2) {
+        StringBuilder ret = new StringBuilder();
+        for(int i = 0; i < s1.length() && i < s2.length(); i++) {
+            ret.append(i % 2 == 0 ? s1.charAt(i) : s2.charAt(i));
+       }
+        String mid = ret.toString();
+        if(mid.equals(s1) || mid.equals(s2)) {
+            return null;
+        }
+        return ret.toString();
+    }
+    
+    private ReadableBuffer encodeDict(List<String> l) {
+        ArrayBuffer b = new ArrayBuffer(l.size() *4);
+        for(String w : l) {
+            b.encode(w);
+        }
+        return b;
     }
 }
