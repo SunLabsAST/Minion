@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion;
 
+import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
@@ -233,9 +234,9 @@ public class FieldInfo implements Cloneable, Configurable {
     public static final String PROP_ATTRIBUTES = "attributes";
 
     /**
-     * A factory for stemmers.
+     * A factory for pipelines.
      */
-    @ConfigComponent(type=com.sun.labs.minion.Pipeline.class, mandatory=false)
+    @ConfigComponent(type=com.sun.labs.minion.pipeline.PipelineFactory.class, mandatory=false)
     public static final String PROP_PIPELINE_FACTORY = "pipelineFactory";
 
     private PipelineFactory pipelneFactory;
@@ -448,8 +449,12 @@ public class FieldInfo implements Cloneable, Configurable {
 
     }
 
-    public Stemmer getStemmer() {
-        return pipelneFactory.getStemmer();
+    public Pipeline getPipeline() {
+        return pipelneFactory.getPipeline();
+    }
+
+    public HLPipeline getHLPipeline() {
+        return pipelneFactory.getHLPipeline();
     }
 
     /**
@@ -485,7 +490,7 @@ public class FieldInfo implements Cloneable, Configurable {
         name = ps.getInstanceName();
         attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(PROP_ATTRIBUTES);
         type = (Type) ps.getEnum(PROP_TYPE);
-        pipelneFactory = (StemmerFactory) ps.getComponent(PROP_PIPELINE_FACTORY);
+        pipelneFactory = (PipelineFactory) ps.getComponent(PROP_PIPELINE_FACTORY);
     }
 
     /**
@@ -498,9 +503,8 @@ public class FieldInfo implements Cloneable, Configurable {
         try {
             type = Enum.valueOf(Type.class, typeString.toUpperCase());
         } catch(IllegalArgumentException iae) {
-            logger.severe("Unknown type for field " + this.name +
-                    ": " + typeString +
-                    ", defaulting to String");
+            logger.severe(String.format("Unknown type for field %s: %s, defaulting to STRING",
+                    this.name, typeString));
             type = Type.STRING;
         }
     }

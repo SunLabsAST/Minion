@@ -90,7 +90,6 @@ import com.sun.labs.minion.indexer.partition.DocumentIterator;
 import com.sun.labs.minion.indexer.partition.Dumper;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.PipelineImpl;
-import com.sun.labs.minion.pipeline.AsyncPipelineImpl;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.query.And;
 import com.sun.labs.minion.query.Element;
@@ -100,7 +99,6 @@ import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.query.StringRelation;
 import com.sun.labs.minion.query.Term;
 import com.sun.labs.minion.retrieval.ArrayGroup;
-import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.parser.LuceneParser;
@@ -155,6 +153,81 @@ import java.util.logging.Logger;
 public class SearchEngineImpl implements SearchEngine, Configurable {
 
     /**
+     * The log.
+     */
+    static final Logger logger = Logger.getLogger(
+            SearchEngineImpl.class.getName());
+
+    @ConfigComponent(type = com.sun.labs.minion.IndexConfig.class)
+    public static final String PROP_INDEX_CONFIG = "index_config";
+
+    @ConfigComponent(type = com.sun.labs.minion.QueryConfig.class)
+    public static final String PROP_QUERY_CONFIG = "query_config";
+
+    @ConfigComponent(type = com.sun.labs.minion.pipeline.PipelineFactory.class)
+    public static final String PROP_PIPELINE_FACTORY = "pipeline_factory";
+
+    private PipelineFactory pipelineFactory;
+
+    @ConfigComponent(type =
+    com.sun.labs.minion.indexer.partition.PartitionManager.class)
+    public static final String PROP_INV_FILE_PARTITION_MANAGER =
+            "inv_file_partition_manager";
+
+    /**
+     * A property indicating whether we should build classifiers while indexing
+     * or not.
+     */
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_BUILD_CLASSIFIERS = "build_classifiers";
+
+    private boolean buildClassifiers;
+
+    @ConfigDouble(defaultValue = 0.30)
+    public static final String PROP_MIN_MEMORY_PERCENT = "min_memory_percent";
+
+    private double minMemoryPercent;
+
+    @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Dumper.class)
+    public static final String PROP_DUMPER = "dumper";
+
+    private Dumper dumper;
+
+    @ConfigInteger(defaultValue = 1)
+    public static final String PROP_NUM_PIPELINES = "num_pipelines";
+
+    private int numPipelines;
+
+    @ConfigInteger(defaultValue = 256)
+    public static final String PROP_INDEXING_QUEUE_LENGTH =
+            "indexing_queue_length";
+
+    private int indexingQueueLength;
+
+    @ConfigString(defaultValue = "com.sun.labs.minion.classification.Rocchio")
+    public static final String PROP_CLASSIFIER_CLASS_NAME =
+            "classifier_class_name";
+
+    private String classifierClassName;
+
+    /**
+     * A property that indicates that the search engine will be used for a long
+     * indexing run with <em>no</em> querying going on during that time.  If this
+     * property is set to <code>true</code> (the default is <code>false</code>),
+     * then no term statistics dictionaries or document vector lengths will be
+     * calculated during indexing or merging of partitions.  Additionally, at
+     * shutdown, the extant partitions will be merged into a single partition and
+     * then term statistics and document vector lengths will be calculated
+     * for that single new partition.
+     */
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_LONG_INDEXING_RUN = "long_indexing_run";
+
+    private boolean longIndexingRun;
+
+    private QueryStats qs;
+
+    /**
      * The configuration for the index and the indexing engine.
      */
     protected IndexConfig indexConfig;
@@ -193,22 +266,6 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * Threads to hold run our pipelines.
      */
     protected Thread[] pipeThreads;
-
-    /**
-     * A format object for formatting the output.
-     */
-    protected static DecimalFormat form =
-            new DecimalFormat("#####00.00");
-
-    /**
-     * The log.
-     */
-    static Logger logger = Logger.getLogger(SearchEngineImpl.class.getName());
-
-    /**
-     * Our log tag.
-     */
-    protected static String logTag = "SE";
 
     /**
      * The configuration name for this search engine.
@@ -1462,73 +1519,4 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         this.queryConfig = queryConfig;
         queryConfig.setEngine(this);
     }
-    @ConfigComponent(type = com.sun.labs.minion.IndexConfig.class)
-    public static final String PROP_INDEX_CONFIG = "index_config";
-
-    @ConfigComponent(type = com.sun.labs.minion.QueryConfig.class)
-    public static final String PROP_QUERY_CONFIG = "query_config";
-
-    @ConfigComponent(type = com.sun.labs.minion.pipeline.PipelineFactory.class)
-    public static final String PROP_PIPELINE_FACTORY = "pipeline_factory";
-
-    private PipelineFactory pipelineFactory;
-
-    @ConfigComponent(type =
-    com.sun.labs.minion.indexer.partition.PartitionManager.class)
-    public static final String PROP_INV_FILE_PARTITION_MANAGER =
-            "inv_file_partition_manager";
-
-    /**
-     * A property indicating whether we should build classifiers while indexing
-     * or not.
-     */
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_BUILD_CLASSIFIERS = "build_classifiers";
-
-    private boolean buildClassifiers;
-
-    @ConfigDouble(defaultValue = 0.30)
-    public static final String PROP_MIN_MEMORY_PERCENT = "min_memory_percent";
-
-    private double minMemoryPercent;
-
-    @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Dumper.class)
-    public static final String PROP_DUMPER = "dumper";
-
-    private Dumper dumper;
-
-    @ConfigInteger(defaultValue = 1)
-    public static final String PROP_NUM_PIPELINES = "num_pipelines";
-
-    private int numPipelines;
-
-    @ConfigInteger(defaultValue = 256)
-    public static final String PROP_INDEXING_QUEUE_LENGTH =
-            "indexing_queue_length";
-
-    private int indexingQueueLength;
-
-    @ConfigString(defaultValue = "com.sun.labs.minion.classification.Rocchio")
-    public static final String PROP_CLASSIFIER_CLASS_NAME =
-            "classifier_class_name";
-
-    private String classifierClassName;
-
-    /**
-     * A property that indicates that the search engine will be used for a long
-     * indexing run with <em>no</em> querying going on during that time.  If this
-     * property is set to <code>true</code> (the default is <code>false</code>),
-     * then no term statistics dictionaries or document vector lengths will be
-     * calculated during indexing or merging of partitions.  Additionally, at
-     * shutdown, the extant partitions will be merged into a single partition and
-     * then term statistics and document vector lengths will be calculated
-     * for that single new partition.
-     */
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_LONG_INDEXING_RUN = "long_indexing_run";
-
-    private boolean longIndexingRun;
-
-    private QueryStats qs;
-
 }

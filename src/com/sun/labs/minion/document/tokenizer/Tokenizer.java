@@ -23,21 +23,23 @@
  */
 package com.sun.labs.minion.document.tokenizer;
 
-import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-
 import com.sun.labs.minion.pipeline.Stage;
-
-import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.minion.pipeline.StageAdapter;
-
-import com.sun.labs.minion.util.Util;
 import java.util.logging.Logger;
 
 public abstract class Tokenizer extends StageAdapter implements
         com.sun.labs.util.props.Configurable {
+
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_SEND_PUNCT = "send_punct";
+
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_SEND_WHITE = "send_white";
+
+    protected boolean sendWhite;
 
     /**
      * The character position in the file we're tokenizing.
@@ -126,24 +128,10 @@ public abstract class Tokenizer extends StageAdapter implements
      */
     public abstract Tokenizer getTokenizer(Stage s, boolean sp);
 
-    /**
-     * Handles a begin document event.
-     */
-    public void startDocument(String key) {
-        wordNum = 1;
-        downstream.startDocument(key);
-    }
-
-    /**
-     * Handles the start of a field event.
-     */
-    public void startField(FieldInfo fi) {
-        flush();
-        makeTokens = fi.hasAttribute(FieldInfo.Attribute.TOKENIZED);
-        indexed = fi.hasAttribute(FieldInfo.Attribute.INDEXED);
-        saveData = fi.hasAttribute(FieldInfo.Attribute.SAVED);
-        trimSpaces = false;
-        downstream.startField(fi);
+    @Override
+    public void process(String text) {
+        char[] tc = text.toCharArray();
+        text(tc, 0, tc.length);
     }
 
     /**
@@ -165,91 +153,6 @@ public abstract class Tokenizer extends StageAdapter implements
      * @param l The length of the character in the document.
      */
     public abstract void handleLongChar(char c, int b, int l);
-
-    /**
-     * Saves the given range of the array, if we're supposed to be saving
-     * field data.  Saves field text exactly as it occurs in the document.
-     */
-    protected void handleFieldData(char[] text, int b, int e) {
-        if(saveData) {
-
-            int len = e - b;
-
-            if(savedLen + len >= savedData.length) {
-                savedData = Util.expandChar(savedData, (savedLen + len) * 2);
-            }
-
-            System.arraycopy(text, b, savedData, savedLen, len);
-            savedLen += len;
-            dataSaved = true;
-        }
-    }
-
-    /**
-     * Handles the end of a field event.  Checks whether saved data needs
-     * to be sent down the pipeline.
-     *
-     * @param fi The information for the field that is ending.
-     */
-    public void endField(FieldInfo fi) {
-        flush();
-        if(saveData && dataSaved) {
-
-            String saveString = new String(savedData,
-                    0, savedLen);
-            downstream.savedData(trimSpaces ? saveString.trim() : saveString);
-            savedLen = 0;
-        }
-        makeTokens = true;
-        indexed = true;
-        saveData = false;
-        dataSaved = false;
-        trimSpaces = false;
-        downstream.endField(fi);
-    }
-
-    /**
-     * Handles the end of document event.
-     */
-    public void endDocument(long size) {
-        flush();
-        downstream.endDocument(size);
-    }
-
-    /**
-     * Tells the downstream stage that its data must be dumped to the
-     * index.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void dump(IndexConfig iC) {
-        flush();
-        if(downstream == null) {
-            return;
-        }
-        downstream.dump(iC);
-    }
-
-    /**
-     * Tells a stage that it needs to shutdown, terminating any processing
-     * that it is doing first.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void shutdown(IndexConfig iC) {
-        flush();
-        if(downstream == null) {
-            return;
-        }
-        downstream.shutdown(iC);
-    }
-
-    /**
-     * Flushes any collected tokens.
-     */
-    public abstract void flush();
 
     /**
      * Reset state of tokenizer to clean slate.
@@ -277,17 +180,10 @@ public abstract class Tokenizer extends StageAdapter implements
         return pos;
     }
 
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
         sendPunct = ps.getBoolean(PROP_SEND_PUNCT);
         sendWhite = ps.getBoolean(PROP_SEND_WHITE);
     }
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_SEND_PUNCT = "send_punct";
-
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_SEND_WHITE = "send_white";
-
-    protected boolean sendWhite;
-
 } // Tokenizer

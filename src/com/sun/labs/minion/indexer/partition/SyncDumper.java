@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.SearchEngine;
@@ -29,7 +28,9 @@ import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.minion.pipeline.Stage;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A dumper that will dump partitions synchronously.
@@ -38,23 +39,32 @@ import com.sun.labs.minion.pipeline.Stage;
  */
 public class SyncDumper implements Dumper {
 
-    private PartitionManager pm;
-    
+    private static final Logger logger = Logger.getLogger(SyncDumper.class.
+            getName());
+
+    @ConfigBoolean(defaultValue = true)
+    public static final String PROP_DO_GC = "do_gc";
+
     /**
      * Whether we should do gc after (some) dumps.
      */
     private boolean doGC;
-    
+
+    @ConfigInteger(defaultValue = 5)
+    public static final String PROP_GC_INTERVAL = "gc_interval";
+
     /**
      * After how many dumps we should do a GC, if that's required.
      */
     private int gcInterval;
-    
+
+    private PartitionManager pm;
+
     /**
      * The number of dumps that we've done since the last gc.
      */
     private int nDumps;
-    
+
     /**
      * Creates a SyncDumper
      */
@@ -72,24 +82,30 @@ public class SyncDumper implements Dumper {
     /**
      * Dumps the given stage synchronously.
      */
-    public void dump(Stage s) {
-        s.dump(null);
-        
-        //
-        // Check whether we need to do GC after this dump.
-        if(doGC) {
-            nDumps++;
-            if(nDumps == gcInterval) {
-                System.gc();
-                nDumps = 0;
+    public void dump(MemoryPartition s) {
+
+        try {
+            s.dump();
+
+            //
+            // Check whether we need to do GC after this dump.
+            if(doGC) {
+                nDumps++;
+                if(nDumps == gcInterval) {
+                    System.gc();
+                    nDumps = 0;
+                }
             }
-        }
-        
-        //
-        // Do a merge if one is needed.
-        PartitionManager.Merger m = pm.getMerger();
-        if(m != null) {
-            m.run();
+
+            //
+            // Do a merge if one is needed.
+            PartitionManager.Merger m = pm.getMerger();
+            if(m != null) {
+                m.run();
+            }
+        } catch(IOException ex) {
+            logger.log(Level.SEVERE, String.format("Error dumping partition"),
+                       ex);
         }
     }
 
@@ -100,10 +116,4 @@ public class SyncDumper implements Dumper {
         doGC = ps.getBoolean(PROP_DO_GC);
         gcInterval = ps.getInt(PROP_GC_INTERVAL);
     }
-    
-    @ConfigBoolean(defaultValue=true)
-    public static final String PROP_DO_GC = "do_gc";
-    
-    @ConfigInteger(defaultValue=5)
-    public static final String PROP_GC_INTERVAL = "gc_interval";
 }

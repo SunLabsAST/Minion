@@ -27,13 +27,11 @@ import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import com.sun.labs.minion.FieldInfo;
 
-import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigComponentList;
@@ -45,8 +43,28 @@ import java.util.logging.Logger;
  * @author Bernard Horan
  *
  */
-public class QuestioningStage extends StageAdapter implements
-        com.sun.labs.util.props.Configurable {
+public class QuestioningStage extends StageAdapter {
+
+    /**
+     * A list of the fields containing questions that we would like to process.
+     */
+    @ConfigComponentList(type = com.sun.labs.minion.FieldInfo.class)
+    public static final String PROP_QUESTION_CONTAINING_FIELDS =
+            "question_containing_fields";
+
+    /**
+     * Whether we should look for questions in non-field text.
+     */
+    @ConfigBoolean(defaultValue = true)
+    public static final String PROP_CHECK_NON_FIELD_QUESTIONS =
+            "check_non_field_questions";
+
+    private boolean checkNonFieldQuestions;
+
+    @ConfigComponent(type = com.sun.labs.minion.FieldInfo.class)
+    public static final String PROP_QUESTION_FIELD = "question_field";
+
+    private FieldInfo questionField;
 
     /**
      * Maximum buffer size to hold tokens that form a question
@@ -56,12 +74,7 @@ public class QuestioningStage extends StageAdapter implements
     /**
      * Log
      */
-    static Logger logger = Logger.getLogger(QuestioningStage.class.getName());
-
-    /**
-     * Tag for the log
-     */
-    protected static final String logTag = "QS";
+    static final Logger logger = Logger.getLogger(QuestioningStage.class.getName());
 
     /**
      * A flag indicating whether we are in a field for which we're collecting
@@ -85,7 +98,7 @@ public class QuestioningStage extends StageAdapter implements
     private List<Token> tokenBuffer = new ArrayList<Token>();
 
     /**
-     * Set of (english) words that start a question
+     * Set of (English) words that start a question
      */
     private static Set<String> QUESTION_STARTERS;
 
@@ -105,47 +118,18 @@ public class QuestioningStage extends StageAdapter implements
         initializeQuestionStarters();
     }
 
-    public void startDocument(String key) {
-        super.startDocument(key);
-        saveKey = key;
-        inField = false;
-    }
-
-    /**
-     * Checks to see whether we're starting one of the fields in which we'll look
-     * for questions.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is starting.
-     * @see com.sun.labs.minion.pipeline.StageAdapter#startField(com.sun.labs.minion.FieldInfo)
-     */
-    public void startField(FieldInfo fi) {
-        if(inQuestion) {
-            brokenQuestion();
-        }
-        inQuestionField = questionContainingFields.size() == 0 ||
-                questionContainingFields.contains(fi.getName());
-        inField = true;
-        super.startField(fi);
-    }
-
-    /* (non-Javadoc)
-     * @see com.sun.labs.minion.pipeline.StageAdapter#token(com.sun.labs.minion.pipeline.Token)
-     */
+    @Override
     public void token(Token t) {
         if(isCheckingTokens()) {
             String s = t.getToken();
             if(isQuestionStart(s)) {
-                //log.log(logTag, MinionLog.LOG, "Token: " + t.getToken());
                 char startChar = s.charAt(0);
                 startQuestion(Character.isUpperCase(startChar));
             }
             if(inQuestion) {
-                //log.log(logTag, MinionLog.LOG, "In a question");
                 buffer(t);
                 if(tokenBuffer.size() > MAX_BUFFER_SIZE) {
                     logger.warning("buffer size exceeded");
-                    //outputBuffer();
                     brokenQuestion();
                 }
             } else {
@@ -157,17 +141,6 @@ public class QuestioningStage extends StageAdapter implements
     }
 
     /**
-     * Debugging
-     */
-    @SuppressWarnings("unused")
-    private void outputBuffer() {
-        for(Iterator<Token> iter = tokenBuffer.iterator(); iter.hasNext();) {
-            Token token = iter.next();
-            System.out.println(token);
-        }
-    }
-
-    /**
      * Am I checking tokens?<br>Depends if I'm in a field that's been
      * identified as one that I'm checking for questions, or (if there isn't one) if
      * I'm checking for questions when I'm not in a field
@@ -175,20 +148,6 @@ public class QuestioningStage extends StageAdapter implements
      */
     private boolean isCheckingTokens() {
         return inQuestionField || (checkNonFieldQuestions && !inField);
-    }
-
-    /**
-     * Processes the event that occurs at the end of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is ending.
-     */
-    public void endField(FieldInfo fi) {
-        if(inQuestion) {
-            brokenQuestion();
-        }
-        inField = false;
-        super.endField(fi);
     }
 
     /**
@@ -245,9 +204,7 @@ public class QuestioningStage extends StageAdapter implements
 
     }
 
-    /* (non-Javadoc)
-     * @see com.sun.labs.minion.pipeline.StageAdapter#punctuation(com.sun.labs.minion.pipeline.Token)
-     */
+    @Override
     public void punctuation(Token p) {
         if(inQuestion) {
             buffer(p);
@@ -268,7 +225,6 @@ public class QuestioningStage extends StageAdapter implements
             }
             if(tokenBuffer.size() > MAX_BUFFER_SIZE) {
                 logger.warning("buffer size exceeded");
-                //outputBuffer();
                 brokenQuestion();
             }
         } else {
@@ -294,9 +250,7 @@ public class QuestioningStage extends StageAdapter implements
         if(tokenBuffer.size() < 1) {
             logger.warning("no tokens to send");
         }
-        super.startField(questionField);
         flushTokens(true);
-        super.endField(questionField);
     }
 
     private void buffer(Token t) {
@@ -329,32 +283,11 @@ public class QuestioningStage extends StageAdapter implements
                     sb.append(t.getToken());
                 }
             }
-            if(saveData) {
-//                log.debug(logTag, 0, saveKey + " question: " + sb.toString().replace('\n', ' '));
-                super.savedData(sb.toString().replace('\n', ' '));
-            }
             tokenBuffer.clear();
         }
     }
 
-    /* (non-Javadoc)
-     * @see com.sun.labs.minion.pipeline.StageAdapter#dump(com.sun.labs.minion.IndexConfig)
-     */
-    public void dump(IndexConfig iC) {
-        flushTokens(false);
-        super.dump(iC);
-    }
-
-    /* (non-Javadoc)
-     * @see com.sun.labs.minion.pipeline.StageAdapter#endDocument(long)
-     */
-    public void endDocument(long size) {
-        if(inQuestion) {
-            endQuestion();
-        }
-        super.endDocument(size);
-    }
-
+    @Override
     public void newProperties(PropertySheet propertySheet) throws PropertyException {
         super.newProperties(propertySheet);
         List temp = propertySheet.getComponentList(
@@ -377,25 +310,4 @@ public class QuestioningStage extends StageAdapter implements
         this.questionContainingFields = new HashSet<String>(
                 questionContainingFields);
     }
-    /**
-     * A list of the fields containing questions that we would like to process.
-     */
-    @ConfigComponentList(type = com.sun.labs.minion.FieldInfo.class)
-    public static final String PROP_QUESTION_CONTAINING_FIELDS =
-            "question_containing_fields";
-
-    /**
-     * Whether we should look for questions in non-field text.
-     */
-    @ConfigBoolean(defaultValue = true)
-    public static final String PROP_CHECK_NON_FIELD_QUESTIONS =
-            "check_non_field_questions";
-
-    private boolean checkNonFieldQuestions;
-
-    @ConfigComponent(type = com.sun.labs.minion.FieldInfo.class)
-    public static final String PROP_QUESTION_FIELD = "question_field";
-
-    private FieldInfo questionField;
-
 }

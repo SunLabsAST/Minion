@@ -39,7 +39,6 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
-import com.sun.labs.minion.pipeline.SyncPipelineImpl;
 import java.util.logging.Logger;
 
 /**
@@ -85,7 +84,7 @@ public class DocumentImpl implements Document {
      */
     private Map<String, List<Posting>> vectoredFields;
 
-    static Logger logger = Logger.getLogger(DocumentImpl.class.getName());
+    static final Logger logger = Logger.getLogger(DocumentImpl.class.getName());
 
     /**
      * Creates an empty document.
@@ -257,11 +256,11 @@ public class DocumentImpl implements Document {
 
         //
         // Process the saved fields.
-        for(Map.Entry<String, List> ent : savedFields.entrySet()) {
-            for(Object o : ent.getValue()) {
-                ((SyncPipelineImpl) si).addFieldInternal(ent.getKey(), o);
-            }
-        }
+//        for(Map.Entry<String, List> ent : savedFields.entrySet()) {
+//            for(Object o : ent.getValue()) {
+//                ((SyncPipelineImpl) si).addFieldInternal(ent.getKey(), o);
+//            }
+//        }
 
         //
         // Process the indexed and vectored fields.

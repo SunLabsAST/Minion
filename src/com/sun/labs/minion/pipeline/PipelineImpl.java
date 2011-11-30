@@ -29,43 +29,44 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
- * An abstract implementation of pipeline.
- *
- * @author Stephen Green <stephen.green@sun.com>
+ * An implementation of pipeline.
  */
-public abstract class PipelineImpl implements Pipeline {
+public class PipelineImpl implements Pipeline {
 
-    /**
-     * The log.
-     */
     static final Logger logger = Logger.getLogger(PipelineImpl.class.getName());
 
     /**
      * The list of stages making up the pipeline.
      */
-    protected List<Stage> pipeline;
+    private List<Stage> stages;
+
+    private Stage head;
 
     /**
      * Creates a AbstractPipelineImpl
      */
-    public PipelineImpl() {
-        pipeline = new ArrayList<Stage>();
+    public PipelineImpl(List<Stage> stages) {
+        this.stages = stages;
+        if(stages != null && !stages.isEmpty()) {
+            head = stages.get(0);
+        }
     }
 
     public void addStage(Stage s) {
-        pipeline.add(s);
+        if(stages == null) {
+            stages = new ArrayList<Stage>();
+        }
+        stages.add(s);
+        head = stages.get(0);
     }
 
     public Stage getHead() {
-        if(!pipeline.isEmpty()) {
-        return pipeline.get(0);
-        }
-        return null;
+        return head;
     }
 
     public void process(String text) {
-        if(!pipeline.isEmpty()) {
-            pipeline.get(0).process(text);
+        if(head != null) {
+            head.process(text);
         }
     }
 }

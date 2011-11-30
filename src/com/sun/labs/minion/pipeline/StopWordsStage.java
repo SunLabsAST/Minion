@@ -25,7 +25,6 @@ package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.util.props.ConfigComponent;
 import java.util.logging.Logger;
 
@@ -41,36 +40,20 @@ import java.util.logging.Logger;
 public class StopWordsStage extends StageAdapter implements
         com.sun.labs.util.props.Configurable {
 
-    static Logger logger = Logger.getLogger(StopWordsStage.class.getName());
+    static final Logger logger =
+            Logger.getLogger(StopWordsStage.class.getName());
 
-    protected static String logTag = "SWS";
+    @ConfigComponent(type = StopWords.class)
+    public static final String PROP_STOPWORDS = "stopwords";
+
+    private StopWords stopwords;
 
     protected boolean inVectoredField = false;
 
     public StopWordsStage() {
     }
 
-    /**
-     * Processes the event that occurs at the start of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is starting.
-     */
-    public void startField(FieldInfo fi) {
-        if(downstream == null) {
-            return;
-        }
-        if(fi.hasAttribute(FieldInfo.Attribute.VECTORED)) {
-            inVectoredField = true;
-        }
-        downstream.startField(fi);
-    }
-
-    /**
-     * Processes a token from further up the pipeline.
-     *
-     * @param t The token to process.
-     */
+    @Override
     public void token(Token t) {
         String val = t.getToken().toLowerCase();
         if(inVectoredField) {
@@ -94,35 +77,10 @@ public class StopWordsStage extends StageAdapter implements
         downstream.token(t);
     }
 
-    /**
-     * Processes text passed in from the upstream stage.  The text is simply 
-     * processed as a token.
-     */
-    public void text(char[] t, int b, int e) {
-        token(new Token(new String(t, b, (e - b)), 1));
-    }
-
-    /**
-     * Processes the event that occurs at the end of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is ending.
-     */
-    public void endField(FieldInfo fi) {
-        if(downstream == null) {
-            return;
-        }
-        inVectoredField = false;
-        downstream.endField(fi);
-    }
-
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
         stopwords = (StopWords) ps.getComponent(PROP_STOPWORDS);
     }
-    @ConfigComponent(type = StopWords.class)
-    public static final String PROP_STOPWORDS = "stopwords";
-
-    private StopWords stopwords;
-
 } // StopWordsStage
+

@@ -26,7 +26,6 @@ package com.sun.labs.minion.document.tokenizer;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import com.sun.labs.minion.pipeline.PrintTokenStage;
 import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.pipeline.Token;
 
@@ -261,12 +260,8 @@ public class UniversalTokenizer extends Tokenizer {
         // should include removing p and the character position pos.
         int p = 0;
         if(authorFlag && traceFlag) { // debug
-            System.out.println("handleText: " + b + "-" + e);
+            logger.info(String.format("text: %d - %d", b, e));
         }
-
-        //
-        // Handle the text as field data.
-        handleFieldData(text, b, e);
 
         //
         // If we're not supposed to make tokens, then just add all of
@@ -1462,29 +1457,6 @@ public class UniversalTokenizer extends Tokenizer {
         return output;
     }
 
-    static public void main(String[] args) throws java.io.IOException {
-
-        PrintTokenStage pts = new PrintTokenStage();
-        UniversalTokenizer tok = new UniversalTokenizer(pts);
-        BufferedReader fr = new BufferedReader(new FileReader(args[0]));
-        String f;
-        char[] buff = new char[32 * 1024];
-        while((f = fr.readLine()) != null) {
-            File lf = new File(f);
-            FileReader lr = new FileReader(lf);
-            int p = 0;
-            while(true) {
-                int n = lr.read(buff);
-                if(n == -1) {
-                    tok.endDocument(lf.length());
-                    lr.close();
-                    break;
-                }
-                tok.text(buff, 0, n);
-                p += n;
-            }
-        }
-    }
     static final int INITIAL = 0;
 
     static final int COLLECTING = 1;
@@ -1555,6 +1527,6 @@ public class UniversalTokenizer extends Tokenizer {
 
     protected String tokenString;
 
-    protected static Logger logger = Logger.getLogger(UniversalTokenizer.class.getName());
+    protected static final Logger logger = Logger.getLogger(UniversalTokenizer.class.getName());
 
 } // UniversalTokenizer.java

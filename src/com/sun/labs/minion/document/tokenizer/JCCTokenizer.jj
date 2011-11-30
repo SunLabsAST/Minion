@@ -96,10 +96,6 @@ public class JCCTokenizer extends Tokenizer {
     public void text(char[] text, int b, int e) {
 
         //
-        // Handle the text as field data.
-        handleFieldData(text, b, e);
-        
-        //
         // If we're not making tokens, just build up this text.
         if(!makeTokens) {
             buildUp.append(text, b, e - b);

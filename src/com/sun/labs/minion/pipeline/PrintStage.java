@@ -23,20 +23,19 @@
  */
 package com.sun.labs.minion.pipeline;
 
-import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-
-import com.sun.labs.minion.FieldInfo;
-
 import com.sun.labs.util.props.ConfigBoolean;
 import java.util.logging.Logger;
 
 public class PrintStage extends StageAdapter {
 
-    static Logger logger = Logger.getLogger(PrintStage.class.getName());
+    static final Logger logger = Logger.getLogger(PrintStage.class.getName());
 
-    protected static String logTag = "PS";
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_PRINT_TOKENS = "print_tokens";
+
+    private boolean printTokens;
 
     public PrintStage() {
     }
@@ -46,63 +45,10 @@ public class PrintStage extends StageAdapter {
         this.printTokens = printTokens;
     } // PrintStage constructor
 
-    public void setDownstream(Stage s) {
-        downstream = s;
-    }
-
-    public Stage getDownstream() {
-        return downstream;
-    }
-
-    /**
-     * Defines a field into which an application will index data.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field we want defined.
-     */
-    public FieldInfo defineField(FieldInfo fi) {
-        logger.info("DF: " + fi);
-        if(downstream == null) {
-            return null;
-        }
-        return downstream.defineField(fi);
-    }
-
-    /**
-     * Process the event that occurs at the start of a document.
-     *
-     * @param key The document key for this document.
-     */
-    public void startDocument(String key) {
-        logger.info("SD: " + key);
-        if(downstream == null) {
-            return;
-        }
-        downstream.startDocument(key);
-    }
-
-    /**
-     * Processes the event that occurs at the start of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is starting.
-     */
-    public void startField(FieldInfo fi) {
-        logger.info("SF: " + fi);
-        if(downstream == null) {
-            return;
-        }
-        downstream.startField(fi);
-    }
-
-    /**
-     * Processes a token from further up the pipeline.
-     *
-     * @param t The token to process.
-     */
+    @Override
     public void token(Token t) {
         if(printTokens) {
-            logger.info("T: " + t);
+            logger.info(String.format("T: %s", t));
         }
         if(downstream == null) {
             return;
@@ -110,14 +56,10 @@ public class PrintStage extends StageAdapter {
         downstream.token(t);
     }
 
-    /**
-     * Processes some punctuation from further up the pipeline.
-     *
-     * @param p The punctuation to process.
-     */
+    @Override
     public void punctuation(Token p) {
         if(printTokens) {
-            logger.info("P: " + p);
+            logger.info(String.format("P: %s", p));
         }
         if(downstream == null) {
             return;
@@ -125,90 +67,18 @@ public class PrintStage extends StageAdapter {
         downstream.punctuation(p);
     }
 
-    /**
-     * Processes saved data from further up the pipeline.
-     *
-     * @param sd the saved data.
-     */
-    public void savedData(Object sd) {
-        logger.info("SV: \"" + sd + "\"");
+    @Override
+    public void process(String text) {
+        logger.info(String.format("TEXT: %s", text));
         if(downstream == null) {
             return;
         }
-        downstream.savedData(sd);
+        downstream.process(text);
     }
 
-    /**
-     * Processes the event that occurs at the end of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is ending.
-     */
-    public void endField(FieldInfo fi) {
-        logger.info("EF: " + fi);
-        if(downstream == null) {
-            return;
-        }
-        downstream.endField(fi);
-    }
-
-    /**
-     * Processes the event that comes at the end of a document.
-     *
-     * @param size The size of the data that was processed for this file.
-     */
-    public void endDocument(long size) {
-        logger.info("ED: " + size);
-        if(downstream == null) {
-            return;
-        }
-        downstream.endDocument(size);
-    }
-
-    /**
-     * Tells a stage that its data must be dumped to the index.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void dump(IndexConfig iC) {
-        logger.info("DUMP");
-        if(downstream == null) {
-            return;
-        }
-        downstream.dump(iC);
-    }
-
-    /**
-     * Tells a stage that it needs to shutdown, terminating any processing
-     * that it is doing first.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void shutdown(IndexConfig iC) {
-        logger.info("SHUT");
-        if(downstream == null) {
-            return;
-        }
-        downstream.shutdown(iC);
-    }
-
-    public void text(char[] t, int b, int e) {
-        logger.info("TEXT: " + new String(t, b, (e - b)));
-        if(downstream == null) {
-            return;
-        }
-        downstream.text(t, b, e);
-    }
-
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
         printTokens = ps.getBoolean(PROP_PRINT_TOKENS);
     }
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_PRINT_TOKENS = "print_tokens";
-
-    private boolean printTokens;
-
 } // PrintStage

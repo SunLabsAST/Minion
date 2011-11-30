@@ -25,7 +25,6 @@ package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.SearchEngine;
-import com.sun.labs.minion.SearchEngineException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -33,18 +32,16 @@ import java.util.Map;
 
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.HighlightStage;
-import java.util.logging.Level;
 
 /**
  * A pipeline that can be used for highlighting documents.
  */
-public class HLPipelineImpl extends SyncPipelineImpl implements HLPipeline {
+public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
 
     private HighlightStage hlStage;
 
-    public HLPipelineImpl(PipelineFactory factory, SearchEngine engine,
-            List<Stage> pipeline) {
-        super(factory, engine, pipeline, null);
+    public HLPipelineImpl(List<Stage> pipeline) {
+        super(pipeline);
         hlStage = (HighlightStage) pipeline.get(pipeline.size() - 1);
 
     } // HLPipeline constructor
@@ -144,18 +141,19 @@ public class HLPipelineImpl extends SyncPipelineImpl implements HLPipeline {
      */
     protected Map getPassages(Map document, boolean addRemaining,
             int context, int maxSize, boolean doSort) {
-        try {
-            if(addRemaining) {
-                hlStage.addRemaining(context, maxSize, doSort);
-            }
-            indexDoc("", document);
-            return hlStage.getPassages();
-        } catch(SearchEngineException se) {
-            logger.log(Level.SEVERE,
-                    "Error processing document for highlighting",
-                    se);
-            return new HashMap();
-        }
+//        try {
+//            if(addRemaining) {
+//                hlStage.addRemaining(context, maxSize, doSort);
+//            }
+//            indexDoc("", document);
+//            return hlStage.getPassages();
+//        } catch(SearchEngineException se) {
+//            logger.log(Level.SEVERE,
+//                    "Error processing document for highlighting",
+//                    se);
+//            return new HashMap();
+//        }
+        return new HashMap();
     }
 
     /**

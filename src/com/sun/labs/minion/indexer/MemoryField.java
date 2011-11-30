@@ -5,10 +5,8 @@ import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import com.sun.labs.minion.pipeline.Stage;
+import com.sun.labs.minion.pipeline.StageAdapter;
 import com.sun.labs.minion.pipeline.Token;
-import com.sun.labs.util.props.PropertyException;
-import com.sun.labs.util.props.PropertySheet;
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.logging.Logger;
@@ -39,7 +37,7 @@ public class MemoryField extends Field {
         super(info);
         dicts = new MemoryDictionaryBundle<Comparable>(this, factory);
         pipeline = info.getPipeline();
-        pipeline.addStage(this);
+        pipeline.addStage(new FieldStage());
     }
 
     public void startDocument(String key) {
@@ -58,7 +56,7 @@ public class MemoryField extends Field {
         }
         
         if(pipeline != null) {
-            
+            pipeline.process(data.toString());
         }
     }
 
@@ -116,50 +114,11 @@ public class MemoryField extends Field {
         return dicts.getTermDictionary(cased);
     }
 
-    private class FieldStage implements Stage {
+    private class FieldStage extends StageAdapter {
 
-        public String getName() {
-            return "FieldStage";
-        }
-
-        public void setDownstream(Stage s) {
-
-        }
-
-        public Stage getDownstream() {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void process(String text) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
+        @Override
         public void token(Token t) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void punctuation(Token p) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void newProperties(PropertySheet ps) throws PropertyException {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void startField(FieldInfo field) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void text(char[] t, int b, int e) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void savedData(Object sd) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        public void endField(FieldInfo field) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            MemoryField.this.token(t);
         }
 
     }

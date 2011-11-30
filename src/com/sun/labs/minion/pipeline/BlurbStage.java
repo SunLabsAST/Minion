@@ -26,6 +26,7 @@ package com.sun.labs.minion.pipeline;
 import java.util.HashSet;
 
 import com.sun.labs.minion.FieldInfo;
+import java.util.Set;
 
 import java.util.logging.Logger;
 
@@ -37,50 +38,18 @@ import java.util.logging.Logger;
  */
 public class BlurbStage extends StageAdapter {
 
-    Stage downstream;
+    private Set stopWords;
 
-    protected HashSet stopWords;
-
-    static Logger logger = Logger.getLogger(BlurbStage.class.getName());
-
-    protected static String logTag = "BS";
+    static final Logger logger = Logger.getLogger(BlurbStage.class.getName());
 
     protected static boolean inReview = false;
 
-    public BlurbStage(Stage d, HashSet stopWords) {
+    public BlurbStage(Stage d, Set stopWords) {
         downstream = d;
         this.stopWords = stopWords;
     } // BlurbStage constructor
 
-    public void setDownstream(Stage s) {
-        downstream = s;
-    }
-
-    public Stage getDownstream() {
-        return downstream;
-    }
-
-    /**
-     * Processes the event that occurs at the start of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is starting.
-     */
-    public void startField(FieldInfo fi) {
-        if(downstream == null) {
-            return;
-        }
-        downstream.startField(fi);
-        if(fi.getName().equals("review")) {
-            inReview = true;
-        }
-    }
-
-    /**
-     * Processes a token from further up the pipeline.
-     *
-     * @param t The token to process.
-     */
+    @Override
     public void token(Token t) {
         if(inReview == true) {
             String val = t.getToken().toLowerCase();
@@ -94,17 +63,4 @@ public class BlurbStage extends StageAdapter {
         downstream.token(t);
     }
 
-    /**
-     * Processes the event that occurs at the end of a field.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is ending.
-     */
-    public void endField(FieldInfo fi) {
-        if(downstream == null) {
-            return;
-        }
-        downstream.endField(fi);
-        inReview = false;
-    }
 } // BlurbStage

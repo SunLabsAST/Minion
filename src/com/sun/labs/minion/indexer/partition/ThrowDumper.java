@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  */
 public class ThrowDumper implements Dumper {
 
-    public static Logger logger = Logger.getLogger(ThrowDumper.class.getName());
+    public static final Logger logger = Logger.getLogger(ThrowDumper.class.getName());
 
     /**
      * Creates a SyncDumper
@@ -54,8 +54,8 @@ public class ThrowDumper implements Dumper {
     /**
      * Dumps the given stage synchronously.
      */
-    public void dump(Stage s) {
-        logger.info(String.format("Dumping %d docs", ((MemoryPartition) s).docDict.size()));
+    public void dump(MemoryPartition part) {
+        logger.info(String.format("Dumping %d docs", part.docDict.size()));
     }
 
     public void finish() {

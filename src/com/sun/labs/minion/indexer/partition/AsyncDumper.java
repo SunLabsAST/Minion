@@ -36,6 +36,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.util.NanoWatch;
+import java.io.IOException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,7 +67,7 @@ public class AsyncDumper implements Runnable, Dumper {
     /**
      * A queue onto which partitions will be placed for dumping.
      */
-    protected BlockingQueue<StageHolder> toDump;
+    protected BlockingQueue<MPHolder> toDump;
 
     /**
      * The interval for polling the partition queue.
@@ -124,10 +125,10 @@ public class AsyncDumper implements Runnable, Dumper {
         return queueLength;
     }
 
-    public void dump(Stage s) {
+    public void dump(MemoryPartition part) {
         try {
             nw.start();
-            toDump.put(new StageHolder(s, new Date()));
+            toDump.put(new MPHolder(part, new Date()));
             nw.stop();
         } catch(InterruptedException ex) {
             logger.warning("Dumper interrupted during put");
@@ -140,10 +141,10 @@ public class AsyncDumper implements Runnable, Dumper {
                 //
                 // We'll poll for a defined interval so that we can catch when
                 // we're finished.
-                StageHolder sh = toDump.poll(pollInterval, TimeUnit.SECONDS);
-                if(sh != null && sh.time.after(pm.getLastPurgeTime())) {
+                MPHolder mph = toDump.poll(pollInterval, TimeUnit.SECONDS);
+                if(mph != null && mph.time.after(pm.getLastPurgeTime())) {
                     try {
-                        sh.stage.dump(null);
+                        mph.part.dump();
 
                         //
                         // Merges will happen synchronously in the thread
@@ -164,13 +165,13 @@ public class AsyncDumper implements Runnable, Dumper {
                         }
                     } catch(Exception ex) {
                         logger.log(Level.SEVERE,
-                                "Error dumping partition, continuing", ex);
+                                   "Error dumping partition, continuing", ex);
                     }
                 }
             } catch(InterruptedException ex) {
                 logger.log(Level.WARNING,
-                        "Dumper interrupted during poll, exiting with " +
-                        toDump.size() + " partitions waiting");
+                           "Dumper interrupted during poll, exiting with " + toDump.
+                        size() + " partitions waiting");
                 return;
             }
             if(done) {
@@ -180,11 +181,16 @@ public class AsyncDumper implements Runnable, Dumper {
 
         //
         // Drain the list of partitions to dump and then dump them.
-        List<StageHolder> l = new ArrayList<StageHolder>();
+        List<MPHolder> l = new ArrayList<MPHolder>();
         toDump.drainTo(l);
-        for(StageHolder sh : l) {
+        for(MPHolder sh : l) {
             if(sh.time.after(pm.getLastPurgeTime())) {
-                sh.stage.dump(null);
+                try {
+                    sh.part.dump();
+                } catch(IOException ex) {
+                    logger.log(Level.SEVERE, String.format(
+                            "Error dumping partition"), ex);
+                }
             }
         }
     }
@@ -206,7 +212,7 @@ public class AsyncDumper implements Runnable, Dumper {
     public void newProperties(PropertySheet ps)
             throws PropertyException {
         queueLength = ps.getInt(PROP_QUEUE_LENGTH);
-        toDump = new ArrayBlockingQueue<StageHolder>(queueLength);
+        toDump = new ArrayBlockingQueue<MPHolder>(queueLength);
         pollInterval = ps.getInt(PROP_POLL_INTERVAL);
         doGC = ps.getBoolean(PROP_DO_GC);
         nw = new NanoWatch();
@@ -222,14 +228,14 @@ public class AsyncDumper implements Runnable, Dumper {
         return name;
     }
 
-    class StageHolder {
+    class MPHolder {
 
-        public Stage stage;
+        public MemoryPartition part;
 
         public Date time;
 
-        public StageHolder(Stage s, Date t) {
-            stage = s;
+        public MPHolder(MemoryPartition part, Date t) {
+            this.part = part;
             time = t;
         }
     }

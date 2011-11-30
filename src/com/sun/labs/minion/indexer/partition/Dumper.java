@@ -26,7 +26,6 @@ package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.util.props.Configurable;
-import com.sun.labs.minion.pipeline.Stage;
 
 /**
  * An interface for partition dumpers.
@@ -41,12 +40,11 @@ public interface Dumper extends Configurable {
     void setSearchEngine(SearchEngine e);
     
     /**
-     * Dumps the pipeline stage, which is assumed to be something that 
-     * contains indexed data.
+     * Dumps a partition to disk.
      *
      * @param s a pipeline stage containing data to be dumped.
      */
-    void dump(Stage s);
+    void dump(MemoryPartition s);
     
     /**
      * Gets the length of the queue that this dumper is using to store partitions
