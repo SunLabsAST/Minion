@@ -89,8 +89,13 @@ public class CollectionStats {
 
     public CollectionStats(PartitionManager pm, Collection<DiskPartition> parts) {
         this.pm = pm;
-        for(DiskPartition p : parts) {
-            nDocs            += p.getNDocs();
+        if(parts.isEmpty()) {
+            nDocs = 1;
+            avgDocLen = 1;
+        } else {
+            for(DiskPartition p : parts) {
+                nDocs += p.getNDocs();
+            }
         }
         avgDocLen = (float) nTokens / nDocs;
     }
