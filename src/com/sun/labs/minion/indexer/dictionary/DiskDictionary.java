@@ -287,7 +287,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         this.dictFile = dictFile;
         this.postFiles = postFiles;
         this.decoder = decoder;
-        this.postIn = new PostingsInput[postFiles.length];
         this.part = part;
         this.fileBufferType = fileBufferType;
 
@@ -295,28 +294,33 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // Read the header.
         dh = new DictionaryHeader(dictFile);
 
-        //
-        // Create the postings inputs.
-        for(int i = 0; i < this.postIn.length; i++) {
-            switch(postingsInputType) {
-                case CHANNEL_FULL_POST:
-                    postIn[i] =
-                            new ChannelPostingsInput(postFiles[i].getChannel(),
-                                                     true);
-                    break;
-                case CHANNEL_PART_POST:
-                    postIn[i] =
-                            new ChannelPostingsInput(postFiles[i].getChannel(),
-                                                     false);
-                    break;
-                case FILE_FULL_POST:
-                    postIn[i] =
-                            new FilePostingsInput(postFiles[i], true);
-                    break;
-                case FILE_PART_POST:
-                    postIn[i] =
-                            new FilePostingsInput(postFiles[i], false);
-                    break;
+        if(postFiles != null) {
+            this.postIn = new PostingsInput[postFiles.length];
+            //
+            // Create the postings inputs.
+            for(int i = 0; i < this.postIn.length; i++) {
+                switch(postingsInputType) {
+                    case CHANNEL_FULL_POST:
+                        postIn[i] =
+                                new ChannelPostingsInput(
+                                postFiles[i].getChannel(),
+                                                         true);
+                        break;
+                    case CHANNEL_PART_POST:
+                        postIn[i] =
+                                new ChannelPostingsInput(
+                                postFiles[i].getChannel(),
+                                                         false);
+                        break;
+                    case FILE_FULL_POST:
+                        postIn[i] =
+                                new FilePostingsInput(postFiles[i], true);
+                        break;
+                    case FILE_PART_POST:
+                        postIn[i] =
+                                new FilePostingsInput(postFiles[i], false);
+                        break;
+                }
             }
         }
 

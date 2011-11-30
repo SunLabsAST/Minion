@@ -195,8 +195,15 @@ public class InvFileMemoryPartition extends MemoryPartition {
             }
             logger.info(String.format("Dumping %s", mf.getInfo().getName()));
             ph.addOffset(mf.getInfo().getID(), dictFile.getFilePointer());
-            tsh.addOffset(mf.getInfo().getID(), tsRAF.getFilePointer());
+            long termStatsOff = tsRAF.getFilePointer();
             mf.dump(indexDir, dictFile, postOut, tsRAF, vlRAF, maxDocumentID);
+            if(tsRAF.getFilePointer() == termStatsOff) {
+                //
+                // No terms tstats for this field, since the file pointer didn't
+                // move.
+                termStatsOff = -1;
+            }
+            tsh.addOffset(mf.getInfo().getID(), termStatsOff);
         }
 
         try {

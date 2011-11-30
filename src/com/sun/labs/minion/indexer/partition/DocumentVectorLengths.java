@@ -153,12 +153,6 @@ public class DocumentVectorLengths {
                     MemoryDictionary.Renumber.RENUMBER);
         }
         
-        boolean trace = f.getInfo().getName().equals("title");
-
-        if(trace) {
-            logger.info(String.format("%s: %s %s %s", f.getInfo().getName(), adjustStats, mdi, gti));
-        }
-        
         //
         // Get a set of postings features for running the postings.
         WeightingFunction wf = p.getPartitionManager().getQueryConfig().
@@ -182,11 +176,6 @@ public class DocumentVectorLengths {
             gte = (TermStatsQueryEntry) gti.next();
         }
 
-        if(trace) {
-            logger.info(String.format("mde: %s gte: %s", mde, gte));
-        }
-
-
         float[] vl = new float[f.getMaximumDocumentID() + 1];
 
         //
@@ -200,10 +189,6 @@ public class DocumentVectorLengths {
                 cmp = -1;
             } else {
                 cmp = ((Comparable) mde.getName()).compareTo(gte.getName());
-            }
-
-            if(trace) {
-                logger.info(String.format("mde: %s gte: %s", mde, gte));
             }
 
             //
@@ -246,7 +231,7 @@ public class DocumentVectorLengths {
 
             //
             // Pump whichever iterators are necessary.
-            if(gte == null && gti.hasNext()) {
+            if(gte == null && gti != null && gti.hasNext()) {
                 gte = (TermStatsQueryEntry) gti.next();
             }
 

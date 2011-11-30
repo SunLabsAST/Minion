@@ -82,11 +82,14 @@ public class TermStatsDiskDictionary implements Closeable {
             raf.seek(headerPos);
             header = new TermStatsHeader(raf);
             for(Map.Entry<Integer, Long> e : header) {
-                raf.seek(e.getValue());
-                fieldDicts[e.getKey()] = new DiskDictionary(
-                        new TermStatsEntryFactory(),
-                        new StringNameHandler(), raf, null);
-                size = Math.max(fieldDicts[e.getKey()].size(), size);
+                logger.info(String.format("loading %d from %d", e.getKey(), e.getValue()));
+                if(e.getValue() >= 0) {
+                    raf.seek(e.getValue());
+                    fieldDicts[e.getKey()] = new DiskDictionary(
+                            new TermStatsEntryFactory(),
+                            new StringNameHandler(), raf, null);
+                    size = Math.max(fieldDicts[e.getKey()].size(), size);
+                }
             }
         }
     }
@@ -186,7 +189,9 @@ public class TermStatsDiskDictionary implements Closeable {
     public boolean close(long currTime) {
         if(closeTime <= currTime) {
             try {
-                raf.close();
+                if(raf != null) {
+                    raf.close();
+                }
             } catch(IOException ex) {
                 logger.log(Level.SEVERE, String.format(
                         "Error closing term stats file %s", termStatsFile), ex);
