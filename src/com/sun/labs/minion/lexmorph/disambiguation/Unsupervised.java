@@ -37,7 +37,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.util.LogMath;
-import com.sun.labs.minion.util.StopWatch;
+import com.sun.labs.util.StopWatch;
 import java.util.logging.Logger;
 
 /**

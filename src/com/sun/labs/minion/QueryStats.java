@@ -23,7 +23,7 @@
  */
 package com.sun.labs.minion;
 
-import com.sun.labs.minion.util.NanoWatch;
+import com.sun.labs.util.NanoWatch;
 import java.io.Serializable;
 
 /**

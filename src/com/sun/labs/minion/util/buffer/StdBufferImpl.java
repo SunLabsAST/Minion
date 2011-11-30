@@ -274,7 +274,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
     // subclasses.
 
     /**
-     * Decodes a postive integer that was coded using a specific number of
+     * Decodes a positive integer that was coded using a specific number of
      * bytes.
      *
      * @param nBytes The number of bytes to use.

@@ -38,13 +38,13 @@ import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.StopWatch;
 
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.Searcher;
+import com.sun.labs.util.StopWatch;
 import java.util.logging.Logger;
 
 /**

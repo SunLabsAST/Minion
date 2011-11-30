@@ -8,7 +8,7 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.NanoWatch;
+import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.io.BufferedReader;
 import java.io.File;

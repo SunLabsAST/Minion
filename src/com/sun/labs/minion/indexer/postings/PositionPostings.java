@@ -516,7 +516,6 @@ public class PositionPostings implements Postings {
         if(pos >= 0) {
             return new UncompressedIterator(features);
         } else {
-            logger.info(String.format("got negative? %d %d", pos, nIDs));
             if(features != null && features.positions && posnBuff == null || posnBuff.position() == 0) {
                 readPositions();
             }

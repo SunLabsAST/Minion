@@ -29,7 +29,7 @@ import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.util.StopWatch;
+import com.sun.labs.util.StopWatch;
 import java.util.logging.Logger;
 
 /**

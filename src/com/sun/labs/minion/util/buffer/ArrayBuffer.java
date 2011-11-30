@@ -31,8 +31,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 
 import com.sun.labs.minion.util.ChannelUtil;
-import com.sun.labs.minion.util.NanoWatch;
-import com.sun.labs.minion.util.Util;
+import com.sun.labs.util.NanoWatch;
 import java.util.Arrays;
 import java.util.logging.Logger;
 

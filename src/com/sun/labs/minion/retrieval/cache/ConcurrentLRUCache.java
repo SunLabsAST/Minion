@@ -1,6 +1,6 @@
 package com.sun.labs.minion.retrieval.cache;
 
-import com.sun.labs.minion.util.NanoWatch;
+import com.sun.labs.util.NanoWatch;
 import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;

@@ -35,7 +35,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.samples.MTQuery;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.NanoWatch;
+import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.util.ArrayList;
 import java.util.Collections;

@@ -1,11 +1,14 @@
 package com.sun.labs.minion.indexer.postings;
 
+import com.sun.labs.minion.indexer.postings.io.RAMPostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.RAMPostingsOutput;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.util.NanoWatch;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,21 +38,24 @@ public class PositionPostingsTest {
 
     private RAMPostingsOutput[] postOut = new RAMPostingsOutput[2];
 
+    private RAMPostingsInput[] postIn = new RAMPostingsInput[2];
+
     private long[] offsets = new long[2];
 
     private int[] sizes = new int[2];
 
     Random rand = new Random();
-    
+
     Zipf zipf = new Zipf(32768, rand);
 
     private static String[] previousData = new String[]{
         "/com/sun/labs/minion/indexer/postings/resource/position/positionpostings.1.gz",
-    };
+        "/var/folders/zq/8xrjbcx915118brpx0pz9l34002wrf/T/random6926995377196554799.data"};
 
     public PositionPostingsTest() {
         for(int i = 0; i < postOut.length; i++) {
             postOut[i] = new RAMPostingsOutput(2048);
+            postIn[i] = postOut[i].asInput();
         }
     }
 
@@ -75,12 +81,12 @@ public class PositionPostingsTest {
             po.cleanUp();
         }
     }
-   
+
     /**
      * Tests encoding our random data, dumping the data to a file if a failure occurs.
      * @throws Exception if there is an error
      */
-    private void randomAddTest(int n, int nIter) throws Exception {
+    private void randomAdd(int n, int nIter) throws Exception {
         for(int i = 0; i < nIter; i++) {
             cleanUp();
             NanoWatch nw = new NanoWatch();
@@ -98,11 +104,22 @@ public class PositionPostingsTest {
                 nw.start();
                 testData.iteration(p);
                 nw.stop();
-                logger.info(String.format(" Iteration took %.3f", nw.getLastTimeMillis()));
+                logger.info(String.format(" Uncompressed iteration took %.3f", nw.getLastTimeMillis()));
                 nw.start();
-                testPostingsEncoding(p, testData);
+                p.write(postOut, offsets, sizes);
                 nw.stop();
-                logger.info(String.format(" Encoding test took %.3f", nw.getLastTimeMillis()));
+                logger.info(String.format(" Writing postings took %.3f", nw.getLastTimeMillis()));
+                nw.start();
+                postingsEncodingCheck(p, testData);
+                nw.stop();
+                logger.info(String.format(" Encoding check took %.3f", nw.getLastTimeMillis()));
+                nw.start();
+                p = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, offsets, sizes);
+                nw.stop();
+                logger.info(String.format(" Instantiation took %.3f", nw.getLastTimeMillis()));
+                testData.iteration(p);
+                nw.stop();
+                logger.info(String.format(" Compressed iteration took %.3f", nw.getLastTimeMillis()));
             } catch(AssertionError ex) {
                 File f = File.createTempFile("random", ".data");
                 PrintWriter out = new PrintWriter(new FileWriter(f));
@@ -115,62 +132,14 @@ public class PositionPostingsTest {
     }
 
     /**
-     * Tests simple addition of occurrences.
-     */
-//    @Test
-//    public void testSimpleAdd() throws Exception {
-//        TestData simple = new TestData(new int[]{1, 4, 7, 10},
-//                new int[]{1, 1, 1, 1},
-//                new int[]{7,3,2,4});
-//        simple.encode();
-//    }
-//
-//    /**
-//     * Tests adding IDs multiple times.
-//     */
-//    @Test
-//    public void testSimpleMultipleAdd() throws Exception {
-//        TestData simple = new TestData(
-//                new int[]{1, 4, 7, 8, 10, 11, 17},
-//                new int[]{4, 3, 2, 1, 1, 2, 1}, 
-//                new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36}
-//                );
-//        PositionPostings p = simple.encode();
-//        simple.iteration(p);
-//    }
-//
-//    /**
-//     * Tests adding IDs multiple times.
-//     */
-//    @Test
-//    public void testSimpleClear() throws Exception {
-//        TestData simple = new TestData(
-//                new int[]{1, 4, 7, 8, 10, 11, 17},
-//                new int[]{4, 3, 2, 1, 1, 2, 1},
-//                new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36});
-//        PositionPostings p = simple.encode();
-//        simple.iteration(p);
-//        p.write(postOut, offsets, sizes);
-//        p.clear();
-//        simple = new TestData(new int[]{1, 4, 7, 10},
-//                new int[]{1, 1, 1, 1}, 
-//                new int[]{7, 3, 2, 4});
-//
-//        simple.encode(p);
-//        simple.iteration(p);
-//    }
-
-    /**
      * Tests the encoding of the IDs by decoding them ourselves.
      * @param p the postings we want to test
      * @param data the data that we're testing
      */
-    private void testPostingsEncoding(PositionPostings posnPostings, TestData data) throws IOException {
-        posnPostings.write(postOut, offsets, sizes);
+    private void postingsEncodingCheck(PositionPostings posnPostings, TestData data) throws IOException {
 
         ReadableBuffer idBuff = postOut[0].asInput().read(offsets[0], sizes[0]);
         ReadableBuffer posnBuff = postOut[1].asInput().read(offsets[1], sizes[1]);
-
 
         if(logger.isLoggable(Level.FINE)) {
             long bsize = sizes[0] + sizes[1];
@@ -180,7 +149,7 @@ public class PositionPostingsTest {
                     + " Compression: %.2f%%", bsize,
                     nb, 100 - ((double) bsize / nb) * 100));
         }
-    
+
         int n = idBuff.byteDecode();
         assertTrue(String.format("Wrong number of IDs: %d", n),
                 n == data.unique.size());
@@ -210,23 +179,29 @@ public class PositionPostingsTest {
             int freq = idBuff.byteDecode();
             int offsetGap = idBuff.byteDecode();
             int curr = prevID + gap;
-            assertTrue(String.format(
-                    "Incorrect ID: %d should be %d, decoded: %d", curr,
-                    data.ids[i], gap),
-                    curr == data.ids[i]);
-            assertTrue(String.format(
-                    "Incorrect freq: %d should be %d", freq,
-                    data.freqs[i]),
-                    freq == data.freqs[i]);
+            if(curr != data.ids[i]) {
+                assertTrue(String.format(
+                        "Incorrect ID: %d should be %d, decoded: %d", curr,
+                        data.ids[i], gap),
+                        curr == data.ids[i]);
+            }
+            if(freq != data.freqs[i]) {
+                assertTrue(String.format(
+                        "Incorrect freq: %d should be %d", freq,
+                        data.freqs[i]),
+                        freq == data.freqs[i]);
+            }
             int prevPosn = 0;
             for(int j = 0; j < data.freqs[i]; j++) {
                 int posnGap = posnBuff.byteDecode();
                 int currPosn = prevPosn + posnGap;
-                assertTrue(String.format(
-                        "Incorrect position for id %d, freq %d: %d should be %d, decoded gap %d",
-                        data.ids[i], data.freqs[i],
-                        currPosn, data.posns[pp], posnGap),
-                        currPosn == data.posns[pp]);
+                if(currPosn != data.posns[pp]) {
+                    assertTrue(String.format(
+                            "Incorrect position for id %d, freq %d: %d should be %d, decoded gap %d",
+                            data.ids[i], data.freqs[i],
+                            currPosn, data.posns[pp], posnGap),
+                            currPosn == data.posns[pp]);
+                }
                 prevPosn = currPosn;
                 pp++;
             }
@@ -235,81 +210,15 @@ public class PositionPostingsTest {
         }
     }
 
-    @Test
-    public void smallRandomAddTest() throws Exception {
-        randomAddTest(16, 1024);
-    }
-
-    @Test
-    public void mediumRandomAddTest() throws Exception {
-        randomAddTest(256, 1024);
-    }
-
-    @Test
-    public void largeRandomAddTest() throws Exception {
-        randomAddTest(8192, 256);
-    }
-
-    @Test
-    public void extraLargeRandomAddTest() throws Exception {
-        randomAddTest(1024 * 1024, 128);
-    }
-
-    /**
-     * Tests encoding data that has had problems before, ensuring that we
-     * don't re-introduce old problems.
-     */
-    @Test
-    public void testPreviousData() throws Exception {
-        for(String s : previousData) {
-
-            InputStream pdis = getClass().getResourceAsStream(s);
-            if(pdis == null) {
-                logger.info(String.format("Couldn't find %s", s));
-                continue;
-            }
-            logger.info(String.format("Testing data %s", s));
-            GZIPInputStream gzis = new GZIPInputStream(pdis);
-            TestData td = new TestData(gzis);
-            gzis.close();
-            PositionPostings p = td.encode();
-            td.iteration(p);
-            testPostingsEncoding(p, td);
-        }
-    }
-
-    /**
-     * Test writing then reading postings.
-     */
-//    @Test
-//    public void testWriteAndRead() throws java.io.IOException {
-//        TestData td = new TestData(8192, 64000);
-//        PositionPostings p = td.encode();
-//        File of = File.createTempFile("single", ".post");
-//        of.deleteOnExit();
-//        p.write(postOut, offsets, sizes);
-//        PositionPostings p2 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID,
-//                new PostingsInput[]{postOut[0].asInput()}, offsets, sizes);
-//        td.iteration(p2);
-//    }
-//
-//    /**
-//     * Test of merge method, of class PositionPostings.
-//     */
-//    @Test
-//    public void testAppend() throws java.io.IOException {
-//        testRandomAppend(8192);
-//    }
-
-    private void testRandomAppend(int size) throws java.io.IOException {
+    private void randomAppend(int size) throws java.io.IOException {
         for(int i = 0; i < 128; i++) {
             TestData d1 = new TestData(rand.nextInt(size));
             TestData d2 = new TestData(rand.nextInt(size));
-            testAppend(d1, d2);
+            checkAppend(d1, d2);
         }
     }
 
-    private void testAppend(TestData d1, TestData d2) throws java.io.IOException {
+    private void checkAppend(TestData d1, TestData d2) throws java.io.IOException {
 
 
         PositionPostings p1 = d1.encode();
@@ -349,6 +258,123 @@ public class PositionPostingsTest {
             logger.severe(String.format("Random data in %s", f));
             throw (er);
         }
+    }
+
+    /**
+     * Tests simple addition of occurrences.
+     */
+//    @Test
+    public void testSimpleAdd() throws Exception {
+        TestData simple = new TestData(new int[]{1, 4, 7, 10},
+                new int[]{1, 1, 1, 1},
+                new int[]{7, 3, 2, 4});
+        simple.encode();
+    }
+
+    /**
+     * Tests adding IDs multiple times.
+     */
+//    @Test
+    public void testSimpleMultipleAdd() throws Exception {
+        TestData simple = new TestData(
+                new int[]{1, 4, 7, 8, 10, 11, 17},
+                new int[]{4, 3, 2, 1, 1, 2, 1},
+                new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36});
+        PositionPostings p = simple.encode();
+        simple.iteration(p);
+    }
+
+    /**
+     * Tests adding IDs multiple times.
+     */
+//    @Test
+    public void testSimpleClear() throws Exception {
+        TestData simple = new TestData(
+                new int[]{1, 4, 7, 8, 10, 11, 17},
+                new int[]{4, 3, 2, 1, 1, 2, 1},
+                new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36});
+        PositionPostings p = simple.encode();
+        simple.iteration(p);
+        p.write(postOut, offsets, sizes);
+        p.clear();
+        simple = new TestData(new int[]{1, 4, 7, 10},
+                new int[]{1, 1, 1, 1},
+                new int[]{7, 3, 2, 4});
+
+        simple.encode(p);
+        simple.iteration(p);
+    }
+
+//    @Test
+    public void smallRandomAddTest() throws Exception {
+        randomAdd(16, 1024);
+    }
+
+//    @Test
+    public void mediumRandomAddTest() throws Exception {
+        randomAdd(256, 1024);
+    }
+
+//    @Test
+    public void largeRandomAddTest() throws Exception {
+        randomAdd(8192, 256);
+    }
+
+//    @Test
+    public void extraLargeRandomAddTest() throws Exception {
+        randomAdd(1024 * 1024, 128);
+    }
+
+    /**
+     * Tests encoding data that has had problems before, ensuring that we
+     * don't re-introduce old problems.
+     */
+    @Test
+    public void testPreviousData() throws Exception {
+        for(String s : previousData) {
+
+            InputStream pdis = getClass().getResourceAsStream(s);
+            if(pdis == null) {
+                try {
+                    pdis = new FileInputStream(s);
+                } catch(FileNotFoundException ex) {
+                    logger.info(String.format("Couldn't find %s", s));
+                    continue;
+                }
+            }
+            logger.info(String.format("Testing data %s", s));
+            InputStream is;
+            if(s.endsWith(".gz")) {
+                is = new GZIPInputStream(pdis);
+            } else {
+                is = pdis;
+            }
+            TestData td = new TestData(is);
+            is.close();
+            PositionPostings p = td.encode();
+            td.iteration(p);
+            postingsEncodingCheck(p, td);
+        }
+    }
+
+    /**
+     * Test writing then reading postings.
+     */
+//    @Test
+//    public void testWriteAndRead() throws java.io.IOException {
+//        TestData td = new TestData(8192, 64000);
+//        PositionPostings p = td.encode();
+//        File of = File.createTempFile("single", ".post");
+//        of.deleteOnExit();
+//        p.write(postOut, offsets, sizes);
+//        PositionPostings p2 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID,
+//                new PostingsInput[]{postOut[0].asInput()}, offsets, sizes);
+//        td.iteration(p2);
+//    }
+//
+//    @Test
+    public void testAppend() throws java.io.IOException {
+        randomAppend(8192);
     }
 
     private class TestData {
@@ -393,7 +419,7 @@ public class PositionPostingsTest {
                 int prevPos = 0;
                 int limit = freq > 4096 ? freq : 4096 / freq;
                 for(int j = 0; j < freq; j++) {
-                    int pos = prevPos + rand.nextInt(limit) + 1; 
+                    int pos = prevPos + rand.nextInt(limit) + 1;
                     posns[pp++] = pos;
                     prevPos = pos;
                 }
@@ -486,7 +512,7 @@ public class PositionPostingsTest {
         }
 
         public void iteration(PositionPostings p) {
-            
+
             PostingsIteratorFeatures features = new PostingsIteratorFeatures();
             features.setPositions(true);
             PostingsIteratorWithPositions pi = (PostingsIteratorWithPositions) p.iterator(features);
@@ -502,20 +528,26 @@ public class PositionPostingsTest {
             while(pi.next()) {
                 int expectedID = ids[i];
                 int expectedFreq = freqs[i];
-                assertTrue(String.format(
-                        "Couldn't match id %d, got %d",
-                        expectedID, pi.getID()), expectedID == pi.getID());
-                assertTrue(String.format(
-                        "Incorrect freq %d, got %d",
-                        expectedFreq, pi.getFreq()), expectedFreq
-                        == pi.getFreq());
+                if(expectedID != pi.getID()) {
+                    assertTrue(String.format(
+                            "Couldn't match id %d, got %d",
+                            expectedID, pi.getID()), expectedID == pi.getID());
+                }
+                if(expectedFreq != pi.getFreq()) {
+                    assertTrue(String.format(
+                            "Incorrect freq %d, got %d",
+                            expectedFreq, pi.getFreq()), expectedFreq
+                            == pi.getFreq());
+                }
                 int[] piPosn = pi.getPositions();
                 for(int j = 0; j < expectedFreq; j++, pp++) {
-                    assertTrue(String.format(
-                            "Incorrect position, expected %d, got %d",
-                            posns[pp], piPosn[j]), 
-                            posns[pp] == piPosn[j]);
-                    
+                    if(posns[pp] != piPosn[j]) {
+                        assertTrue(String.format(
+                                "Incorrect position, expected %d, got %d",
+                                posns[pp], piPosn[j]),
+                                posns[pp] == piPosn[j]);
+                    }
+
                 }
                 i++;
             }

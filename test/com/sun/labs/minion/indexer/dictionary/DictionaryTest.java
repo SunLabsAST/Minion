@@ -1,15 +1,13 @@
 package com.sun.labs.minion.indexer.dictionary;
 
-import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
+import com.sun.labs.util.NanoWatch;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.io.File;
-import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
