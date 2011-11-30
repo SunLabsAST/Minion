@@ -30,6 +30,7 @@ import java.nio.channels.FileChannel;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -57,9 +58,22 @@ import java.util.logging.Logger;
  */
 public class FileLock {
 
-    static Logger logger = Logger.getLogger(FileLock.class.getName());
+    private static final Logger logger = Logger.getLogger(FileLock.class.getName());
 
-    public static final String logTag = "FL";
+    /**
+     * The lock file for the file that we want to lock.
+     */
+    private File lockFile;
+
+    /**
+     * The timeout for the lock.
+     */
+    private long timeout;
+
+    /**
+     * The thread local data for the state of the locks.
+     */
+    protected Map<Thread, LockState> lockState;
 
     /**
      * Makes a lock that will retry the default number of
@@ -163,11 +177,12 @@ public class FileLock {
             //
             // A timeout of zero means we try once and punt if we don't get it.
             if(timeout == 0) {
-                if(lockState.size() == 0 && state.tryLock()) {
+                if(lockState.isEmpty() && state.tryLock()) {
                     state.mark();
                     lockState.put(ct, state);
                     return;
                 } else {
+                    state.close();
                     throw new FileLockException("Unable to acquire lock: " +
                             lockFile);
                 }
@@ -185,7 +200,7 @@ public class FileLock {
                 //
                 // Try for the lock.  We check for the size of the lock state to 
                 // be zero because we need to account for locks held by another thread.
-                if(lockState.size() == 0 && state.tryLock()) {
+                if(lockState.isEmpty() && state.tryLock()) {
                     break;
                 }
 
@@ -206,8 +221,7 @@ public class FileLock {
                 //  
                 // We didn't succeed.  Try to clean up before we leave.
                 state.close();
-                throw new FileLockException("Unable to acquire lock: " +
-                        lockFile);
+                throw new FileLockException(String.format("Unable to acquire lock %s", lockFile));
             }
         }
     }
@@ -232,16 +246,9 @@ public class FileLock {
                             state.lock, ex);
                 }
                 try {
-                    state.openChannel.close();
+                    state.close();
                 } catch(IOException ex) {
-                    throw new FileLockException("Unable to close lock file channel: " +
-                            lockFile, ex);
-                }
-                try {
-                    state.openFile.close();
-                } catch(IOException ex) {
-                    throw new FileLockException("Unable to close lock file: " +
-                            lockFile, ex);
+                    throw new FileLockException(String.format("Unable to close lock: %s",lockFile), ex);
                 }
 
                 //
@@ -251,8 +258,9 @@ public class FileLock {
                 //
                 // We'll try to delete the lock file, but if it doesn't go, it's OK.
                 if(!lockFile.delete()) {
-                    logger.fine("Couldn't delete lock file (this is OK): " +
-                            lockFile.getName());
+                    if(logger.isLoggable(Level.FINE)) {
+                        logger.fine(String.format("Couldn't delete lock file %s (this is OK)", lockFile.getName()));
+                    }
                 }
 
 
@@ -356,6 +364,7 @@ public class FileLock {
             openChannel.close();
             openFile.close();
         }
+        
         RandomAccessFile openFile;
 
         FileChannel openChannel;
@@ -363,19 +372,4 @@ public class FileLock {
         java.nio.channels.FileLock lock;
 
     }
-    /**
-     * The lock file for the file that we want to lock.
-     */
-    private File lockFile;
-
-    /**
-     * The timeout for the lock.
-     */
-    private long timeout;
-
-    /**
-     * The thread local data for the state of the locks.
-     */
-    protected Map<Thread, LockState> lockState;
-
 } // FileLock
