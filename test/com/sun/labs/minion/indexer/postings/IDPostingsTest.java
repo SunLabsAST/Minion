@@ -182,10 +182,10 @@ public class IDPostingsTest {
      * Tests encoding our random data, dumping the data to a file if a failure occurs.
      * @throws Exception if there is an error
      */
-//    @Test
-//    public void randomAddTest() throws Exception {
-//        encodeData(randomData, true);
-//    }
+    @Test
+    public void randomAddTest() throws Exception {
+        encodeData(randomData, true);
+    }
     /**
      * Tests encoding data that has had problems before, ensuring that we
      * don't re-introduce old problems.
