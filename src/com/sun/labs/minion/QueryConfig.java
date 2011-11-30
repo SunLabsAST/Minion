@@ -36,7 +36,6 @@ import java.util.Map;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
 import com.sun.labs.minion.pipeline.StopWords;

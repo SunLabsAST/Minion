@@ -33,9 +33,7 @@ import java.util.logging.Logger;
 
 public class ChannelUtil {
 
-    static Logger logger = Logger.getLogger(ChannelUtil.class.getName());
-
-    protected static String logTag = "CU";
+    static final Logger logger = Logger.getLogger(ChannelUtil.class.getName());
 
     /**
      * The block size in which buffers will be written.

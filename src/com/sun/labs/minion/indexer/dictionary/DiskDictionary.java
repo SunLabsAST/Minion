@@ -49,7 +49,6 @@ import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsInput;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Util;
-import com.sun.labs.minion.util.buffer.Buffer;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -113,6 +112,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     protected static ThreadLocal<WeakHashMap<DiskDictionary, LookupState>> threadLookupStates =
             new ThreadLocal<WeakHashMap<DiskDictionary, LookupState>>() {
 
+                @Override
                 protected WeakHashMap<DiskDictionary, LookupState> initialValue() {
                     return new WeakHashMap<DiskDictionary, LookupState>();
                 }

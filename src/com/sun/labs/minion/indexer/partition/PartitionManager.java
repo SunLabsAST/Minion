@@ -2594,7 +2594,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     @ConfigComponent(type = com.sun.labs.minion.IndexConfig.class)
     public static final String PROP_INDEX_CONFIG = "index_config";
 
-    @ConfigInteger(defaultValue = 5)
+    @ConfigInteger(defaultValue = 10)
     public static final String PROP_MERGE_RATE = "merge_rate";
 
     /**

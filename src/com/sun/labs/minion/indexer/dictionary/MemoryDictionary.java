@@ -28,8 +28,6 @@ import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import com.sun.labs.minion.indexer.entry.EntryFactory;
@@ -37,6 +35,8 @@ import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.partition.Partition;
 import java.io.File;
+import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * A dictionary that will be used during indexing.  The entries will be
@@ -74,7 +74,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * A map to hold the entries.
      */
-    protected SortedMap<N, IndexEntry> map;
+    protected Map<N, IndexEntry> map;
 
     /**
      * The class of the entries that we will be holding.
@@ -92,6 +92,12 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * <code>renumber</code> parameter of {@link #dump}
      */
     protected int[] idMap;
+    
+    /**
+     * The sorted entries from the dictionary, computed at dump time and 
+     * saved.
+     */
+    private IndexEntry[] sortedEntries;
 
     /**
      * The log.
@@ -152,7 +158,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * @param factory a factory that will generate entries for this dictionary
      */
     public MemoryDictionary(EntryFactory factory) {
-        map = new TreeMap<N, IndexEntry>();
+        map = new HashMap<N, IndexEntry>();
         id = 0;
         this.factory = factory;
     }
@@ -226,6 +232,10 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         id = 0;
         idMap = null;
     }
+    
+    public IndexEntry[] getSortedEntries() {
+        return sortedEntries;
+    }
 
     /**
      * Sorts the dictionary entries.  Depending on the value of
@@ -239,12 +249,13 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * @return The entries, in sorted order.
      */
     protected IndexEntry[] sort(Renumber renumber, IDMap idMapType) {
-        IndexEntry[] entries = map.values().toArray(new IndexEntry[0]);
+        sortedEntries = map.values().toArray(new IndexEntry[0]);
+        Arrays.sort(sortedEntries);
 
         //
         // Check if we need to keep an ID map.
         if(idMapType != IDMap.NONE) {
-            idMap = new int[entries.length + 1];
+            idMap = new int[sortedEntries.length + 1];
         }
 
         switch(renumber) {
@@ -253,29 +264,29 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             case RENUMBER:
                 switch(idMapType) {
                     case NONE:
-                        for(int i = 0; i < entries.length;
+                        for(int i = 0; i < sortedEntries.length;
                                 i++) {
-                            entries[i].setID(i + 1);
+                            sortedEntries[i].setID(i + 1);
                         }
                         break;
                     case OLDTONEW:
-                        for(int i = 0; i < entries.length;
+                        for(int i = 0; i < sortedEntries.length;
                                 i++) {
-                            IndexEntry e = entries[i];
+                            IndexEntry e = sortedEntries[i];
                             idMap[e.getID()] = i + 1;
                             e.setID(i + 1);
                         }
                     case NEWTOOLD:
-                        for(int i = 0; i < entries.length;
+                        for(int i = 0; i < sortedEntries.length;
                                 i++) {
-                            IndexEntry e = entries[i];
+                            IndexEntry e = sortedEntries[i];
                             idMap[i + 1] = e.getID();
                             e.setID(i + 1);
                         }
                         break;
                 }
         }
-        return entries;
+        return sortedEntries;
     }
 
     /**
@@ -373,10 +384,10 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             //
             // Write it out.
             if(entry.writePostings(postOut, postIDMap) == true) {
-                logger.fine(String.format("wrote postings for %s, %d entries in list", entry.getName(), entry.getN()));
+//                logger.fine(String.format("wrote postings for %s, %d entries in list", entry.getName(), entry.getN()));
                 dw.write(entry);
             } else {
-                logger.fine(String.format("No postings for %s", entry.getName()));
+//                logger.fine(String.format("No postings for %s", entry.getName()));
             }
         }
 
@@ -391,7 +402,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         // Write the final dictionary.
         dw.finish(dictFile);
         
-        logger.fine(String.format("header:\n%s", dw.dh));
+//        logger.fine(String.format("header:\n%s", dw.dh));
 
         return sorted;
     }
@@ -401,20 +412,25 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      */
     public class MemoryDictionaryIterator implements DictionaryIterator {
 
-        protected Iterator<IndexEntry> iter;
-
         protected boolean actualOnly;
+        
+        int pos = 0;
+        
+        int last;
 
         public MemoryDictionaryIterator() {
-            iter = map.values().iterator();
+            if(sortedEntries == null) {
+                throw new UnsupportedOperationException("Entries must be sorted before they can be iterated!");
+            }
+            last = sortedEntries.length - 1;
         }
 
         public boolean hasNext() {
-            return iter.hasNext();
+            return pos < last;
         }
 
         public Entry next() {
-            return iter.next();
+            return sortedEntries[pos++];
         }
 
         public void remove() {
@@ -422,11 +438,15 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         }
 
         public int estimateSize() {
-            return 0;
+            int est = 0;
+            for(int i = 0; i < sortedEntries.length; i++) {
+                est += sortedEntries[i].getN();
+            }
+            return est;
         }
 
         public int getNEntries() {
-            return map.size();
+            return sortedEntries.length;
         }
 
         @Override

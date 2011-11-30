@@ -197,8 +197,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     private int numIndexingThreads;
 
     @ConfigInteger(defaultValue = 256)
-    public static final String PROP_INDEXING_QUEUE_LENGTH =
-            "indexing_queue_length";
+    public static final String PROP_INDEXING_QUEUE_LENGTH = "indexing_queue_length";
 
     private int indexingQueueLength;
 
@@ -1450,6 +1449,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         // Make our indexing pipelines.
         numIndexingThreads =
                 ps.getInt(PROP_NUM_INDEXING_THREADS);
+        logger.info(String.format("Starting %d indexers", numIndexingThreads));
         indexers = new Indexer[numIndexingThreads];
         if(indexers.length == 1) {
             indexers[0] = new Indexer();
