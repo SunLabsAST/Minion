@@ -150,7 +150,7 @@ public class Marshaller implements Configurable {
         }
     }
 
-    public void dump(InvFileMemoryPartition part) {
+    public void marshall(InvFileMemoryPartition part) {
         try {
             toMarshall.put(new MPHolder(part, new Date()));
         } catch(InterruptedException ex) {
