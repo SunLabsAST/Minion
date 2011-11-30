@@ -48,8 +48,8 @@ import java.util.logging.Logger;
  */
 public class DiskDictionaryBundle<N extends Comparable> {
 
-    private static final Logger logger = Logger.getLogger(DiskDictionaryBundle.class.
-            getName());
+    private static final Logger logger =
+            Logger.getLogger(DiskDictionaryBundle.class.getName());
 
     /**
      * The header for this field.
@@ -60,7 +60,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * The dictionaries.
      */
     private DiskDictionary[] dicts;
-    
+
     /**
      * An entry factory for the token dictionaries.
      */
@@ -107,14 +107,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                 RandomAccessFile dictFile,
                                 RandomAccessFile vectorLengthsFile,
                                 RandomAccessFile[] postIn,
-                                EntryFactory entryFactory) throws java.io.IOException {
+                                EntryFactory entryFactory) throws
+            java.io.IOException {
         this.field = field;
         this.entryFactory = entryFactory;
         info = field.getInfo();
-        
+
         header = new FieldHeader(dictFile);
         dicts = new DiskDictionary[MemoryDictionaryBundle.Type.values().length];
-        
+
         for(Type type : Type.values()) {
             int ord = type.ordinal();
             NameDecoder decoder;
@@ -147,10 +148,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         if(header.tokenBGOffset > 0) {
             dictFile.seek(header.tokenBGOffset);
-            DiskDictionary tokenDict = 
-                    dicts[Type.CASED_TOKENS.ordinal()] != null ?
-                    dicts[Type.CASED_TOKENS.ordinal()] :
-                    dicts[Type.UNCASED_TOKENS.ordinal()];
+            DiskDictionary tokenDict =
+                    dicts[Type.CASED_TOKENS.ordinal()] != null
+                    ? dicts[Type.CASED_TOKENS.ordinal()]
+                    : dicts[Type.UNCASED_TOKENS.ordinal()];
             tokenBigrams = new DiskBiGramDictionary(dictFile, postIn[0],
                                                     DiskDictionary.PostingsInputType.FILE_PART_POST,
                                                     DiskDictionary.BufferType.FILEBUFFER,
@@ -162,12 +163,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         if(header.savedBGOffset > 0) {
             dictFile.seek(header.savedBGOffset);
-            savedBigrams = new DiskBiGramDictionary(dictFile, postIn[0],
-                                                    DiskDictionary.PostingsInputType.FILE_PART_POST,
-                                                    DiskDictionary.BufferType.FILEBUFFER,
-                                                    256, 2048, 2048, 2048, 2048,
-                                                    null,
-                                                    dicts[Type.RAW_SAVED.ordinal()]);
+            savedBigrams =
+                    new DiskBiGramDictionary(dictFile, postIn[0],
+                                             DiskDictionary.PostingsInputType.FILE_PART_POST,
+                                             DiskDictionary.BufferType.FILEBUFFER,
+                                             256, 2048, 2048, 2048, 2048,
+                                             null,
+                                             dicts[Type.RAW_SAVED.ordinal()]);
             savedBigrams.setPartition(field.partition);
         }
 
@@ -240,10 +242,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         name, info.getName()));
             }
         } else if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-            ret = dicts[Type.UNCASED_TOKENS.ordinal()].get(CharUtils.
+            ret =
+                    dicts[Type.UNCASED_TOKENS.ordinal()].get(CharUtils.
                     toLowerCase(name));
         }
-        
+
         if(ret != null) {
             ret.setField(info);
         }
@@ -280,19 +283,19 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
         return ret;
     }
-    
-    public List<QueryEntry> getWildcardMatches(String pat, boolean caseSensitive, 
-            int maxEntries, long timeLimit) {
-        
-        DiskDictionary tokenDict = 
-                dicts[Type.CASED_TOKENS.ordinal()] != null ?
-                dicts[Type.CASED_TOKENS.ordinal()] :
-                dicts[Type.UNCASED_TOKENS.ordinal()];
-        
+
+    public List<QueryEntry> getWildcardMatches(String pat, boolean caseSensitive,
+                                               int maxEntries, long timeLimit) {
+
+        DiskDictionary tokenDict =
+                dicts[Type.CASED_TOKENS.ordinal()] != null
+                ? dicts[Type.CASED_TOKENS.ordinal()]
+                : dicts[Type.UNCASED_TOKENS.ordinal()];
+
         if(tokenDict == null) {
             return Collections.EMPTY_LIST;
         }
-        
+
         QueryEntry[] qes = tokenDict.getMatching(
                 tokenBigrams, pat,
                 caseSensitive,
@@ -302,17 +305,17 @@ public class DiskDictionaryBundle<N extends Comparable> {
         if(qes == null) {
             return Collections.EMPTY_LIST;
         }
-        
+
         return Arrays.asList(qes);
-        
+
     }
-    
+
     public QueryEntry getStem(String stem) {
         QueryEntry ret = null;
         if(dicts[Type.STEMMED_TOKENS.ordinal()] != null) {
             ret = dicts[Type.STEMMED_TOKENS.ordinal()].get(stem);
         }
-        
+
         if(ret != null) {
             ret.setField(info);
         }
@@ -323,8 +326,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
         QueryEntry ret = null;
         if(!field.vectored) {
             logger.warning(
-                    String.format("Requested vector for non-vectored field %s", info.
-                    getName()));
+                    String.format("Requested vector for non-vectored field %s",
+                                  info.getName()));
             return null;
         }
         if(caseSensitive) {
@@ -332,7 +335,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         } else {
             ret = dicts[Type.STEMMED_VECTOR.ordinal()].get(key);
         }
-        
+
         if(ret != null) {
             ret.setField(info);
         }
@@ -353,10 +356,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     getName()));
             return null;
         }
-        
+
         Comparable val = MemoryDictionaryBundle.getEntryName(stringVal, info,
                                                              dateParser);
-        
+
         if(field.info.getType() != FieldInfo.Type.STRING) {
             return dicts[Type.RAW_SAVED.ordinal()].get(val);
         } else {
@@ -417,7 +420,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 }
                 return dicts[Type.UNCASED_SAVED.ordinal()].iterator(lowerBound.
                         toString(),
-                                                                    includeLower, upperBound.
+                                                                    includeLower,
+                                                                    upperBound.
                         toString(),
                                                                     includeUpper);
             }
@@ -489,8 +493,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
             DictionaryIterator di = getMatchingIterator(pattern, caseSensitive,
                                                         maxEntries, timeLimit);
-            if (di != null) {
-                while (di.hasNext()) {
+            if(di != null) {
+                while(di.hasNext()) {
                     ret.add((QueryEntry) di.next());
                 }
             }
@@ -573,8 +577,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
         int maxd = Integer.MIN_VALUE;
         PriorityQueue<IntEntry> h = new PriorityQueue<IntEntry>();
         for(int i = 0; i < var.length; i++) {
-            QueryEntry qe = (caseSensitive ? dicts[Type.RAW_SAVED.ordinal()] : dicts[Type.UNCASED_SAVED.
-                    ordinal()]).getByID(
+            QueryEntry qe = (caseSensitive ? dicts[Type.RAW_SAVED.ordinal()]
+                    : dicts[Type.UNCASED_SAVED.ordinal()]).getByID(
                     var[i]);
             String name = qe.getName().toString();
             if(!caseSensitive) {
@@ -678,15 +682,18 @@ public class DiskDictionaryBundle<N extends Comparable> {
         dvl.normalize(docs, scores, n, qw);
     }
 
-    public static void merge(MergeState mergeState, 
-                      DiskDictionaryBundle[] bundles) 
+    public static void merge(MergeState mergeState,
+                             DiskDictionaryBundle[] bundles)
             throws java.io.IOException {
-        
-        DictionaryOutput fieldDictOut = mergeState.partOut.getPartitionDictionaryOutput();
+
+        DictionaryOutput fieldDictOut = mergeState.partOut.
+                getPartitionDictionaryOutput();
         int headerPos = fieldDictOut.position();
         FieldHeader mergeHeader = new FieldHeader();
+        mergeHeader.fieldID = mergeState.info.getID();
+        mergeHeader.maxDocID = mergeState.maxDocID;
         mergeHeader.write(fieldDictOut);
-        
+
         //
         // ID maps for the entries in the dictionaries.  We'll store them all, 
         // even though we'll only use a few.  Later merges will need maps from
@@ -705,15 +712,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
             boolean foundDict = false;
 
             for(int i = 0; i < bundles.length; i++) {
-                
+
                 //
                 // Handle bundles from empty fields.
-                if (bundles[i] == null) {
+                if(bundles[i] == null) {
                     mDicts[i] = null;
                 } else {
                     mDicts[i] = bundles[i].dicts[ord];
                 }
-                if (mDicts[i] != null) {
+                if(mDicts[i] != null) {
                     foundDict = true;
                 }
             }
@@ -763,33 +770,36 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             ordinal()];
                     break;
             }
-            
+
             if(foundDict) {
                 mergeHeader.dictOffsets[ord] = fieldDictOut.position();
-                entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
-                                                  encoder, 
-                                                  mDicts,
-                                                  null,
-                                                  mergeState.docIDStarts,
-                                                  mergeState.postIDMaps,
-                                                  fieldDictOut,
-                                                  mergeState.partOut.getPostingsOutput(), 
-                                                  true);
+                entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.
+                        getIndexDir(),
+                                                        encoder,
+                                                        mDicts,
+                                                        null,
+                                                        mergeState.docIDStarts,
+                                                        mergeState.postIDMaps,
+                                                        fieldDictOut,
+                                                        mergeState.partOut.
+                        getPostingsOutput(),
+                                                        true);
             } else {
                 mergeHeader.dictOffsets[ord] = -1;
             }
         }
 
-        DiskBiGramDictionary[] bgDicts = new DiskBiGramDictionary[bundles.length];
+        DiskBiGramDictionary[] bgDicts =
+                new DiskBiGramDictionary[bundles.length];
         boolean foundOne = false;
         for(int i = 0; i < bundles.length; i++) {
-            
-            if (bundles[i] == null) {
+
+            if(bundles[i] == null) {
                 bgDicts[i] = null;
             } else {
                 bgDicts[i] = bundles[i].tokenBigrams;
             }
-            if (bgDicts[i] != null) {
+            if(bgDicts[i] != null) {
                 foundOne = true;
             }
         }
@@ -797,11 +807,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
         //
         // The entry ID maps token dictionaries, which we'll use to merge
         // the bigram dictionaries.
-        mergeState.entryIDMaps = 
-                entryIDMaps[Type.CASED_TOKENS.ordinal()] != null ? 
-                entryIDMaps[Type.CASED_TOKENS.ordinal()] : 
-                entryIDMaps[Type.UNCASED_TOKENS.ordinal()];
-        
+        mergeState.entryIDMaps =
+                entryIDMaps[Type.CASED_TOKENS.ordinal()] != null
+                ? entryIDMaps[Type.CASED_TOKENS.ordinal()]
+                : entryIDMaps[Type.UNCASED_TOKENS.ordinal()];
+
         if(foundOne) {
             mergeHeader.tokenBGOffset = fieldDictOut.position();
             DiskBiGramDictionary.merge(mergeState, bgDicts);
@@ -811,7 +821,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         foundOne = false;
 
         for(int i = 0; i < bundles.length; i++) {
-            if (bundles[i] == null) {
+            if(bundles[i] == null) {
                 bgDicts[i] = null;
             } else {
                 bgDicts[i] = bundles[i].savedBigrams;
@@ -821,11 +831,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
         }
 
-        mergeState.entryIDMaps = 
-                entryIDMaps[Type.RAW_SAVED.ordinal()] != null ? 
-                entryIDMaps[Type.RAW_SAVED.ordinal()] : 
-                entryIDMaps[Type.UNCASED_SAVED.
-                ordinal()];
+        mergeState.entryIDMaps =
+                entryIDMaps[Type.RAW_SAVED.ordinal()] != null
+                ? entryIDMaps[Type.RAW_SAVED.ordinal()]
+                : entryIDMaps[Type.UNCASED_SAVED.ordinal()];
         if(foundOne) {
             mergeHeader.savedBGOffset = fieldDictOut.position();
             DiskBiGramDictionary.merge(mergeState, bgDicts);
@@ -834,7 +843,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         //
         // Merge the docs to values data.
         if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED)) {
-            
+
             File id = mergeState.manager.getIndexDir();
 
             //
@@ -844,9 +853,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
             FileWriteableBuffer mdtvBuff = new FileWriteableBuffer(dtvRAF,
                                                                    16384);
             File dtvOffsetFile = File.createTempFile("dtvOff", "buff", id);
-            RandomAccessFile dtvOffsetRAF = new RandomAccessFile(dtvOffsetFile, "rw");
-            FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(dtvOffsetRAF, 1 << 16);
-            
+            RandomAccessFile dtvOffsetRAF = new RandomAccessFile(dtvOffsetFile,
+                                                                 "rw");
+            FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(
+                    dtvOffsetRAF, 1 << 16);
+
             for(int i = 0; i < bundles.length; i++) {
                 //
                 // This partition didn't have this field, but we still want to
@@ -858,16 +869,16 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     }
                     continue;
                 }
-                
+
                 //
                 // Copy the values from this field.
                 ReadableBuffer dtvDup = bundles[i].dtvData.duplicate();
                 int[] docIDMap = mergeState.docIDMaps[i];
                 int[] valIDMap = mergeState.entryIDMaps[i];
-                
+
                 for(int j = 0; j < bundles[i].header.maxDocID; j++) {
                     int n = dtvDup.byteDecode();
-                    
+
                     if(docIDMap != null && docIDMap[j + 1] < 0) {
                         //
                         // Skip this document's data.
@@ -875,11 +886,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             dtvDup.byteDecode();
                         }
                     } else {
-                        
+
                         //
                         // Where the data can be found in the merged partition.
                         mdtvOffsetBuff.byteEncode(mdtvBuff.position(), 4);
-                        
+
                         //
                         // Re-encode the data, keeping in mind that the IDs for
                         // the values were remapped by the values merge above.
@@ -905,7 +916,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
         }
-        
+
         //
         // Calculate document vector lengths.
         if(mergeState.info.hasAttribute(FieldInfo.Attribute.INDEXED)) {
@@ -913,12 +924,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
             //
             // Calculate document vector lengths.  We need an iterator for the 
             // main merged dictionary for this.
-            int mdp = (int) mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
+            int mdp =
+                    (int) mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
             if(mdp < 0) {
                 mdp = (int) mergeHeader.dictOffsets[Type.CASED_TOKENS.ordinal()];
             }
             if(mdp >= 0) {
-                
+
                 //
                 // We need a disk dictionary for calculating the lengths, so we'll
                 // open the one that we just wrote.  We'll start by remembering where 
@@ -926,36 +938,39 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 int mdsp = fieldDictOut.position();
 
                 File[] postOutFiles = mergeState.partOut.getPostingsFiles();
-                RandomAccessFile[] mPostRAF = new RandomAccessFile[postOutFiles.length];
+                RandomAccessFile[] mPostRAF =
+                        new RandomAccessFile[postOutFiles.length];
                 for(int i = 0; i < postOutFiles.length; i++) {
                     mPostRAF[i] = new RandomAccessFile(postOutFiles[i], "rw");
                 }
-                WriteableBuffer vlb = mergeState.partOut.getVectorLengthsBuffer();
+                WriteableBuffer vlb =
+                        mergeState.partOut.getVectorLengthsBuffer();
                 mergeHeader.vectorLengthOffset = vlb.position();
                 fieldDictOut.position(mdp);
                 DiskDictionary newMainDict =
                         new DiskDictionary(mergeState.entryFactory,
-                        new StringNameHandler(),
-                        fieldDictOut,
-                        mPostRAF);
-                DocumentVectorLengths.calculate(mergeState.info, 
+                                           new StringNameHandler(),
+                                           fieldDictOut,
+                                           mPostRAF);
+                DocumentVectorLengths.calculate(mergeState.info,
                                                 mergeState.maxDocID,
-                                                mergeState.maxDocID,  
+                                                mergeState.maxDocID,
                                                 mergeState.manager,
                                                 newMainDict.iterator(),
-                                                null,  // no term stats calculation during merges.
+                                                null, // no term stats calculation during merges.
                                                 vlb,
-                                                mergeState.manager.getTermStatsDict());
+                                                mergeState.manager.
+                        getTermStatsDict());
                 for(RandomAccessFile mprf : mPostRAF) {
                     mprf.close();
                 }
                 fieldDictOut.position(mdsp);
-                
+
             } else {
                 mergeHeader.vectorLengthOffset = -1;
             }
         }
-        
+
         //
         // Now zip back and write the header.
         int endPos = fieldDictOut.position();
@@ -986,7 +1001,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * a particular field, for example, when sorting or clustering results
      * by a particular field.
      */
-    public static class Fetcher {
+    public class Fetcher {
 
         /**
          * A local copy of the docs-to-vals offset buffer.
@@ -1000,7 +1015,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         DiskDictionary rawSaved;
 
-        public Fetcher(DiskDictionary rawSaved, ReadableBuffer dtvOffsets,
+        public Fetcher(DiskDictionary rawSaved,
+                       ReadableBuffer dtvOffsets,
                        ReadableBuffer dtvData) {
             this.rawSaved = rawSaved;
             ldtvo = dtvOffsets.duplicate();

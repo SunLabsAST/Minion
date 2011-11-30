@@ -668,7 +668,7 @@ public class DiskPartition extends Partition implements Closeable {
                 }
                 mergeState.maxDocID += mergeState.nUndel[i];
             }
-
+            
             //
             // Write a placeholder for the offset of the partition header.
             
