@@ -57,12 +57,8 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         this.post = post;
         if(post != null) {
             this.type = post.getType();
-            offset = new long[post.getNumChannels()];
-            size = new int[post.getNumChannels()];
         } else {
             this.type = Postings.Type.NONE;
-            size = new int[0];
-            offset = new long[0];
         }
     }
 
@@ -103,6 +99,8 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         // be encoded later.
         n = post.getN();
         maxFDT = post.getMaxFDT();
+        offset = new long[out.length];
+        size = new int[out.length];
         post.write(out, offset, size);
         return true;
     }
@@ -118,10 +116,14 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         b.byteEncode(n);
         b.byteEncode(maxFDT);
         b.byteEncode(id);
-        b.byteEncode(size.length);
-        for(int i = 0; i < size.length; i++) {
-            b.byteEncode(size[i]);
-            b.byteEncode(offset[i]);
+        if(size == null) {
+            b.byteEncode(0);
+        } else {
+            b.byteEncode(size.length);
+            for(int i = 0; i < size.length; i++) {
+                b.byteEncode(size[i]);
+                b.byteEncode(offset[i]);
+            }
         }
     }
 
