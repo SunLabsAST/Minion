@@ -20,14 +20,16 @@ import java.util.logging.Logger;
  */
 public class MemoryField extends Field {
     
+    private static final Logger logger = Logger.getLogger(MemoryField.class.getName());
+    
+    public static final int MULTIVALUE_GAP = 300;
+
     public enum MarshallResult {
         NOTHING_DUMPED,
         DICTS_DUMPED,
         EVERYTHING_DUMPED,
     }
 
-    static final Logger logger = Logger.getLogger(MemoryField.class.getName());
-    
     /**
      * The dictionaries for this field.
      */
@@ -89,7 +91,9 @@ public class MemoryField extends Field {
         if(pipeline != null) {
             fieldStage.setDocID(docID);
             pipeline.process(data.toString());
+            int lastPos = pipeline.getHead().getLastWordPosition();
             pipeline.reset();
+            pipeline.getHead().setNextWordPosition(lastPos+MULTIVALUE_GAP);
         }
     }
 
