@@ -112,17 +112,6 @@ public class IDFreqPostings extends IDPostings {
     }
 
     /**
-     * Encodes the data for the current ID, and sets up for the next one.
-     */
-    protected int encode(int id) {
-        maxfdt = Math.max(freq, maxfdt);
-        to += freq;
-        int nb = super.encode(id) + ((WriteableBuffer) post).byteEncode(freq);
-        freq = 0;
-        return nb;
-    }
-
-    /**
      * Adds an occurrence to the postings list.
      *
      * @param o The occurrence to add.
@@ -143,34 +132,9 @@ public class IDFreqPostings extends IDPostings {
         freqs[nIDs] += o.getCount();
     }
 
-    /**
-     * Finishes off the encoding our data.
-     */
-    public void finish() {
-
-        if(post != null) {
-            //
-            // We were appending data.
-            return;
-        }
-
-        if(curr != 0) {
-            nIDs++;
-        }
-
-        WriteableBuffer temp = new ArrayBuffer(nIDs * 2);
-        for(int i = 0,  prevID = 0; i < nIDs; i++) {
-            if(i > 0 && i % skipSize == 0) {
-                addSkip(ids[i], temp.position());
-            }
-            temp.byteEncode(ids[i] - prevID);
-            temp.byteEncode(freqs[i]);
-            maxfdt = Math.max(freqs[i], maxfdt);
-            to += freqs[i];
-            prevID = ids[i];
-            lastID = prevID;
-        }
-        post = temp;
+    @Override
+    protected void encodeOtherData(WriteableBuffer b, int i) {
+        b.byteEncode(freqs[i]);
     }
 
     /**

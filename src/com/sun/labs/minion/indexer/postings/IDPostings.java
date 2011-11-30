@@ -78,6 +78,8 @@ import java.util.logging.Logger;
  */
 public class IDPostings implements Postings, MergeablePostings {
 
+    private static Logger logger = Logger.getLogger(IDPostings.class.getName());
+
     /**
      * The compressed postings.
      */
@@ -133,10 +135,6 @@ public class IDPostings implements Postings, MergeablePostings {
      * The number of documents in a skip.
      */
     protected int skipSize = 1024;
-
-    static Logger logger = Logger.getLogger(IDPostings.class.getName());
-
-    protected static String logTag = "IDP";
 
     /**
      * Makes a postings entry that is useful during indexing.
@@ -233,15 +231,6 @@ public class IDPostings implements Postings, MergeablePostings {
     }
 
     /**
-     * Encodes the data for a single ID.
-     *
-     * @return The number of bytes used for the encoding.
-     */
-    protected int encode(int id) {
-        return ((WriteableBuffer) post).byteEncode(id - prevID);
-    }
-
-    /**
      * Sets the skip size.
      */
     public void setSkipSize(int size) {
@@ -251,7 +240,7 @@ public class IDPostings implements Postings, MergeablePostings {
     /**
      * Adds an occurrence to the postings list.
      *
-     * @param other The occurrence.
+     * @param oThe occurrence.
      */
     public void add(Occurrence o) {
 
@@ -261,6 +250,7 @@ public class IDPostings implements Postings, MergeablePostings {
             }
             ids[nIDs++] = o.getID();
             curr = o.getID();
+            lastID = curr;
         }
     }
 
@@ -288,30 +278,6 @@ public class IDPostings implements Postings, MergeablePostings {
      */
     public long getTotalOccurrences() {
         return nIDs;
-    }
-
-    /**
-     * Finishes off the encoding by adding any data that we collected for
-     * the last document.
-     */
-    public void finish() {
-
-        if(post != null) {
-            //
-            // We were appending data.
-            return;
-        }
-
-        WriteableBuffer temp = new ArrayBuffer(nIDs * 2);
-        for(int i = 0, prevID = 0; i < nIDs; i++) {
-            if(i > 0 && i % skipSize == 0) {
-                addSkip(ids[i], temp.position());
-            }
-            temp.byteEncode(ids[i] - prevID);
-            prevID = ids[i];
-        }
-        lastID = ids[nIDs - 1];
-        post = temp;
     }
 
     /**
@@ -345,12 +311,12 @@ public class IDPostings implements Postings, MergeablePostings {
         //
         // Encode the skip table.
         temp.byteEncode(nSkips);
-        int prevID = 0;
+        int prevSkipID = 0;
         int prevPos = 0;
         for(int i = 0; i < nSkips; i++) {
-            temp.byteEncode(skipID[i] - prevID);
+            temp.byteEncode(skipID[i] - prevSkipID);
             temp.byteEncode(skipPos[i] - prevPos);
-            prevID = skipID[i];
+            prevSkipID = skipID[i];
             prevPos = skipPos[i];
         }
 
@@ -358,8 +324,22 @@ public class IDPostings implements Postings, MergeablePostings {
         // Return the buffers.
         return new WriteableBuffer[]{
                     temp,
-                    (WriteableBuffer) post
+                    encodeIDs(),
                 };
+    }
+
+    protected WriteableBuffer encodeIDs() {
+        WriteableBuffer b = new ArrayBuffer(ids.length * 2);
+        int prev = 0;
+        for(int i = 0; i < nIDs; i++) {
+            b.byteEncode(ids[i] - prev);
+            encodeOtherData(b, i);
+        }
+        return b;
+    }
+
+    protected void encodeOtherData(WriteableBuffer b, int i) {
+        
     }
 
     /**
@@ -610,32 +590,36 @@ public class IDPostings implements Postings, MergeablePostings {
      */
     public class UncompressedIDIterator implements PostingsIterator {
 
-        int pos = 0;
+        int pos = -1;
 
         PostingsIteratorFeatures features;
 
+        private int ourN;
+
         public UncompressedIDIterator(PostingsIteratorFeatures features) {
             this.features = features;
+            ourN = nIDs;
         }
 
         public int getN() {
-            return nIDs;
+            return ourN;
         }
 
         public boolean next() {
-            if(pos >= nIDs) {
-                return false;
-            }
-            pos++;
-            return true;
+            return ourN != 0 && ++pos < ourN;
         }
 
         public boolean findID(int id) {
-            return Util.binarySearch(ids, 0, nIDs, id) > 0;
+            pos = Util.binarySearch(ids, 0, ourN, id);
+            if(pos > 0) {
+                return true;
+            }
+            pos = -pos;
+            return  false;
         }
 
         public void reset() {
-            pos = 0;
+            pos = -1;
         }
 
         public int getID() {

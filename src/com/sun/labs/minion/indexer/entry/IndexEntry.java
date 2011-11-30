@@ -79,10 +79,6 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         }
 
         //
-        // Finish any ongoing encoding in our postings entry.
-        post.finish();
-
-        //
         // Possibly remap the data and get a buffer to write.
         post.remap(idMap);
 

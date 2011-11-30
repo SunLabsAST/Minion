@@ -174,7 +174,8 @@ public class MemoryDictionaryTest {
 
         File f = getFile("string");
         RandomAccessFile dictFile = new RandomAccessFile(f, "rw");
-        sd.dump(tmpDir, new StringNameHandler(), dictFile, new PostingsOutput[0], MemoryDictionary.Renumber.NONE,
+        sd.dump(tmpDir, new StringNameHandler(), dictFile,
+                new PostingsOutput[0], MemoryDictionary.Renumber.NONE,
                 MemoryDictionary.IDMap.NONE, null);
         dictFile.close();
         f.delete();

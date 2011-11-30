@@ -115,12 +115,6 @@ public interface Postings {
     public int getMaxFDT();
 
     /**
-     * Finishes any ongoing encoding and prepares for the data to be
-     * dumped.
-     */
-    public void finish();
-
-    /**
      * Gets a number of <code>Buffers</code> whose contents represent the
      * postings.  These buffers can be written to disk.
      *
