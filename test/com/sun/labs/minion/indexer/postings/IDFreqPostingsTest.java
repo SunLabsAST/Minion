@@ -6,6 +6,7 @@ package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.indexer.postings.io.RAMPostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsInput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -22,7 +23,6 @@ import java.io.RandomAccessFile;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import org.junit.After;
@@ -101,8 +101,27 @@ public class IDFreqPostingsTest {
     @Test
     public void testSimpleMultipleAdd() throws Exception {
         TestData simple = new TestData(new int[]{1, 4, 7, 8, 10, 11, 17},
-                                       new int[]{4, 3, 2, 1, 1, 2, 1});
-        simple.encode();
+                new int[]{4, 3, 2, 1, 1, 2, 1});
+        IDFreqPostings p = simple.encode();
+        simple.iteration(p);
+    }
+
+    /**
+     * Tests adding IDs multiple times.
+     */
+    @Test
+    public void testSimpleClear() throws Exception {
+        RAMPostingsOutput po = new RAMPostingsOutput();
+        TestData simple = new TestData(new int[]{1, 4, 7, 8, 10, 11, 17},
+                new int[]{4, 3, 2, 1, 1, 2, 1});
+        IDFreqPostings p = simple.encode();
+        simple.iteration(p);
+        po.write(p);
+        p.clear();
+        simple = new TestData(new int[]{1, 4, 7, 10},
+                new int[]{1, 1, 1, 1});
+        simple.encode(p);
+        simple.iteration(p);
     }
 
     /**
@@ -368,6 +387,10 @@ public class IDFreqPostingsTest {
 
         public IDFreqPostings encode() {
             IDFreqPostings p = new IDFreqPostings();
+            return encode(p);
+        }
+        
+        public IDFreqPostings encode(IDFreqPostings p) {
             OccurrenceImpl o = new OccurrenceImpl();
             o.setCount(1);
             logger.fine(String.format("Encoding %d ids (%d unique)",

@@ -165,27 +165,27 @@ public class DictionaryTest {
     /**
      * Test of dump method, of class MemoryDictionary.
      */
-    @Test
-    public void testDump() throws Exception {
-        MemoryDictionary<String> sd = new MemoryDictionary<String>(new EntryFactory(
-                Postings.Type.NONE));
-        sd.put("b");
-        sd.put("d");
-        sd.put("c");
-        sd.put("a");
-
-        DiskPartitionOutput dumpState = new DiskPartitionOutput(tmpDir);
-        dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
-        dumpState.idMap = MemoryDictionary.IDMap.NONE;
-        dumpState.encoder = new StringNameHandler();
-        sd.dump(dumpState);
-        logger.info(String.format("Dump completed"));
-        File f = File.createTempFile("string", ".dict");
-        f.deleteOnExit();
-        RandomAccessFile dictFile = new RandomAccessFile(f, "rw");
-        dumpState.partDictOut.flush(dictFile);
-        dictFile.close();
-    }
+//    @Test
+//    public void testDump() throws Exception {
+//        MemoryDictionary<String> sd = new MemoryDictionary<String>(new EntryFactory(
+//                Postings.Type.NONE));
+//        sd.put("b");
+//        sd.put("d");
+//        sd.put("c");
+//        sd.put("a");
+//
+//        DiskPartitionOutput dumpState = new DiskPartitionOutput(tmpDir);
+//        dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
+//        dumpState.idMap = MemoryDictionary.IDMap.NONE;
+//        dumpState.encoder = new StringNameHandler();
+//        sd.dump(dumpState);
+//        logger.info(String.format("Dump completed"));
+//        File f = File.createTempFile("string", ".dict");
+//        f.deleteOnExit();
+//        RandomAccessFile dictFile = new RandomAccessFile(f, "rw");
+//        dumpState.partDictOut.flush(dictFile);
+//        dictFile.close();
+//    }
 
     @Test
     public void testAllWordsDump() throws Exception {

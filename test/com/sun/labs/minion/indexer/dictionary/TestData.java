@@ -3,6 +3,7 @@ package com.sun.labs.minion.indexer.dictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.util.LabsLogFormatter;
 import java.io.BufferedReader;
@@ -95,17 +96,15 @@ public class TestData {
             md.put(w);
             uniq.add(w);
         }
-        DiskPartitionOutput dumpState = new DiskPartitionOutput(DictionaryTest.tmpDir);
-        dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
-        dumpState.idMap = MemoryDictionary.IDMap.NONE;
-        dumpState.encoder = new StringNameHandler();
-        md.dump(dumpState);
+        PartitionOutput pout = new DiskPartitionOutput(DictionaryTest.tmpDir);
+        pout.setDictionaryEncoder(new StringNameHandler());
+        pout.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
+        pout.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+        md.dump(pout);
         dictFile = File.createTempFile("all", ".dict");
         dictFile.deleteOnExit();
-        raf = new RandomAccessFile(dictFile, "rw");
-        dumpState.partDictOut.flush(raf);
-        dumpState.close();
-        raf.close();
+        pout.flush();
+        pout.close();
         raf = new RandomAccessFile(dictFile, "r");
         dd = new DiskDictionary<String>(new EntryFactory<String>(
                 Postings.Type.NONE),

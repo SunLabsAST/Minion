@@ -6,6 +6,8 @@ package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.indexer.postings.io.RAMPostingsInput;
+import com.sun.labs.minion.indexer.postings.io.RAMPostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsInput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -14,7 +16,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -151,6 +152,45 @@ public class IDPostingsTest {
         }
     }
 
+    /**
+     * Tests simple addition of occurrences.
+     */
+    @Test
+    public void testSimpleClear() throws Exception {
+        TestData simple = new TestData(new int[]{1, 4, 7, 10});
+        IDPostings p = simple.encode();
+        simple.iteration(p);
+        p.clear();
+        simple = new TestData(new int[] {3,6,9,12});
+        simple.encode(p);
+        simple.iteration(p);
+    }
+    
+    @Test
+    public void testRandomClear() throws Exception {
+        Random rand = new Random();
+        for(int i = 0; i < 128; i++) {
+            TestData r = null;
+            try {
+                r = new TestData(rand.nextInt(2000) + 1);
+                IDPostings p = r.encode();
+                r.iteration(p);
+                p.clear();
+                r = new TestData(rand.nextInt(2000) + 1);
+                p = r.encode(p);
+                r.iteration(p);        
+            } catch(AssertionError ex) {
+                File f = File.createTempFile("random", ".data");
+                PrintWriter out = new PrintWriter(new FileWriter(f));
+                r.dump(out);
+                out.close();
+                logger.severe(String.format("Random data in %s", f));
+                throw (ex);
+            }
+        }
+
+    }
+    
     @Test
     public void smallRandomAddTest() throws Exception {
         randomAddTest(16);
@@ -266,17 +306,13 @@ public class IDPostingsTest {
 
         File of = File.createTempFile("single", ".post");
         of.deleteOnExit();
-        StreamPostingsOutput po = new StreamPostingsOutput(new FileOutputStream(
-                of));
+        RAMPostingsOutput po = new RAMPostingsOutput();
         long s1 = po.write(p1);
         long s2 = po.write(p2);
-        po.close();
-
+        RAMPostingsInput pi = po.asInput();
         TestData atd = new TestData(d1, d2, lastID + 1);
 
         try {
-            RandomAccessFile raf = new RandomAccessFile(of, "r");
-            StreamPostingsInput pi = new StreamPostingsInput(raf, 8192);
             IDPostings append = new IDPostings();
             p1 = (IDPostings) pi.read(Postings.Type.ID, 0, (int) s1);
             d1.iteration(p1);
@@ -284,8 +320,9 @@ public class IDPostingsTest {
             p2 = (IDPostings) pi.read(Postings.Type.ID, s1, (int) s2);
             d2.iteration(p2);
             append.append(p2, lastID + 1);
+            long s3 = po.write(append);
+            append = (IDPostings) pi.read(Postings.Type.ID, s1 + s2, (int) s3);
             atd.iteration(append);
-            raf.close();
         } catch(AssertionError er) {
             File f = File.createTempFile("randomappend", ".data");
             PrintWriter out = new PrintWriter(new FileWriter(f));
@@ -369,6 +406,10 @@ public class IDPostingsTest {
 
         public IDPostings encode() {
             IDPostings idp = new IDPostings();
+            return encode(idp);
+        }
+        
+        public IDPostings encode(IDPostings idp) {
             OccurrenceImpl o = new OccurrenceImpl();
             logger.info(String.format("Encoding %d ids (%d unique)",
                                       rawData.length,

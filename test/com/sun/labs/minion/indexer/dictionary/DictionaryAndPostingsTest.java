@@ -222,26 +222,26 @@ public class DictionaryAndPostingsTest {
             if(md == null) {
                 generateMemoryDictionary();
             }
-            File dictFile = File.createTempFile("all", ".dict");
-            dictFile.deleteOnExit();
-            File postFile = File.createTempFile("all", ".post");
-            postFile.deleteOnExit();
-            DiskDictionaryOutput dout = new DiskDictionaryOutput(DictionaryTest.tmpDir);
-            dout.postStream = new OutputStream[] {new BufferedOutputStream(
-                    new FileOutputStream(postFile))};
-            dout.postOut = new PostingsOutput[] {new StreamPostingsOutput(dout.postStream[0])};
-            dout.renumber = MemoryDictionary.Renumber.RENUMBER;
-            dout.idMap = MemoryDictionary.IDMap.NONE;
-            dout.encoder = new StringNameHandler();
-            md.dump(dout);
-            dout.close();
-            raf.close();
-
-            raf = new RandomAccessFile(dictFile, "r");
-            RandomAccessFile praf = new RandomAccessFile(postFile, "r");
-            dd = new DiskDictionary<String>(new EntryFactory<String>(type),
-                    new StringNameHandler(), raf,
-                    new RandomAccessFile[]{praf});
+//            File dictFile = File.createTempFile("all", ".dict");
+//            dictFile.deleteOnExit();
+//            File postFile = File.createTempFile("all", ".post");
+//            postFile.deleteOnExit();
+//            DiskDictionaryOutput dout = new DiskDictionaryOutput(DictionaryTest.tmpDir);
+//            dout.postStream = new OutputStream[] {new BufferedOutputStream(
+//                    new FileOutputStream(postFile))};
+//            dout.postOut = new PostingsOutput[] {new StreamPostingsOutput(dout.postStream[0])};
+//            dout.renumber = MemoryDictionary.Renumber.RENUMBER;
+//            dout.idMap = MemoryDictionary.IDMap.NONE;
+//            dout.encoder = new StringNameHandler();
+//            md.dump(dout);
+//            dout.close();
+//            raf.close();
+//
+//            raf = new RandomAccessFile(dictFile, "r");
+//            RandomAccessFile praf = new RandomAccessFile(postFile, "r");
+//            dd = new DiskDictionary<String>(new EntryFactory<String>(type),
+//                    new StringNameHandler(), raf,
+//                    new RandomAccessFile[]{praf});
             return dd;
         }
 
