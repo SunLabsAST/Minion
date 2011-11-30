@@ -64,7 +64,6 @@ import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.QueryElement;
 import com.sun.labs.minion.retrieval.QueryOptimizer;
 import com.sun.labs.minion.retrieval.parser.LuceneTransformer;
-import com.sun.labs.minion.retrieval.parser.ParseException;
 import com.sun.labs.minion.retrieval.parser.Parser;
 import com.sun.labs.minion.retrieval.parser.SimpleNode;
 import com.sun.labs.minion.retrieval.parser.StrictTransformer;
@@ -1410,7 +1409,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         // memory is low.
         double freePercent = (mu.getMax() - mu.getUsed()) / (double) mu.getMax();
         if(freePercent < minMemoryPercent) {
-            logger.fine(String.format(
+            logger.info(String.format(
                     "Memory is low %.1fMB used %.1fMB max %.1f%% free",
                     toMB(mu.getUsed()), toMB(mu.getMax()),
                     freePercent * 100));

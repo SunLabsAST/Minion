@@ -118,6 +118,11 @@ public class MemoryField extends Field {
                      RandomAccessFile vectorLengthsFile,
                      int maxID) throws
             java.io.IOException {
+        //
+        // If there's nothing in the field, then call it a day.
+        if(dicts.getMaxDocID() == 0) {
+            return;
+        }
         dicts.dump(path, fieldDictFile, postOut, termStatsDictFile,
                    vectorLengthsFile, maxID);
     }

@@ -197,10 +197,15 @@ public class InvFileMemoryPartition extends MemoryPartition {
             if(mf == null) {
                 continue;
             }
-            logger.fine(String.format("Dumping %s", mf.getInfo().getName()));
-            ph.addOffset(mf.getInfo().getID(), dictFile.getFilePointer());
+            logger.info(String.format("Dumping %s", mf.getInfo().getName()));
+            long fieldOffset = dictFile.getFilePointer();
             long termStatsOff = tsRAF.getFilePointer();
             mf.dump(indexDir, dictFile, postOut, tsRAF, vlRAF, maxDocumentID);
+            if(dictFile.getFilePointer() == fieldOffset) {
+                logger.info(String.format(" No dicts dumped"));
+                fieldOffset = -1;
+            }
+            ph.addOffset(mf.getInfo().getID(), fieldOffset);
             if(tsRAF.getFilePointer() == termStatsOff) {
                 //
                 // No terms tstats for this field, since the file pointer didn't

@@ -87,6 +87,10 @@ public class InvFileDiskPartition extends DiskPartition {
         fields = new DiskField[offsets.get(offsets.size() - 1).getId() + 1];
 
         for (PartitionHeader.FieldOffset offset : header.getFieldOffsets()) {
+            if(offset.getOffset() == -1) {
+                continue;
+            }
+                   
             dictFile.seek(offset.getOffset());
             FieldInfo info = manager.getMetaFile().getFieldInfo(offset.getId());
             fields[offset.getId()] =
