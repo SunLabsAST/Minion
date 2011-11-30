@@ -280,13 +280,12 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         }
 
         //
-        // Expand our array here, if necessary.
-        capacity(pos + n);
-
-        //
         // We can handle ArrayBuffers much faster.
         if(b instanceof ArrayBuffer) {
             ArrayBuffer o = (ArrayBuffer) b;
+            if(pos + n >= units.length) {
+                units = Arrays.copyOf(units, Math.max(units.length * 2, (pos + n) * 2));
+            }
             System.arraycopy(o.units, o.pos, units, pos, n);
             o.pos += n;
             pos += n;
