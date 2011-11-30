@@ -36,6 +36,7 @@ import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.Util;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -248,6 +249,11 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
                 entry.clear();
             } else {
                 i.remove();
+            }
+        }
+        if(sortedEntries != null) {
+            for(int i = 0; i < nUsed; i++) {
+                sortedEntries[i] = null;
             }
         }
         id = 0;

@@ -43,9 +43,9 @@ import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.FileLock;
+import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.util.NanoWatch;
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,7 +73,7 @@ import java.util.logging.Logger;
  */
 public class DiskPartition extends Partition implements Closeable {
 
-    private static Logger logger = Logger.getLogger(DiskPartition.class.getName());
+    private static final Logger logger = Logger.getLogger(DiskPartition.class.getName());
 
     /**
      * The dictionary file.
@@ -624,8 +624,10 @@ public class DiskPartition extends Partition implements Closeable {
         try {
             NanoWatch mw = new NanoWatch();
             mw.start();
-            logger.info(String.format("Merging %s into DP: %d", partCopy,
-                                      mergeState.partOut.getPartitionNumber()));
+            if(logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format("Merging %s into DP: %d", partCopy,
+                        mergeState.partOut.getPartitionNumber()));
+            }
 
             //
             // Get an array of partitions, and a similar sized array of
@@ -712,7 +714,6 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Merge the document dictionaries.  We'll need to remap the
-            logger.fine("Merge document dictionary");
             mergeState.partOut.getPartitionHeader().setDocDictOffset(fieldDictOut.position());
             DiskDictionary.merge(pm.getIndexDir(),
                     new StringNameHandler(),
@@ -738,7 +739,9 @@ public class DiskPartition extends Partition implements Closeable {
             
             DiskPartition ndp = pm.newDiskPartition(mergeState.partOut.getPartitionNumber(), pm);
             mw.stop();
-            logger.info(String.format("Merge took %.3fms", mw.getTimeMillis()));
+            if(logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format("Merge took %s", Util.millisToTimeString(mw.getTimeMillis())));
+            }
             return ndp;
         } catch(DuplicateKeyException dke) {
             //

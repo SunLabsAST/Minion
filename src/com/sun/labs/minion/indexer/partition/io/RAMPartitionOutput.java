@@ -1,6 +1,7 @@
 package com.sun.labs.minion.indexer.partition.io;
 
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
 import com.sun.labs.minion.indexer.dictionary.io.RAMDictionaryOutput;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
@@ -32,7 +33,7 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
     public DictionaryOutput getTermStatsDictionaryOutput() {
         if(termStatsDictOut == null) {
             try {
-                termStatsDictOut = new RAMDictionaryOutput(partitionManager.getIndexDir());
+                termStatsDictOut = new DiskDictionaryOutput(partitionManager.getIndexDir());
             } catch(IOException ex) {
                 logger.log(Level.SEVERE, String.format("Error getting term stats dictionary"), ex);
                 return null;

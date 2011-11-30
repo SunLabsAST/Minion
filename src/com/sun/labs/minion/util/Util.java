@@ -62,24 +62,24 @@ public class Util {
         return a;
     }
     
-    public static String millisToTimeString(float millis) {
+    public static String millisToTimeString(double millis) {
         if(millis < 1000) {
             return String.format("%.2fms", millis);
         }
         
-        float secs = millis / 1000;
+        double secs = millis / 1000;
         
         if(secs < 60) {
             return String.format("%.2fs", secs);
         }
         
-        float min = secs / 60;
+        double min = secs / 60;
         
         if(min < 60) {
             return String.format("%.2fmin", min);
         }
         
-        float h = min / 60;
+        double h = min / 60;
         
         return String.format("%.2fh", h);
     }

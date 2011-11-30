@@ -29,7 +29,8 @@ import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.util.StopWatch;
+import com.sun.labs.minion.util.Util;
+import com.sun.labs.util.NanoWatch;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -82,18 +83,18 @@ public abstract class MemoryPartition extends Partition {
             return null;
         }
         
-        StopWatch sw = new StopWatch();
-        sw.start();
+        NanoWatch mw = new NanoWatch();
+        mw.start();
         
         partOut.startPartition(this);
         partOut.setKeys(docDict.getKeys());
         
         long dur = System.currentTimeMillis() - startIndexTime;
         if(logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("Indexing %s %d, %d docs took %d ms",
+            logger.fine(String.format("Indexing %s %d, %d docs took %s",
                     getPartitionName(),
                     partOut.getPartitionNumber(),
-                    docDict.size(), dur));
+                    docDict.size(), Util.millisToTimeString(dur)));
         }
         
         PartitionHeader partHeader = partOut.getPartitionHeader();
@@ -141,13 +142,13 @@ public abstract class MemoryPartition extends Partition {
         partDictOut.byteEncode(phoffset, 8);
         partDictOut.position(pos);
         
-        sw.stop();
+        mw.stop();
         if(logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("Marshalled %s %d into %s, %d docs took %dms",
+            logger.fine(String.format("Marshalled %s %d into %s, %d docs took %s",
                     getPartitionName(),
                     partOut.getPartitionNumber(),
                     partOut.getName(),
-                    docDict.size(), sw.getTime()));
+                    docDict.size(), Util.millisToTimeString(mw.getTimeMillis())));
         }
         return partOut;
 
