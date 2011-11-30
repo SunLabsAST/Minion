@@ -127,15 +127,15 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         info = field.getInfo();
         dicts = new MemoryDictionary[Type.values().length];
 
-        if(field.isCased()) {
+        if(field.isTokenized() && field.isCased()) {
             dicts[Type.CASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
         }
 
-        if(field.isUncased()) {
+        if(field.isTokenized() && field.isUncased()) {
             dicts[Type.UNCASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
         }
 
-        if(field.isStemmed()) {
+        if(field.isTokenized() && field.isStemmed()) {
             dicts[Type.STEMMED_TOKENS.ordinal()] = new MemoryDictionary<String>(
                     factory);
         }
