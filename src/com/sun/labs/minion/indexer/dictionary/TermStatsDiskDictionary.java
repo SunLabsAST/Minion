@@ -41,8 +41,7 @@ import java.util.logging.Logger;
  */
 public class TermStatsDiskDictionary implements Closeable {
 
-    private static Logger logger = Logger.getLogger(TermStatsDiskDictionary.class.
-            getName());
+    private static Logger logger = Logger.getLogger(TermStatsDiskDictionary.class.getName());
 
     private int dictNumber;
 
@@ -63,13 +62,13 @@ public class TermStatsDiskDictionary implements Closeable {
     private int size;
 
     public TermStatsDiskDictionary(int dictNumber,
-                                   File termStatsFile,
-                                   PartitionManager manager) throws
+            File termStatsFile,
+            PartitionManager manager) throws
             java.io.IOException {
         this.dictNumber = dictNumber;
         this.termStatsFile = termStatsFile;
         this.manager = manager;
-        
+
         fieldDicts = new DiskDictionary[manager.getMetaFile().size() + 1];
 
         //
@@ -209,7 +208,15 @@ public class TermStatsDiskDictionary implements Closeable {
     }
 
     public void createRemoveFile() {
-        manager.makeRemovedTermStatsFile(dictNumber);
+        try {
+            manager.makeRemovedTermStatsFile(dictNumber).createNewFile();
+        } catch(IOException ex) {
+            logger.log(Level.SEVERE, String.format("Unable to make removed file for TSD %d", dictNumber), ex);
+        }
     }
-
+    
+    @Override
+    public String toString() {
+        return String.format("TSD: %d", dictNumber);
+    }
 }
