@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -32,6 +33,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.theories.PotentialAssignment;
 import static org.junit.Assert.*;
 
 /**
@@ -117,32 +119,45 @@ public class IDPostingsTest {
      * @param idp the postings we want to test
      * @param data the data that we're testing
      */
-    private void testPostingsEncoding(IDPostings idp, TestData data) {
-        WriteableBuffer[] buffs = idp.getBuffers();
-        assertTrue(String.format("Wrong number of buffers: %d", buffs.length),
-                   buffs.length == 2);
+    private void testPostingsEncoding(IDPostings idp, TestData data) throws IOException {
+        RAMPostingsOutput[] po = new RAMPostingsOutput[] {new RAMPostingsOutput(2048)};
+        int[] size = new int[1];
+        long[] offset = new long[1];
+        idp.write(po, offset, size);
+        
+        RAMPostingsInput postIn = po[0].asInput();
+        ReadableBuffer postBuff = postIn.read(offset[0], size[0]);
+        
 
-        long bsize = buffs[0].position() + buffs[1].position();
+        long bsize = postBuff.position();
         long nb = 4 * data.unique.size();
 
-        logger.info(String.format("%d bytes in buffers (%d + %d) for %d bytes of ids."
+        logger.info(String.format("%d bytes in buffer for %d bytes of ids."
                 + " Compression: %.2f%%", bsize,
-                                  buffs[0].position(), buffs[1].position(),
                                   nb, 100 - ((double) bsize / nb) * 100));
 
-        ReadableBuffer rb = buffs[0].getReadableBuffer();
-
-        int n = rb.byteDecode();
-        assertTrue(String.format("Wrong number of IDs: %d", n), n == data.unique.
-                size());
-        n = rb.byteDecode();
+        int n = postBuff.byteDecode();
+        assertTrue(String.format("Wrong number of IDs: %d", n), 
+                n == data.unique.size());
+        n = postBuff.byteDecode();
         assertTrue(String.format("Wrong last ID: %d", n),
-                   n == data.rawData[data.rawData.length - 1]);
-        rb = buffs[1].getReadableBuffer();
-
+                   n == data.ids[data.ids.length - 1]);
+        
+        //
+        // Decode the skip table.
+        try {
+            n = postBuff.byteDecode();
+            for(int i = 0; i < n; i++) {
+                postBuff.byteDecode();
+                postBuff.byteDecode();
+            }
+        } catch(RuntimeException ex) {
+            fail(String.format("Error decoding skip table nSkips might be %d: %s", n, ex));
+        }
+        
         int prev = 0;
         for(Integer x : data.unique) {
-            int gap = rb.byteDecode();
+            int gap = postBuff.byteDecode();
             int curr = prev + gap;
             assertTrue(String.format(
                     "Incorrect ID: %d should be %d, decoded: %d", curr,
@@ -234,20 +249,19 @@ public class IDPostingsTest {
         }
     }
 
-    private long writePostings(File of, IDPostings p) throws java.io.IOException {
+    private void writePostings(IDPostings p, File of, long[] offsets, int[] sizes) throws java.io.IOException {
         OutputStream os = new FileOutputStream(of);
         PostingsOutput postOut = new StreamPostingsOutput(os);
-        long ret = postOut.write(p);
+        p.write(new PostingsOutput[] {postOut}, offsets, sizes);
         postOut.flush();
         os.close();
-        return ret;
     }
 
-    private IDPostings readPostings(File f, long size) throws
+    private IDPostings readPostings(File f, long offset, int size) throws
             java.io.IOException {
         RandomAccessFile raf = new RandomAccessFile(f, "r");
         PostingsInput postIn = new StreamPostingsInput(raf, 8192);
-        return (IDPostings) postIn.read(Postings.Type.ID, 0L, (int) size);
+        return (IDPostings) Postings.Type.getPostings(Postings.Type.ID, new PostingsInput[] {postIn}, new long[] {offset}, new int[] {size});
     }
 
     /**
@@ -259,9 +273,11 @@ public class IDPostingsTest {
         IDPostings p = td.encode();
         File of = File.createTempFile("single", ".post");
         of.deleteOnExit();
-        long size = writePostings(of, p);
-        IDPostings idp2 = readPostings(of, size);
-        td.iteration(p);
+        long[] offsets = new long[1];
+        int[] sizes = new int[1];
+        writePostings(p, of, offsets, sizes);
+        IDPostings idp2 = readPostings(of, offsets[0], sizes[0]);
+        td.iteration(idp2);
     }
 
     /**
@@ -304,24 +320,30 @@ public class IDPostingsTest {
         IDPostings p2 = d2.encode();
         int lastID = p1.getLastID();
 
-        File of = File.createTempFile("single", ".post");
-        of.deleteOnExit();
-        RAMPostingsOutput po = new RAMPostingsOutput();
-        long s1 = po.write(p1);
-        long s2 = po.write(p2);
-        RAMPostingsInput pi = po.asInput();
+        RAMPostingsOutput postOut = new RAMPostingsOutput();
+        PostingsOutput[] pos = new PostingsOutput[] {postOut};
+        long o1[] = new long[1];
+        int s1[] = new int[1];
+        long o2[] = new long[1];
+        int s2[] = new int[1];
+        p1.write(pos, o1, s1);
+        p2.write(pos, o2, s2);
+
+        PostingsInput[] pis = new PostingsInput[] {postOut.asInput()};
         TestData atd = new TestData(d1, d2, lastID + 1);
 
         try {
             IDPostings append = new IDPostings();
-            p1 = (IDPostings) pi.read(Postings.Type.ID, 0, (int) s1);
+            p1 = (IDPostings) Postings.Type.getPostings(Postings.Type.ID, pis, o1, s1);
             d1.iteration(p1);
             append.append(p1, 1);
-            p2 = (IDPostings) pi.read(Postings.Type.ID, s1, (int) s2);
+            p1 = (IDPostings) Postings.Type.getPostings(Postings.Type.ID, pis, o2, s2);
             d2.iteration(p2);
             append.append(p2, lastID + 1);
-            long s3 = po.write(append);
-            append = (IDPostings) pi.read(Postings.Type.ID, s1 + s2, (int) s3);
+            long o3[] = new long[1];
+            int s3[] = new int[1];
+            append.write(pos, o3, s3);
+            append = (IDPostings) Postings.Type.getPostings(Postings.Type.ID, pis, o3, s3);
             atd.iteration(append);
         } catch(AssertionError er) {
             File f = File.createTempFile("randomappend", ".data");
@@ -337,12 +359,12 @@ public class IDPostingsTest {
 
     private static class TestData {
 
-        int[] rawData;
+        int[] ids;
 
         Set<Integer> unique;
 
         public TestData(int n) {
-            rawData = new int[n];
+            ids = new int[n];
             unique = new LinkedHashSet<Integer>();
 
             //
@@ -350,22 +372,22 @@ public class IDPostingsTest {
             // keep track of the unique numbers with some sets.
             Random r = new Random();
             int prev = 0;
-            for(int i = 0; i < rawData.length; i++) {
+            for(int i = 0; i < ids.length; i++) {
 
                 //
                 // We'll use random gaps to make sure we get appropriately increasing
                 // postings.
-                rawData[i] = prev + r.nextInt(256);
-                if(i == 0 && rawData[i] == 0) {
-                    rawData[i] = 1;
+                ids[i] = prev + r.nextInt(256);
+                if(i == 0 && ids[i] == 0) {
+                    ids[i] = 1;
                 }
-                prev = rawData[i];
+                prev = ids[i];
                 unique.add(prev);
             }
         }
 
         public TestData(int[] d) {
-            rawData = d;
+            ids = d;
             unique = new LinkedHashSet<Integer>();
             for(int x : d) {
                 unique.add(x);
@@ -377,28 +399,28 @@ public class IDPostingsTest {
             String line = r.readLine();
             unique = new LinkedHashSet<Integer>();
             if(line == null) {
-                rawData = new int[0];
+                ids = new int[0];
                 return;
             }
             String[] nums = line.split("\\s");
-            rawData = new int[nums.length];
-            for(int i = 0; i < rawData.length; i++) {
-                rawData[i] = Integer.parseInt(nums[i]);
-                unique.add(rawData[i]);
+            ids = new int[nums.length];
+            for(int i = 0; i < ids.length; i++) {
+                ids[i] = Integer.parseInt(nums[i]);
+                unique.add(ids[i]);
             }
         }
 
         public TestData(TestData d1, TestData d2, int start) {
-            rawData = new int[d1.rawData.length + d2.rawData.length];
+            ids = new int[d1.ids.length + d2.ids.length];
             unique = new LinkedHashSet<Integer>();
             int p = 0;
-            for(int x : d1.rawData) {
-                rawData[p++] = x;
+            for(int x : d1.ids) {
+                ids[p++] = x;
                 unique.add(x);
             }
-            for(int x : d2.rawData) {
+            for(int x : d2.ids) {
                 int m = x + start - 1;
-                rawData[p++] = m;
+                ids[p++] = m;
                 unique.add(m);
             }
             logger.info(String.format("p: %d unique: %d", p, unique.size()));
@@ -412,10 +434,10 @@ public class IDPostingsTest {
         public IDPostings encode(IDPostings idp) {
             OccurrenceImpl o = new OccurrenceImpl();
             logger.info(String.format("Encoding %d ids (%d unique)",
-                                      rawData.length,
+                                      ids.length,
                                       unique.size()));
-            for(int i = 0; i < rawData.length; i++) {
-                o.setID(rawData[i]);
+            for(int i = 0; i < ids.length; i++) {
+                o.setID(ids[i]);
                 idp.add(o);
             }
             return idp;
@@ -441,8 +463,8 @@ public class IDPostingsTest {
         }
 
         public void dump(PrintWriter out) throws java.io.IOException {
-            for(int i = 0; i < rawData.length; i++) {
-                out.format("%d ", rawData[i]);
+            for(int i = 0; i < ids.length; i++) {
+                out.format("%d ", ids[i]);
             }
             out.println("");
         }
