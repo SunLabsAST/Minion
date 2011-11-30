@@ -355,7 +355,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                      Comparable upperBound,
                                                      boolean includeUpper) {
 
-        logger.info(String.format("%s", info.getName()));
         if(!field.saved) {
             return null;
         }
@@ -724,14 +723,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     break;
             }
             
-//            logger.info(String.format("merge %s %s", type, foundDict));
-
             if(foundDict) {
                 mergeHeader.dictOffsets[ord] = mergeState.dictRAF.getFilePointer();
-                logger.info(String.format("%s: %d", type, mergeState.dictRAF.getFilePointer()));
-//                if(type == type.UNCASED_TOKENS) {
-//                  Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINE);
-//                }
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                                                   encoder, 
                                                   mDicts,
@@ -741,9 +734,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                   mergeState.dictRAF, 
                                                   mergeState.postOut, 
                                                   true);
-//                if (type == type.UNCASED_TOKENS) {
-//                    Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.INFO);
-//                }
             } else {
                 mergeHeader.dictOffsets[ord] = -1;
             }
@@ -764,7 +754,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     entryIDMaps[Type.UNCASED_TOKENS.ordinal()] :
                     entryIDMaps[Type.CASED_TOKENS.ordinal()];
             mergeHeader.tokenBGOffset = mergeState.dictRAF.getFilePointer();
-            logger.info(String.format("token bg: %d", mergeState.dictRAF.getFilePointer()));
             bgMerger.merge(mergeState.manager.getIndexDir(), 
                            bgDicts, mergeState.docIDStart, tokenIDMap, 
                            mergeState.dictRAF,
@@ -786,8 +775,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 ordinal()];
         if(bgMerger != null) {
             mergeHeader.savedBGOffset = mergeState.dictRAF.getFilePointer();
-            logger.info(String.format("saved bg: %d", mergeState.dictRAF.
-                    getFilePointer()));
             bgMerger.merge(mergeState.manager.getIndexDir(), 
                            bgDicts, mergeState.docIDStart, 
                            savedValueIDMap, mergeState.dictRAF,
@@ -865,15 +852,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
             //
             // Transfer the temp buffers.
             mergeHeader.dtvOffset = mergeState.dictRAF.getFilePointer();
-            logger.info(String.format("dtvOffset: %d", mergeState.dictRAF.
-                    getFilePointer()));
             mdtvBuff.write(dtvRAF.getChannel());
             dtvRAF.close();
             dtvFile.delete();
 
             mergeHeader.dtvPosOffset = mergeState.dictRAF.getFilePointer();
-            logger.info(String.format("dtvPostOffset: %d", mergeState.dictRAF.
-                    getFilePointer()));
             mdtvOffsetBuff.write(dtvOffsetRAF.getChannel());
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
@@ -888,18 +871,20 @@ public class DiskDictionaryBundle<N extends Comparable> {
             
             long mdsp = mergeState.dictRAF.getFilePointer();
             if(mdp >= 0) {
+                
+                //
+                // We need a disk dictionary for calculating the lengths, so we'll
+                // open the one that we just wrote.
                 RandomAccessFile[] mPostRAF = new RandomAccessFile[mergeState.postFiles.length];
                 for(int i = 0; i < mergeState.postFiles.length; i++) {
                     mPostRAF[i] = new RandomAccessFile(mergeState.postFiles[i], "rw");
                 }
                 mergeHeader.vectorLengthOffset = mergeState.vectorLengthRAF.getFilePointer();
-                logger.info(String.format("Opening main dict at %d", mdp));
                 mergeState.dictRAF.seek(mdp);
-//                Logger dl = Logger.getLogger(DiskDictionary.class.getName());
-//                dl.setLevel(Level.FINE);
-                DiskDictionary newMainDict = new DiskDictionary(exemplar.entryFactory,
-                                                                new StringNameHandler(),
-                                                                mergeState.dictRAF, 
+                DiskDictionary newMainDict =
+                        new DiskDictionary(exemplar.entryFactory,
+                        new StringNameHandler(),
+                        mergeState.dictRAF,
                         mPostRAF);
                 DocumentVectorLengths.calculate(mergeState.info, 
                                                 mergeState.maxDocID,

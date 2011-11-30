@@ -31,12 +31,9 @@ import java.nio.channels.FileChannel;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 
 import com.sun.labs.minion.util.Util;
-import com.sun.labs.minion.util.buffer.Buffer;
-import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -132,23 +129,20 @@ public class DictionaryWriter<N extends Comparable> {
      */
     protected int[] idToPosn;
 
-    static final Logger logger = Logger.getLogger(DictionaryWriter.class.getName());
+    private static final Logger logger = Logger.getLogger(DictionaryWriter.class.getName());
 
-    protected static String logTag = "DW";
-
-    protected static int OUT_BUFFER_SIZE = 16 * 1024;
+    protected static final int OUT_BUFFER_SIZE = 16 * 1024;
 
     /**
      * Creates a dictionary writer that will write data to disk.
      *
      * @param path The path where the temporary files should be written.
      * @param encoder An encoder for the names of the entries.
-     * @param partStats the set of stats for this partition
      * @param nChans The number of postings channels used by the
      * dictionary.
      * @param renumber A flag indicating how entries in the dictionary were
      * renumbered during sorting.  We only care about {@link
-     * MemoryDictionary.Renumber#NONE}, value which inidicates to us that we
+     * MemoryDictionary.Renumber#NONE}, value which indicates to us that we
      * need to keep a map from entry ID to position in the dictionary.
      * @throws java.io.IOException if there was an error writing to disk
      */
@@ -306,13 +300,6 @@ public class DictionaryWriter<N extends Comparable> {
         dh.write(dictFile);
         dictFile.seek(end);
 
-        if (logger.isLoggable(Level.FINE)) {
-            FileReadableBuffer frb = new FileReadableBuffer(dictFile, dh.nameOffsetsPos, dh.nameOffsetsSize);
-            logger.fine(String.format("after writing buffer: dh: %s\n%s", 
-                    dh,
-                    frb.toString(Buffer.Portion.ALL, Buffer.DecodeMode.INTEGER)));
-            dictFile.seek(end);
-        }
         //
         // Close and delete the temporary files.
         namesRAF.close();

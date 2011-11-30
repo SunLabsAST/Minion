@@ -689,9 +689,6 @@ public class DiskPartition extends Partition implements Closeable {
             // Get a channel for the main dictionary.
             mergeState.dictFile = files[0];
             mergeState.postFiles = Arrays.copyOfRange(files, 1, files.length);
-            
-            logger.info(String.format("dictFile: %s post files: %s", mergeState.dictFile, 
-                                                                     Arrays.toString(mergeState.postFiles)));
             mergeState.dictRAF = new RandomAccessFile(files[0], "rw");
             mergeState.postStreams = new OutputStream[mergeState.postFiles.length];
             mergeState.postOut = new PostingsOutput[mergeState.postFiles.length];
