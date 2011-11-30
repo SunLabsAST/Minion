@@ -611,6 +611,14 @@ public class FieldInfo implements Cloneable, Configurable {
         return EnumSet.of(Attribute.SAVED);
     }
 
+    /**
+     * Gets a set of attributes for a string field that stores case insensitive 
+     * versions of the saved values as well.
+     */
+    public static EnumSet<Attribute> getUncasedStringAttributes() {
+        return EnumSet.of(Attribute.SAVED, Attribute.UNCASED);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if(obj == null) {
