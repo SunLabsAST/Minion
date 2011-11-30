@@ -1670,7 +1670,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                              key));
                 return;
             }
-            part.addField(getFieldInfo(name), value);
+            part.addField(fi, value);
         }
 
         public void addField(String name, IndexableString value) {
@@ -1680,7 +1680,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                              key));
                 return;
             }
-            part.addField(getFieldInfo(name), value);
+            part.addField(fi, value);
         }
 
         public void addField(String name, Date value) {
@@ -1690,7 +1690,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                              key));
                 return;
             }
-            part.addField(getFieldInfo(name), value);
+            part.addField(fi, value);
         }
 
         public void addField(String name, Long value) {
@@ -1700,7 +1700,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                              key));
                 return;
             }
-            part.addField(getFieldInfo(name), value);
+            part.addField(fi, value);
         }
 
         public void addField(String name, Integer value) {
@@ -1710,7 +1710,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                              key));
                 return;
             }
-            part.addField(getFieldInfo(name), value);
+            part.addField(fi, value);
         }
 
         public void addField(String name, Double value) {
@@ -1720,7 +1720,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                              key));
                 return;
             }
-            part.addField(getFieldInfo(name), value);
+            part.addField(fi, value);
         }
 
         public void addField(String name, Float value) {
@@ -1730,7 +1730,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                              key));
                 return;
             }
-            part.addField(getFieldInfo(name), value);
+            part.addField(fi, value);
         }
 
         public void addField(String name, Object[] values) {
@@ -1741,7 +1741,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 return;
             }
             for(Object value : values) {
-                part.addField(getFieldInfo(name), value);
+                part.addField(fi, value);
             }
         }
 
@@ -1753,7 +1753,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                              key));
             }
             for(Object value : values) {
-                part.addField(getFieldInfo(name), value);
+                part.addField(fi, value);
             }
         }
 
