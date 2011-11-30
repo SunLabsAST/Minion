@@ -33,6 +33,7 @@ import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -783,8 +784,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                            mergeState.postOut[0]);
         }
 
-        long mdsp = mergeState.dictRAF.getFilePointer();
-
         //
         // Merge the docs to values data.
         if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED)) {
@@ -831,7 +830,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             dtvDup.byteDecode();
                         }
                     } else {
-
+                        
                         //
                         // Where the data can be found in the merged partition.
                         mdtvOffsetBuff.byteEncode(mdtvBuff.position(), 4);
@@ -850,14 +849,16 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
 
             //
-            // Transfer the temp buffers.
+            // Transfer the temp buffers into the dictionary file.
+            FileChannel dictChan = mergeState.dictRAF.getChannel();
+            
             mergeHeader.dtvOffset = mergeState.dictRAF.getFilePointer();
-            mdtvBuff.write(dtvRAF.getChannel());
+            mdtvBuff.write(dictChan);
             dtvRAF.close();
             dtvFile.delete();
 
             mergeHeader.dtvPosOffset = mergeState.dictRAF.getFilePointer();
-            mdtvOffsetBuff.write(dtvOffsetRAF.getChannel());
+            mdtvOffsetBuff.write(dictChan);
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
         }
@@ -873,13 +874,14 @@ public class DiskDictionaryBundle<N extends Comparable> {
             if(mdp < 0) {
                 mdp = mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
             }
-            mdsp = mergeState.dictRAF.getFilePointer();
-
             if(mdp >= 0) {
                 
                 //
                 // We need a disk dictionary for calculating the lengths, so we'll
-                // open the one that we just wrote.
+                // open the one that we just wrote.  We'll start by remembering where 
+                // we were in the file!
+                long mdsp = mergeState.dictRAF.getFilePointer();
+
                 RandomAccessFile[] mPostRAF = new RandomAccessFile[mergeState.postFiles.length];
                 for(int i = 0; i < mergeState.postFiles.length; i++) {
                     mPostRAF[i] = new RandomAccessFile(mergeState.postFiles[i], "rw");
@@ -902,6 +904,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 for(RandomAccessFile mprf : mPostRAF) {
                     mprf.close();
                 }
+                mergeState.dictRAF.seek(mdsp);
                 
             } else {
                 mergeHeader.vectorLengthOffset = -1;
@@ -910,9 +913,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
         
         //
         // Now zip back and write the header.
+        long endPos = mergeState.dictRAF.getFilePointer();
         mergeState.dictRAF.seek(headerPos);
         mergeHeader.write(mergeState.dictRAF);
-        mergeState.dictRAF.seek(mdsp);
+        mergeState.dictRAF.seek(endPos);
     }
 
     /**

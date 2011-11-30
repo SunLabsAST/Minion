@@ -538,9 +538,9 @@ public class QueryTest extends SEMain {
                 long st = Long.parseLong(q.substring(q.indexOf(' ') + 1).trim());
                 Thread.sleep(st);
             } catch(NumberFormatException nfe) {
-                logger.warning("Invalid sleep time: " + q.substring(q.indexOf(
+                logger.warning(String.format("Invalid sleep time: %s", q.substring(q.indexOf(
                         ' ') + 1).
-                        trim());
+                        trim()));
             } catch(InterruptedException ie) {
             }
 
