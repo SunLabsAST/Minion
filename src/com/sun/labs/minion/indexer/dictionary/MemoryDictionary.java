@@ -358,32 +358,15 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     }
 
     /**
-     * Dumps the dictionary and the associated postings to files.  Once the
-     * dumping is complete, the pointer in the file must be pointing to a
+     * Marshalls the dictionary and the associated postings to a partition output
+     * that will eventually be flushed out to disk.  Once the
+     * marshalling is complete, the pointer in the file must be pointing to a
      * position *after* the data just written.  This is so that we may dump
      * multiple dictionaries and postings types to the same channel.
      *
-     * @param path The path to the directory where the dictionary should be
-     * dumped.
-     * @param encoder An encoder for the names of the entries.
-     * @param partStats a set of partition statistics that we will
-     * contribute to while dumping the dictionary.  May be <code>null</code>.
-     * @param dictFile The file where the dictionary will be dumped.
-     * @param postOut The place where the postings will be dumped.
-     * @param renumber How entries should be renumbered at dump time.
-     * @param idMapType the type of ID mapping to use.
-     * @param postIDMap A map from old IDs used in the postings to new IDs.
-     * This map will be given to the postings from the dictionary before
-     * they are dumped to disk, allowing the postings to be remapped before
-     * the dump.  This is useful when the postings in one dictionary
-     * contain IDs that have been remapped during a dump operation, such as
-     * those in a document dictionary.  If this value is <code>null</code>,
-     * no remapping will take place.
-     * @return An array of entries in the order that they were dumped.
-     * @throws java.io.IOException When there is an error writing either of
-     * the channels.
+     *  @param partOut the output where the dictionary should be marshalled.
      */
-    public IndexEntry[] dump(PartitionOutput partOut) throws java.io.IOException {
+    public IndexEntry[] marshall(PartitionOutput partOut) throws java.io.IOException {
         logger.fine(String.format("Dumping %d entries", map.size()));
 
         DictionaryOutput dout = partOut.getPartitionDictionaryOutput();

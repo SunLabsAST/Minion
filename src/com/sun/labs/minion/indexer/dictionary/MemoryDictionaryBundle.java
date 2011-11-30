@@ -294,7 +294,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
     }
 
     /**
-     * Dumps this dictionary bundle's dictionaries.
+     * Marshalls this dictionary bundle's dictionaries for eventual flushing
+     * to disk.
      *
      * @param path the path of the index
      * @param fieldDictFile the file where the data will be dumped
@@ -305,11 +306,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      * @param maxID the maximum ID for this
      * @throws java.io.IOException
      */
-    public MemoryField.DumpResult dump(PartitionOutput partOut) throws
+    public MemoryField.MarshallResult marshall(PartitionOutput partOut) throws
             java.io.IOException {
         boolean debug = field.getInfo().getName().equals("timestamp");
 
-        MemoryField.DumpResult ret = MemoryField.DumpResult.DICTS_DUMPED;
+        MemoryField.MarshallResult ret = MemoryField.MarshallResult.DICTS_DUMPED;
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 
         long headerPos = partDictOut.position();
@@ -459,7 +460,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             }
 
             header.dictOffsets[ord] = partDictOut.position();
-            dicts[ord].dump(partOut);
+            dicts[ord].marshall(partOut);
        }
         
         if(field.isSaved()) {
@@ -515,7 +516,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             DocumentVectorLengths.calculate(field, partOut,
                     field.getPartition().getPartitionManager().
                     getTermStatsDict());
-            ret = MemoryField.DumpResult.EVERYTHING_DUMPED;
+            ret = MemoryField.MarshallResult.EVERYTHING_DUMPED;
         } else {
             header.vectorLengthOffset = -1;
         }

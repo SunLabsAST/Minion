@@ -83,7 +83,7 @@ import java.util.SortedSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
-import com.sun.labs.minion.indexer.partition.Dumper;
+import com.sun.labs.minion.indexer.partition.Marshaller;
 import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.PipelineFactory;
@@ -185,10 +185,10 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
     private double minMemoryPercent;
 
-    @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Dumper.class)
+    @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Marshaller.class)
     public static final String PROP_DUMPER = "dumper";
 
-    private Dumper dumper;
+    private Marshaller dumper;
     
     @ConfigInteger(defaultValue=-1)
     public static final String PROP_DOCS_PER_PARTITION = "docs_per_partition";
@@ -1513,7 +1513,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         buildClassifiers = ps.getBoolean(PROP_BUILD_CLASSIFIERS);
         minMemoryPercent = ps.getDouble(PROP_MIN_MEMORY_PERCENT);
-        dumper = (Dumper) ps.getComponent(PROP_DUMPER);
+        dumper = (Marshaller) ps.getComponent(PROP_DUMPER);
         dumper.setMemoryPartitionQueue(mpPool);
     }
 

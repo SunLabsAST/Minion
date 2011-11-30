@@ -44,22 +44,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A class that will be used to dump partitions in an orderly fashion.  This
- * class dumps partitions asynchronously from the threads that did the indexing,
- * so a thread that dumps a partition may continue indexing new data before the
- * old data has been dumped to disk.
- *
- * <p>
- *
- * We use a bounded queue for dump requests in order to throttle the indexers
- * when they attempt to dump if the dumper cannot keep up.  Note that the longer
- * the queue the more memory will be required to store the indexed but undumped
- * data.
- *
+ * A class that will be used to marshall the data from  partitions in an orderly
+ * fashion.  This class will take partitions and marshall data into the final form
+ * that will be written to disk.
+ * 
  */
-public class Dumper implements Configurable {
+public class Marshaller implements Configurable {
 
-    private static final Logger logger = Logger.getLogger(Dumper.class.getName());
+    private static final Logger logger = Logger.getLogger(Marshaller.class.getName());
 
     /**
      * Our configuration name.
@@ -80,7 +72,10 @@ public class Dumper implements Configurable {
      * A pool of partition output objects.
      */
     protected BlockingQueue<PartitionOutput> poPool;
-
+    
+    /**
+     * The queue of partition whose data needs to be marshalled for output.
+     */
     private BlockingQueue<InvFileMemoryPartition> mpPool;
 
     /**
@@ -109,6 +104,9 @@ public class Dumper implements Configurable {
      */
     private Thread[] dumpThreads;
 
+    /**
+     * The partition outputs that we'll use for marshalling data.
+     */
     private RAMPartitionOutput[] partOuts;
 
     /**
@@ -139,7 +137,7 @@ public class Dumper implements Configurable {
     /**
      * Default constructor used for configuration.
      */
-    public Dumper() {
+    public Marshaller() {
     }
 
     public void setMemoryPartitionQueue(BlockingQueue<InvFileMemoryPartition> mpq) {
@@ -216,7 +214,7 @@ public class Dumper implements Configurable {
         pollInterval = ps.getInt(PROP_POLL_INTERVAL);
         dumpThreads = new Thread[ndt];
         for(int i = 0; i < dumpThreads.length; i++) {
-            dumpThreads[i] = new Thread(new DumpThread());
+            dumpThreads[i] = new Thread(new MarshallThread());
             dumpThreads[i].setName("Dump-" + i);
             dumpThreads[i].start();
         }
@@ -244,7 +242,11 @@ public class Dumper implements Configurable {
         }
     }
 
-    class DumpThread implements Runnable {
+    /**
+     * A thread that will run, selecting partitions from the queue and 
+     * marshalling their data.
+     */
+    class MarshallThread implements Runnable {
 
         public void run() {
             while(!dumperDone) {
@@ -306,7 +308,7 @@ public class Dumper implements Configurable {
 
         private void dump(MPHolder mph, PartitionOutput partOut) throws IOException, InterruptedException {
             if(partOut != null) {
-                PartitionOutput ret = mph.part.dump(partOut);
+                PartitionOutput ret = mph.part.marshall(partOut);
                 if(ret != null) {
                     toFlush.put(partOut);
                 }
@@ -316,6 +318,10 @@ public class Dumper implements Configurable {
         }
     }
 
+    /**
+     * A thread that will flush the marshalled data for partitions to the 
+     * disk.
+     */
     class FlushThread implements Runnable {
 
         public void run() {

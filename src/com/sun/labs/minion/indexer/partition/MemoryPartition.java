@@ -81,13 +81,14 @@ public abstract class MemoryPartition extends Partition {
     }
 
     /**
-     * Dumps the current partition.
+     * Marshalls the data for the current partition so that it can be written to
+     * disk for later use.
      *
      * @return The partition number for the dumped partition.
      * @throws java.io.IOException if there is any error writing the partition
      * data to disk
      */
-    public PartitionOutput dump(PartitionOutput partOut) throws java.io.IOException {
+    public PartitionOutput marshall(PartitionOutput partOut) throws java.io.IOException {
         
         //
         // Do nothing if we have no data.
@@ -102,7 +103,7 @@ public abstract class MemoryPartition extends Partition {
         partOut.setKeys(docDict.getKeys());
         
         long dur = System.currentTimeMillis() - startIndexTime;
-        logger.info(String.format("Dumping %s %d, %d docs after %d ms", 
+        logger.info(String.format("Indexing %s %d, %d docs took %d ms", 
                 getPartitionName(),
                 partOut.getPartitionNumber(),
                 docDict.size(), dur));
@@ -122,7 +123,7 @@ public abstract class MemoryPartition extends Partition {
         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
         partOut.setPostingsIDMap(null);
         partOut.setDictionaryEncoder(new StringNameHandler());
-        docDict.dump(partOut);
+        docDict.marshall(partOut);
 
         //
         // Set the number of documents.
@@ -139,7 +140,7 @@ public abstract class MemoryPartition extends Partition {
 
         //
         // Dump any custom data -- to be filled in by subclasses.
-        dumpCustom(partOut);
+        customMarshall(partOut);
         
         //
         // Write the partition header, then return to the top of the file to
@@ -152,7 +153,7 @@ public abstract class MemoryPartition extends Partition {
         partDictOut.position(pos);
         
         sw.stop();
-        logger.info(String.format("Dumped %s %d, %d docs took %dms",
+        logger.info(String.format("Marshalled %s %d, %d docs took %dms",
                 getPartitionName(),
                 partOut.getPartitionNumber(),
                 docDict.size(), sw.getTime()));
@@ -169,7 +170,7 @@ public abstract class MemoryPartition extends Partition {
     }
 
     /**
-     * Performs any custom data dump required in a subclass.  This method
+     * Performs any custom data marshalling required by a subclass.  This method
      * exists to be overridden in a subclass and provides no functionality
      * at this level.
      *
@@ -177,7 +178,7 @@ public abstract class MemoryPartition extends Partition {
      * @throws java.io.IOException if there is any error writing the data
      * to disk
      */
-    protected abstract void dumpCustom(PartitionOutput dumpState) throws java.io.IOException;
+    protected abstract void customMarshall(PartitionOutput dumpState) throws java.io.IOException;
 
     @Override
     public String toString() {

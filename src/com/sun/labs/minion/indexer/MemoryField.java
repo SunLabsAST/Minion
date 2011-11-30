@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  */
 public class MemoryField extends Field {
     
-    public enum DumpResult {
+    public enum MarshallResult {
         NOTHING_DUMPED,
         DICTS_DUMPED,
         EVERYTHING_DUMPED,
@@ -116,14 +116,14 @@ public class MemoryField extends Field {
      * @throws java.io.IOException if there is an error during the
      * writing.
      */
-    public DumpResult dump(PartitionOutput partOut) throws
+    public MarshallResult dump(PartitionOutput partOut) throws
             java.io.IOException {
         //
         // If there's nothing in the field, then call it a day.
         if(dicts.getMaxDocID() == 0) {
-            return DumpResult.NOTHING_DUMPED;
+            return MarshallResult.NOTHING_DUMPED;
         }
-        return dicts.dump(partOut);
+        return dicts.marshall(partOut);
     }
     
     public void clear() {

@@ -169,7 +169,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
     }
 
     @Override
-    protected void dumpCustom(PartitionOutput partOut) throws IOException {
+    protected void customMarshall(PartitionOutput partOut) throws IOException {
 
         int tsn = 0;
         
