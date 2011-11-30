@@ -786,9 +786,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // The entry ID maps token dictionaries, which we'll use to merge
         // the bigram dictionaries.
         mergeState.entryIDMaps = 
-                entryIDMaps[Type.UNCASED_TOKENS.ordinal()] != null ? 
-                entryIDMaps[Type.UNCASED_TOKENS.ordinal()] : 
-                entryIDMaps[Type.CASED_TOKENS.ordinal()];
+                entryIDMaps[Type.CASED_TOKENS.ordinal()] != null ? 
+                entryIDMaps[Type.CASED_TOKENS.ordinal()] : 
+                entryIDMaps[Type.UNCASED_TOKENS.ordinal()];
+        
         if(foundOne) {
             mergeHeader.tokenBGOffset = mergeState.dictRAF.getFilePointer();
             DiskBiGramDictionary.merge(mergeState, bgDicts);
