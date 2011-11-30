@@ -136,6 +136,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 dicts[ord] = new DiskDictionary<String>(fact,
                                                         decoder,
                                                         dictFile, postIn);
+                dicts[ord].setPartition(field.partition);
             }
         }
 
@@ -149,6 +150,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                     null,
                                                     dicts[Type.UNCASED_TOKENS.
                     ordinal()]);
+            tokenBigrams.setPartition(field.partition);
         }
 
         if(header.savedBGOffset > 0) {
@@ -160,6 +162,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                     null,
                                                     dicts[Type.UNCASED_SAVED.
                     ordinal()]);
+            savedBigrams.setPartition(field.partition);
         }
 
         if(header.dtvOffset >= 0) {
