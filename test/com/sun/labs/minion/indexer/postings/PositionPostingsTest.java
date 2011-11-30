@@ -383,6 +383,18 @@ public class PositionPostingsTest {
         }
     }
     
+    @Test
+    public void testStepUpAppend() throws java.io.IOException {
+        for(int i = 1; i < 1024; i += 2) {
+            TestData td1 = new TestData(i);
+            for(int j = 1; j < 128; j++) {
+                logger.fine(String.format("Step up %d/%d", i, j));
+                TestData td2 = new TestData(j);
+                checkAppend(true, td1, td2);
+            }
+        }
+    }
+    
 //    @Test
     public void testMultiAppend() throws java.io.IOException {
         for(int i = 0; i < 256; i++) {
@@ -391,6 +403,7 @@ public class PositionPostingsTest {
                 for(int k = 0; k < tds.length; k++) {
                     tds[k] = new TestData(8196);
                 }
+                checkAppend(true, tds);
             }
         }
     }
