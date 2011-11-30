@@ -29,6 +29,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -59,7 +60,7 @@ public class QuickOr {
     /**
      * The fields that contributed documents to this or.
      */
-    private Set<FieldInfo> fields;
+    protected Set<FieldInfo> fields;
 
     /**
      * A flag indicating that the weights array is as long as the number of
@@ -140,6 +141,16 @@ public class QuickOr {
     public void addField(FieldInfo field) {
         fields.add(field);
     }
+    
+    public void addFields(FieldInfo[] fields) {
+        for(FieldInfo field : fields) {
+            this.fields.add(field);
+        }
+    }
+    
+    public void addFields(Collection<FieldInfo> fields) {
+        this.fields.addAll(fields);
+    }
 
     /**
      * Adds an explicit set of documents and weights to this quick or.
@@ -203,7 +214,9 @@ public class QuickOr {
                 p = s;
             }
         }
-        return new ArrayGroup(part, docs, p);
+        ArrayGroup ret = new ArrayGroup(part, docs, p);
+        ret.setFields(fields);
+        return ret;
     }
 } // QuickOr
 

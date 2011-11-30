@@ -113,6 +113,7 @@ public class TermStatsDiskDictionary implements Closeable {
      */
     public TermStatsImpl getTermStats(String term) {
         TermStatsImpl total = new TermStatsImpl(term);
+        total.clear();
         for(DiskDictionary dd : fieldDicts) {
             if(dd != null) {
                 TermStatsQueryEntry qe = (TermStatsQueryEntry) dd.get(term);

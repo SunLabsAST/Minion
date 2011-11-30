@@ -99,6 +99,7 @@ public class ScoredQuickOr extends QuickOr {
                 weights[p++] = pi.getWeight() * qw;
             }
         }
+        
         qs.piW.stop();
         qs.unionW.stop();
     }
@@ -204,7 +205,9 @@ public class ScoredQuickOr extends QuickOr {
                 p = s;
             }
         }
-        return new ScoredGroup(part, docs, weights, p, sqw);
+        ScoredGroup ret = new ScoredGroup(part, docs, weights, p, sqw);
+        ret.setFields(fields);
+        return ret;
     }
     @Override
     public String toString() {

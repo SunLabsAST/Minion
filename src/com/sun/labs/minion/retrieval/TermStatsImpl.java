@@ -68,6 +68,12 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
         this.name = name;
         decode(b);
     }
+    
+    public void clear() {
+        maxfdt = 0;
+        ft = 0;
+        Ft = 0;
+    }
 
     public TermStatsImpl(TermStatsImpl tsi) {
         name = tsi.name;

@@ -252,10 +252,11 @@ public class DictTerm extends QueryTerm implements Comparator {
 
         if(ag == null) {
 
-            QuickOr or =
-                    strictEval ? new QuickOr(part, estSize) : new ScoredQuickOr(
-                    part, estSize);
+            QuickOr or = strictEval
+                    ? new QuickOr(part, estSize)
+                    : new ScoredQuickOr(part, estSize);
             or.setQueryStats(qs);
+            or.addFields(searchFields);
             for(QueryEntry qe : dictEntries) {
                 wc.setField(qe.getField());
                 wc.setTerm((String) qe.getName());

@@ -298,7 +298,7 @@ public class DocumentVectorLengths {
      */
     public void normalize(int[] docs, float[] scores, int p, float qw) {
         ReadableBuffer lvl = vecLens.duplicate();
-
+        
         for(int i = 0; i < p; i++) {
             lvl.position((docs[i] - 1) * 4);
             scores[i] /= (lvl.decodeFloat() * qw);

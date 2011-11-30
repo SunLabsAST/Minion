@@ -78,6 +78,7 @@ import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
+import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.command.CommandInterface;
 import com.sun.labs.util.command.CommandInterpreter;
@@ -426,7 +427,13 @@ public class QueryTest extends SEMain {
                 for(int i = 1; i < args.length; i++) {
                     String word = args[i];
                     TermStats ts = tsd.getTermStats(word);
-                    sb.append(String.format("%s: %s", word, ts));
+                    shell.out.format("Overall %s: %s\n", word, ts);
+                    for(FieldInfo fi : manager.getMetaFile()) {
+                        TermStatsQueryEntry tsqe = tsd.getTermStats(word, fi);
+                        if(tsqe != null) {
+                            shell.out.format(" %s: %s\n", fi.getName(), tsqe.getTermStats());
+                        }
+                    }
                 }                
                 return sb.toString();
             }

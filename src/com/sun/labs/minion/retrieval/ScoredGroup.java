@@ -33,6 +33,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.logging.Logger;
 
 /**
  * A scored array group is one for which the documents have scores
@@ -41,6 +42,8 @@ import com.sun.labs.minion.util.buffer.ReadableBuffer;
  * combined according to the dictates of the operator.
  */
 public class ScoredGroup extends ArrayGroup {
+    
+    private static final Logger logger = Logger.getLogger(ScoredGroup.class.getName());
     
     /**
      * The scores for the documents in the set.
@@ -281,7 +284,7 @@ public class ScoredGroup extends ArrayGroup {
             ((InvFileDiskPartition) part).normalize(fields, docs, scores, size, sqw);
             normalized = true;
         }
-            return this;
+        return this;
     }
     
     /**
