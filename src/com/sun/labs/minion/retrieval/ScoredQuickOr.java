@@ -24,7 +24,6 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.postings.FieldedPostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
 import com.sun.labs.minion.util.Util;
@@ -48,11 +47,6 @@ public class ScoredQuickOr extends QuickOr {
      */
     float sqw = 0;
 
-    /**
-     * A particular field in which we're interested.
-     */
-    int fieldID = -1;
-
     protected static Logger logger = Logger.getLogger(ScoredQuickOr.class.getName());
 
     protected static String logTag = "SQO";
@@ -73,10 +67,6 @@ public class ScoredQuickOr extends QuickOr {
             weights = new float[estSize];
         }
     } // ScoredQuickOr constructor
-
-    public void setField(int fieldID) {
-        this.fieldID = fieldID;
-    }
 
     public String toString() {
         return String.format("part: %s storeAll: %s nDocs: %d size: %d", part, storeAll, part.getNDocs(), p);
@@ -103,25 +93,7 @@ public class ScoredQuickOr extends QuickOr {
         qs.unionW.start();
         if(storeAll) {
             while(pi.next()) {
-                int d = pi.getID();
-
-                //
-                // We need to figure out whether the weight is coming from a particular
-                // field or from the whole document.
-                float w;
-                if(fieldID != -1) {
-                    float[] fw =
-                            ((FieldedPostingsIterator) pi).getFieldWeights();
-                    if(fw != null) {
-                        w = fw[fieldID] * qw;
-                    } else {
-                        w = pi.getWeight() * qw;
-                    }
-                } else {
-                    w = pi.getWeight() * qw;
-                }
-
-                weights[d] += w;
+                weights[pi.getID()] += pi.getWeight() * qw;
             }
         } else {
             int s = pi.getN() + p;
@@ -131,24 +103,8 @@ public class ScoredQuickOr extends QuickOr {
             }
 
             while(pi.next()) {
-
-                //
-                // We need to figure out whether the weight is coming from a particular
-                // field or from the whole document.
-                float w;
-                if(fieldID != -1) {
-                    float[] fw = ((FieldedPostingsIterator) pi).getFieldWeights();
-                    if(fw != null) {
-                        w = fw[fieldID] * qw;
-                    } else {
-                        w = pi.getWeight() * qw;
-                    }
-                } else {
-                    w = pi.getWeight() * qw;
-                }
-
                 docs[p] = pi.getID();
-                weights[p++] = w;
+                weights[p++] = pi.getWeight() * qw;
             }
         }
         qs.piW.stop();
@@ -167,8 +123,7 @@ public class ScoredQuickOr extends QuickOr {
         qs.unionW.start();
         if(storeAll) {
             while(pi.next()) {
-                int d = pi.getID();
-                weights[d] += dw * qw;
+                weights[pi.getID()] += dw * qw;
             }
         } else {
             int s = pi.getN() + p;

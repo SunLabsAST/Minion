@@ -28,8 +28,6 @@ import com.sun.labs.minion.HLPipeline;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.indexer.dictionary.FeatureVector;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.QueryStats;

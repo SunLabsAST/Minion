@@ -105,7 +105,7 @@ public abstract class QueryElement implements Comparable {
      * An array of fields that can be used for getting postings iterators
      * that are field based.  This will be set per-partition.
      */
-    protected int[] searchFields;
+    protected FieldInfo[] searchFields;
 
     /**
      * An array of field multipliers that can be used for getting postings
@@ -138,18 +138,21 @@ public abstract class QueryElement implements Comparable {
                     List<FieldInfo> df = qc.getDefaultFields();
                     if(df.size() > 0) {
                         searchFieldNames = new String[df.size()];
+                        searchFields = df.toArray(new FieldInfo[0]);
                         for(int i = 0; i < df.size(); i++) {
                             searchFieldNames[i] = df.get(i).getName();
                         }
                     }
+                } else {
+                    searchFields = ifpart.getPartitionManager().getMetaFile()
+                            .getFieldInfo(searchFieldNames)
+                            .toArray(new FieldInfo[0]);
                 }
-                searchFields = ifpart.getFieldStore().getFieldArray(
-                        searchFieldNames);
-                fieldMultipliers = ifpart.getFieldStore().getMultArray(qc.
+                fieldMultipliers = ifpart.getPartitionManager().getMetaFile().getMultArray(qc.
                         getMultFields(),
                         qc.getMultValues());
             } else {
-                searchFields = new int[0];
+                searchFields = new FieldInfo[0];
                 fieldMultipliers = new float[0];
             }
         }

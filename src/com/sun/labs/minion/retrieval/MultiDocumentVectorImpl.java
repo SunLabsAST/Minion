@@ -26,12 +26,11 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.WeightedFeature;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
-import com.sun.labs.minion.classification.WeightedFeature;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
-import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
 
 /**
  * An implementation of a document vector that combines the vectors for
@@ -39,7 +38,7 @@ import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
  */
 public class MultiDocumentVectorImpl extends DocumentVectorImpl implements DocumentVector {
     
-    List<DocKeyEntry> keys;
+    List<QueryEntry> keys;
     
     public MultiDocumentVectorImpl(List<DocumentVector> dvs) {
         List<WeightedFeature[]> fvs = new ArrayList<WeightedFeature[]>(dvs.size());
@@ -80,7 +79,7 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
      * vectored attribute set, the resulting document vector will be empty!
      */
     public MultiDocumentVectorImpl(SearchEngine e,
-                               List<DocKeyEntry> keys, String field) {
+                               List<QueryEntry> keys, String field) {
         this(e, keys, field, e.getQueryConfig().getWeightingFunction(),
              e.getQueryConfig().getWeightingComponents());
     }
@@ -102,7 +101,7 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
      * @param wc weight components to use instead of the default
      */
     public MultiDocumentVectorImpl(SearchEngine e,
-                               List<DocKeyEntry> keys, String field,
+                               List<QueryEntry> keys, String field,
                                WeightingFunction wf,
                                WeightingComponents wc) {
 
@@ -120,13 +119,9 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
     
     private WeightedFeature[] initFeatures() {
         List<WeightedFeature[]> fvs = new ArrayList<WeightedFeature[]>();
-        for(DocKeyEntry dke : keys) {
-            if(dke instanceof FieldedDocKeyEntry) {
-                fvs.add(((FieldedDocKeyEntry) dke).getWeightedFeatures(fieldID, wf,
-                        wc));
-            } else {
-                fvs.add(dke.getWeightedFeatures(wf, wc));
-            }
+        for(QueryEntry dke : keys) {
+            DocumentVectorImpl dvi = new DocumentVectorImpl(e, key, field);
+            fvs.add(dvi.getFeatures());
         }
         return combineFeatures(fvs);
     }

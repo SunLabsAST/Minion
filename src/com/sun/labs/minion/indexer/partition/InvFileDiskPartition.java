@@ -302,26 +302,6 @@ public class InvFileDiskPartition extends DiskPartition {
     }
 
     /**
-     * Gets the postings associated with a particular field value.
-     *
-     * @param name The name of the field for which we want postings.
-     * @param value The value from the field for which we want postings.
-     * @param caseSensitive If true, case should be taken into account when
-     * iterating through the values.  This value will only be observed for
-     * character fields!
-     * @return The postings associated with that value, or
-     * <code>null</code> if there is no such value in the field.
-     */
-    public PostingsIterator getFieldPostings(String name, Object value,
-                                             boolean caseSensitive) {
-        DiskField df = getDF(name);
-        if(df == null) {
-            return null;
-        }
-        return df.getFieldPostings(value, caseSensitive);
-    }
-
-    /**
      * Gets the number of defined fields.
      */
     public int getFieldCount() {

@@ -25,7 +25,7 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.indexer.dictionary.SavedField;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
 /**
@@ -68,14 +68,14 @@ public class Undefined extends UnaryOperator {
             return new ArrayGroup(part, new int[0], 0);
         }
         
-        if(!fi.isSaved()) {
+        if(!fi.hasAttribute(FieldInfo.Attribute.SAVED)) {
             logger.warning("Non saved field " + field.getName() + " for <undefined> operator");
             
             //
             // If this isn't a saved field, return the empty set.
             return new ArrayGroup(part, new int[0], 0);
         }
-        SavedField sf = ((InvFileDiskPartition) part).getFieldStore().getSavedField(fi);
+        DiskField sf = ((InvFileDiskPartition) part).getDF(fi);
         if(sf == null) {
             
             //

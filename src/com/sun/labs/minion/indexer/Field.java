@@ -1,6 +1,7 @@
 package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.Stemmer;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.util.CDateParser;
 import java.util.logging.Logger;
@@ -42,6 +43,11 @@ public abstract class Field {
     protected FieldInfo info;
 
     protected Partition partition;
+    
+    /**
+     * A stemmer for stemming.
+     */
+    protected Stemmer stemmer;
 
     public Field(FieldInfo info) {
         this.info = info;
@@ -63,6 +69,10 @@ public abstract class Field {
 
     public Partition getPartition() {
         return partition;
+    }
+
+    public Stemmer getStemmer() {
+        return stemmer;
     }
 
     public abstract int getMaximumDocumentID();

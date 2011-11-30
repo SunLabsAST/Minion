@@ -79,11 +79,6 @@ public class MemoryField extends Field {
     protected DocOccurrence ddo;
 
     /**
-     * A stemmer for stemming.
-     */
-    private Stemmer stemmer;
-
-    /**
      * An array of the sets of entries saved per document at indexing time.
      */
     private List[] dv;

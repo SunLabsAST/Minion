@@ -62,6 +62,7 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
     
     /**
      * Creates an empty set of term stats to which we can add terms.
+     * @param name the name of the term
      */
     public TermStatsImpl(String name) {
         this.name = name;

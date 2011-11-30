@@ -25,8 +25,6 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.HLPipeline;
-import com.sun.labs.minion.ResultsCluster;
-import com.sun.labs.util.props.PropertyException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -37,18 +35,13 @@ import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.SearchEngine;
-import java.util.Set;
-import com.sun.labs.minion.clustering.ClustererFactory;
-import com.sun.labs.minion.clustering.FieldClusterer;
 
-import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.indexer.DiskField;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.PriorityQueue;
-import com.sun.labs.minion.clustering.AbstractClusterer;
 
-import com.sun.labs.minion.indexer.dictionary.BasicField;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
@@ -286,12 +279,10 @@ public class ResultSetImpl implements ResultSet {
                 ArrayGroup ag = (ArrayGroup) i.next();
                 //
                 // Fetchers for our two fields. Huzzah!      
-                BasicField.Fetcher vf = ((InvFileDiskPartition) ag.part).
-                        getFieldStore().
-                        getFetcher(vfi);
-                BasicField.Fetcher sf = ((InvFileDiskPartition) ag.part).
-                        getFieldStore().
-                        getFetcher(sfi);
+                DiskField.Fetcher vf = ((InvFileDiskPartition) ag.part).
+                        getDF(vfi).getFetcher();
+                DiskField.Fetcher sf = ((InvFileDiskPartition) ag.part).
+                        getDF(sfi).getFetcher();
                 ArrayGroup.DocIterator iter = ag.iterator();
 
                 while(iter.next()) {
@@ -657,46 +648,6 @@ public class ResultSetImpl implements ResultSet {
 
     public AGDocs newAGDocs(ArrayGroup ag) {
         return new AGDocs(ag);
-    }
-
-    public Set<ResultsCluster> cluster(int k) throws SearchEngineException {
-        return cluster(null, k);
-    }
-
-    public Set<ResultsCluster> cluster(String field, int k) throws SearchEngineException {
-        AbstractClusterer clust;
-        Set<ResultsCluster> ret = null;
-        try {
-            ClustererFactory fact = (ClustererFactory) ((SearchEngineImpl) e).
-                    getConfigurationManager().
-                    lookup(ClustererFactory.CLUSTERER_FACTORY_CONFIG_NAME);
-            clust = fact.getResultsClusterer();
-            clust.setK(k);
-            clust.setResults(this);
-            clust.init(field);
-            clust.cluster();
-            ret = clust.getClusters();
-        } catch(PropertyException ex) {
-            logger.log(Level.SEVERE, "Error getting clusterer factory", ex);
-            ret = Collections.emptySet();
-        } catch(Exception e) {
-            logger.log(Level.SEVERE, "Error getting clusterer factory", e);
-            throw (e);
-        } finally {
-            return ret;
-        }
-    }
-
-    public Set<ResultsCluster> groupBy(String field, boolean ignoreCase)
-            throws SearchEngineException {
-        FieldClusterer clust = new FieldClusterer();
-        clust.setField(field);
-        clust.setIgnoreCase(ignoreCase);
-        clust.setK(0);
-        clust.setResults(this);
-        clust.init(field);
-        clust.cluster();
-        return clust.getClusters();
     }
 
     public ResultSet weight(float w) {

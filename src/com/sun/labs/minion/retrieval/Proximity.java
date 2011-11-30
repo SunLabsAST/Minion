@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.FieldInfo;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -185,13 +186,16 @@ public abstract class Proximity extends Operator {
             //
             // Figure out what fields we need.
             int[] doFields;
+            doFields = new int[part.getPartitionManager().getMetaFile().size()
+                               + 1];
             if((searchFields == null) && (part instanceof InvFileDiskPartition)) {
-                doFields = new int[part.getPartitionManager().getMetaFile().size() + 1];
                 for(int i = 0; i < doFields.length; i++) {
                     doFields[i] = 1;
                 }
             } else {
-                doFields = searchFields;
+                for(FieldInfo fi : searchFields) {
+                    doFields[fi.getID()] = 1;
+                }
             }
 
             int[][] fieldPosns;
@@ -245,14 +249,16 @@ public abstract class Proximity extends Operator {
         // field.  If we have some fields that we're supposed to search,
         // we'll do only those, otherwise, we'll do everything.
         int[] doFields;
+        doFields = new int[((InvFileDiskPartition) part).getPartitionManager().
+                getMetaFile().size() + 1];
         if((searchFields == null) && (part instanceof InvFileDiskPartition)) {
-            doFields = new int[((InvFileDiskPartition) part).getPartitionManager().
-                    getMetaFile().size() + 1];
             for(int i = 0; i < doFields.length; i++) {
                 doFields[i] = 1;
             }
         } else {
-            doFields = searchFields;
+            for(FieldInfo fi : searchFields) {
+                doFields[fi.getID()] = 1;
+            }
         }
 
         //
@@ -331,7 +337,7 @@ public abstract class Proximity extends Operator {
                         logger.info("lens exceeds column length");
                         logger.info("part: " + part);
                         logger.info("doc: " + doc);
-                        logger.info("key: " + part.getDocumentTerm(doc));
+                        logger.info("key: " + part.getDocumentDictionary().getByID(doc));
                         logger.info("j: " + j);
                         logger.info("columns[j].length: " +
                                 columns[j].length);
@@ -361,7 +367,7 @@ public abstract class Proximity extends Operator {
                 for(int j = 0; j < columns.length; j++) {
                     if(lens[j] > columns[j].length) {
                         logger.info("doc: " + doc);
-                        logger.info("key: " + part.getDocumentTerm(doc));
+                        logger.info("key: " + part.getDocumentDictionary().getByID(doc));
                         logger.info(j + " " + part + " " +
                                 lens[j] + " " + columns[j].length);
 

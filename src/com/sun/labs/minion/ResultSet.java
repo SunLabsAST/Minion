@@ -214,7 +214,7 @@ public interface ResultSet {
      * @throws SearchEngineException if there are any errors generating the clusters
      * @see ResultsCluster
      */
-    public Set<ResultsCluster> cluster(int k) throws SearchEngineException;
+//    public Set<ResultsCluster> cluster(int k) throws SearchEngineException;
     
     /**
      * Clusters the results into this set into a number of clusters.  The 
@@ -231,7 +231,7 @@ public interface ResultSet {
      * @throws SearchEngineException if there are any errors generating the clusters
      * @see ResultsCluster
      */
-    public Set<ResultsCluster> cluster(String field, int k) throws SearchEngineException;
+//    public Set<ResultsCluster> cluster(String field, int k) throws SearchEngineException;
     
     /**
      * Groups the results in this set into a number of clusters.  The results are
@@ -246,6 +246,6 @@ public interface ResultSet {
      * @throws SearchEngineException if there are any errors grouping the
      * results
      */
-    public Set<ResultsCluster> groupBy(String field, boolean ignoreCase) throws SearchEngineException;
+//    public Set<ResultsCluster> groupBy(String field, boolean ignoreCase) throws SearchEngineException;
 
 } // ResultSet

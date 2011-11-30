@@ -27,6 +27,7 @@ import java.util.Arrays;
 import com.sun.labs.minion.FieldInfo;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
@@ -305,7 +306,7 @@ public class ScoredGroup extends ArrayGroup {
             if(sqw == 0) {
                 sqw = 1;
             }
-            part.normalize(docs, scores, size, sqw, field);
+            ((InvFileDiskPartition) part).getDF(field).normalize(docs, scores, size, sqw);
             normalized = true;
         }
         return this;

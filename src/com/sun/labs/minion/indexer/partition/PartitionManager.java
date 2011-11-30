@@ -775,11 +775,16 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                                              String pattern) {
         SortedSet<FieldValue> ret = new TreeSet<FieldValue>();
         FieldInfo fi = metaFile.getFieldInfo(field);
+        int l = pattern.length();
         for(DiskPartition dp : getActivePartitions()) {
 
             DiskField df = ((InvFileDiskPartition) dp).getDF(fi);
             if(df != null) {
-                ret.addAll(df.getMatching(pattern));
+                for(QueryEntry qe : df.getMatching(pattern, true,
+                                                   -1, -1)) {
+                    String n = qe.getName().toString();
+                    ret.add(new FieldValue(n, l / n.length()));
+                }
             }
         }
         return ret;

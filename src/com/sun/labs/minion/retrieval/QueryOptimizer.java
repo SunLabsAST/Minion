@@ -91,9 +91,9 @@ public class QueryOptimizer
                     FieldTerm ft1 = (FieldTerm)terms.get(0);
                     FieldTerm ft2 = (FieldTerm)terms.get(1);
 
-                    Object objLower = null;
+                    Comparable objLower = null;
                     boolean incLower = false;
-                    Object objUpper = null;
+                    Comparable objUpper = null;
                     boolean incUpper = false;
                     //
                     // Is term one a < or <= and term two a

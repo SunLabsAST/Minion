@@ -1,24 +1,30 @@
 package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.FieldValue;
 import com.sun.labs.minion.indexer.dictionary.ArrayDictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DateNameHandler;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskBiGramDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DoubleNameHandler;
+import com.sun.labs.minion.indexer.dictionary.IntEntry;
 import com.sun.labs.minion.indexer.dictionary.LongNameHandler;
 import com.sun.labs.minion.indexer.dictionary.NameDecoder;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.retrieval.ArrayGroup;
+import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
+import com.sun.labs.minion.retrieval.ScoredGroup;
+import com.sun.labs.minion.retrieval.ScoredQuickOr;
 import com.sun.labs.minion.util.CharUtils;
+import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -26,9 +32,8 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.PriorityQueue;
 import java.util.logging.Logger;
 
 /**
@@ -176,6 +181,10 @@ public class DiskField extends Field {
 
         vectorLengthsFile.seek(header.vectorLengthOffset);
         dvl = new DocumentVectorLengths(vectorLengthsFile, 8192);
+
+        if(info.hasAttribute(FieldInfo.Attribute.STEMMED)) {
+            stemmer = info.getStemmer();
+        }
     }
 
     @Override
@@ -213,14 +222,14 @@ public class DiskField extends Field {
     /**
      * Gets a term from the "main" dictionary for this partition.
      * @param name the name of the term to lookup
-     * @param matchCase whether we should lookup the term using the provided case.
+     * @param caseSensitive whether we should lookup the term using the provided case.
      * If <code>true</code>, then an entry will only be returned if there is a
      * match for this term with the provided case.  If <code>false</code> then an
      * entry will be returned if there is a match for this term in lower case.
      * @return
      */
-    public QueryEntry getTerm(String name, boolean matchCase) {
-        if(matchCase) {
+    public QueryEntry getTerm(String name, boolean caseSensitive) {
+        if(caseSensitive) {
             if(cased) {
                 return casedTokens.get(name);
             } else {
@@ -237,14 +246,14 @@ public class DiskField extends Field {
     /**
      * Gets a term from the "main" dictionary for this partition.
      * @param name the name of the term to lookup
-     * @param matchCase whether we should lookup the term using the provided case.
+     * @param caseSensitive whether we should lookup the term using the provided case.
      * If <code>true</code>, then an entry will only be returned if there is a
      * match for this term with the provided case.  If <code>false</code> then an
      * entry will be returned if there is a match for this term in lower case.
      * @return
      */
-    public QueryEntry getTerm(int id, boolean matchCase) {
-        if(matchCase) {
+    public QueryEntry getTerm(int id, boolean caseSensitive) {
+        if(caseSensitive) {
             if(cased) {
                 return casedTokens.getByID(id);
             } else {
@@ -258,12 +267,38 @@ public class DiskField extends Field {
         return uncasedTokens.getByID(id);
     }
 
+    public QueryEntry getStem(String stem) {
+        return stemmedTokens.get(stem);
+    }
+
     public QueryEntry getVector(String key) {
         if(!vectored) {
             logger.warning(String.format("Requested vector for non-vectored field %s", info.getName()));
             return null;
         }
         return vectors.get(key);
+    }
+
+    /**
+     * Gets the entry in the dictionary associated with a given value.
+     * @param val the value to get
+     * @param caseSensitive whether to do a case sensitive lookup
+     * @return
+     */
+    public QueryEntry getSaved(Comparable val, boolean caseSensitive) {
+        if(caseSensitive) {
+            if(cased) {
+                return rawSaved.get(val);
+            } else {
+                logger.warning(
+                        String.format(
+                        "Case sensitive request for field value %s in field %s, "
+                        + "but this field only has case insensitive values."));
+                return rawSaved.get(val);
+            }
+        }
+
+        return uncasedSaved.get(CharUtils.toLowerCase((val.toString())));
     }
 
     /**
@@ -355,9 +390,10 @@ public class DiskField extends Field {
         return new ArrayDictionaryIterator(qes);
     }
 
-    public Set<FieldValue> getMatching(String pattern) {
+    public List<QueryEntry> getMatching(String pattern, boolean caseSensitive,
+            int maxEntries, long timeLimit) {
 
-        Set<FieldValue> ret = new HashSet<FieldValue>();
+        List<QueryEntry> ret = new ArrayList<QueryEntry>();
 
         if(info.getType() != FieldInfo.Type.STRING) {
             logger.warning(String.format(
@@ -372,16 +408,14 @@ public class DiskField extends Field {
         // of the appropriate length.
         if(pattern.matches("\\*+")) {
             for(Entry e : rawSaved) {
-                ret.add(new FieldValue(e.getName().toString(), 1));
+                ret.add((QueryEntry) e);
             }
         } else {
 
-            DictionaryIterator di = getMatchingIterator(pattern, true, -1,
-                                                        -1);
-            float l = pattern.length();
+            DictionaryIterator di = getMatchingIterator(pattern, caseSensitive,
+                    maxEntries, timeLimit);
             while(di.hasNext()) {
-                String n = di.next().getName().toString();
-                ret.add(new FieldValue(n, l / n.length()));
+                ret.add((QueryEntry) di.next());
             }
         }
         return ret;
@@ -438,36 +472,97 @@ public class DiskField extends Field {
     }
 
     /**
-     * Gets the postings associated with a particular field value.
+     * Gets the values of a string field that are similar to the given field.
      *
-     * @param value The value from the field for which we want postings.
-     * @param caseSensitive If true, case should be taken into account when
-     * iterating through the values.  This value will only be observed for
-     * character fields!
-     * @return An iterator for the postings associated with that value, or
-     * <code>null</code> if there is no such value in the field.
+     * @param ag an array group agains
+     * @param value
+     * @param caseSensitive
+     * @return
      */
-    public PostingsIterator getFieldPostings(Object value,
-                                             boolean caseSensitive) {
-
-        if(!saved) {
-            logger.warning(String.format("Can't get field postings for " +
-                    " non-saved field %s", info.getName()));
-            return null;
+    public ArrayGroup getSimilar(String value, boolean caseSensitive) {
+        if(info.getType() != FieldInfo.Type.STRING) {
+            logger.warning(String.format("Can't get similar values for non-string field %s", info.getName()));
+            return new ScoredGroup(0);
+        }
+        int[] var = savedBigrams.getAllVariants(value, true);
+        int maxd = Integer.MIN_VALUE;
+        PriorityQueue<IntEntry> h = new PriorityQueue<IntEntry>();
+        for(int i = 0; i < var.length; i++) {
+            QueryEntry qe = (caseSensitive ? rawSaved : uncasedSaved).getByID(var[i]);
+            String name = qe.getName().toString();
+            if(!caseSensitive) {
+                name = CharUtils.toLowerCase(name);
+            }
+            int d = Util.levenshteinDistance(value, name);
+            maxd = Math.max(d, maxd);
+            h.offer(new IntEntry(d, qe));
         }
 
-        QueryEntry e;
-        if(caseSensitive) {
-            e = rawSaved.get((Comparable) value);
+        ScoredQuickOr qor = new ScoredQuickOr((DiskPartition) partition, h.size());
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
+        while(h.size() > 0) {
+            IntEntry e = h.poll();
+            PostingsIterator pi = e.e.iterator(feat);
+            if(pi == null) {
+                continue;
+            }
+            qor.add(pi, (maxd - e.i) / (float) maxd, 1);
+        }
+        ScoredGroup sg = (ScoredGroup) qor.getGroup();
+        sg.setNormalized();
+        return sg;
+    }
+
+    /**
+     * Gets a group of all the documents that do not have any values saved for
+     * this field.
+     *
+     * @param ag a set of documents to which we should restrict the search for
+     * documents with undefined field values.  If this is <code>null</code> then
+     * there is no such restriction.
+     * @return a set of documents that have no defined values for this field.
+     * This set may be restricted to documents occurring in the group that was
+     * passed in.
+     */
+    public ArrayGroup getUndefined(ArrayGroup ag) {
+
+        ArrayGroup ret = new ArrayGroup(ag == null ? 2048 : ag.getSize());
+
+        //
+        // Get local copies of the buffers.
+        ReadableBuffer ldtvo = dtvOffsets.duplicate();
+        ReadableBuffer ldtv = dtvData.duplicate();
+
+        if(ag == null) {
+
+            //
+            // If there's no restriction set, then do all documents.
+            ldtvo.position(0);
+            for(int i = 0; i < header.maxDocID; i++) {
+
+                //
+                // Jump to each offset and decode the number of saved values.  If
+                // that's 0, then we have a document that has no defined values, so
+                // we put it in the return set.
+                ldtv.position(ldtvo.byteDecode(4));
+                if(ldtv.byteDecode() == 0) {
+                    ret.addDoc(i + 1);
+                }
+            }
         } else {
-            e = uncasedSaved.get(value.toString());
+
+            //
+            // Just check for the documents in the set.
+            for(DocIterator i = ag.iterator(); i.next();) {
+                ldtvo.position((i.getDoc() - 1) * 4);
+                ldtv.position(ldtvo.byteDecode(4));
+                if(ldtv.byteDecode() == 0) {
+                    ret.addDoc(i.getDoc());
+                }
+            }
         }
 
-        if(e == null) {
-            return null;
-        }
-
-        return e.iterator(new PostingsIteratorFeatures());
+        return ret;
     }
 
     /**

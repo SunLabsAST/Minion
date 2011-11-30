@@ -2,12 +2,11 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultAccessor;
-import com.sun.labs.minion.indexer.dictionary.BasicField;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
+import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * A simple implementation of a results accessor that can be used in cases
@@ -19,14 +18,14 @@ public class ResultAccessorImpl implements ResultAccessor {
 
     private int currDoc;
 
-    private DocKeyEntry dke;
+    private QueryEntry dke;
 
     private float currScore;
 
     /**
      * Fetchers for field values.
      */
-    private BasicField.Fetcher[] fetchers;
+    private DiskField.Fetcher[] fetchers;
 
     public ResultAccessorImpl() {
     }
@@ -56,36 +55,36 @@ public class ResultAccessorImpl implements ResultAccessor {
     @Override
     public String getKey() {
         if(dke == null) {
-            dke = dp.getDocumentTerm(currDoc);
+            dke = dp.getDocumentDictionary().getByID(currDoc);
         }
         return dke.getName().toString();
     }
 
-    private BasicField.Fetcher getFetcher(String field) {
-        FieldInfo fi = dp.getFieldStore().getFieldInfo(field);
+    private DiskField.Fetcher getFetcher(String field) {
+        FieldInfo fi = dp.getPartitionManager().getMetaFile().getFieldInfo(field);
         if(fi == null) {
             return null;
         }
-        if(!fi.isSaved()) {
+        if(!fi.hasAttribute(FieldInfo.Attribute.SAVED)) {
             return null;
         }
         int fid = fi.getID();
         if(fetchers == null) {
-            fetchers = new BasicField.Fetcher[fid + 1];
+            fetchers = new DiskField.Fetcher[fid + 1];
         } else if(fetchers.length < fid) {
-            BasicField.Fetcher[] temp = new BasicField.Fetcher[fid + 1];
+            DiskField.Fetcher[] temp = new DiskField.Fetcher[fid + 1];
             System.arraycopy(fetchers, 0, temp, 0, fetchers.length);
             fetchers = temp;
         }
         if(fetchers[fid] == null) {
-            fetchers[fid] = dp.getFieldStore().getFetcher(fi);
+            fetchers[fid] = dp.getDF(fi).getFetcher();
         }
         return fetchers[fid];
     }
 
     @Override
     public List<Object> getField(String field) {
-        BasicField.Fetcher f = getFetcher(field);
+        DiskField.Fetcher f = getFetcher(field);
         if(f != null) {
             return f.fetch(currDoc);
         }
@@ -94,7 +93,7 @@ public class ResultAccessorImpl implements ResultAccessor {
 
     @Override
     public Object getSingleFieldValue(String field) {
-        BasicField.Fetcher f = getFetcher(field);
+        DiskField.Fetcher f = getFetcher(field);
         if(f != null) {
             return f.fetchOne(currDoc);
         }
