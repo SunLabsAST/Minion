@@ -39,15 +39,26 @@ package com.sun.labs.minion;
  * any further text will be considered to be part of the original
  * field for which the analyzer was invoked.
  *
- * @author Jeff Alexander
  */
 
 public interface PipelineStage {
+    
+    /**
+     * Sets the pipeline of which this stage is a member.
+     * @param pipeline the pipeline of which this stage is a member.
+     */
+    public void setPipeline(Pipeline pipeline);
+    
+    /**
+     * Gets the pipeline of which this stage is a member.
+     * 
+     * @return 
+     */
+    public Pipeline getPipeline();
     
     /**
      * Send some text to be processed by the pipeline.
      * @param text
      */
     public void process(String text);
-    
 }

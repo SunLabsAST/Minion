@@ -41,6 +41,7 @@ package com.sun.labs.minion.pipeline;
  * 
  */
 
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.PipelineStage;
 import com.sun.labs.util.props.Configurable;
 
@@ -64,7 +65,7 @@ public interface Stage extends Configurable, PipelineStage {
      * Gets the downstream stage of this stage.
      */
     public Stage getDownstream();
-
+    
     /**
      * Processes text, passing the results downstream.
      */
@@ -83,5 +84,24 @@ public interface Stage extends Configurable, PipelineStage {
      * @param p The punctuation to process.
      */
     public void punctuation(Token p);
+    
+    /**
+     * 
+     * Processes a value for another field, so that a given pipeline stage 
+     * (e.g., {@link QuestioningStage}) can define the value for a different
+     * field.
+     * @param field the field to which we want to add the data
+     * @param value the value that we want to add
+     */
+    public void addField(String field, Object value);
 
+    /**
+     * 
+     * Processes a value for another field, so that a given pipeline stage 
+     * (e.g., {@link QuestioningStage}) can define the value for a different
+     * field.
+     * @param field the field to which we want to add the data
+     * @param value the value that we want to add
+     */
+    public void addField(FieldInfo field, Object value);
 } // Stage

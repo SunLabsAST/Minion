@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion;
 
+import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.pipeline.Stage;
 
 /**
@@ -33,6 +34,16 @@ import com.sun.labs.minion.pipeline.Stage;
  *
  */
 public interface Pipeline {
+    
+    /**
+     * Gets the field that this pipeline is used for.
+     */
+    public Field getField();
+    
+    /**
+     * Sets the field that this pipeline is used for.
+     */
+    public void setField(Field field);
     
     /**
      * Gets the head of the pipeline.

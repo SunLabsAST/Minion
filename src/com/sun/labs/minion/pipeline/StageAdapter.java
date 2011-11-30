@@ -24,6 +24,9 @@
 
 package com.sun.labs.minion.pipeline;
 
+import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.Pipeline;
+import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 
@@ -38,6 +41,8 @@ import com.sun.labs.util.props.PropertySheet;
  * 
  */
 public class StageAdapter implements Stage {
+    
+    protected Pipeline pipeline;
 
     /**
      * Our configuration name.
@@ -88,6 +93,22 @@ public class StageAdapter implements Stage {
             return;
         }
         downstream.process(text);
+    }
+
+    public Pipeline getPipeline() {
+        return pipeline;
+    }
+
+    public void setPipeline(Pipeline pipeline) {
+        this.pipeline = pipeline;
+    }
+
+    public void addField(String field, Object value) {
+        ((InvFileMemoryPartition) pipeline.getField().getPartition()).addField(field, value);
+    }
+
+    public void addField(FieldInfo field, Object value) {
+        ((InvFileMemoryPartition) pipeline.getField().getPartition()).addField(field, value);
     }
 
     public void newProperties(PropertySheet ps) throws PropertyException {
