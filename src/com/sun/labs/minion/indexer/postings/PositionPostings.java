@@ -536,6 +536,10 @@ public class PositionPostings implements Postings {
         nSkips = 0;
         pos = -1;
         posPos = 0;
+        if(idBuff != null) {
+            ((WriteableBuffer) idBuff).clear();
+            ((WriteableBuffer) posnBuff).clear();
+        }
     }
     
     public String toString() {
