@@ -14,6 +14,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -46,6 +47,10 @@ public class IDPostingsTest {
         "/com/sun/labs/minion/indexer/postings/resource/2.data.gz",
         "/com/sun/labs/minion/indexer/postings/resource/1.data.gz",};
 
+    private static String[] previousAppends = new String[]{
+        "/com/sun/labs/minion/indexer/postings/resource/1.append.gz"
+    };
+
     @BeforeClass
     public static void setUpClass() throws Exception {
     }
@@ -60,19 +65,6 @@ public class IDPostingsTest {
 
     @After
     public void tearDown() {
-    }
-
-    private IDPostings encodeData(TestData data) {
-        IDPostings idp = new IDPostings();
-        OccurrenceImpl o = new OccurrenceImpl();
-        logger.info(String.format("Encoding %d ids (%d unique)",
-                                  data.rawData.length,
-                                  data.unique.size()));
-        for(int i = 0; i < data.rawData.length; i++) {
-            o.setID(data.rawData[i]);
-            idp.add(o);
-        }
-        return idp;
     }
 
     private void testIteration(IDPostings idp, TestData data) {
@@ -107,7 +99,7 @@ public class IDPostingsTest {
             TestData r = null;
             try {
                 r = new TestData(rand.nextInt(n) + 1);
-                IDPostings idp = encodeData(r);
+                IDPostings idp = r.encode();
                 testIteration(idp, r);
                 testPostingsEncoding(idp, r);
             } catch(AssertionError ex) {
@@ -127,7 +119,7 @@ public class IDPostingsTest {
     @Test
     public void testSimpleAdd() throws Exception {
         TestData simple = new TestData(new int[]{1, 4, 7, 10});
-        encodeData(simple);
+        simple.encode();
     }
 
     /**
@@ -138,7 +130,7 @@ public class IDPostingsTest {
         TestData simple = new TestData(new int[]{1, 1, 1,
                                                  1, 4, 4, 4, 7, 7, 8,
                                                  10, 11, 11, 17});
-        encodeData(simple);
+        simple.encode();
     }
 
     /**
@@ -155,7 +147,7 @@ public class IDPostingsTest {
         long nb = 4 * data.unique.size();
 
         logger.info(String.format("%d bytes in buffers (%d + %d) for %d bytes of ids."
-                                  + " Compression: %.2f%%", bsize,
+                + " Compression: %.2f%%", bsize,
                                   buffs[0].position(), buffs[1].position(),
                                   nb, 100 - ((double) bsize / nb) * 100));
 
@@ -218,7 +210,7 @@ public class IDPostingsTest {
             GZIPInputStream gzis = new GZIPInputStream(pdis);
             TestData td = new TestData(gzis);
             gzis.close();
-            IDPostings idp = encodeData(td);
+            IDPostings idp = td.encode();
             testIteration(idp, td);
             testPostingsEncoding(idp, td);
         }
@@ -246,7 +238,7 @@ public class IDPostingsTest {
     @Test
     public void testWriteAndRead() throws java.io.IOException {
         TestData td = new TestData(8192);
-        IDPostings idp = encodeData(td);
+        IDPostings idp = td.encode();
         File of = File.createTempFile("single", ".post");
         of.deleteOnExit();
         long size = writePostings(of, idp);
@@ -258,36 +250,73 @@ public class IDPostingsTest {
      * Test of merge method, of class IDPostings.
      */
     @Test
-    public void testAppend() throws java.io.IOException {
+    public void testRandomAppends() throws java.io.IOException {
         Random rand = new Random();
         for(int i = 0; i < 128; i++) {
 
-            TestData d1 = new TestData(rand.nextInt(8192));
-            IDPostings idp1 = encodeData(d1);
-            TestData d2 = new TestData(rand.nextInt(8192));
-            IDPostings idp2 = encodeData(d2);
+            TestData d1 = new TestData(rand.nextInt(1024 * 16));
+            TestData d2 = new TestData(rand.nextInt(1024 * 16));
+            testAppend(d1, d2);
+        }
+    }
 
-            int lastID = idp1.getLastID();
+    @Test
+    public void previousAppendTest() throws Exception {
+        for(String s : previousAppends) {
 
-            File of = File.createTempFile("single", ".post");
-            of.deleteOnExit();
-            StreamPostingsOutput po = new StreamPostingsOutput(new FileOutputStream(
-                    of));
-            long s1 = po.write(idp1);
-            long s2 = po.write(idp2);
-            po.close();
+            InputStream pdis = getClass().getResourceAsStream(s);
+            if(pdis == null) {
+                logger.info(String.format("Couldn't find %s", s));
+                continue;
+            }
+            logger.info(String.format("Testing data %s", s));
+            GZIPInputStream gzis = new GZIPInputStream(pdis);
+            TestData td1 = new TestData(gzis);
+            TestData td2 = new TestData(gzis);
+            TestData atd = new TestData(gzis);
+            testAppend(td1, td2);
+            gzis.close();
+        }
+    }
+
+    private void testAppend(TestData d1, TestData d2) throws java.io.IOException {
 
 
+        IDPostings idp1 = d1.encode();
+        IDPostings idp2 = d2.encode();
+        int lastID = idp1.getLastID();
+
+        File of = File.createTempFile("single", ".post");
+        of.deleteOnExit();
+        StreamPostingsOutput po = new StreamPostingsOutput(new FileOutputStream(
+                of));
+        long s1 = po.write(idp1);
+        long s2 = po.write(idp2);
+        po.close();
+
+        TestData atd = new TestData(d1, d2, lastID + 1);
+
+        try {
             RandomAccessFile raf = new RandomAccessFile(of, "r");
             StreamPostingsInput pi = new StreamPostingsInput(raf, 8192);
             IDPostings append = new IDPostings();
             idp1 = (IDPostings) pi.read(Postings.Type.ID, 0, (int) s1);
+            testIteration(idp1, d1);
             append.append(idp1, 1);
             idp2 = (IDPostings) pi.read(Postings.Type.ID, s1, (int) s2);
+            testIteration(idp2, d2);
             append.append(idp2, lastID + 1);
-            TestData atd = new TestData(d1, d2, lastID + 1);
             testIteration(append, atd);
             raf.close();
+        } catch(AssertionError er) {
+            File f = File.createTempFile("randomappend", ".data");
+            PrintWriter out = new PrintWriter(new FileWriter(f));
+            d1.dump(out);
+            d2.dump(out);
+            atd.dump(out);
+            out.close();
+            logger.severe(String.format("Random data in %s", f));
+            throw (er);
         }
     }
 
@@ -311,7 +340,10 @@ public class IDPostingsTest {
                 //
                 // We'll use random gaps to make sure we get appropriately increasing
                 // postings.
-                rawData[i] = prev + r.nextInt(256) + 1;
+                rawData[i] = prev + r.nextInt(256);
+                if(i == 0 && rawData[i] == 0) {
+                    rawData[i] = 1;
+                }
                 prev = rawData[i];
                 unique.add(prev);
             }
@@ -354,6 +386,20 @@ public class IDPostingsTest {
                 rawData[p++] = m;
                 unique.add(m);
             }
+            logger.info(String.format("p: %d unique: %d", p, unique.size()));
+        }
+
+        public IDPostings encode() {
+            IDPostings idp = new IDPostings();
+            OccurrenceImpl o = new OccurrenceImpl();
+            logger.info(String.format("Encoding %d ids (%d unique)",
+                                      rawData.length,
+                                      unique.size()));
+            for(int i = 0; i < rawData.length; i++) {
+                o.setID(rawData[i]);
+                idp.add(o);
+            }
+            return idp;
         }
 
         public void dump(PrintWriter out) throws java.io.IOException {
