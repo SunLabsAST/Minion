@@ -33,8 +33,7 @@ import static org.junit.Assert.*;
  */
 public class PositionPostingsTest {
 
-    private static final Logger logger = Logger.getLogger(
-            PositionPostingsTest.class.getName());
+    private static final Logger logger = Logger.getLogger(PositionPostingsTest.class.getName());
 
     private RAMPostingsOutput[] postOut = new RAMPostingsOutput[2];
 
@@ -92,34 +91,9 @@ public class PositionPostingsTest {
             NanoWatch nw = new NanoWatch();
             TestData testData = null;
             try {
-                logger.info(String.format("randomAdd iteration %d/%d", i + 1, nIter));
-                nw.start();
+                logger.info(String.format("randomAdd iteration %d/%d max %d", i + 1, nIter, n));
                 testData = new TestData(rand.nextInt(n) + 1);
-                nw.stop();
-                logger.info(String.format(" Generated data for %d ids in %.3f", testData.ids.length, nw.getLastTimeMillis()));
-                nw.start();
-                PositionPostings p = testData.encode();
-                nw.stop();
-                logger.info(String.format(" Encode took %.3f", nw.getLastTimeMillis()));
-                nw.start();
-                testData.iteration(p);
-                nw.stop();
-                logger.info(String.format(" Uncompressed iteration took %.3f", nw.getLastTimeMillis()));
-                nw.start();
-                p.write(postOut, offsets, sizes);
-                nw.stop();
-                logger.info(String.format(" Writing postings took %.3f", nw.getLastTimeMillis()));
-                nw.start();
-                postingsEncodingCheck(p, testData);
-                nw.stop();
-                logger.info(String.format(" Encoding check took %.3f", nw.getLastTimeMillis()));
-                nw.start();
-                p = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, offsets, sizes);
-                nw.stop();
-                logger.info(String.format(" Instantiation took %.3f", nw.getLastTimeMillis()));
-                testData.iteration(p);
-                nw.stop();
-                logger.info(String.format(" Compressed iteration took %.3f", nw.getLastTimeMillis()));
+                testData.paces();
             } catch(AssertionError ex) {
                 File f = File.createTempFile("random", ".data");
                 PrintWriter out = new PrintWriter(new FileWriter(f));
@@ -143,9 +117,9 @@ public class PositionPostingsTest {
 
         if(logger.isLoggable(Level.FINE)) {
             long bsize = sizes[0] + sizes[1];
-            long nb = 8 * data.unique.size() + 4 * data.posns.length;
+            long nb = 8 * data.unique.size() + 4 * data.numPosns;
 
-            logger.fine(String.format("%d bytes in buffer for %d bytes of ids."
+            logger.fine(String.format(" %d bytes for %d bytes of data,"
                     + " Compression: %.2f%%", bsize,
                     nb, 100 - ((double) bsize / nb) * 100));
         }
@@ -165,6 +139,7 @@ public class PositionPostingsTest {
         try {
             n = idBuff.byteDecode();
             for(int i = 0; i < n; i++) {
+                idBuff.byteDecode();
                 idBuff.byteDecode();
                 idBuff.byteDecode();
             }
@@ -221,8 +196,8 @@ public class PositionPostingsTest {
     private void checkAppend(TestData d1, TestData d2) throws java.io.IOException {
 
 
-        PositionPostings p1 = d1.encode();
-        PositionPostings p2 = d2.encode();
+        PositionPostings p1 = d1.addData();
+        PositionPostings p2 = d2.addData();
         int lastID = p1.getLastID();
 
         long o1[] = new long[2];
@@ -263,37 +238,37 @@ public class PositionPostingsTest {
     /**
      * Tests simple addition of occurrences.
      */
-//    @Test
+    @Test
     public void testSimpleAdd() throws Exception {
         TestData simple = new TestData(new int[]{1, 4, 7, 10},
                 new int[]{1, 1, 1, 1},
                 new int[]{7, 3, 2, 4});
-        simple.encode();
+        simple.addData();
     }
 
     /**
      * Tests adding IDs multiple times.
      */
-//    @Test
+    @Test
     public void testSimpleMultipleAdd() throws Exception {
         TestData simple = new TestData(
                 new int[]{1, 4, 7, 8, 10, 11, 17},
                 new int[]{4, 3, 2, 1, 1, 2, 1},
                 new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36});
-        PositionPostings p = simple.encode();
+        PositionPostings p = simple.addData();
         simple.iteration(p);
     }
 
     /**
      * Tests adding IDs multiple times.
      */
-//    @Test
+    @Test
     public void testSimpleClear() throws Exception {
         TestData simple = new TestData(
                 new int[]{1, 4, 7, 8, 10, 11, 17},
                 new int[]{4, 3, 2, 1, 1, 2, 1},
                 new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36});
-        PositionPostings p = simple.encode();
+        PositionPostings p = simple.addData();
         simple.iteration(p);
         p.write(postOut, offsets, sizes);
         p.clear();
@@ -301,26 +276,26 @@ public class PositionPostingsTest {
                 new int[]{1, 1, 1, 1},
                 new int[]{7, 3, 2, 4});
 
-        simple.encode(p);
+        simple.addData(p);
         simple.iteration(p);
     }
 
-//    @Test
+    @Test
     public void smallRandomAddTest() throws Exception {
-        randomAdd(16, 1024);
+        randomAdd(16, 256);
     }
 
-//    @Test
+    @Test
     public void mediumRandomAddTest() throws Exception {
-        randomAdd(256, 1024);
+        randomAdd(256, 256);
     }
 
-//    @Test
+    @Test
     public void largeRandomAddTest() throws Exception {
         randomAdd(8192, 256);
     }
 
-//    @Test
+    @Test
     public void extraLargeRandomAddTest() throws Exception {
         randomAdd(1024 * 1024, 128);
     }
@@ -329,7 +304,7 @@ public class PositionPostingsTest {
      * Tests encoding data that has had problems before, ensuring that we
      * don't re-introduce old problems.
      */
-    @Test
+//    @Test
     public void testPreviousData() throws Exception {
         for(String s : previousData) {
 
@@ -349,30 +324,14 @@ public class PositionPostingsTest {
             } else {
                 is = pdis;
             }
-            TestData td = new TestData(is);
+            cleanUp();
+            TestData testData = new TestData(is);
             is.close();
-            PositionPostings p = td.encode();
-            td.iteration(p);
-            postingsEncodingCheck(p, td);
+            testData.paces();
         }
     }
 
-    /**
-     * Test writing then reading postings.
-     */
-//    @Test
-//    public void testWriteAndRead() throws java.io.IOException {
-//        TestData td = new TestData(8192, 64000);
-//        PositionPostings p = td.encode();
-//        File of = File.createTempFile("single", ".post");
-//        of.deleteOnExit();
-//        p.write(postOut, offsets, sizes);
-//        PositionPostings p2 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID,
-//                new PostingsInput[]{postOut[0].asInput()}, offsets, sizes);
-//        td.iteration(p2);
-//    }
-//
-//    @Test
+    @Test
     public void testAppend() throws java.io.IOException {
         randomAppend(8192);
     }
@@ -384,6 +343,8 @@ public class PositionPostingsTest {
         int[] freqs;
 
         int[] posns;
+        
+        int numPosns;
 
         Set<Integer> unique;
 
@@ -397,7 +358,6 @@ public class PositionPostingsTest {
             // Generate some random data.  We need to account for gaps of zero, so
             // keep track of the unique numbers with some sets.
             int prev = 0;
-            int pp = 0;
             for(int i = 0; i < ids.length; i++) {
 
                 //
@@ -413,14 +373,14 @@ public class PositionPostingsTest {
 
                 //
                 // Position data, which is distributed amongst a pretend 4K document.
-                if(pp + freq >= posns.length) {
-                    posns = Arrays.copyOf(posns, (pp + freq) * 2);
+                if(numPosns + freq >= posns.length) {
+                    posns = Arrays.copyOf(posns, (numPosns + freq) * 2);
                 }
                 int prevPos = 0;
                 int limit = freq > 4096 ? freq : 4096 / freq;
                 for(int j = 0; j < freq; j++) {
                     int pos = prevPos + rand.nextInt(limit) + 1;
-                    posns[pp++] = pos;
+                    posns[numPosns++] = pos;
                     prevPos = pos;
                 }
                 unique.add(ids[i]);
@@ -488,18 +448,47 @@ public class PositionPostingsTest {
                 unique.add(m);
             }
         }
-
-        public PositionPostings encode() {
-            PositionPostings p = new PositionPostings();
-            return encode(p);
+        
+        /**
+         * Puts the data through its paces.
+         */
+        public void paces() throws java.io.IOException {
+            logger.fine(String.format("Paces for %d postings", ids.length));
+            NanoWatch nw = new NanoWatch();
+            nw.start();
+            PositionPostings p = addData();
+            nw.stop();
+            logger.fine(String.format(" Adding data %.3f", nw.getLastTimeMillis()));
+            nw.start();
+            iteration(p);
+            nw.stop();
+            logger.fine(String.format(" Uncompressed iteration %.3f", nw.getLastTimeMillis()));
+            nw.start();
+            p.write(postOut, offsets, sizes);
+            nw.stop();
+            logger.fine(String.format(" Encoding and writing %.3f", nw.getLastTimeMillis()));
+            nw.start();
+            postingsEncodingCheck(p, this);
+            nw.stop();
+            logger.fine(String.format(" Encoding check %.3f", nw.getLastTimeMillis()));
+            nw.start();
+            p = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, offsets, sizes);
+            nw.stop();
+            logger.fine(String.format(" Instantiation %.3f", nw.getLastTimeMillis()));
+            nw.start();
+            iteration(p);
+            nw.stop();
+            logger.fine(String.format(" Compressed iteration %.3f", nw.getLastTimeMillis()));
         }
 
-        public PositionPostings encode(PositionPostings p) {
+        public PositionPostings addData() {
+            PositionPostings p = new PositionPostings();
+            return addData(p);
+        }
+
+        public PositionPostings addData(PositionPostings p) {
             FieldOccurrenceImpl o = new FieldOccurrenceImpl();
             o.setCount(1);
-            logger.fine(String.format("Encoding %d ids (%d unique)",
-                    ids.length,
-                    unique.size()));
             int pp = 0;
             for(int i = 0; i < ids.length; i++) {
                 o.setID(ids[i]);
@@ -530,12 +519,16 @@ public class PositionPostingsTest {
                 int expectedFreq = freqs[i];
                 if(expectedID != pi.getID()) {
                     assertTrue(String.format(
-                            "Couldn't match id %d, got %d",
-                            expectedID, pi.getID()), expectedID == pi.getID());
+                            "Couldn't match %d id, %d, got %d",
+                            i, 
+                            expectedID, 
+                            pi.getID()), 
+                            expectedID == pi.getID());
                 }
                 if(expectedFreq != pi.getFreq()) {
                     assertTrue(String.format(
-                            "Incorrect freq %d, got %d",
+                            "Incorrect %d freq %d, got %d",
+                            i,
                             expectedFreq, pi.getFreq()), expectedFreq
                             == pi.getFreq());
                 }
