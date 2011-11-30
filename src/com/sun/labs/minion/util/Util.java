@@ -61,6 +61,28 @@ public class Util {
         a[n] = x;
         return a;
     }
+    
+    public static String millisToTimeString(float millis) {
+        if(millis < 1000) {
+            return String.format("%.2fms", millis);
+        }
+        
+        float secs = millis / 1000;
+        
+        if(secs < 60) {
+            return String.format("%.2fs", secs);
+        }
+        
+        float min = secs / 60;
+        
+        if(min < 60) {
+            return String.format("%.2fmin", min);
+        }
+        
+        float h = min / 60;
+        
+        return String.format("%.2fh", h);
+    }
 
     /**
      * Converts a character to a unicode escape sequence.

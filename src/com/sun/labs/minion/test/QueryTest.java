@@ -298,7 +298,7 @@ public class QueryTest extends SEMain {
     private static String join(String[] a, int start, int end, String j) {
         StringBuilder sb = new StringBuilder();
         for(int i = start; i < end; i++) {
-            if(i > 0) {
+            if(i > start) {
                 sb.append(j);
             }
             sb.append(a[i]);

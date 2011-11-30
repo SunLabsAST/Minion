@@ -38,6 +38,8 @@ import java.util.logging.Logger;
  */
 public class SortSpec {
 
+    private static final Logger logger = Logger.getLogger(SortSpec.class.getName());
+
     /**
      * The original specification.
      */
@@ -65,10 +67,6 @@ public class SortSpec {
      * decreasing direction.
      */
     protected boolean[] directions;
-
-    protected static Logger logger = Logger.getLogger(SortSpec.class.getName());
-
-    protected static String logTag = "SSPEC";
 
     /**
      * Creates a sorting specification from the given string description.
@@ -100,7 +98,6 @@ public class SortSpec {
             String fieldSpec = tok.nextToken();
             String fn;
             char dc = fieldSpec.charAt(0);
-            boolean dir;
             if(dc == '+' || dc == '-') {
                 fn = fieldSpec.substring(1);
                 directions[i] = dc == '+';

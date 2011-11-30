@@ -705,6 +705,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
         mergeHeader.write(fieldDictOut);
         DiskDictionaryBundle exemplar = null;
         
+        boolean debug = mergeState.info.getName().equalsIgnoreCase("references");
+        
         //
         // Find a non-null bundle for when we need an actual bundle.
         for(DiskDictionaryBundle bundle : bundles) {
@@ -751,7 +753,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 mergeHeader.dictOffsets[ord] = -1;
                 continue;
             }
-
+            
             NameEncoder encoder = null;
             mergeHeader.dictOffsets[ord] = fieldDictOut.position();
 
@@ -836,8 +838,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
 
         //
-        // Merge the docs to values data.
-        if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED)) {
+        // Merge the docs to values data, if we wrote and dictionaries!
+        if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED) && entryIDMaps[Type.RAW_SAVED.ordinal()] != null) {
 
             File id = mergeState.manager.getIndexDir();
             
@@ -860,7 +862,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 //
                 // This partition didn't have this field, but we still want to
                 // fill in values.
-                if(bundles[i] == null) {
+                if(bundles[i] == null || bundles[i].dtvData == null) {
                     for(int j = 0; j < mergeState.nUndel[i]; j++) {
                         mdtvOffsetBuff.byteEncode(mdtvBuff.position(), 4);
                         mdtvBuff.byteEncode(0);

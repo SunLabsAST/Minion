@@ -134,28 +134,6 @@ public interface SimpleIndexer {
     public void addField(String name, String value);
 
     /**
-     * Adds an indexable string field value to the current document.
-     *
-     * @param name the name of the field to which we want to add a value.
-     * If the named field is not currently defined, then the way that the
-     * field is treated depends on the engine configuration.  By default,
-     * the field will be indexed, tokenized, and vectored.  If the field
-     * name is <code>null</code>, then the value will be treated as part of
-     * the implicit document body and will therefore be indexed, tokenized,
-     * and vectored.
-     * @param value the value of the field, which may contain some markup.
-     * Note that this may cause additional fields to be added to the
-     * document, depending on what the markup analyzer for the provided
-     * string will do.
-     * @throws IllegalStateException if this method is called without having
-     * called <code>startDocument</code>
-     * @see IndexConfig
-     * @see #startDocument
-     * 
-     */
-    public void addField(String name, IndexableString value);
-
-    /**
      * Adds a date field value to the current document.
      *
      * @param name the name of the field to which we want to add a value.

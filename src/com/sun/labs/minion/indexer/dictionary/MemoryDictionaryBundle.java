@@ -332,7 +332,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      */
     public MemoryField.MarshallResult marshall(PartitionOutput partOut) throws
             java.io.IOException {
-        boolean debug = field.getInfo().getName().equals("title");
 
         MemoryField.MarshallResult ret = MemoryField.MarshallResult.DICTS_DUMPED;
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
@@ -388,15 +387,24 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     // We can do that now since we can process things 
                     // in document ID order.
                     Occurrence co = new OccurrenceImpl();
+                    int nAdded = 0;
                     for(int i = 0; i < dv.length; i++) {
                         if(dv[i] != null && !dv[i].isEmpty()) {
                             co.setID(i);
                             for(IndexEntry e : (List<IndexEntry>) dv[i]) {
                                 e.add(co);
                             }
+                            nAdded++;
                         }
                     }
-
+                    if(nAdded == 0) {
+                        //
+                        // There were no entries stored in the dictionary, so
+                        // we don't need to save anything.
+                        header.dictOffsets[ord] = -1;
+                        continue;
+                        
+                    }
                     break;
 
                 case UNCASED_SAVED:
@@ -409,13 +417,23 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     // We can do that now since we can process things 
                     // in document ID order.
                     Occurrence uo = new OccurrenceImpl();
+                    nAdded = 0;
                     for(int i = 0; i < dv.length; i++) {
                         if(ucdv[i] != null && !dv[i].isEmpty()) {
                             uo.setID(i);
                             for(IndexEntry e : (List<IndexEntry>) ucdv[i]) {
                                 e.add(uo);
+                                nAdded++;
                             }
                         }
+                    }
+                    if(nAdded == 0) {
+                        //
+                        // There were no entries stored in the dictionary, so
+                        // we don't need to save anything.
+                        header.dictOffsets[ord] = -1;
+                        continue;
+
                     }
                     break;
                 case RAW_VECTOR:
@@ -470,7 +488,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     break;
 
                 case SAVED_VALUE_BIGRAMS:
-                    if(field.getInfo().getType() == FieldInfo.Type.STRING) {
+                    //
+                    // If this is a string field, and there were some saved values, 
+                    // then go ahead and make bigrams out of them.
+                    if(field.getInfo().getType() == FieldInfo.Type.STRING &&
+                            header.dictOffsets[Type.RAW_SAVED.ordinal()] != -1){
                         if(dicts[ord] == null) {
                             dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
                         }
@@ -509,7 +531,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             }
         }
 
-        if(field.isSaved()) {
+        //
+        // If we had any saved values, then we need to dump the map from document
+        // IDs to the values that were saved for that document.
+        if(field.isSaved() && header.dictOffsets[Type.RAW_SAVED.ordinal()] != -1) {
 
             //
             // Dump the map from document IDs to the values saved for that document
@@ -530,14 +555,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 }
                 List<IndexEntry> dvs = (List<IndexEntry>) dv[i];
 
-                if(debug) {
-//                    logger.info(String.format("doc: %d n: %d", i, dvs.size()));
-                }
                 dtv.byteEncode(dvs.size());
                 for(IndexEntry e : dvs) {
-                    if(debug) {
-//                        logger.info(String.format(" %s id: %d", ((Date) e.getName()).getTime(), e.getID()));
-                    }
                     dtv.byteEncode(e.getID());
                 }
             }

@@ -108,7 +108,7 @@ public class InvFileDiskPartition extends DiskPartition {
         for(DiskField field : fields) {
             if(field != null) {
                 String[] t = field.getPostingsChannelNames();
-                if(max == null || t.length > max.length) {
+                if(max == null || (t != null && t.length > max.length)) {
                     max = t;
                 }
             }

@@ -73,8 +73,7 @@ import java.util.logging.Logger;
  */
 public class DiskPartition extends Partition implements Closeable {
 
-    private static Logger logger = Logger.getLogger(
-            DiskPartition.class.getName());
+    private static Logger logger = Logger.getLogger(DiskPartition.class.getName());
 
     /**
      * The dictionary file.

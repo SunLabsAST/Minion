@@ -34,7 +34,6 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
-import com.sun.labs.minion.indexer.postings.PositionPostings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.Util;
 import java.util.HashMap;
