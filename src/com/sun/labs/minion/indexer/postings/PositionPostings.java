@@ -519,7 +519,7 @@ public class PositionPostings implements Postings {
         if(pos >= 0) {
             return new UncompressedIterator(features);
         } else {
-            if(features != null && features.positions && posnBuff == null || posnBuff.position() == 0) {
+            if(features != null && features.positions && (posnBuff == null || posnBuff.position() == 0)) {
                 readPositions();
             }
             return new CompressedIterator(features);
