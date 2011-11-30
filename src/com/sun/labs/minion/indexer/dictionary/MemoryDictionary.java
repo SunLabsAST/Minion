@@ -96,7 +96,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * The log.
      */
-    static Logger logger = Logger.getLogger(MemoryDictionary.class.getName());
+    static final Logger logger = Logger.getLogger(MemoryDictionary.class.getName());
 
     /**
      * The tag for this module.

@@ -10,7 +10,7 @@ import java.util.logging.Logger;
  * An abstract base class for fields.
  */
 public abstract class Field {
-    private static Logger logger = Logger.getLogger(Field.class.getName());
+    private static final Logger logger = Logger.getLogger(Field.class.getName());
     
     public static int CASED_TOKENS = 0;
 
