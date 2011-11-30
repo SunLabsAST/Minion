@@ -886,6 +886,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         new StringNameHandler(),
                         mergeState.dictRAF,
                         mPostRAF);
+                logger.info(String.format("max: %d", mergeState.maxDocID));
                 DocumentVectorLengths.calculate(mergeState.info, 
                                                 mergeState.maxDocID,
                                                 mergeState.maxDocID,  

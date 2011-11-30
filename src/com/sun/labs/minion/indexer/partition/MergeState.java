@@ -104,6 +104,11 @@ public class MergeState implements Cloneable {
     public RandomAccessFile termStatsRAF;
     
     /**
+     * The new term stats after a merge.
+     */
+    public int termStatsNumber;
+    
+    /**
      * A place where vector lengths can be written.
      */
     public RandomAccessFile vectorLengthRAF;

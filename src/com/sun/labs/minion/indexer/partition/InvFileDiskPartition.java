@@ -31,14 +31,13 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
+import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
@@ -343,10 +342,14 @@ public class InvFileDiskPartition extends DiskPartition {
 
         File vlf = manager.makeVectorLengthFile(partNumber);
         mergeState.vectorLengthRAF = new RandomAccessFile(vlf, "rw");
-        int newTSN = manager.getMetaFile().getTermStatsNumber();
-        File mtsf = manager.makeTermStatsFile(newTSN);
+        mergeState.termStatsNumber = manager.getMetaFile().getTermStatsNumber();
+        File mtsf = manager.makeTermStatsFile(mergeState.termStatsNumber);
         mergeState.termStatsRAF = new RandomAccessFile(mtsf, "rw");
-        
+        //
+        // Remember where the header for the term stats should go.
+        mergeState.termStatsRAF.writeLong(0);
+        TermStatsHeader tsh = new TermStatsHeader();
+
         for(FieldInfo fi : manager.getMetaFile()) {
             DiskField[] mFields = new DiskField[mergeState.partitions.length];
             DiskField merger = null;
@@ -356,12 +359,36 @@ public class InvFileDiskPartition extends DiskPartition {
                     merger = mFields[j];
                 }
             }
+            
+            long fieldOffset = dictFile.getFilePointer();
+            long termStatsOff = mergeState.termStatsRAF.getFilePointer();
+
             if(merger == null) {
                 logger.info(String.format("No merger for %s", fi.getName()));
+                fieldOffset = -1;
+                termStatsOff = -1;
             } else {
                 mergeState.info = fi;
+                mergeState.header.addOffset(fi.getID(), mergeState.dictRAF.getFilePointer());
                 DiskField.merge(mergeState, mFields);
             }
+            mergeState.header.addOffset(fi.getID(), fieldOffset);
+            tsh.addOffset(fi.getID(), termStatsOff);
+        }
+
+        try {
+            //
+            // Finish off the term stats dictionary, especially writing the
+            // header.
+            if (mergeState.termStatsRAF != null) {
+                long hpos = mergeState.termStatsRAF.getFilePointer();
+                tsh.write(mergeState.termStatsRAF);
+                mergeState.termStatsRAF.seek(0);
+                mergeState.termStatsRAF.writeLong(hpos);
+            }
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE,
+                    String.format("Error setting term stats %d", mergeState.termStatsNumber), ex);
         }
 
         mergeState.vectorLengthRAF.close();

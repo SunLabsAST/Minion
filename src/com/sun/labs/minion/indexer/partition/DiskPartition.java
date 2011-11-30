@@ -646,7 +646,6 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // We'll quickly build some stats that we need for pretty much
             // everything.
-            int newMaxDocID = 0;
             for(int i = 0; i < mergeState.partitions.length; i++) {
 
                 DiskPartition d = mergeState.partitions[i];
@@ -677,7 +676,7 @@ public class DiskPartition extends Partition implements Closeable {
                 if(i > 0) {
                     mergeState.docIDStart[i] = mergeState.docIDStart[i - 1] + nUndel[i - 1];
                 }
-                newMaxDocID += nUndel[i];
+                mergeState.maxDocID += nUndel[i];
             }
 
             //
@@ -713,7 +712,7 @@ public class DiskPartition extends Partition implements Closeable {
             }
             
             int[][] docDictIDMaps = new int[dicts.length][1];
-            docDictIDMaps[0][0] = newMaxDocID;
+            docDictIDMaps[0][0] = mergeState.maxDocID;
 
             //
             // Merge the document dictionaries.  We'll need to remap the
@@ -743,6 +742,12 @@ public class DiskPartition extends Partition implements Closeable {
             for(int i = 0; i < mergeState.postStreams.length; i++) {
                 mergeState.postOut[i].flush();
                 mergeState.postStreams[i].close();
+            }
+            
+            if (mergeState.termStatsNumber != 0) {
+                manager.getMetaFile().setTermStatsNumber(
+                        mergeState.termStatsNumber);
+                manager.updateTermStats();
             }
 
             DiskPartition ndp = manager.newDiskPartition(mergeState.partNumber, manager);
