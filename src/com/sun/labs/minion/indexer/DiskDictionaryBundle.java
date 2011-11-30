@@ -104,10 +104,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
         header = new FieldHeader(dictFile);
         dicts = new DiskDictionary[MemoryDictionaryBundle.Type.values().length];
         
-        if(info.getName().equals("headline")) {
-            logger.info(String.format("header: %s", header));
-        }
-
         for(Type type : Type.values()) {
             int ord = type.ordinal();
             NameDecoder decoder;

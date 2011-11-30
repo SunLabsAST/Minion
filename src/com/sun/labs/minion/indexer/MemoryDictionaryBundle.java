@@ -333,8 +333,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         
         boolean trace = info.getName().equals("headline");
 
-        logger.info(String.format("Dumping saved values for %s, maxID: %d", info, maxID));
-
         //
         // Dump the dictionaries in this bundle.  This loop is a little gross, what
         // with the pre-dump and post-dump switches based on the type of dictionary
