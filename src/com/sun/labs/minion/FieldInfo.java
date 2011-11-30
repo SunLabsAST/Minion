@@ -579,11 +579,37 @@ public class FieldInfo implements Cloneable, Configurable {
                           Attribute.VECTORED);
     }
 
+    /**
+     * Gets the default set of attributes, which indexes a field, but doesn't
+     * vector or save it.
+     * @return 
+     */
     public static EnumSet<Attribute> getDefaultAttributes() {
         return EnumSet.of(Attribute.INDEXED,
                           Attribute.CASED,
                           Attribute.UNCASED,
                           Attribute.TOKENIZED);
+    }
+
+    /**
+     * Gets a set of the typical attributes for an indexed field.
+     * @return a set of attributes containing the INDEXED, TOKENIZED, and VECTORED
+     * attributes
+     */
+    public static EnumSet<Attribute> getIndexedAndSavedAttributes() {
+        return EnumSet.of(Attribute.INDEXED,
+                Attribute.TOKENIZED,
+                Attribute.CASED,
+                Attribute.UNCASED,
+                Attribute.VECTORED, 
+                Attribute.SAVED);
+    }
+
+    /**
+     * Gets a set of attributes for a field that is only SAVED.
+     */
+    public static EnumSet<Attribute> getSavedAttributes() {
+        return EnumSet.of(Attribute.SAVED);
     }
 
     @Override
