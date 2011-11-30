@@ -75,6 +75,7 @@ import com.sun.labs.minion.indexer.DiskField;
 import java.io.File;
 import java.net.URL;
 import com.sun.labs.minion.indexer.MetaFile;
+import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.util.LabsLogFormatter;
@@ -407,11 +408,20 @@ public class QueryTest extends SEMain {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 
-                if(args.length == 1) {
-                    return "Must specify one or more terms";
-                }
-                
                 TermStatsDiskDictionary tsd = manager.getTermStatsDict();
+                if(args.length == 1) {
+                    for(FieldInfo fi : manager.getMetaFile()) {
+                        DictionaryIterator di = tsd.iterator(fi);
+                        if(di != null) {
+                            shell.out.format("Term stats for %s\n", fi.getName());
+                            while(di.hasNext()) {
+                                Entry e = di.next();
+                                shell.out.format("  %s: %d\n", e.getName(), e.getN());
+                            }
+                        }
+                        
+                    }
+                }
                 StringBuilder sb = new StringBuilder();
                 for(int i = 1; i < args.length; i++) {
                     String word = args[i];
