@@ -35,8 +35,10 @@ import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import java.util.Arrays;
+import com.sun.labs.minion.util.Util;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * A dictionary that will be used during indexing.  The entries will be
@@ -257,8 +259,20 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * @return The entries, in sorted order.
      */
     protected IndexEntry[] sort(Renumber renumber, IDMap idMapType) {
-        sortedEntries = map.values().toArray(new IndexEntry[0]);
-        Arrays.sort(sortedEntries);
+        
+        //
+        // Only put the elements that were used in the array for sorting.
+        List<IndexEntry> used = new ArrayList<IndexEntry>(map.size());
+        for(IndexEntry e : map.values()) {
+            if(e.isUsed()) {
+                used.add(e);
+            }
+        }
+        
+        //
+        // Sort.
+        sortedEntries = used.toArray(new IndexEntry[0]);
+        Util.sort(sortedEntries);
 
         //
         // Check if we need to keep an ID map.
@@ -270,26 +284,22 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             case NONE:
                 break;
             case RENUMBER:
+                int newID = 1;
                 switch(idMapType) {
                     case NONE:
-                        for(int i = 0; i < sortedEntries.length;
-                                i++) {
-                            sortedEntries[i].setID(i + 1);
+                        for(IndexEntry e : sortedEntries) {
+                            e.setID(newID++);
                         }
                         break;
                     case OLDTONEW:
-                        for(int i = 0; i < sortedEntries.length;
-                                i++) {
-                            IndexEntry e = sortedEntries[i];
-                            idMap[e.getID()] = i + 1;
-                            e.setID(i + 1);
+                        for(IndexEntry e : sortedEntries) {
+                            idMap[e.getID()] = newID;
+                            e.setID(newID++);
                         }
                     case NEWTOOLD:
-                        for(int i = 0; i < sortedEntries.length;
-                                i++) {
-                            IndexEntry e = sortedEntries[i];
-                            idMap[i + 1] = e.getID();
-                            e.setID(i + 1);
+                        for(IndexEntry e : sortedEntries) {
+                            idMap[newID] = e.getID();
+                            e.setID(newID++);
                         }
                         break;
                 }
@@ -385,16 +395,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Write the postings and entries.
         for(IndexEntry entry : sorted) {
-
-            //
-            // Skip entries that were kept around but not used.
-            if(!entry.isUsed()) {
-                continue;
-            }
-
-            //
-            // Write it out.
-            if(entry.writePostings(postOut, postingsIDMap) == true) {
+            if(entry.writePostings(postOut, postingsIDMap)) {
                 dout.write(entry);
             }
         }
