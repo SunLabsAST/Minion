@@ -27,27 +27,27 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Tests for the memory dictionary.
+ * Tests for the dictionaries.
  */
-public class MemoryDictionaryTest {
+public class DictionaryTest {
 
     static File tmpDir;
 
     static Logger logger =
-            Logger.getLogger(MemoryDictionaryTest.class.getName());
+            Logger.getLogger(DictionaryTest.class.getName());
 
     static List<String> wordList;
 
     static List<String> shuffleList;
 
-    public MemoryDictionaryTest() {
+    public DictionaryTest() {
     }
 
     @BeforeClass
     public static void setUpClass() throws Exception {
         tmpDir = new File(System.getProperty("java.io.tmpdir"));
         wordList = new ArrayList<String>();
-        InputStream pdis = MemoryDictionaryTest.class.getResourceAsStream("/com/sun/labs/minion/indexer/dictionary/resource/words.gz");
+        InputStream pdis = DictionaryTest.class.getResourceAsStream("/com/sun/labs/minion/indexer/dictionary/resource/words.gz");
         if(pdis == null) {
             logger.severe(String.format("Couldn't find test data!"));
             return;

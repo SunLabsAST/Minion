@@ -52,6 +52,8 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         this.post = post;
         if(post != null) {
             this.type = post.getType();
+        } else {
+            this.type = Postings.Type.NONE;
         }
     }
 
@@ -75,7 +77,7 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
     public boolean writePostings(PostingsOutput[] out, int[] idMap)
             throws java.io.IOException {
         if(post == null || post.getN() == 0) {
-            return false;
+            return type == Postings.Type.NONE;
         }
 
         //
