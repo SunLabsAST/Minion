@@ -12,7 +12,10 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -33,16 +36,21 @@ public class IDPostingsTest {
     }
     private static int[][] randomData;
 
+    private static Set[] sets;
+
     @BeforeClass
     public static void setUpClass() throws Exception {
 
         //
-        // Generate some random data.
+        // Generate some random data.  We need to account for gaps of zero, so
+        // keep track of the unique numbers.
         randomData = new int[10][];
+        sets = new Set[randomData.length];
         Random r = new Random();
         for(int i = 0; i < randomData.length; i++) {
             int s = r.nextInt(10240) + 1;
             int[] a = new int[s];
+            LinkedHashSet<Integer> uniq = new LinkedHashSet<Integer>(a.length);
             int prev = 0;
 
             //
@@ -50,8 +58,10 @@ public class IDPostingsTest {
             // postings.
             for(int j = 0; j < a.length; j++) {
                 a[j] = prev + r.nextInt(256);
+                prev = a[j];
             }
             randomData[i] = a;
+            sets[i] = uniq;
         }
     }
 
@@ -214,15 +224,21 @@ public class IDPostingsTest {
                                        dumpRandomData()));
                 }
             }
+            
+            if(sets[i].size() != idp.getN()) {
+                fail(String.format("Expected %d ids got %d, see: %s", sets[i].
+                        size(), idp.getN(), dumpRandomData()));
+            }
 
             PostingsIterator pi = idp.iterator(null);
+            Iterator<Integer> ui = sets[i].iterator();
             assertNotNull("Null postings iterator", pi);
-            int j = 0;
             while(pi.next()) {
-                assertTrue(String.format("Couldn't match id %d, got %d", curr[j], pi.
-                        getID()),
-                           pi.getID() == curr[j]);
-                j++;
+                int expected = ui.next();
+                if(pi.getID() != expected) {
+                    fail(String.format("Couldn't match id %d, got %d, see %s",
+                                       expected, pi.getID(), dumpRandomData()));
+                }
             }
         }
     }
