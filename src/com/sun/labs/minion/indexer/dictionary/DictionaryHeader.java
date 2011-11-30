@@ -261,7 +261,7 @@ public class DictionaryHeader {
         b.byteEncode(postStart.length, 4);
         for(int i = 0; i < postStart.length; i++) {
             b.byteEncode(postStart[i], 8);
-            b.byteEncode(postEnd[i], 7);
+            b.byteEncode(postEnd[i], 8);
         }
         b.byteEncode(magic, 4);
     }
@@ -275,18 +275,27 @@ public class DictionaryHeader {
 
     @Override
     public String toString() {
-        return "size: " + size
+        StringBuilder b = new StringBuilder("size: " + size
                 + " maxEntryID: " + maxEntryID
-                + " namesPos: " + namesPos
-                + " namesSize: " + namesSize
+                + " id2pp: " + idToPosnPos
+                + " id2p: " + idToPosnSize 
                 + " nameOffsetsPos: " + nameOffsetsPos
                 + " nameOffsetsSize: " + nameOffsetsSize
-                + " entryInfoPos: " + entryInfoPos
-                + " entryInfoSize: " + entryInfoSize
+                + " namesPos: " + namesPos
+                + " namesSize: " + namesSize
                 + " entryInfoOffsetsPos: " + entryInfoOffsetsPos
                 + " entryInfoOffsetsSize: " + entryInfoOffsetsSize
-                + " id2p: " + idToPosnSize 
-                + " magic: " + magic;
-                
+                + " entryInfoPos: " + entryInfoPos
+                + " entryInfoSize: " + entryInfoSize);
+
+        for(int i = 0; i < postStart.length; i++) {
+            if(i > 0) {
+                b.append(", ");
+            }
+            b.append('[').append(postStart[i]);
+            b.append(postEnd[i]).append(']');
+        }
+        b.append("magic: ").append(magic);
+        return b.toString();
     }
 } // DictionaryHeader
