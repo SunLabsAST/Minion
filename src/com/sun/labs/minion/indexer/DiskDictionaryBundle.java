@@ -129,10 +129,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 default:
                     decoder = new StringNameHandler();
                     fact = entryFactory;
-
             }
 
-            if(header.dictOffsets[ord] > 0) {
+            if(header.dictOffsets[ord] >= 0) {
                 dictFile.seek(header.dictOffsets[ord]);
                 dicts[ord] = new DiskDictionary<String>(fact,
                                                         decoder,
@@ -221,6 +220,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
      */
     public QueryEntry getTerm(String name, boolean caseSensitive) {
         QueryEntry ret = null;
+        logger.info(String.format("%s name: %s cs: %s dict: %s", 
+                info.getName(), name, caseSensitive,dicts[Type.UNCASED_TOKENS.ordinal()] ));
         if(caseSensitive) {
             if(field.cased) {
                 ret = dicts[Type.CASED_TOKENS.ordinal()].get(name);
@@ -232,6 +233,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         name, info.getName()));
             }
         } else if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
+            logger.info(String.format("here"));
             ret = dicts[Type.UNCASED_TOKENS.ordinal()].get(CharUtils.
                     toLowerCase(name));
         }
@@ -648,7 +650,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
     public static void merge(MergeState mergeState, 
                       DiskDictionaryBundle[] bundles) 
             throws java.io.IOException {
-
+        
         long headerPos = mergeState.dictRAF.getFilePointer();
         FieldHeader mergeHeader = new FieldHeader();
         mergeHeader.write(mergeState.dictRAF);
@@ -781,6 +783,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                            mergeState.postOut[0]);
         }
 
+        long mdsp = mergeState.dictRAF.getFilePointer();
+
         //
         // Merge the docs to values data.
         if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED)) {
@@ -868,8 +872,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
             if(mdp < 0) {
                 mdp = mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
             }
-            
-            long mdsp = mergeState.dictRAF.getFilePointer();
+            mdsp = mergeState.dictRAF.getFilePointer();
+
             if(mdp >= 0) {
                 
                 //
@@ -901,14 +905,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
             } else {
                 mergeHeader.vectorLengthOffset = -1;
             }
-
-            //
-            // Now zip back and write the header.
-            mergeState.dictRAF.seek(headerPos);
-            mergeHeader.write(mergeState.dictRAF);
-            mergeState.dictRAF.seek(mdsp);
-
         }
+        
+        //
+        // Now zip back and write the header.
+        mergeState.dictRAF.seek(headerPos);
+        mergeHeader.write(mergeState.dictRAF);
+        mergeState.dictRAF.seek(mdsp);
     }
 
     /**

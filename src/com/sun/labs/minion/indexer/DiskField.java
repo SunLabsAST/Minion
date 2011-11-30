@@ -255,7 +255,6 @@ public class DiskField extends Field {
         for(int i = 0; i < fields.length; i++) {
             bundles[i] = fields[i].bundle;
         }
-        logger.info(String.format("Merge %s", mergeState.info.getName()));
         DiskDictionaryBundle.merge(mergeState, bundles);
 
     }

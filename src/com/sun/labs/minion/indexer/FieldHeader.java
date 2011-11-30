@@ -38,12 +38,12 @@ class FieldHeader {
     /**
      * The ID of the field.
      */
-    protected int fieldID;
+    protected int fieldID = -1;
 
     /**
      * The maximum document ID for the partition in which this field resides.
      */
-    protected int maxDocID;
+    protected int maxDocID = -1;
 
     /**
      * The offsets of the starts of the dictionaries that make up the fields.
@@ -54,35 +54,36 @@ class FieldHeader {
      * The offset of the start of the bigram dictionary for the tokens in the
      * field, if any.
      */
-    protected long tokenBGOffset;
+    protected long tokenBGOffset = -1;
 
     /**
      * The offset of the start of the bigram dictionary for the saved values in the
      * field, if any.
      */
-    protected long savedBGOffset;
+    protected long savedBGOffset = -1;
 
     /**
      * Where we'll find the buffer that maps from document ID to a position
      * in the doc-to-value data.
      */
-    protected long dtvPosOffset;
+    protected long dtvPosOffset = -1;
 
     /**
      * Where we'll find the doc to value data.
      */
-    protected long dtvOffset;
+    protected long dtvOffset = -1;
 
     /**
      * Where we'll find the document lengths for this field.
      */
-    protected long vectorLengthOffset;
+    protected long vectorLengthOffset = -1;
 
     /**
      * Creates a header.
      */
     public FieldHeader() {
-    } // SavedFieldHeader constructor
+        Arrays.fill(dictOffsets, -1);
+    } // FieldHeader constructor
 
     /**
      * Creates a header, reading the data from the given channel.
@@ -96,7 +97,6 @@ class FieldHeader {
      * Reads a field header from the given channel.
      */
     public void read(RandomAccessFile f) throws java.io.IOException {
-        long initoff = f.getFilePointer();
         fieldID = f.readInt();
         maxDocID = f.readInt();
         int n = f.readInt();

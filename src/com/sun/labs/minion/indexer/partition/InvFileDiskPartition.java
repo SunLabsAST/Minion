@@ -31,7 +31,6 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
-import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
