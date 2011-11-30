@@ -132,7 +132,6 @@ public abstract class MemoryPartition extends Partition {
         // Write the partition header, then return to the top of the file to
         // say where it is.
         long phoffset = partDictOut.position();
-        logger.info(String.format("partHeader: %s", partHeader));
         partHeader.write(partDictOut);
         long pos = partDictOut.position();
         partDictOut.position(phoffsetpos);
