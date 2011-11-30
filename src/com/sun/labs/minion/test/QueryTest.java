@@ -48,15 +48,12 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
-import com.sun.labs.minion.indexer.postings.PostingsIterator;
-import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.StopWatch;
 import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.DocumentVector;
@@ -83,7 +80,6 @@ import com.sun.labs.minion.WeightedField;
 import com.sun.labs.minion.indexer.DiskField;
 import java.io.File;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
 import java.net.URL;
@@ -91,13 +87,10 @@ import java.util.HashSet;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
-import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.lexmorph.disambiguation.Unsupervised;
 import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
 import com.sun.labs.util.LabsLogFormatter;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
 import java.util.Collections;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -594,15 +587,20 @@ public class QueryTest extends SEMain {
                     q.indexOf(' ') + 1).trim());
             for(DiskPartition p : manager.getActivePartitions()) {
                 for(DiskField df : ((InvFileDiskPartition) p).getDiskFields()) {
+                    if(!df.getInfo().hasAttribute(FieldInfo.Attribute.INDEXED)) {
+                        continue;
+                    }
                     Entry e = df.getTerm(term, true);
                     if(e == null) {
-                        output.format("%s field: %s null", p,
+                        output.format("%s field: %s null\n", p,
                                       df.getInfo().getName());
                     } else {
-                        output.format("%s field: %s %s (%s) %d", p,
+                        output.format("%s field: %s %s (%s) %d\n", 
+                                      p,
                                       df.getInfo().getName(),
-                                      e.getName(), Util.toHexDigits(e.getName().
-                                toString()), e.getN());
+                                      e.getName(), 
+                                      Util.toHexDigits(e.getName().toString()), 
+                                      e.getN());
                     }
                 }
             }
@@ -636,12 +634,15 @@ public class QueryTest extends SEMain {
                     q.indexOf(' ') + 1).trim());
             for(DiskPartition p : manager.getActivePartitions()) {
                 for(DiskField df : ((InvFileDiskPartition) p).getDiskFields()) {
+                    if(!df.getInfo().hasAttribute(FieldInfo.Attribute.INDEXED)) {
+                        continue;
+                    }
                     Entry e = df.getTerm(term, false);
                     if(e == null) {
-                        output.format("%s field: %s null", p,
+                        output.format("%s field: %s null\n", p,
                                       df.getInfo().getName());
                     } else {
-                        output.format("%s field: %s %s (%s) %d", p,
+                        output.format("%s field: %s %s (%s) %d\n", p,
                                       df.getInfo().getName(),
                                       e.getName(), Util.toHexDigits(e.getName().
                                 toString()), e.getN());

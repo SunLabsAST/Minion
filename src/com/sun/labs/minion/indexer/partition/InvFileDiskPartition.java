@@ -35,6 +35,7 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -152,8 +153,14 @@ public class InvFileDiskPartition extends DiskPartition {
         return fields[fieldID];
     }
 
-    public DiskField[] getDiskFields() {
-        return fields;
+    public List<DiskField> getDiskFields() {
+        List<DiskField> ret = new ArrayList<DiskField>();
+        for(DiskField field : fields) {
+            if(field != null) {
+                ret.add(field);
+            }
+        }
+        return ret;
     }
 
     /**

@@ -10,8 +10,9 @@ import java.util.logging.Logger;
  * An abstract base class for fields.
  */
 public abstract class Field {
+
     private static final Logger logger = Logger.getLogger(Field.class.getName());
-    
+
     protected boolean cased;
 
     protected boolean saved;
@@ -29,7 +30,7 @@ public abstract class Field {
     protected FieldInfo info;
 
     protected Partition partition;
-    
+
     /**
      * A stemmer for stemming.
      */
@@ -44,7 +45,8 @@ public abstract class Field {
         cased = info.hasAttribute(FieldInfo.Attribute.CASED);
         uncased = info.hasAttribute(FieldInfo.Attribute.UNCASED);
 
-        if(info.getType() != FieldInfo.Type.STRING && info.getType() != FieldInfo.Type.NONE && uncased) {
+        if(info.getType() != FieldInfo.Type.STRING && info.getType()
+                != FieldInfo.Type.NONE && uncased) {
             logger.warning(String.format("Field %s of type %s has UNCASED attribute, which "
                     + "doesn't make sense!", info.getName(), info.getType()));
         }
@@ -63,5 +65,4 @@ public abstract class Field {
     }
 
     public abstract int getMaximumDocumentID();
-
 }

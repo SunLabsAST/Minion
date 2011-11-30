@@ -122,6 +122,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     fact = factory;
 
             }
+
             if(header.dictOffsets[ord] > 0) {
                 dictFile.seek(header.dictOffsets[ord]);
                 dicts[ord] = new DiskDictionary<String>(fact,
@@ -217,7 +218,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 logger.warning(
                         String.format(
                         "Match case requested for term %s in field %s, "
-                        + "but this field only has case insensitive terms stored"));
+                        + "but this field only has case insensitive terms stored",
+                        name, info.getName()));
             }
         }
 
@@ -853,7 +855,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         DiskDictionary rawSaved;
 
-        public Fetcher(DiskDictionary rawSaved, ReadableBuffer dtvOffsets, ReadableBuffer dtvData) {
+        public Fetcher(DiskDictionary rawSaved, ReadableBuffer dtvOffsets,
+                       ReadableBuffer dtvData) {
             this.rawSaved = rawSaved;
             ldtvo = dtvOffsets.duplicate();
             ldtv = dtvData.duplicate();
