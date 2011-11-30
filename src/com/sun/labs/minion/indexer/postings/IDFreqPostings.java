@@ -30,6 +30,7 @@ import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Logger;
 
 /**
  * A postings class for IDs that have frequencies associated with them.
@@ -48,6 +49,8 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * </ol>
  */
 public class IDFreqPostings extends IDPostings {
+
+    private static final Logger logger = Logger.getLogger(IDFreqPostings.class.getName());
 
     /**
      * The position where we're collecting data.
@@ -113,11 +116,7 @@ public class IDFreqPostings extends IDPostings {
         return Type.ID_FREQ;
     }
 
-    /**
-     * Adds an occurrence to the postings list.
-     *
-     * @param o The occurrence to add.
-     */
+    @Override
     public void add(Occurrence o) {
         int oid = o.getID();
         if(oid != curr) {
@@ -232,6 +231,7 @@ public class IDFreqPostings extends IDPostings {
     /**
      * Gets the total number of occurrences in this postings list.
      */
+    @Override
     public long getTotalOccurrences() {
         return to;
     }
@@ -245,6 +245,7 @@ public class IDFreqPostings extends IDPostings {
      * requested, a warning will be logged and <code>null</code> will be
      * returned.
      */
+    @Override
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
 
         if(ids != null) {
@@ -278,7 +279,7 @@ public class IDFreqPostings extends IDPostings {
 
         @Override
         public int getFreq() {
-            return freqs[pos];
+            return freqs[currPos];
         }
 
         @Override
@@ -406,5 +407,21 @@ public class IDFreqPostings extends IDPostings {
             return p;
         }
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(nIDs*6);
+        sb.append("nIDS: ").append(nIDs).append(" [");
+        for(int i = 0; i < nIDs; i++) {
+            if(i > 0) {
+                sb.append(", ");
+            }
+            sb.append('(').append(ids[i]).append(',').append(freqs[i]).append(')');
+        }
+        sb.append(']');
+        return sb.toString();
+    }
+
+
 } // IDFreqPostings
 

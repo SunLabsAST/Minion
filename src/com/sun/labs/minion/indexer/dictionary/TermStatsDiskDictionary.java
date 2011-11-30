@@ -82,7 +82,6 @@ public class TermStatsDiskDictionary implements Closeable {
             raf.seek(headerPos);
             header = new TermStatsHeader(raf);
             for(Map.Entry<Integer, Long> e : header) {
-                logger.info(String.format("loading %d from %d", e.getKey(), e.getValue()));
                 if(e.getValue() >= 0) {
                     raf.seek(e.getValue());
                     fieldDicts[e.getKey()] = new DiskDictionary(

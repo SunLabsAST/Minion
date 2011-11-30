@@ -93,7 +93,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
 
         for(MemoryField field : fields) {
             if(field != null) {
-                field.startDocument(key);
+                field.startDocument(dockey);
             }
         }
     }
@@ -148,7 +148,9 @@ public class InvFileMemoryPartition extends MemoryPartition {
             logger.warning(String.format("Can't add term to undefined field %s", field));
         }
         MemoryField mf = getMF(fi);
-        mf.token(new Token(term, count));
+        Token t = new Token(term, count);
+        t.setID(dockey.getID());
+        mf.token(t);
     }
 
     /**

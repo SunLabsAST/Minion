@@ -165,6 +165,10 @@ public abstract class Entry<N extends Comparable> implements Comparable<Entry>, 
         return String.format("%s (%s)", name, type);
     }
 
+    public String toVerboseString() {
+        return String.format("%s: %s", name, post.toString());
+    }
+
     /**
      * Sets the ID associated with this entry.
      *

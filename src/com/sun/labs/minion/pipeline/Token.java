@@ -26,8 +26,6 @@ package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.minion.indexer.postings.FieldOccurrence;
 
-import com.sun.labs.minion.util.CharUtils;
-import com.sun.labs.minion.util.Util;
 
 /**
  * A class encapsulating all of our knowledge about a given token.
@@ -217,9 +215,10 @@ public class Token implements FieldOccurrence {
         return end;
     }
     
+    @Override
     public String toString() {
-        return "[" + token + ", " +
-                wordNum + ", " + start + ", " + end + ", " + type + "]";
+        return String.format("[%s, %d, %d, %d, %d, %s]",
+                token, wordNum, start, end, count, type);
     }
     
     //

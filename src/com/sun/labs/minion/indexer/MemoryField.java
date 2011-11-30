@@ -4,6 +4,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
+import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
@@ -32,10 +33,7 @@ public class MemoryField extends Field {
      */
     private Pipeline pipeline;
 
-    /**
-     * The maximum document ID for which we're storing data.
-     */
-    private int maximumDocumentID;
+    private FieldStage fieldStage;
 
     public MemoryField(MemoryPartition partition, FieldInfo info, EntryFactory factory) {
         super(partition, info);
@@ -48,12 +46,13 @@ public class MemoryField extends Field {
                 throw new IllegalArgumentException(String.format("Unknown pipline name %s for field %s", pipelineFactoryName, info.getName()));
             }
             pipeline = pf.getPipeline();
-            pipeline.addStage(new FieldStage());
+            fieldStage = new FieldStage();
+            pipeline.addStage(fieldStage);
         }
     }
 
-    public void startDocument(String key) {
-        dicts.startDocument(key);
+    public void startDocument(Entry docKey) {
+        dicts.startDocument(docKey);
     }
 
     /**
@@ -68,6 +67,7 @@ public class MemoryField extends Field {
         }
 
         if(pipeline != null) {
+            fieldStage.setDocID(docID);
             pipeline.process(data.toString());
         }
     }
@@ -93,7 +93,7 @@ public class MemoryField extends Field {
     }
 
     public int getMaximumDocumentID() {
-        return maximumDocumentID;
+        return dicts.getMaxDocID();
     }
 
     /**
@@ -128,8 +128,15 @@ public class MemoryField extends Field {
 
     private class FieldStage extends StageAdapter {
 
+        private int docID;
+
+        public void setDocID(int docID) {
+            this.docID = docID;
+        }
+
         @Override
         public void token(Token t) {
+            t.setID(docID);
             MemoryField.this.token(t);
         }
 

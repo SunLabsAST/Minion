@@ -9,6 +9,7 @@ import com.sun.labs.minion.indexer.dictionary.MemoryBiGramDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
+import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
@@ -94,6 +95,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
     private FieldInfo info;
 
+    private int maxDocID;
+
     /**
      * An occurrence that we can use to add data to postings for the
      * document dictionary entries.
@@ -161,7 +164,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
     }
 
-    public void startDocument(String key) {
+    public void startDocument(Entry docKey) {
+        String key = docKey.getName().toString();
+        maxDocID = Math.max(maxDocID, docKey.getID());
         if(field.vectored) {
             if(field.cased) {
                 dicts[Type.RAW_VECTOR.ordinal()].remove(key);
@@ -175,6 +180,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             rawVector = null;
             stemmedVector = null;
         }
+    }
+
+    public int getMaxDocID() {
+        return maxDocID;
     }
 
     public void token(Token t) {

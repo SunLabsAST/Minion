@@ -208,6 +208,7 @@ public class DocumentVectorLengths {
                 gte = null;
                 mde = null;
             } else if(cmp < 0) {
+
                 //
                 // Only the new partition has the term.  Create the stats.
                 we = new TermStatsIndexEntry(mde.getName().toString(), 0);

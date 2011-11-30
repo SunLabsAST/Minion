@@ -78,7 +78,7 @@ import java.util.logging.Logger;
  */
 public class IDPostings implements Postings, MergeablePostings {
 
-    private static Logger logger = Logger.getLogger(IDPostings.class.getName());
+    private static final Logger logger = Logger.getLogger(IDPostings.class.getName());
 
     /**
      * The compressed postings.
@@ -596,7 +596,7 @@ public class IDPostings implements Postings, MergeablePostings {
      */
     public class UncompressedIDIterator implements PostingsIterator {
 
-        int pos = -1;
+        int currPos = -1;
 
         PostingsIteratorFeatures features;
 
@@ -612,24 +612,24 @@ public class IDPostings implements Postings, MergeablePostings {
         }
 
         public boolean next() {
-            return ourN != 0 && ++pos < ourN;
+            return ourN != 0 && ++currPos < ourN;
         }
 
         public boolean findID(int id) {
-            pos = Util.binarySearch(ids, 0, ourN, id);
-            if(pos > 0) {
+            currPos = Util.binarySearch(ids, 0, ourN, id);
+            if(currPos > 0) {
                 return true;
             }
-            pos = -pos;
+            currPos = -currPos;
             return  false;
         }
 
         public void reset() {
-            pos = -1;
+            currPos = -1;
         }
 
         public int getID() {
-            return ids[pos];
+            return ids[currPos];
         }
 
         public float getWeight() {
