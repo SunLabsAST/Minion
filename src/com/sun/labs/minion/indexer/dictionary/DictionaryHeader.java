@@ -241,8 +241,10 @@ public class DictionaryHeader {
     }
     
     public String toString() {
-        return "size: " + size + " maxEntryID: " + maxEntryID + " nos: " + nameOffsetsSize + " ns: " + namesSize + 
-                " ios: " + entryInfoOffsetsSize + " is: " + entryInfoSize + " id2p: " + idToPosnSize;
+        return "size: " + size + " maxEntryID: " + maxEntryID + 
+                " nos: " + nameOffsetsSize + " ns: " + namesSize + 
+                " ios: " + entryInfoOffsetsSize + 
+                " is: " + entryInfoSize + " id2p: " + idToPosnSize;
     }
 
 } // DictionaryHeader

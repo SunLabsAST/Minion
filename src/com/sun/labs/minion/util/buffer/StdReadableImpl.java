@@ -218,8 +218,6 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      */
     public String toString(int mode) {
 
-        StringBuffer b = new StringBuffer(16);
-
         int start;
         int end;
 
@@ -253,8 +251,12 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * @return A string representation of the buffer.
      */
     public String toString(int start, int end) {
-
-        StringBuffer b = new StringBuffer((end - start + 1) * 8);
+        
+        if(start < 0 || end < 0) {
+            return String.format("position: %d limit: %d", position(), limit());
+        }
+        
+        StringBuilder b = new StringBuilder((end - start + 1) * 8);
 
         for(int i = start; i < end; i++) {
             if(i > start) {
@@ -267,7 +269,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
             } else if(i < 1000) {
                 b.append(" ");
             }
-            b.append(i + " " + StdBufferImpl.byteToBinaryString(get(i)));
+            b.append(i).append(' ').append(StdBufferImpl.byteToBinaryString(get(i)));
         }
         return b.toString();
     }

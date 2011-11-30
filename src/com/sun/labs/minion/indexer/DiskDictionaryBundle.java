@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -714,6 +715,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     }
                     break;
                 case STEMMED_VECTOR:
+                    //
+                    // The stemmed vector's names are strings, and we use the
+                    // map for the stemmed tokens.
                     encoder = new StringNameHandler();
                     mergeState.postIDMaps = entryIDMaps[Type.STEMMED_TOKENS.
                             ordinal()];
@@ -724,6 +728,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
             if(foundDict) {
                 mergeHeader.dictOffsets[ord] = mergeState.dictRAF.getFilePointer();
+                logger.info(String.format("%s: %d", type, mergeHeader.dictOffsets[ord]));
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                                                   encoder, 
                                                   mDicts,
@@ -875,7 +880,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     mPostRAF[i] = new RandomAccessFile(mergeState.postFiles[i], "rw");
                 }
                 mergeHeader.vectorLengthOffset = mergeState.vectorLengthRAF.getFilePointer();
+                logger.info(String.format("Opening main dict at %d", mdp));
                 mergeState.dictRAF.seek(mdp);
+                Logger dl = Logger.getLogger(DiskDictionary.class.getName());
+                dl.setLevel(Level.FINE);
                 DiskDictionary newMainDict = new DiskDictionary(exemplar.entryFactory,
                                                                 new StringNameHandler(),
                                                                 mergeState.dictRAF, 

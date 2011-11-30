@@ -553,6 +553,10 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @return A string representation of the buffer.
      */
     public String toString(int start, int end) {
+        
+        if(start < 0 || end < 0) {
+            return String.format("position: %d limit: %d", position(), limit());
+        }
 
         StringBuilder b = new StringBuilder((end - start + 1) * 8);
 

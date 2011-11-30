@@ -291,7 +291,11 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         
         //
         // Read the header.
+        
+        logger.fine(String.format("reading dict at %d", dictFile.getFilePointer()));
         dh = new DictionaryHeader(dictFile);
+        logger.fine(String.format("header: %s", dh));
+        
 
         if(postFiles != null) {
             this.postIn = new PostingsInput[postFiles.length];
@@ -684,6 +688,12 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         int offset =
                 lus.localNameOffsets.byteDecode(
                 dh.nameOffsetsBytes * pos, dh.nameOffsetsBytes);
+        
+        logger.fine(String.format("pos: %d no: %d buff: %s offset: %d", 
+                                  pos, 
+                                  pos * dh.nameOffsetsBytes,
+                                  lus.localNameOffsets.toString(),
+                                  offset));
 
         //
         // Get the name of the entry at that position.
@@ -2098,6 +2108,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             //
             // quick approximation to the log base 2 of the cache size.
             depth = (int) (Math.log(capacity) / Math.log(2)) - 1;
+            logger.fine(String.format("depth: %d", depth));
             LookupState lus = new LookupState(DiskDictionary.this);
             if(size() > 0) {
                 root = new Node(lus, 0, dh.nOffsets - 1);
@@ -2166,6 +2177,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 //
                 // Get the name for the node at the midpoint.
                 mid = (lower + upper) / 2;
+                logger.fine(String.format("lower: %d mid: %d upper: %d", lower, mid, upper));
                 name = getUncompressedName(mid, lus);
                 this.lower = lower;
                 this.upper = upper;
