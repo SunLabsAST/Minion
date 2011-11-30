@@ -1069,11 +1069,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 ((MemoryPartition) ((AbstractPipelineImpl) si).getIndexer()).
                 getDocumentDictionary().get(doc.getKey());
 
-        //
-        // Get a document vector for that field.
-        CompositeDocumentVectorImpl dvi =
-                new CompositeDocumentVectorImpl(this, dke, fields);
-        return dvi;
+        return null;
     }
 
     public QueryEntry getDocumentTerm(String key) {

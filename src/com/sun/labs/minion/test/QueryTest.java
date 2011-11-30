@@ -1995,7 +1995,7 @@ public class QueryTest extends SEMain {
                 } else if(dv2 == null) {
                     output.println("No such doc: " + key2);
                 } else {
-                    Map<String, Float> words = dv1.getSimilarityTerms(dv2);
+                    Map<String, Float> words = dv1.getSimilarityTermMap(dv2);
                     for(Iterator it = words.keySet().iterator(); it.hasNext();) {
                         String curr = (String) it.next();
                         output.println(curr + ": \t" + words.get(curr));

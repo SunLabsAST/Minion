@@ -34,23 +34,18 @@ import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.WeightedFeature;
 import java.util.HashSet;
 import java.util.PriorityQueue;
 import java.util.Set;
 import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.classification.WeightedFeature;
-import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
-import com.sun.labs.minion.indexer.dictionary.LightIterator;
-import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
-import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.pipeline.StopWords;
-import com.sun.labs.minion.retrieval.cache.TermCache;
-import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.util.Util;
 import java.io.Serializable;
 import java.util.logging.Logger;
@@ -79,7 +74,12 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
     /**
      * The document key for this entry.
      */
-    protected transient DocKeyEntry key;
+    protected transient QueryEntry key;
+
+    /**
+     * The field for this entry.
+     */
+    protected transient DiskField df;
 
     /**
      * The name of the key, which will survive transport.
@@ -120,7 +120,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
 
     protected transient QueryStats qs = new QueryStats();
 
-    private static Logger logger = Logger.getLogger(DocumentVectorImpl.class.getName());
+    private static Logger logger = Logger.getLogger(DocumentVectorImpl.class.
+            getName());
 
     protected transient StopWords ignoreWords;
 
@@ -137,7 +138,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      * @param r The search result for which we want a document vector.
      */
     public DocumentVectorImpl(ResultImpl r) {
-        this(r.set.getEngine(), r.ag.part.getDocumentTerm(r.doc), null);
+        this(r.set.getEngine(),
+             r.ag.part.getDocumentDictionary().getByID(r.doc), null);
     }
 
     /**
@@ -150,11 +152,12 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      * vectored attribute set, the resulting document vector will be empty!
      */
     public DocumentVectorImpl(ResultImpl r, String field) {
-        this(r.set.getEngine(), r.ag.part.getDocumentTerm(r.doc), field);
+        this(r.set.getEngine(),
+             r.ag.part.getDocumentDictionary().getByID(r.doc), field);
     }
 
     public DocumentVectorImpl(SearchEngine e,
-            WeightedFeature[] basisFeatures) {
+                              WeightedFeature[] basisFeatures) {
         this.e = e;
         this.key = null;
         QueryConfig qc = e.getQueryConfig();
@@ -187,22 +190,23 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      * vectored attribute set, the resulting document vector will be empty!
      */
     public DocumentVectorImpl(SearchEngine e,
-            DocKeyEntry key, String field) {
+                              QueryEntry key, String field) {
         this(e, key, field, e.getQueryConfig().getWeightingFunction(),
-                e.getQueryConfig().getWeightingComponents());
+             e.getQueryConfig().getWeightingComponents());
     }
 
     public DocumentVectorImpl(SearchEngine e,
-            DocKeyEntry key, String field,
-            WeightingFunction wf,
-            WeightingComponents wc) {
+                              QueryEntry key, String field,
+                              WeightingFunction wf,
+                              WeightingComponents wc) {
 
         this.e = e;
         this.key = key;
         keyName = key.getName().toString();
         setField(field);
         this.wf = wf;
-        this.wc = wc.setDocument(this.key, field);
+        this.wc = wc.setDocument(this.key, ((InvFileDiskPartition) key.
+                getPartition()).getDF(field));
         length = wc.dvl;
         initFeatures();
     }
@@ -211,6 +215,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         DocumentVectorImpl ret = new DocumentVectorImpl();
         ret.e = e;
         ret.key = key;
+        ret.df = df;
         ret.keyName = keyName;
         ret.field = field;
         ret.fields = fields != null ? fields.clone() : fields;
@@ -244,7 +249,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         setField(field);
     }
 
-    public DocKeyEntry getEntry() {
+    public QueryEntry getEntry() {
         return key;
     }
 
@@ -332,8 +337,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             WeightedFeature f1 = v[i];
             WeightedFeature f2 = other.v[i];
 
-            if(f1.getName().equals(f2.getName()) &&
-                    f1.getWeight() == f2.getWeight()) {
+            if(f1.getName().equals(f2.getName()) && f1.getWeight() == f2.
+                    getWeight()) {
                 i++;
                 continue;
             }
@@ -364,7 +369,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      * @param dv the document vector to compare this one to
      * @return a sorted hash map of String names to Float weights
      */
-    public Map<String, Float> getSimilarityTerms(DocumentVector dv) {
+    public Map<String, Float> getSimilarityTermMap(DocumentVector dv) {
         //
         // Get the set of similarity terms, then turn it into
         // an ordered hashmap that is suitable for returning to
@@ -412,7 +417,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
                     //
                     // We found two terms with the same name.
                     float combined = f1.getWeight() * f2.getWeight();
-                    WeightedFeature wf = new WeightedFeature(f1.getName(), combined);
+                    WeightedFeature wf = new WeightedFeature(f1.getName(),
+                                                             combined);
                     s.add(wf);
                 }
                 i1++;
@@ -524,25 +530,9 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      */
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
 
-        //
-        // If the number of terms that we'll consider is a substantial portion of
-        // the number of terms in the dictionary, then we're going to do things
-        // a bit differently.
-        if(v == null && skimPercent == 1 && key.getN() >=
-                0.1 * key.getPartition().getManager().getNTerms()) {
-            return bigFindSimilar(sortOrder, skimPercent);
-        }
-
-        //
-        // Get the features if we need them
         getFeatures();
-
         qs.queryW.start();
 
-        //
-        // OK, we can do things the usual way:  process the document vector
-        // postings, build up the weighted features, and then process the
-        // postings.
         //
         // How many features will we actually consider here?
         WeightedFeature[] sf;
@@ -550,7 +540,8 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             int nf = (int) Math.floor(skimPercent * v.length);
             PriorityQueue<WeightedFeature> wfq =
                     new PriorityQueue<WeightedFeature>(nf,
-                    WeightedFeature.getInverseWeightComparator());
+                                                       WeightedFeature.
+                    getInverseWeightComparator());
             for(WeightedFeature twf : v) {
                 if(wfq.size() < nf) {
                     wfq.offer(twf);
@@ -582,35 +573,33 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         //
         // Iterate through the partitions, looking for the features.
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
-        feat.setFields(fields);
         feat.setQueryStats(qs);
-        for(DiskPartition curr : e.getManager().getActivePartitions()) {
+        for(DiskPartition dp : e.getManager().getActivePartitions()) {
+
+            InvFileDiskPartition curr = (InvFileDiskPartition) dp;
 
             if(curr.isClosed()) {
                 continue;
             }
 
+            DiskField cdf = curr.getDF(df.getInfo());
+
+            if(cdf == null) {
+                continue;
+            }
+
+
             ScoredQuickOr qor = new ScoredQuickOr(curr, 1024, true);
             qor.setQueryStats(qs);
-            qor.setField(fieldID);
-
-            TermCache termCache = curr.getTermCache();
 
             for(WeightedFeature f : sf) {
-                
-                //
-                // Try to do things with the term cache if we can.
-                PostingsIterator pi = null;
-                if(termCache != null) {
-                    TermCacheElement el = termCache.get(f.getName(), feat);
-                    pi = el.iterator();
-                } else {
-                    QueryEntry entry = curr.getTerm(f.getName());
-                    if(entry != null) {
-                        wf.initTerm(wc.setTerm(f.getName()));
-                        pi = entry.iterator(feat);
-                    }
+
+                QueryEntry entry = cdf.getTerm(f.getName(), false);
+                if(entry != null) {
+                    wf.initTerm(wc.setTerm(f.getName()));
                 }
+
+                PostingsIterator pi = entry.iterator(feat);
 
                 if(pi != null) {
                     //
@@ -653,178 +642,27 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
      * Builds the features for the feature vector.
      */
     private void initFeatures() {
-        if(key instanceof FieldedDocKeyEntry) {
-            v = ((FieldedDocKeyEntry) key).getWeightedFeatures(fieldID, wf, wc);
-        } else {
-            v = key.getWeightedFeatures(wf, wc);
+
+        QueryEntry ve = df.getVector(keyName);
+        if(ve == null) {
+            v = new WeightedFeature[0];
+            return;
         }
-    }
 
-    /**
-     * Computes the similar documents from scratch, using iteration rather than
-     * lookups.
-     */
-    private ResultSet bigFindSimilar(String sortOrder, double skimPercent) {
-
-        //
-        // Get an iterator for the terms in the document.
-        PostingsIteratorFeatures feat =
-                new PostingsIteratorFeatures(wf, wc);
-        feat.setFields(fields);
-        feat.setQueryStats(qs);
-        qs.queryW.start();
-        PostingsIterator pi = key.iterator(feat);
-        DiskPartition part =
-                (DiskPartition) key.getPartition();
-
-        //
-        // Get an iterator for the term stats dictionary.
-        DictionaryIterator tsi = part.getPartitionManager().getTermStatsDict().iterator();
-
-        //
-        // Handle the partition that the document was drawn from first.  We'll
-        // iterate through the main dictionary for this one too.
-        LightIterator mdi = part.getMainDictionary().literator();
-
-        //
-        // As we're going through this partition, we'll compute the weighted
-        // features, which we'll use for the other partitions.
-        List<WeightedFeature> fl =
-                new ArrayList<WeightedFeature>(key.getN());
-
-        //
-        // The groups for the result set.
-        List<ScoredGroup> groups =
-                new ArrayList<ScoredGroup>();
-        ScoredQuickOr qor =
-                new ScoredQuickOr(part, part.getNDocs());
-
+        PostingsIterator pi = ve.iterator(new PostingsIteratorFeatures());
+        if(pi == null) {
+            v = new WeightedFeature[0];
+            return;
+        }
+        
+        v = new WeightedFeature[pi.getN()];
+        int p = 0;
         while(pi.next()) {
-            int termID = pi.getID();
-
-            //
-            // Get to the main dictionary iterator for this term.
-            while(mdi.next()) {
-                if(mdi.getID() == termID) {
-                    break;
-                }
-            }
-
-            QueryEntry mde = mdi.getEntry();
-
-            //
-            // Get to the term stats for this term.
-            String name = mde.getName().toString();
-            TermStatsQueryEntry tse = null;
-            while(tsi.hasNext()) {
-                tse = (TermStatsQueryEntry) tsi.next();
-                if(tse.getName().equals(name)) {
-                    break;
-                }
-            }
-
-            //
-            // Make a weighted feature for this term.
-            wc.setTerm(tse.getTermStats()).setDocument(pi);
-            wf.initTerm(wc);
-            WeightedFeature twf =
-                    new WeightedFeature(name, pi.getID(),
-                    wf.termWeight(wc) / wc.dvl);
-            twf.setFreq(pi.getFreq());
-            fl.add(twf);
-            qor.add(mde.iterator(feat), twf.getWeight());
+            int tid = pi.getID();
+            QueryEntry qe = df.getTerm(tid, false);
+            v[p++] = new WeightedFeature(qe.getName().toString(), tid, pi.
+                    getWeight());
         }
-
-        groups.add((ScoredGroup) qor.getGroup());
-
-        //
-        // Get our array of features, while we're here.
-        v = fl.toArray(new WeightedFeature[0]);
-
-        //
-        // Now handle the rest of the partitions.
-        for(DiskPartition curr : e.getManager().getActivePartitions()) {
-
-            if(curr == part || curr.isClosed()) {
-                continue;
-            }
-
-            qor = new ScoredQuickOr(curr, curr.getNDocs());
-            qor.setField(fieldID);
-
-            //
-            // We're going to iterate through the other dictionaries as
-            // well.
-            mdi = curr.getMainDictionary().literator();
-            if(!mdi.next()) {
-                continue;
-            }
-
-            tsi = part.getPartitionManager().getTermStatsDict().iterator();
-            for(WeightedFeature f : v) {
-
-                String mdin = mdi.getName().toString();
-
-                while(mdin.compareTo(f.getName()) < 0) {
-                    if(mdi.next()) {
-                        mdin = mdi.getName().toString();
-                    } else {
-                        break;
-                    }
-                }
-
-                if(mdin.equals(f.getName())) {
-
-                    //
-                    // Get the term stats.
-                    TermStatsQueryEntry tse = null;
-                    while(tsi.hasNext()) {
-                        tse = (TermStatsQueryEntry) tsi.next();
-                        if(tse.getName().equals(f.getName())) {
-                            break;
-                        }
-                    }
-
-                    QueryEntry mde = mdi.getEntry();
-                    wf.initTerm(wc.setTerm(tse.getTermStats()));
-
-                    //
-                    // If we got an entry in this partition, add its postings
-                    // to the quick or.
-                    qor.add(mde.iterator(feat), f.getWeight());
-                } else {
-                    qor.addWeightOnly(f.getWeight());
-                }
-            }
-
-            //
-            // Add the results for this partition into the list
-            // of results.
-            ScoredGroup sg = (ScoredGroup) qor.getGroup();
-            groups.add(sg);
-        }
-
-        for(ScoredGroup sg : groups) {
-            if(fields == null) {
-                sg.normalize();
-            } else {
-                for(int i = 0; i < fields.length; i++) {
-                    if(fields[i] == 1) {
-                        sg.normalize(i);
-                        break;
-                    }
-                }
-            }
-            sg.removeDeleted();
-        }
-        qs.queryW.stop();
-        ((SearchEngineImpl) e).addQueryStats(qs);
-
-        ResultSetImpl ret =
-                new ResultSetImpl(e, sortOrder, groups);
-        ret.setQueryStats(qs);
-
-        return ret;
     }
 
     // Doc inherited from interface.  Gets a HashMap of the top N terms, or
@@ -888,94 +726,6 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             return;
         }
 
-        //
-        // Figure out the ID of the field that we're building a vector for.  If
-        // the field value is null, we won't do any field restriction, i.e.,
-        // we'll use the entire body of the document.  If the field is the empty
-        // string, then we'll use the data that doesn't occur in any field in
-        // the document (aka "the body").  If the field value isn't null and isn't
-        // empty, we'll treat it as the name of a (hopefully vectored) field.
-        //
-        // We're going to need the field ID in order to fetch the correct weight
-        // from the postings iterator when we're iterating through them, and to
-        // do normalization correctly when findSimilar is called.
-        fieldID = -1;
-        if(field != null) {
-            if(field.equals("")) {
-                //
-                // The no-field field.
-                fields = new int[]{1};
-                fieldID = 0;
-            } else {
-                fields = ((SearchEngineImpl) e).getManager().getMetaFile().
-                        getFieldArray(field);
-                for(int i = 0; i < fields.length; i++) {
-                    if(fields[i] == 1) {
-                        fieldID = i;
-                        break;
-                    }
-                }
-            }
-        }
+        df = ((InvFileDiskPartition) key.getPartition()).getDF(field);
     }
-
-//    /**
-//     * Writes the object to the provided output using a gzipped output stream to
-//     * save space (the resulting serialized data is 2-3 times smaller than it is
-//     * with the normal serialization approach.)  Changes to this method will require
-//     * a change to the serial version and will require modifications to the
-//     * <code>readExternal</code> method to reflect the changes.
-//     * @param out the output where the
-//     * @throws java.io.IOException if there is an error writing the object
-//     * @see #serialVersionUID
-//     * @see #readExternal(java.io.ObjectInput)
-//     */
-//    public void writeExternal(ObjectOutput out) throws IOException {
-//        out.writeLong(serialVersionUID);
-//        out.writeBoolean(keyName != null);
-//        if (keyName != null) {
-//            out.writeUTF(keyName);
-//        }
-//        out.writeBoolean(normalized);
-//        out.writeBoolean(field != null);
-//        if (field != null) {
-//            out.writeUTF(field);
-//        }
-//        out.writeInt(v.length);
-//        for (WeightedFeature f : v) {
-//            out.writeUTF(f.getName());
-//            out.writeFloat(f.getWeight());
-//        }
-//    }
-//
-//    /**
-//     * Reads the vector from the provided input.  This method reads a serial version
-//     * first.
-//     * @param in the input from which the vector will be read.
-//     * @throws java.io.IOException if there is an error reading from the input
-//     * or if the object being read has a different version than the one for this
-//     * class
-//     * @throws java.lang.ClassNotFoundException if there is an error instantiating
-//     * the vector
-//     */
-//    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-//        long svuid = in.readLong();
-//        if(svuid != serialVersionUID) {
-//            throw new java.io.InvalidClassException(String.format("Read class version %d looking for %d", svuid, serialVersionUID));
-//        }
-//        if (in.readBoolean()) {
-//            keyName = in.readUTF();
-//        }
-//        normalized = in.readBoolean();
-//        if (in.readBoolean()) {
-//            field = in.readUTF();
-//        }
-//        int l = in.readInt();
-//        v = new WeightedFeature[l];
-//        for(int i = 0; i < v.length; i++) {
-//            String n = in.readUTF();
-//            float w = in.readFloat();
-//            v[i] = new WeightedFeature(n, w);
-//        }
-//    }
 }

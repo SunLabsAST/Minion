@@ -258,6 +258,14 @@ public class DiskField extends Field {
         return uncasedTokens.getByID(id);
     }
 
+    public QueryEntry getVector(String key) {
+        if(!vectored) {
+            logger.warning(String.format("Requested vector for non-vectored field %s", info.getName()));
+            return null;
+        }
+        return vectors.get(key);
+    }
+
     /**
      * Gets an iterator for the saved values in a field.
      * @param caseSensitive for a string saved field, if this is <code>true</code>,

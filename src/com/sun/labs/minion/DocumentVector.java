@@ -135,6 +135,6 @@ public interface DocumentVector extends Cloneable {
      * @param vector the document vector to compare this one to
      * @return a sorted hash map of String names to Float weights
      */
-    public Map<String,Float> getSimilarityTerms(DocumentVector vector);
+    public Map<String,Float> getSimilarityTermMap(DocumentVector vector);
     
 }// DocumentVector

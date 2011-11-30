@@ -23,7 +23,6 @@
  */
 package com.sun.labs.minion.retrieval;
 
-import com.sun.labs.minion.indexer.dictionary.DiskDictionary.LookupState;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -37,7 +36,6 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PosPostingsIterator;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-import com.sun.labs.minion.lextax.ConceptEntry;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.retrieval.cache.TermCacheElement;
 import com.sun.labs.minion.util.Util;
@@ -125,13 +123,10 @@ public class DictTerm extends QueryTerm implements Comparator {
             feat = new PostingsIteratorFeatures();
             searchFields = part.getPartitionManager().getMetaFile().getFieldArray(
                     searchFieldNames);
-            feat.setFields(searchFields);
-            feat.setCaseSensitive(matchCase);
             feat.setPositions(loadPositions);
             feat.setQueryStats(qs);
             feat.setWeightingFunction(wf);
             feat.setWeightingComponents(wc);
-            feat.setMult(fieldMultipliers);
             feat.setQueryStats(qs);
         }
 
@@ -152,38 +147,8 @@ public class DictTerm extends QueryTerm implements Comparator {
         }
 
         //
-        //We'll get the semantic expansions once, for all the partitions
-        if(doExpand && semanticVariants == null) {
-            Set semanticExpansions = new HashSet();
-            Iterator partitionIterator = part.getPartitionManager().getActivePartitions().
-                    iterator();
-            while(partitionIterator.hasNext()) {
-                InvFileDiskPartition p =
-                        (InvFileDiskPartition) partitionIterator.next();
-                if(p.isClosed()) {
-                    continue;
-                }
-                Set subsumedConceptEntries = p.getSubsumed(this.getName());
-                if(subsumedConceptEntries != null) {
-                    for(Iterator iter = subsumedConceptEntries.iterator(); iter.
-                            hasNext();) {
-                        semanticExpansions.add(((ConceptEntry) iter.next()).
-                                getName());
-
-                    }
-                }
-            }
-            semanticVariants = new String[semanticExpansions.size()];
-            int i = 0;
-            for(Iterator iter = semanticExpansions.iterator(); iter.hasNext();) {
-                Object element = iter.next();
-                semanticVariants[i++] = (String) element;
-            }
-        }
-
-        //
         // A set to hold term variants from morphology or other sources.
-        Set variants = new HashSet();
+        Set<QueryEntry> variants = new HashSet<QueryEntry>();
 
         //
         // We'll start with the term itself, unless we're doing a wildcard.
@@ -336,24 +301,6 @@ public class DictTerm extends QueryTerm implements Comparator {
         } else {
             return intersect(ag);
         }
-    }
-
-    private TermCacheElement getTermCacheElement(PostingsIteratorFeatures feat) {
-        TermCache tc = part.getTermCache();
-        if(tc == null) {
-            return null;
-        }
-
-        if(dictEntries.length == 0) {
-            return null;
-        }
-
-        List<String> terms = new ArrayList<String>();
-        for(QueryEntry qe : dictEntries) {
-            terms.add(qe.getName().toString());
-        }
-
-        return tc.get(terms, feat);
     }
 
     /**
