@@ -344,7 +344,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * the channels.
      */
     public IndexEntry[] dump(DumpState dumpState) throws java.io.IOException {
-        logger.info(String.format("Dumping %d entries", map.size()));
+        logger.fine(String.format("Dumping %d entries", map.size()));
 
         DictionaryOutput dout = dumpState.fieldDictOut;
         
@@ -384,8 +384,6 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             dh.postEnd[i] = dumpState.postOut[i].position();
         }
         
-        logger.info(String.format("done dict dump"));
-
         //
         // Write the final dictionary.
         dout.finish();

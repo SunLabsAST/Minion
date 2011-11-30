@@ -26,6 +26,7 @@ package com.sun.labs.minion.indexer.partition;
 import java.io.File;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
+import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.StopWatch;
@@ -113,6 +114,7 @@ public abstract class MemoryPartition extends Partition {
         dumpState.renumber = MemoryDictionary.Renumber.NONE;
         dumpState.idMap = MemoryDictionary.IDMap.NONE;
         dumpState.postIDMap = null;
+        dumpState.encoder = new StringNameHandler();
         docDict.dump(dumpState);
 
         //

@@ -119,6 +119,7 @@ public class DictionaryTest {
         sd.put("d");
         sd.put("c");
         sd.put("a");
+        sd.sort(MemoryDictionary.Renumber.RENUMBER, MemoryDictionary.IDMap.NONE);
         Iterator<Entry> i = sd.iterator();
         assertEquals("a", i.next().getName());
         assertEquals("b", i.next().getName());
@@ -133,6 +134,7 @@ public class DictionaryTest {
         id.put(2l);
         id.put(1l);
         id.put(4l);
+        id.sort(MemoryDictionary.Renumber.RENUMBER, MemoryDictionary.IDMap.NONE);
         i = id.iterator();
         assertEquals(1L, i.next().getName());
         assertEquals(2L, i.next().getName());

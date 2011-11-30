@@ -98,7 +98,9 @@ public class DumpState {
         partNumber = manager.getNextPartitionNumber();
         fieldDictOut = new DiskDictionaryOutput(indexDir);
         postStream = new OutputStream[files.length - 1];
+        postOut = new PostingsOutput[postStream.length];
         for(int i = 1; i < files.length; i++) {
+            logger.info(String.format("file: %s", files[i]));
             postStream[i - 1] =
                     new BufferedOutputStream(new FileOutputStream(files[i]),
                     32768);
@@ -115,7 +117,6 @@ public class DumpState {
         fieldDictOut = new DiskDictionaryOutput(indexDir);
         postStream = new OutputStream[0];
         postOut = new PostingsOutput[0];
-        logger.info(String.format("Dump state ready to go!"));
     }
     
     public void close() throws IOException {

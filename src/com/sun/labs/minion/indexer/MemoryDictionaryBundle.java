@@ -194,7 +194,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             throw new UnsupportedOperationException(String.format(
                     "Field: %s is not tokenized", info.getName()));
         }
-
+        
         IndexEntry ce = null;
         IndexEntry uce = null;
         IndexEntry se = null;
@@ -313,6 +313,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         
         MemoryField.DumpResult ret = MemoryField.DumpResult.DICTS_DUMPED;
         
+        logger.info(String.format("dumping: %s", info.getName()));
+        
         int headerPos = dumpState.fieldDictOut.position();
         FieldHeader header = new FieldHeader();
         header.write(dumpState.fieldDictOut);
@@ -343,7 +345,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             //
             // Figure out the encoder for the type of dictionary.
             dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
-            dumpState.idMap = MemoryDictionary.IDMap.OLDTONEW;
+            dumpState.idMap = MemoryDictionary.IDMap.NONE;
             dumpState.postIDMap = null;
             switch(type) {
 
@@ -399,7 +401,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 default:
                     dumpState.encoder = new StringNameHandler();
             }
-
+            
+            logger.info(String.format("dump: %s %d", type, dicts[ord].size()));
             header.dictOffsets[ord] = dumpState.fieldDictOut.position();
             sortedEntries[ord] = dicts[ord].dump(dumpState);
         }
@@ -421,7 +424,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             header.tokenBGOffset = dumpState.fieldDictOut.position();
             dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
             dumpState.idMap = MemoryDictionary.IDMap.NONE;
-            dumpState.idMap = null;
+            dumpState.postIDMap = null;
             dumpState.encoder = new StringNameHandler();
             tbg.dump(dumpState);
         } else {
@@ -438,7 +441,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             header.savedBGOffset = dumpState.fieldDictOut.position();
             dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
             dumpState.idMap = MemoryDictionary.IDMap.NONE;
-            dumpState.idMap = null;
+            dumpState.postIDMap = null;
             dumpState.encoder = new StringNameHandler();
             sbg.dump(dumpState);
         } else {
