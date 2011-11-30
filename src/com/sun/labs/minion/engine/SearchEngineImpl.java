@@ -1561,10 +1561,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         public Indexer(int docsPerPart) {
             this.docsPerPart = docsPerPart;
             try {
-                part = mpPool.poll(10, TimeUnit.SECONDS);
-                if(part == null) {
-                    throw new IllegalStateException("Couldn't get memory parititon");
-                }
+                part = mpPool.take();
+                part.start();
             } catch(InterruptedException ex) {
                 throw new IllegalStateException("Error getting memory partition");
             }
@@ -1622,6 +1620,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             dumper.dump(part);
             try {
                 part = mpPool.take();
+                part.start();
             } catch(InterruptedException ex) {
                 logger.log(Level.SEVERE, String.format("Error getting memory partition"), ex);
             }

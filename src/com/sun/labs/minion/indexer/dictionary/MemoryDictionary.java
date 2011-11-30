@@ -303,7 +303,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      *
      * @return the latest id given out
      */
-    public int getMaxId() {
+    public int getMaxID() {
         return id;
     }
 
@@ -360,7 +360,8 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
 
         //
         // Start the dump.
-        dout.start(partOut.getDictionaryEncoder(),
+        dout.start(this, 
+                partOut.getDictionaryEncoder(),
                 partOut.getDictionaryRenumber(),
                 postOut.length);
 

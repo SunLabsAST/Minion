@@ -66,17 +66,19 @@ public abstract class MemoryPartition extends Partition {
      * A deletion map.
      */
     protected DelMap deletions;
-    private int uses;
-    public static AtomicInteger count = new AtomicInteger();
+    
+    private long startIndexTime;
     
     public MemoryPartition() {
-        
     }
 
     public MemoryPartition(PartitionManager manager, Postings.Type type) {
         this.manager = manager;
         docDict = new MemoryDictionary<String>(new EntryFactory(type));
-        count.incrementAndGet();
+    }
+    
+    public void start() {
+        startIndexTime = System.currentTimeMillis();
     }
 
     /**
@@ -87,7 +89,7 @@ public abstract class MemoryPartition extends Partition {
      * data to disk
      */
     public PartitionOutput dump(PartitionOutput partOut) throws java.io.IOException {
-
+        
         //
         // Do nothing if we have no data.
         if(docDict.size() == 0) {
@@ -99,6 +101,12 @@ public abstract class MemoryPartition extends Partition {
         
         partOut.startPartition(this);
         partOut.setKeys(docDict.getKeys());
+        
+        long dur = System.currentTimeMillis() - startIndexTime;
+        logger.info(String.format("Dumping %s %d, %d docs after %d ms", 
+                getPartitionName(),
+                partOut.getPartitionNumber(),
+                docDict.size(), dur));
         
         PartitionHeader partHeader = partOut.getPartitionHeader();
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
@@ -155,7 +163,6 @@ public abstract class MemoryPartition extends Partition {
     
     public void clear() {
         docDict.clear();
-        uses++;
     }
 
     public MemoryDictionary getDocumentDictionary() {
@@ -173,10 +180,6 @@ public abstract class MemoryPartition extends Partition {
      */
     protected abstract void dumpCustom(PartitionOutput dumpState) throws java.io.IOException;
 
-    public int getUses() {
-        return uses;
-    }
-    
     @Override
     public String toString() {
         return "MP: " + getPartitionName();

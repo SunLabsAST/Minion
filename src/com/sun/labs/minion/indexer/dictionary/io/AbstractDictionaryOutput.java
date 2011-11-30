@@ -22,6 +22,11 @@ import java.util.logging.Logger;
 public abstract class AbstractDictionaryOutput implements DictionaryOutput {
 
     private static final Logger logger = Logger.getLogger(AbstractDictionaryOutput.class.getName());
+    
+    /**
+     * The dictionary that we're currently dumping.
+     */
+    protected MemoryDictionary dict;
 
     /**
      * A buffer to hold term information.
@@ -83,9 +88,10 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
     /**
      * A place to store the id to position map for one dictionary.
      */
-    private int[] idToPosn = new int[4096];
+    private int[] idToPosn = null;
 
-    public void start(NameEncoder encoder, MemoryDictionary.Renumber renumber, int nChans) {
+    public void start(MemoryDictionary dict, NameEncoder encoder, 
+            MemoryDictionary.Renumber renumber, int nChans) {
         if(!finished) {
             throw new IllegalStateException("Starting another dictionary before finishing the previous one");
         }
@@ -95,7 +101,25 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         started = true;
         finished = false;
         prevName = null;
-        Arrays.fill(idToPosn, 0);
+        
+        //
+        // If we're not supposed to re-number the dictionary entries as we output them, 
+        // then we need to keep an ID to position map.  Make sure we have the space
+        // to store that map.
+        if(renumber == MemoryDictionary.Renumber.NONE) {
+            if(dict == null) {
+                throw new IllegalStateException(String.format("Can't start a dictionary with %s without a dictionary", renumber));
+            } else {
+                if(idToPosn == null) {
+                    logger.info(String.format("Allocating %d idToPosn map", dict.getMaxID()+1));
+                    idToPosn = new int[dict.getMaxID() + 1];
+                } else if(dict.getMaxID() >= idToPosn.length) {
+                    logger.info(String.format("Resizing to %d idToPosn map", dict.getMaxID() + 1));
+                    idToPosn = Arrays.copyOf(idToPosn, dict.getMaxID() + 1);
+                }
+            }
+            Arrays.fill(idToPosn, 0);
+        }
     }
 
     public DictionaryHeader getHeader() {
@@ -131,10 +155,6 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         //
         // Keep the ID to position map up to date, if necessary.
         if(renumber == MemoryDictionary.Renumber.NONE) {
-            if(e.getID() >= idToPosn.length) {
-                idToPosn = Arrays.copyOf(idToPosn,
-                        Math.max(e.getID() * 2, idToPosn.length * 2));
-            }
             idToPosn[e.getID()] = header.size;
         }
 

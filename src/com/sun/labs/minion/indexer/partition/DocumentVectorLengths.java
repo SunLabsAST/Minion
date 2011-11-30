@@ -140,7 +140,7 @@ public class DocumentVectorLengths {
         boolean adjustStats = termStatsOut != null;
 
         if(adjustStats) {
-            termStatsOut.start(new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, 0);
+            termStatsOut.start(null, new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, 0);
         }
         
         //

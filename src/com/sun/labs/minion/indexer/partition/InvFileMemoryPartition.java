@@ -63,7 +63,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         super(manager, Postings.Type.NONE);
         fields = new MemoryField[16];
     }
-
+    
     public void index(Indexable doc) {
         startDocument(doc.getKey());
         for(Map.Entry<String,Object> field : doc.getMap().entrySet()) {
@@ -201,7 +201,6 @@ public class InvFileMemoryPartition extends MemoryPartition {
             
             //
             // Dump the dictionary and deal with the result.
-            try {
             switch(mf.dump(partOut)) {
                 case NOTHING_DUMPED:
                     logger.finer(String.format("No dicts dumped"));
@@ -214,10 +213,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
                 case EVERYTHING_DUMPED:
                     break;
             }
-            } catch (ArithmeticException ex) {
-                logger.log(Level.SEVERE, String.format("AX dumping %s, used %d times", getPartitionName(), getUses()));
-                throw(ex);
-            }
+            
             partOut.getPartitionHeader().addOffset(mf.getInfo().getID(), fieldOffset);
             tsh.addOffset(mf.getInfo().getID(), termStatsOff);
         }

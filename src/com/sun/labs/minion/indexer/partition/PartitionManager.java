@@ -1628,10 +1628,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         int partDocs = 1; // partition capacity at this level
         int mergePart = -1; // the largest overflow partition
         int levelParts = 0; // number of parts seen on this level
-        for(int p = 0; p < parts.size();
-                p++) {
+        for(int p = 0; p < parts.size(); p++) {
+            
             DiskPartition dp = parts.get(p);
-
             while(dp.getMaxDocumentID() > partDocs) {
                 //
                 // Move to the next level.
@@ -1658,8 +1657,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Merge all partitions up to and including mergePart.  Nb: This
         // will merge all partitions at the mergePart level and below.
-        List<DiskPartition> toMerge =
-                new ArrayList<DiskPartition>();
+        List<DiskPartition> toMerge = new ArrayList<DiskPartition>();
         for(int p = 0; p <= mergePart && p < maxMergeSize; p++) {
             toMerge.add(parts.get(p));
         }
@@ -2593,7 +2591,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     @ConfigComponent(type = com.sun.labs.minion.IndexConfig.class)
     public static final String PROP_INDEX_CONFIG = "index_config";
 
-    @ConfigInteger(defaultValue = 10)
+    @ConfigInteger(defaultValue = 5)
     public static final String PROP_MERGE_RATE = "merge_rate";
 
     /**

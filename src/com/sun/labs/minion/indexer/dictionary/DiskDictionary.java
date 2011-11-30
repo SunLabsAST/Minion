@@ -1377,7 +1377,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
         //
         // Where we'll write the dictionary.
-        dictOut.start(encoder, MemoryDictionary.Renumber.NONE, postOut.length);
+        dictOut.start(null, encoder, MemoryDictionary.Renumber.RENUMBER, postOut.length);
         
         int[] mapped = new int[idMaps.length];
 
@@ -1536,7 +1536,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                               PostingsOutput[] postOut) throws
             java.io.IOException {
 
-        dictOut.start(encoder, MemoryDictionary.Renumber.NONE, postOut.length);
+        dictOut.start(null, encoder, MemoryDictionary.Renumber.RENUMBER, postOut.length);
 
         //
         // Track what the highest ID is in the new dictionary

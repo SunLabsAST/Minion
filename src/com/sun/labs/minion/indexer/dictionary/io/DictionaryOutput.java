@@ -14,15 +14,7 @@ import java.io.RandomAccessFile;
  */
 public interface DictionaryOutput extends WriteableBuffer {
     
-    /**
-     * Tells the instance that we are about to start writing out a new 
-     * dictionary.
-     * 
-     * @param header The header for the dictionary about to be written.
-     * @throws IllegalStateException if you try to start a dictionary before 
-     * finishing another.
-     */
-    public void start(NameEncoder encoder, MemoryDictionary.Renumber renumber, int nChans);
+    public void start(MemoryDictionary dict, NameEncoder encoder, MemoryDictionary.Renumber renumber, int nChans);
     
     /**
      * Gets a header for the dictionary currently being dumped.
