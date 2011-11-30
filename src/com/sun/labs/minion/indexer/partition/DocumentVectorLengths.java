@@ -27,7 +27,6 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.Field;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
-import com.sun.labs.minion.indexer.dictionary.DictionaryWriter;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
@@ -133,7 +132,7 @@ public class DocumentVectorLengths {
                                  RandomAccessFile vectorLengthsFile,
                                  TermStatsDiskDictionary gts)
             throws java.io.IOException {
-
+        
         //
         // Get iterators for our two dictionaries and a place to write the new term stats.
         DictionaryIterator gti = gts.iterator(fi);
