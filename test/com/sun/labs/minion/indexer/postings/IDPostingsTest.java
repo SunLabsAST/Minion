@@ -4,19 +4,23 @@
  */
 package com.sun.labs.minion.indexer.postings;
 
+import com.sun.labs.minion.indexer.postings.io.PostingsInput;
+import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.indexer.postings.io.StreamPostingsInput;
+import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
+import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -192,7 +196,7 @@ public class IDPostingsTest {
         randomAddTest(8192);
     }
 
-    @Test
+//    @Test
     public void extraLargeRandomAddTest() throws Exception {
         randomAddTest(1024 * 1024);
     }
@@ -220,18 +224,71 @@ public class IDPostingsTest {
         }
     }
 
+    private long writePostings(File of, IDPostings p) throws java.io.IOException {
+        OutputStream os = new FileOutputStream(of);
+        PostingsOutput postOut = new StreamPostingsOutput(os);
+        long ret = postOut.write(p);
+        postOut.flush();
+        os.close();
+        return ret;
+    }
+
+    private IDPostings readPostings(File f, long size) throws
+            java.io.IOException {
+        RandomAccessFile raf = new RandomAccessFile(f, "r");
+        PostingsInput postIn = new StreamPostingsInput(raf, 8192);
+        return (IDPostings) postIn.read(Postings.Type.ID, 0L, (int) size);
+    }
+
+    /**
+     * Test writing then reading postings.
+     */
+    @Test
+    public void testWriteAndRead() throws java.io.IOException {
+        TestData td = new TestData(8192);
+        IDPostings idp = encodeData(td);
+        File of = File.createTempFile("single", ".post");
+        of.deleteOnExit();
+        long size = writePostings(of, idp);
+        IDPostings idp2 = readPostings(of, size);
+        testIteration(idp2, td);
+    }
+
     /**
      * Test of merge method, of class IDPostings.
      */
     @Test
-    public void testMerge() {
-    }
+    public void testAppend() throws java.io.IOException {
+        Random rand = new Random();
+        for(int i = 0; i < 128; i++) {
 
-    /**
-     * Test of iterator method, of class IDPostings.
-     */
-    @Test
-    public void testIterator() {
+            TestData d1 = new TestData(rand.nextInt(8192));
+            IDPostings idp1 = encodeData(d1);
+            TestData d2 = new TestData(rand.nextInt(8192));
+            IDPostings idp2 = encodeData(d2);
+
+            int lastID = idp1.getLastID();
+
+            File of = File.createTempFile("single", ".post");
+            of.deleteOnExit();
+            StreamPostingsOutput po = new StreamPostingsOutput(new FileOutputStream(
+                    of));
+            long s1 = po.write(idp1);
+            long s2 = po.write(idp2);
+            po.close();
+
+
+            RandomAccessFile raf = new RandomAccessFile(of, "r");
+            StreamPostingsInput pi = new StreamPostingsInput(raf, 8192);
+            IDPostings append = new IDPostings();
+            idp1 = (IDPostings) pi.read(Postings.Type.ID, 0, (int) s1);
+            append.append(idp1, 1);
+            idp2 = (IDPostings) pi.read(Postings.Type.ID, s1, (int) s2);
+            append.append(idp2, lastID + 1);
+            TestData atd = new TestData(d1, d2, lastID + 1);
+            testIteration(append, atd);
+            raf.close();
+        }
     }
 
     private static class TestData {
@@ -281,6 +338,21 @@ public class IDPostingsTest {
             for(int i = 0; i < rawData.length; i++) {
                 rawData[i] = Integer.parseInt(nums[i]);
                 unique.add(rawData[i]);
+            }
+        }
+
+        public TestData(TestData d1, TestData d2, int start) {
+            rawData = new int[d1.rawData.length + d2.rawData.length];
+            unique = new LinkedHashSet<Integer>();
+            int p = 0;
+            for(int x : d1.rawData) {
+                rawData[p++] = x;
+                unique.add(x);
+            }
+            for(int x : d2.rawData) {
+                int m = x + start - 1;
+                rawData[p++] = m;
+                unique.add(m);
             }
         }
 
