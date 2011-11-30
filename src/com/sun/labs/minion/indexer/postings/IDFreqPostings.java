@@ -162,7 +162,7 @@ public class IDFreqPostings extends IDPostings {
         int n = ((Postings) mp).getN();
         int[] tid = new int[Math.max(n, nIDs)];
         int[] tf = new int[Math.max(n, nIDs)];
-
+        
         PostingsIterator pi = ((Postings) mp).iterator(null);
         pi.next();
         int p1 = 0;
@@ -197,13 +197,13 @@ public class IDFreqPostings extends IDPostings {
         while(p1 < n) {
             int pid = map[pi.getID()];
             if(pid > 0) {
-                tid = Util.addExpand(tid, np, map[pi.getID()]);
+                tid = Util.addExpand(tid, np, pid);
                 tf = Util.addExpand(tf, np++, pi.getFreq());
             }
             pi.next();
             p1++;
         }
-
+        
         if(p2 < nIDs) {
             int toadd = (nIDs - p2);
             if(np + toadd >= tid.length) {
@@ -214,9 +214,10 @@ public class IDFreqPostings extends IDPostings {
             System.arraycopy(freqs, p2, tf, np, toadd);
             np += toadd;
         }
-
+        
         nIDs = np;
         ids = tid;
+        lastID = ids[np-1];
         freqs = tf;
     }
 

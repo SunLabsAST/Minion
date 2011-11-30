@@ -12,6 +12,7 @@ import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import java.io.RandomAccessFile;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -255,7 +256,7 @@ public class DiskField extends Field {
 
     public static void merge(MergeState mergeState, DiskField[] fields)
             throws java.io.IOException {
-        
+
         DiskDictionaryBundle[] bundles = new DiskDictionaryBundle[fields.length];
         for (int i = 0; i < fields.length; i++) {
             //

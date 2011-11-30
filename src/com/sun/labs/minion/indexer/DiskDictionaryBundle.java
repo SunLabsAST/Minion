@@ -47,7 +47,7 @@ import java.util.logging.Logger;
  */
 public class DiskDictionaryBundle<N extends Comparable> {
 
-    public static final Logger logger = Logger.getLogger(DiskDictionaryBundle.class.
+    private static final Logger logger = Logger.getLogger(DiskDictionaryBundle.class.
             getName());
 
     /**

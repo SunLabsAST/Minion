@@ -293,10 +293,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Read the header.
         
-        logger.fine(String.format("reading dict at %d", dictFile.getFilePointer()));
         dh = new DictionaryHeader(dictFile);
-        logger.fine(String.format("header: %s", dh));
-        
 
         if(postFiles != null) {
             this.postIn = new PostingsInput[postFiles.length];
@@ -392,14 +389,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                                                   infoOffsetsBufferSize);
                 break;
         }
-        
-        if (logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("dh:%s\nnameOffsets:\n%s", dh,
-                    nameOffsets.toString(Buffer.Portion.ALL,
-                    Buffer.DecodeMode.INTEGER)));
-        }
-
-
     }
 
     /**
@@ -1492,7 +1481,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Finish of the writing of the entries to the merged dictionary.
         dw.finish(mDictFile);
-
+        
         //
         // Return the maps from old to new IDs.
         return idMaps;
@@ -2109,7 +2098,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             //
             // quick approximation to the log base 2 of the cache size.
             depth = (int) (Math.log(capacity) / Math.log(2)) - 1;
-            logger.fine(String.format("depth: %d", depth));
             LookupState lus = new LookupState(DiskDictionary.this);
             if(size() > 0) {
                 root = new Node(lus, 0, dh.nOffsets - 1);
@@ -2178,7 +2166,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 //
                 // Get the name for the node at the midpoint.
                 mid = (lower + upper) / 2;
-                logger.fine(String.format("lower: %d mid: %d upper: %d", lower, mid, upper));
                 name = getUncompressedName(mid, lus);
                 this.lower = lower;
                 this.upper = upper;
