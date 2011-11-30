@@ -196,8 +196,9 @@ public class TermStatsDiskDictionary implements Closeable {
                         "Error closing term stats file %s", termStatsFile), ex);
             }
             closed = true;
+            return true;
         }
-        return closed;
+        return false;
     }
 
     public void setClosed() {
