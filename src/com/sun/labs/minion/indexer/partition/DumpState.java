@@ -130,6 +130,12 @@ public class DumpState {
             postOut[i].flush();
             postStream[i].close();
         }
-        fieldDictOut.close();
+        if(fieldDictOut != null) {
+            fieldDictOut.close();
+        }
+        if(termStatsDictOut != null) {
+            termStatsDictOut.close();
+        }
+
     }
 }
