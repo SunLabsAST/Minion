@@ -153,22 +153,22 @@ public class IDFreqPostingsTest {
 
     @Test
     public void smallRandomAddTest() throws Exception {
-        randomAddTest(16);
+        randomAddTest(16, 128);
     }
 
     @Test
     public void mediumRandomAddTest() throws Exception {
-        randomAddTest(256);
+        randomAddTest(256, 128);
     }
 
     @Test
     public void largeRandomAddTest() throws Exception {
-        randomAddTest(8192);
+        randomAddTest(8192, 64);
     }
 
     @Test
     public void extraLargeRandomAddTest() throws Exception {
-        randomAddTest(1024 * 1024);
+        randomAddTest(1024 * 1024, 32);
     }
 
     /**

@@ -77,8 +77,8 @@ public class TestData {
         raf = new RandomAccessFile(dictFile, "r");
         dd = new DiskDictionary<String>(new EntryFactory<String>(
                 Postings.Type.NONE),
-                                        new StringNameHandler(), raf,
-                                        new RandomAccessFile[0]);
+                new StringNameHandler(), raf,
+                new RandomAccessFile[0]);
         for(Entry<String> e : dd) {
             words.add(e.getName());
             uniq.add(e.getName());
@@ -102,15 +102,42 @@ public class TestData {
         raf = new RandomAccessFile(dictFile, "r");
         dd = new DiskDictionary<String>(new EntryFactory<String>(
                 Postings.Type.NONE),
-                                        new StringNameHandler(), raf,
-                                        new RandomAccessFile[0]);
+                new StringNameHandler(), raf,
+                new RandomAccessFile[0]);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        final TestData other = (TestData) obj;
+        
+        return this.uniq.equals(other.uniq);
+    }
+
+    @Override
+    public int hashCode() {
+        return uniq.hashCode();
+    }
+    
+    public boolean checkConsistency(TestData... data) {
+        SortedSet<String> mu = new TreeSet<String>();
+        for(TestData td : data) {
+            mu.addAll(td.uniq);
+        }
+        return uniq.equals(mu);
+    }
+    
 
     public File dump() throws Exception {
         File f = File.createTempFile("words", "");
         PrintWriter pw =
                 new PrintWriter(new OutputStreamWriter(new FileOutputStream(f),
-                                                       "utf-8"));
+                "utf-8"));
         for(String w : words) {
             pw.println(w);
         }
