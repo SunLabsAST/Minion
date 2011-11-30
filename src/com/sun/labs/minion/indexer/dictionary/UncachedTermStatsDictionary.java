@@ -23,18 +23,12 @@
  */
 package com.sun.labs.minion.indexer.dictionary;
 
-import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsEntryFactory;
-import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import com.sun.labs.minion.retrieval.TermStatsImpl;
-import java.util.Collection;
-import java.util.PriorityQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -143,33 +137,6 @@ public class UncachedTermStatsDictionary
             raf.close();
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Error creating term stats dictionary", ioe);
-        }
-    }
-
-    /**
-     * An inner class to use when building a new term stats dictionary out of a 
-     * number of partitions.
-     */
-    private class HE implements Comparable<HE> {
-
-        DictionaryIterator di;
-
-        TermStatsQueryEntry curr;
-
-        public HE(DictionaryIterator di) {
-            this.di = di;
-        }
-
-        public boolean next() {
-            if(di.hasNext()) {
-                curr = (TermStatsQueryEntry) di.next();
-                return true;
-            }
-            return false;
-        }
-
-        public int compareTo(HE o) {
-            return curr.getName().compareTo(o.curr.getName());
         }
     }
 }

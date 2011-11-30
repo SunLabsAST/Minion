@@ -65,7 +65,7 @@ import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.SimpleFilter;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.dictionary.TermStatsDictionary;
+import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.TermStatsFactory;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
@@ -137,7 +137,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     /**
      * A dictionary containing global term statistics.
      */
-    private TermStatsDictionary termStatsDict;
+    private TermStatsDiskDictionary termStatsDict;
 
     private File currTSF;
 
@@ -1373,7 +1373,19 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return a file for the global term statistics for this index
      */
     protected File makeTermStatsFile(int tsn) {
-        return new File(indexDir, "termstats." + tsn + ".dict");
+        return makeTermStatsFile(indexDirFile, tsn);
+    }
+
+    protected static File makeTermStatsFile(File indexDirFile, int tsn) {
+        return new File(indexDirFile, String.format("termstats.%d.dict", tsn));
+    }
+
+    public File makeRemovedTermStatsFile(int tsfn) {
+        return makeRemovedTermStatsFile(indexDirFile, tsfn);
+    }
+
+    public static File makeRemovedTermStatsFile(File iD, int tsfn) {
+        return new File(String.format("%s.rem", makeTermStatsFile(iD, tsfn)));
     }
 
     /**
@@ -2702,7 +2714,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      *
      * @return the term statistics dictionary for this index
      */
-    public TermStatsDictionary getTermStatsDict() {
+    public TermStatsDiskDictionary getTermStatsDict() {
         return termStatsDict;
     }
 
@@ -2712,11 +2724,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return the statistics associated with the given name, or an empty set
      * of term statistics if there are none for the given name
      */
-    public TermStatsImpl getTermStats(String name) {
+    public TermStatsImpl getTermStats(String name, String field) {
         if(termStatsDict == null) {
             return new TermStatsImpl(name);
         }
-        TermStatsQueryEntry tse = termStatsDict.getTermStats(name);
+        TermStatsQueryEntry tse = termStatsDict.getTermStats(name, field);
         return tse == null ? new TermStatsImpl(name) : tse.getTermStats();
     }
 
@@ -2725,7 +2737,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         File newTSF = makeTermStatsFile(metaFile.getTermStatsNumber());
         if(!newTSF.equals(currTSF) && newTSF.exists()) {
 
-            TermStatsDictionary oldTSD = termStatsDict;
+            TermStatsDiskDictionary oldTSD = termStatsDict;
             termStatsDict = termstatsDictFactory.getDictionary(newTSF);
 
             //

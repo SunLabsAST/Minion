@@ -111,7 +111,7 @@ import java.util.HashSet;
 import com.sun.labs.minion.classification.ExplainableClassifierModel;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
-import com.sun.labs.minion.indexer.dictionary.TermStatsDictionary;
+import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.UncachedTermStatsDictionary;
 import com.sun.labs.minion.indexer.entry.CasedDFOEntry;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
@@ -550,7 +550,7 @@ public class QueryTest extends SEMain {
                 ex.printStackTrace();
             }
         } else if(q.startsWith(":ts")) {
-            TermStatsDictionary tsd = manager.getTermStatsDict();
+            TermStatsDiskDictionary tsd = manager.getTermStatsDict();
             output.println("Term stats dictionary has: " + tsd.size());
             DictionaryIterator di = tsd.iterator();
             while(di.hasNext()) {
@@ -2016,7 +2016,7 @@ public class QueryTest extends SEMain {
             // term stats dictionary.
             String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
             int partNum = Integer.parseInt(vals[0]);
-            TermStatsDictionary tsd = manager.getTermStatsDict();
+            TermStatsDiskDictionary tsd = manager.getTermStatsDict();
             boolean adjustStats = false;
             if(vals.length > 1) {
                 try {

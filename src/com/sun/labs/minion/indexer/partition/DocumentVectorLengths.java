@@ -32,7 +32,7 @@ import com.sun.labs.minion.indexer.dictionary.DictionaryWriter;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.MemoryDictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
-import com.sun.labs.minion.indexer.dictionary.TermStatsDictionary;
+import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
@@ -115,7 +115,7 @@ public class DocumentVectorLengths {
     public static void calculate(MemoryField f,
                                  RandomAccessFile tsdFile,
                                  RandomAccessFile vlFile,
-                                 TermStatsDictionary gts)
+                                 TermStatsDiskDictionary gts)
             throws java.io.IOException {
 
         calculate(f, f.getTermDictionary(false).iterator(),
@@ -125,7 +125,7 @@ public class DocumentVectorLengths {
     public static void calculate(DiskField f,
                                  RandomAccessFile tsdFile,
                                  RandomAccessFile vlFile,
-                                 TermStatsDictionary gts)
+                                 TermStatsDiskDictionary gts)
             throws java.io.IOException {
 
         calculate(f, f.getTermDictionary(false).iterator(),
@@ -136,12 +136,12 @@ public class DocumentVectorLengths {
                                  Iterator<Entry> mdi,
                                  RandomAccessFile tsdFile,
                                  RandomAccessFile vlFile,
-                                 TermStatsDictionary gts)
+                                 TermStatsDiskDictionary gts)
             throws java.io.IOException {
 
         //
         // Get iterators for our two dictionaries and a place to write the new term stats.
-        DictionaryIterator gti = gts.iterator();
+        DictionaryIterator gti = gts.iterator(f.getInfo());
         DictionaryWriter gtw = null;
 
         Partition p = f.getPartition();

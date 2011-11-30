@@ -29,6 +29,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.MemoryField;
+import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.postings.Postings;
 import java.io.File;
 import java.util.logging.Level;
@@ -120,6 +121,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
             tsn = manager.getMetaFile().getNextTermStatsNumber();
             File ntsf = manager.makeTermStatsFile(tsn);
             tsRAF = new RandomAccessFile(ntsf, "rw");
+
+            //
+            // Remember where the header for the term stats should go.
+            tsRAF.writeLong(0);
         } catch(Exception ex) {
             logger.severe(String.format(
                     "Error making term stats dictionary file for %s", this));
@@ -129,16 +134,24 @@ public class InvFileMemoryPartition extends MemoryPartition {
         RandomAccessFile vlRAF = new RandomAccessFile(vlf, "rw");
 
         //
-        // Dump the fields.
+        // Dump the fields.  Keep track of the offsets of the field and of the
+        // offsets for the term statistics dictionaries for the fields.
+        TermStatsHeader tsh = new TermStatsHeader();
         for(MemoryField mf : fields) {
             if(mf != null) {
                 ph.addOffset(mf.getInfo().getID(), dictFile.getFilePointer());
             }
+            tsh.addOffset(mf.getInfo().getID(), tsRAF.getFilePointer());
             mf.dump(indexDir, dictFile, postOut, tsRAF, vlRAF, maxDocumentID);
         }
 
         try {
+            //
+            // Finish off the term stats dictionary, especially writing the
+            // header.
             if(tsRAF != null) {
+                tsRAF.seek(0);
+                tsh.write(tsRAF);
                 tsRAF.close();
                 manager.getMetaFile().setTermStatsNumber(tsn);
                 manager.updateTermStats();

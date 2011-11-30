@@ -51,7 +51,7 @@ public class TermStatsFactory implements Configurable {
     /**
      * Gets an appropriate term stats dictionary, given the configuration.
      */
-    public TermStatsDictionary getDictionary(File df) throws java.io.IOException {
+    public TermStatsDiskDictionary getDictionary(File df) throws java.io.IOException {
         switch(type) {
             case UNCACHED:
                 return new UncachedTermStatsDictionary(df);

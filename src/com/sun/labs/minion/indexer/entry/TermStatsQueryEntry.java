@@ -46,7 +46,7 @@ public class TermStatsQueryEntry extends QueryEntry<String> {
         ts = new TermStatsImpl(name);
     }
     
-    public TermStatsQueryEntry(String name, Postings.Type type, ReadableBuffer b) {
+    public TermStatsQueryEntry(String name, ReadableBuffer b) {
         super(name, null, b);
         ts = new TermStatsImpl(name, b);
     }
