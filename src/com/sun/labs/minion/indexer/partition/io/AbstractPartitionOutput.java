@@ -252,7 +252,6 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
             }
 
         }
-        logger.info(String.format("flushed %d keys", keys != null ? keys.size() : 0));
         if(keys != null && !keys.isEmpty()) {
             manager.addNewPartition(partNumber, keys);
         }

@@ -307,7 +307,6 @@ public class Dumper implements Configurable {
                     PartitionOutput partOut = toFlush.poll(pollInterval, TimeUnit.SECONDS);
                     if(partOut != null) {
                         try {
-                            logger.info(String.format("flushing %s", partOut));
                             partOut.flush();
                             poPool.put(partOut);
                         } catch(IOException ex) {
