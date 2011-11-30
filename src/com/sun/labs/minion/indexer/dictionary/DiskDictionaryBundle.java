@@ -13,7 +13,6 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.MergeState;
-import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -35,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -743,9 +743,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     // tokens dictionary.
                     encoder = new StringNameHandler();
                     if(entryIDMaps[Type.UNCASED_TOKENS.ordinal()] == null) {
-                        mergeState.postIDMaps = entryIDMaps[Type.CASED_TOKENS.ordinal()];
-                    } else {
                         mergeState.postIDMaps = entryIDMaps[Type.UNCASED_TOKENS.ordinal()];
+                    } else {
+                        mergeState.postIDMaps = entryIDMaps[Type.CASED_TOKENS.ordinal()];
                     }
                     break;
                 case STEMMED_VECTOR:
@@ -778,16 +778,22 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
             
             logger.fine(String.format(" Merging %s", type));
-
-            entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
-                    encoder,
-                    mDicts,
-                    null,
-                    mergeState.docIDStarts,
-                    mergeState.postIDMaps,
-                    fieldDictOut,
-                    mergeState.partOut.getPostingsOutput(),
-                    true);
+            
+            try{
+                entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
+                        encoder,
+                        mDicts,
+                        null,
+                        mergeState.docIDStarts,
+                        mergeState.postIDMaps,
+                        fieldDictOut,
+                        mergeState.partOut.getPostingsOutput(),
+                        true);
+            } catch(RuntimeException ex) {
+                logger.log(Level.SEVERE, String.format("Exception merging %s of field %s",
+                        type, mergeState.info.getName()));
+                throw(ex);
+            }
         }
 
         //

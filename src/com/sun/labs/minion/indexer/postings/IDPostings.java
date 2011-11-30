@@ -484,7 +484,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * no deleted documents.
      */
     public void append(Postings p, int start, int[] idMap) {
-
+        
         if(post == null) {
             post = new ArrayBuffer(p.getN() * 2);
         }
@@ -510,21 +510,17 @@ public class IDPostings implements Postings, MergeablePostings {
             }
 
             //
-            // Get the document ID for this document in the new partition.
-            int cID = mapID + start - 1;
-
-            //
             // Increment our ID count, and see if we need to add a skip.
             nIDs++;
             if(nIDs % skipSize == 0) {
-                addSkip(cID, (int) post.position());
+                addSkip(mapID, (int) post.position());
             }
 
-            recodeID(cID, lastID, pi);
+            recodeID(mapID, lastID, pi);
 
             //
             // Set the new last document for our entry.
-            lastID = cID;
+            lastID = mapID;
         }
     }
 

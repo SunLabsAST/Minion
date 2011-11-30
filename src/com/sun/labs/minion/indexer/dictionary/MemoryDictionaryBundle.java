@@ -208,6 +208,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         //
         // If we're storing uncased terms or stemming, then we need to downcase
         // the term, since stemming will likely break on a mixed case term.
+        //
+        // Note that we prefer to store uncased terms in the raw vector if 
+        // possible.
         if(field.isUncased() || field.isStemmed()) {
             String uct = CharUtils.toLowerCase(t.getToken());
 
@@ -224,7 +227,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
 
         if(field.isVectored()) {
-            ddo.setEntry(uce);
+            if(uce != null) {
+                ddo.setEntry(uce);
+            } else {
+                ddo.setEntry(ce);
+            }
             ddo.setCount(1);
             rawVector.add(ddo);
 
@@ -397,7 +404,15 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     partOut.setDictionaryEncoder(new StringNameHandler());
                     partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
                     partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
-                    partOut.setPostingsIDMap(entryIDMaps[Type.CASED_TOKENS.ordinal()]);
+                    
+                    //
+                    // We preferred uncased tokens when making the raw vectors, 
+                    // so do the same at marshall time.
+                    if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
+                        partOut.setPostingsIDMap(entryIDMaps[Type.UNCASED_TOKENS.ordinal()]);
+                    } else {
+                        partOut.setPostingsIDMap(entryIDMaps[Type.CASED_TOKENS.ordinal()]);
+                    }
                     break;
 
                 case STEMMED_VECTOR:
