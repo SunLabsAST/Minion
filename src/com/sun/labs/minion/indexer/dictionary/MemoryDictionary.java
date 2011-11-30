@@ -356,15 +356,6 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     }
 
     /**
-     * Prepares a dictionary for dumping.  This can be used by subclasses
-     * to do anything that needs doing before dumping begins.
-     *
-     * @param sortedEntries entries from another dictionary.
-     */
-    public void dumpPrepare(IndexEntry[] sortedEntries) {
-    }
-
-    /**
      * Marshalls the dictionary and the associated postings to a partition output
      * that will eventually be flushed out to disk.  Once the
      * marshalling is complete, the pointer in the file must be pointing to a
