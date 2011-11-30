@@ -1,40 +1,16 @@
 package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.indexer.dictionary.ArrayDictionaryIterator;
-import com.sun.labs.minion.indexer.dictionary.DateNameHandler;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
-import com.sun.labs.minion.indexer.dictionary.DiskBiGramDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
-import com.sun.labs.minion.indexer.dictionary.DoubleNameHandler;
-import com.sun.labs.minion.indexer.dictionary.IntEntry;
-import com.sun.labs.minion.indexer.dictionary.LongNameHandler;
-import com.sun.labs.minion.indexer.dictionary.NameDecoder;
-import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
-import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
-import com.sun.labs.minion.indexer.postings.PostingsIterator;
-import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.ArrayGroup;
-import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
-import com.sun.labs.minion.retrieval.ScoredGroup;
-import com.sun.labs.minion.retrieval.ScoredQuickOr;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
-import com.sun.labs.minion.util.CharUtils;
-import com.sun.labs.minion.util.Util;
-import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
-import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
-import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.io.File;
 import java.io.RandomAccessFile;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.PriorityQueue;
 import java.util.logging.Logger;
 
 /**

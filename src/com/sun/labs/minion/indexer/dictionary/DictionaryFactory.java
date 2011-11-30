@@ -41,7 +41,6 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public class DictionaryFactory implements Configurable {
 

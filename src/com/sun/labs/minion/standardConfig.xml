@@ -70,10 +70,6 @@
     <!-- The information for the default field to use when an unknown field is
         encountered during indexing -->
     <component name="unknown_field" type="com.sun.labs.minion.FieldInfo">
-        <property name="indexed" value="true"/>
-        <property name="tokenized" value="true"/>
-        <property name="vectored" value="true"/>
-        <property name="saved" value="false"/>
     </component>
     
     <!-- The query configuration -->

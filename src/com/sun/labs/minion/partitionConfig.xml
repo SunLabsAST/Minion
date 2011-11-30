@@ -39,23 +39,15 @@
         <property name="index_config" value="index_config"/>
         <property name="lock_dir" value="${lock_directory}"/>
         <property name="partition_factory" value="partition_factory"/>
-        <property name="termstats_dict_factory" value="uncached_termstats_dictionary_factory"/>
     </component>
     
     <!-- The factory for the default inverted file partitions. -->
     <component name="partition_factory" type="com.sun.labs.minion.indexer.partition.InvFilePartitionFactory">
-        <property name="main_dict_factory" value="cased_dict_factory"/>
-        <property name="document_dict_factory" value="dockey_dict_factory"/>
-        <property name="field_store_dict_factory" value="id_dict_factory"/>
-        <property name="bigram_dict_factory" value="id_dict_factory"/>
+        <property name="entryFactory" value="idFreqEntryFactory"/>
     </component>
 
      <!-- A memory partition for our default indexing pipeline. -->
     <component name="memory_partition" type="com.sun.labs.minion.indexer.partition.InvFileMemoryPartition">
-        <property name="main_dict_factory" value="cased_dict_factory"/>
-        <property name="doc_dict_factory" value="dockey_dict_factory"/>
-        <property name="partition_manager" value="partition_manager"/>
-        <property name="index_config" value="index_config"/>
     </component>
     
    <!-- A partition manager for inverted file partitions that don't use cased
