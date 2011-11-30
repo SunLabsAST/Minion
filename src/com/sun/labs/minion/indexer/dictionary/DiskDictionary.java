@@ -38,7 +38,6 @@ import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -289,7 +288,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         this.decoder = decoder;
         this.part = part;
         this.fileBufferType = fileBufferType;
-
+        
         //
         // Read the header.
         dh = new DictionaryHeader(dictFile);
@@ -1302,8 +1301,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                          RandomAccessFile mDictFile,
                          PostingsOutput[] postOut, boolean appendPostings)
             throws java.io.IOException {
-
-        //
+        
+            //
         // We'll keep a map from old to new IDs for each of the
         // dictionaries and a heap to manage the merge.
         boolean keepIDToPosn = false;
@@ -1879,7 +1878,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                     }
                 }
             }
-
+            
             // Now position the buffer and seed the next() call:
             if(startPos != 0) {
                 // Reposition to the start
@@ -1968,7 +1967,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                         unbufferedPostings ? postIn : bufferedPostings);
             prevName = name;
             pos++;
-
+            
             //
             // We can return this element next time around.
             returnCurr = true;

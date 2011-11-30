@@ -369,7 +369,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Write the postings and entries.
         for(IndexEntry entry : sorted) {
-
+            
             //
             // Write it out.
             if(entry.writePostings(postOut, postIDMap) == true) {

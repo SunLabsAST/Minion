@@ -25,11 +25,14 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import java.io.RandomAccessFile;
+import java.util.logging.Logger;
 
 /**
  * A class that contains the header information for a dictionary.
  */
 public class DictionaryHeader {
+    
+    private static final Logger logger = Logger.getLogger(DictionaryHeader.class.getName()); 
 
     /**
      *  A magic number, written last.

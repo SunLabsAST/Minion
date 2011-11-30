@@ -324,17 +324,17 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         header.fieldID = info.getID();
         header.maxDocID = maxID;
+        
+        boolean trace = info.getName().equals("published");
 
         //
-        // A place to save a few things that we'll need for dumping bigrams and
-        // the document vectors.
-        IndexEntry[] sortedTokens = null;
-        int[] tokenIDMap = null;
+        // The sorted entries from each of the dictionaries.
+        IndexEntry[][] sortedEntries = new IndexEntry[Type.values().length][];
         
-        IndexEntry[] sortedSaved = null;
+        //
+        // The ID maps from each of the dictionaries.
+        int[][] entryIDMaps = new int[Type.values().length][];
         
-        boolean trace = info.getName().equals("headline");
-
         //
         // Dump the dictionaries in this bundle.  This loop is a little gross, what
         // with the pre-dump and post-dump switches based on the type of dictionary
@@ -355,60 +355,73 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             int[] currentTokenIDMap = null;
             switch(type) {
                 case RAW_SAVED:
+                    encoder = getEncoder(info);
+                    
                     //
                     // We didn't add any occurrence data to the dictionary
                     // while we were adding values, since
                     // we might have added data in non-document ID order.  
                     // We can do that now since we can process things 
                     // in document ID order.
-                    Occurrence o = new OccurrenceImpl();
+                    Occurrence co = new OccurrenceImpl();
                     for(int i = 0; i < dv.length; i++) {
                         if(dv[i] != null) {
-                            o.setID(i);
+                            co.setID(i);
                             for(IndexEntry e : (List<IndexEntry>) dv[i]) {
-                                e.add(o);
+                                e.add(co);
                             }
                         }
                     }
+                    break;
 
                 case UNCASED_SAVED:
                     encoder = getEncoder(info);
+                    
+                    //
+                    // We didn't add any occurrence data to the dictionary
+                    // while we were adding values, since
+                    // we might have added data in non-document ID order.  
+                    // We can do that now since we can process things 
+                    // in document ID order.
+                    Occurrence uo = new OccurrenceImpl();
+                    for(int i = 0; i < dv.length; i++) {
+                        if(dv[i] != null) {
+                            uo.setID(i);
+                            for(IndexEntry e : (List<IndexEntry>) dv[i]) {
+                                e.add(uo);
+                            }
+                        }
+                    }
                     break;
                 case RAW_VECTOR:
+                    renumber = MemoryDictionary.Renumber.NONE;
+                    idmap = MemoryDictionary.IDMap.NONE;
+                    currentTokenIDMap = entryIDMaps[Type.CASED_TOKENS.ordinal()];
                 case STEMMED_VECTOR:
                     renumber = MemoryDictionary.Renumber.NONE;
                     idmap = MemoryDictionary.IDMap.NONE;
-                    currentTokenIDMap = tokenIDMap;
+                    currentTokenIDMap = entryIDMaps[Type.STEMMED_TOKENS.ordinal()];
                 default:
                     encoder = new StringNameHandler();
             }
 
+            if(trace) {
+                logger.info(String.format("dump: %s", type));
+            }
             header.dictOffsets[ord] = fieldDictFile.getFilePointer();
-            IndexEntry[] sorted = dicts[ord].dump(path, encoder,
+            sortedEntries[ord] = dicts[ord].dump(path, encoder,
                                             fieldDictFile, postOut,
                                             renumber, idmap, currentTokenIDMap);
-
-            //
-            // Remember the sorted order and the id map for the dictionary of
-            // tokens, which we'll need in a couple of iterations when we're
-            // dumping the document vectors.  We'll remembe the sorted saved
-            // values for string fields so that we can dump bigrams later on.
-            switch(type) {
-                case CASED_TOKENS:
-                case UNCASED_TOKENS:
-                    sortedTokens = sorted;
-                    tokenIDMap = dicts[ord].getIdMap();
-                case RAW_SAVED:
-                case UNCASED_SAVED:
-                    if(info.getType() == FieldInfo.Type.STRING) {
-                        sortedSaved = sorted;
-                    }
-            }
         }
 
         //
         // If we have tokens or saved values, then output any bigrams that we
         // need for accelerating wildcards.
+        IndexEntry[] sortedTokens = 
+                sortedEntries[Type.UNCASED_TOKENS.ordinal()] != null ?
+                sortedEntries[Type.UNCASED_TOKENS.ordinal()] :
+                sortedEntries[Type.CASED_TOKENS.ordinal()];
+        
         if(sortedTokens != null) {
             MemoryBiGramDictionary tbg = new MemoryBiGramDictionary(
                     new EntryFactory(Postings.Type.ID_FREQ));
@@ -420,20 +433,28 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                      MemoryDictionary.Renumber.RENUMBER,
                      MemoryDictionary.IDMap.NONE,
                      null);
+        } else {
+            header.tokenBGOffset = -1;
         }
 
-        if(sortedSaved != null) {
-            MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
-                    new EntryFactory(Postings.Type.ID_FREQ));
-            for(IndexEntry e : sortedSaved) {
-                sbg.add(e.getName().toString(), e.getID());
+        if(field.info.getType() == FieldInfo.Type.STRING) {
+            IndexEntry[] sortedSaved =
+                    sortedEntries[Type.UNCASED_SAVED.ordinal()] != null ? sortedEntries[Type.UNCASED_SAVED.
+                    ordinal()] : sortedEntries[Type.RAW_SAVED.ordinal()];
+            if(sortedSaved != null) {
+                MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
+                        new EntryFactory(Postings.Type.ID_FREQ));
+                for(IndexEntry e : sortedSaved) {
+                    sbg.add(e.getName().toString(), e.getID());
+                }
+                header.savedBGOffset = fieldDictFile.getFilePointer();
+                sbg.dump(path, new StringNameHandler(), fieldDictFile, postOut,
+                         MemoryDictionary.Renumber.NONE,
+                         MemoryDictionary.IDMap.NONE,
+                         null);
+            } else {
+                header.savedBGOffset = -1;
             }
-            header.savedBGOffset = fieldDictFile.getFilePointer();
-            sbg.dump(path, new StringNameHandler(), fieldDictFile, postOut,
-                     MemoryDictionary.Renumber.NONE, MemoryDictionary.IDMap.NONE,
-                     null);
-        } else {
-            header.savedBGOffset = -1;
         }
 
       
@@ -448,7 +469,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             for(int i = 1; i <= maxID; i++) {
                 
                 dtvOffsets.byteEncode(dtv.position(), 4);
-
+                
                 //
                 // If there's no set here, or we're past the end of the array,
                 // encode 0 for the count of items for this document ID.

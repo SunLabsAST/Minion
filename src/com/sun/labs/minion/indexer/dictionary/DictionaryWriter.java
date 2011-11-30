@@ -245,9 +245,9 @@ public class DictionaryWriter<N extends Comparable> {
         //
         // Make up our header.
         if(dh.maxEntryID == 0) {
-            dh.maxEntryID = dh.size;
+            dh.maxEntryID = dh.size+1;
         }
-
+        
         dh.computeValues();
 
         //

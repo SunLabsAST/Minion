@@ -697,7 +697,7 @@ public class DiskPartition extends Partition implements Closeable {
                 mergeState.postStreams[i] =
                         new BufferedOutputStream(new FileOutputStream(files[i]),
                                                  8192);
-                mergeState.postOut[i] = new StreamPostingsOutput(mergeState.postStreams[i - 1]);
+                mergeState.postOut[i] = new StreamPostingsOutput(mergeState.postStreams[i]);
             }
 
             //
@@ -732,6 +732,7 @@ public class DiskPartition extends Partition implements Closeable {
             mergeCustom(mergeState);
 
             long phoffset = mergeState.dictRAF.getFilePointer();
+            
             mergeState.header.write(mergeState.dictRAF);
             long pos = mergeState.dictRAF.getFilePointer();
             mergeState.dictRAF.seek(phoffsetpos);
