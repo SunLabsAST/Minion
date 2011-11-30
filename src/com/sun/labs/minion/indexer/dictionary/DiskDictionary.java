@@ -1116,7 +1116,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // First, get the matching entry IDs from the bigram dictionary.
         int[] entryIds = biDict.getMatching(substring, starts, ends);
-
+        
         if(qtt.timedOut) {
             // Operation timed out
             logger.warning("Lookup timed out");
@@ -1132,8 +1132,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             substring = CharUtils.toLowerCase(substring);
         }
 
-        ArrayList<QueryEntry> res =
-                new ArrayList<QueryEntry>();
+        ArrayList<QueryEntry> res = new ArrayList<QueryEntry>();
 
         //
         // Now look up each entry and see if it contains the given
