@@ -3,10 +3,7 @@ package com.sun.labs.minion.indexer.partition;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
-import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
-import java.io.OutputStream;
 import java.util.logging.Logger;
 
 /**
@@ -85,16 +82,6 @@ public class MergeState implements Cloneable {
      * Maps from old entry IDs to new entry IDs from the merged dictionary.
      */
     public int[][] entryIDMaps;
-    
-    /**
-     * The files containing the merged postings.
-     */
-    public File[] postFiles;
-
-    /**
-     * The underlying streams for the postings.
-     */
-    public OutputStream[] postStreams;
     
     public MergeState(PartitionOutput partOut) {
         this.manager = partOut.getPartitionManager();

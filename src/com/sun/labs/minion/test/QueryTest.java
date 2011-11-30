@@ -127,7 +127,7 @@ public class QueryTest extends SEMain {
 
     protected static final Logger logger = Logger.getLogger(QueryTest.class.getName());
     
-    private CommandInterpreter shell = new CommandInterpreter();
+    private CommandInterpreter shell;
 
     protected boolean displayPassage;
 
@@ -164,6 +164,7 @@ public class QueryTest extends SEMain {
     private SimpleHighlighter shigh;
 
     public QueryTest(URL cmFile, String indexDir, String engineType,
+            String inputFile,
                      String displayFields, String displayFormat,
                      String sortSpec) throws java.io.IOException,
             SearchEngineException {
@@ -178,6 +179,7 @@ public class QueryTest extends SEMain {
                     indexDir,
                     engineType, cmFile);
         }
+        shell = new CommandInterpreter(inputFile);
         manager = engine.getManager();
         searcher = engine;
         morphEn = LiteMorph_en.getMorph();
@@ -1150,6 +1152,7 @@ public class QueryTest extends SEMain {
                 cmFile,
                 indexDir,
                 engineType,
+                inputFile,
                 "partNum docID dockey",
                 "%6d%10d %s",
                 "-score");

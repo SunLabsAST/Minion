@@ -45,6 +45,7 @@ import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -615,7 +616,8 @@ public class DiskPartition extends Partition implements Closeable {
         // A place to store state and pass it around while we're merging.
         MergeState mergeState = new MergeState(partOut);
         PartitionManager pm = partOut.getPartitionManager();
-        mergeState.partOut.startPartition(null);
+        logger.info(String.format("Merge with %s", Arrays.toString(getPostingsChannelNames())));
+        mergeState.partOut.startPartition(getPostingsChannelNames());
 
         //
         // A honkin' big try, so that we can get rid of any failed merges.

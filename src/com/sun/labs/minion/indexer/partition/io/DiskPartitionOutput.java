@@ -56,6 +56,19 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
     }
 
     @Override
+    public int startPartition(String[] postingsChannelNames) throws IOException {
+        int ret = super.startPartition(postingsChannelNames);
+        postStream = new OutputStream[postOutFiles.length];
+        postOut = new PostingsOutput[postStream.length];
+        for(int i = 0; i < postOutFiles.length; i++) {
+            postStream[i] = new BufferedOutputStream(
+                    new FileOutputStream(postOutFiles[i]), 512 * 1024);
+            postOut[i] = new StreamPostingsOutput(postStream[i]);
+        }
+        return ret;
+    }
+
+    @Override
     public DictionaryOutput getTermStatsDictionaryOutput() {
         if(termStatsDictOut == null) {
             try {

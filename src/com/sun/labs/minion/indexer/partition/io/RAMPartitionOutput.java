@@ -53,7 +53,17 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
         return ret;
     }
     
-    
+    @Override
+    public int startPartition(String[] postingsChannelNames) throws IOException {
+        int ret = super.startPartition(postingsChannelNames);
+        if(postOut == null) {
+            postOut = new PostingsOutput[postOutFiles.length];
+            for(int i = 0; i < postOutFiles.length; i++) {
+                postOut[i] = new RAMPostingsOutput();
+            }
+        }
+        return ret;
+    }
 
     @Override
     public void flush() throws IOException {

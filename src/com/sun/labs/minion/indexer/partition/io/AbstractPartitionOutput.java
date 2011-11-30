@@ -75,7 +75,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      * A postings ID map to use when dumping.
      */
     protected int[] postingsIDMap;
-
+    
     /**
      * The files where we're putting the postings.
      */
@@ -136,7 +136,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     public PartitionManager getPartitionManager() {
         return partitionManager;
     }
-
+    
     public int startPartition(MemoryPartition partition) throws IOException {
         if(started) {
             throw new IllegalStateException("Already outputting a partition, can't start another");
@@ -145,7 +145,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
             this.partition = partition;
             partitionHeader = new PartitionHeader();
             partitionNumber = partitionManager.getMetaFile().getNextPartitionNumber();
-            postOutFiles = partitionManager.makePostingsFiles(partitionNumber, 
+            postOutFiles = partitionManager.makePostingsFiles(partitionNumber,
                     partition.getPostingsChannelNames());
         } catch(FileLockException ex) {
             throw new IOException("Error getting partition number", ex);
@@ -154,7 +154,25 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         return partitionNumber;
     }
 
-    public void setPartitionNumber(int partitionNumber) {
+    public int startPartition(String[] postingsChannelNames) throws IOException {
+        if(started) {
+            throw new IllegalStateException("Already outputting a partition, can't start another");
+        }
+        try {
+            this.partition = partition;
+            partitionHeader = new PartitionHeader();
+            partitionNumber = partitionManager.getMetaFile().getNextPartitionNumber();
+            postOutFiles = partitionManager.makePostingsFiles(partitionNumber, postingsChannelNames);
+        } catch(FileLockException ex) {
+            throw new IOException("Error getting partition number", ex);
+        }
+        keys = null;
+        return partitionNumber;
+        
+    }
+
+
+            public void setPartitionNumber(int partitionNumber) {
         this.partitionNumber = partitionNumber;
     }
 

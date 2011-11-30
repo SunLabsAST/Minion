@@ -21,6 +21,8 @@ public interface PartitionOutput {
     public PartitionManager getPartitionManager();
     
     public int startPartition(MemoryPartition partition) throws IOException;
+
+    public int startPartition(String[] postingsChannelNames) throws IOException;
     
     public void setKeys(Set<String> keys);
     
