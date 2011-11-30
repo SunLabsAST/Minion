@@ -120,7 +120,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
      */
     @Override
     public int size() {
-        if(post != null) {
+        if(idBuff != null) {
             return super.size();
         }
         return nIDs * 2;
@@ -183,7 +183,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
             temp.byteEncode(freq);
             prevID = id;
         }
-        post = temp;
+        idBuff = temp;
 
         lastID = prevID;
     }

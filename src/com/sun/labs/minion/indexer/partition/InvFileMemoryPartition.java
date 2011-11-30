@@ -64,6 +64,20 @@ public class InvFileMemoryPartition extends MemoryPartition {
         fields = new MemoryField[16];
     }
     
+    @Override
+    public String[] getPostingsChannelNames() {
+        String[] max = null;
+        for(MemoryField field : fields) {
+            if(field != null) {
+                String[] t = field.getPostingsChannelNames();
+                if(max == null || t.length > max.length) {
+                    max = t;
+                }
+            }
+        }
+        return max;
+    }
+    
     public void index(Indexable doc) {
         startDocument(doc.getKey());
         for(Map.Entry<String,Object> field : doc.getMap().entrySet()) {

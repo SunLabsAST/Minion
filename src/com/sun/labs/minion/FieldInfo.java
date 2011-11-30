@@ -173,6 +173,11 @@ public class FieldInfo implements Cloneable, Configurable {
          */
         INDEXED,
         /**
+         * Postions for the tokens in this field will be stored in the
+         * index
+         */
+        POSITIONS,
+        /**
          * The values tokenized from this field will be stored in a document vector
          * for this field, which will allow document similarity computations to
          * be done using the data from this field.
@@ -573,6 +578,7 @@ public class FieldInfo implements Cloneable, Configurable {
     public static EnumSet<Attribute> getIndexedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
                           Attribute.TOKENIZED,
+                          Attribute.POSITIONS,
                           Attribute.CASED,
                           Attribute.UNCASED,
                           Attribute.VECTORED);
@@ -587,7 +593,8 @@ public class FieldInfo implements Cloneable, Configurable {
         return EnumSet.of(Attribute.INDEXED,
                           Attribute.CASED,
                           Attribute.UNCASED,
-                          Attribute.TOKENIZED);
+                          Attribute.TOKENIZED, 
+                          Attribute.POSITIONS);
     }
 
     /**
@@ -598,6 +605,7 @@ public class FieldInfo implements Cloneable, Configurable {
     public static EnumSet<Attribute> getIndexedAndSavedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
                 Attribute.TOKENIZED,
+                Attribute.POSITIONS,
                 Attribute.CASED,
                 Attribute.UNCASED,
                 Attribute.VECTORED, 

@@ -84,7 +84,7 @@ public class IDPostings implements Postings, MergeablePostings {
     /**
      * The compressed postings.
      */
-    protected Buffer post;
+    protected Buffer idBuff;
 
     /**
      * The uncompressed postings.
@@ -130,7 +130,7 @@ public class IDPostings implements Postings, MergeablePostings {
     /**
      * The number of documents in a skip.
      */
-    protected int skipSize = 1024;
+    protected int skipSize = 256;
 
     /**
      * Makes a postings entry that is useful during indexing.
@@ -150,10 +150,6 @@ public class IDPostings implements Postings, MergeablePostings {
         this(in[0].read(offset[0], size[0]), 0, 0);
     }
 
-    public String[] getChannelNames() {
-        return new String[] {"post"};
-    }
-
     /**
      * Makes a postings entry that is useful during querying.
      *
@@ -166,19 +162,19 @@ public class IDPostings implements Postings, MergeablePostings {
     public IDPostings(ReadableBuffer b, int offset, int size) {
 
         if(offset > 0) {
-            post = b.slice(offset, size);
+            idBuff = b.slice(offset, size);
         } else {
-            post = b;
+            idBuff = b;
         }
 
         //
         // Get the initial data.
-        nIDs = ((ReadableBuffer) post).byteDecode();
-        lastID = ((ReadableBuffer) post).byteDecode();
+        nIDs = ((ReadableBuffer) idBuff).byteDecode();
+        lastID = ((ReadableBuffer) idBuff).byteDecode();
 
         //
         // Decode the skip table.
-        nSkips = ((ReadableBuffer) post).byteDecode();
+        nSkips = ((ReadableBuffer) idBuff).byteDecode();
 
         if(nSkips > 0) {
 
@@ -187,8 +183,8 @@ public class IDPostings implements Postings, MergeablePostings {
             int currSkipDoc = 0;
             int currSkipPos = 0;
             for(int i = 1; i <= nSkips; i++) {
-                currSkipDoc += ((ReadableBuffer) post).byteDecode();
-                currSkipPos += ((ReadableBuffer) post).byteDecode();
+                currSkipDoc += ((ReadableBuffer) idBuff).byteDecode();
+                currSkipPos += ((ReadableBuffer) idBuff).byteDecode();
                 skipID[i] = currSkipDoc;
                 skipPos[i] = currSkipPos;
             }
@@ -199,13 +195,17 @@ public class IDPostings implements Postings, MergeablePostings {
             // from the beginning of the buffer so that we can use
             // jump directly to them.  So we need to figure out
             // how much to add.
-            dataStart = (int) post.position();
+            dataStart = (int) idBuff.position();
             for(int i = 0; i <= nSkips; i++) {
                 skipPos[i] += dataStart;
             }
         } else {
-            dataStart = (int) post.position();
+            dataStart = (int) idBuff.position();
         }
+    }
+
+    public String[] getChannelNames() {
+        return new String[]{"post"};
     }
 
     /**
@@ -291,13 +291,24 @@ public class IDPostings implements Postings, MergeablePostings {
      * Gets the size of the postings, in bytes.
      */
     public int size() {
-        return (int) post.position();
+        return (int) idBuff.position();
     }
     
     public void write(PostingsOutput[] out, long[] offset, int[] size) throws java.io.IOException {
 
         //
-        // We'll use an array backed buffer for the skips.
+        // Write the buffers.
+        offset[0] = out[0].position();
+        if(idBuff == null) {
+            idBuff = encodeIDs();
+        }
+        size[0] = out[0].write(
+                 new WriteableBuffer[]{
+                    encodeHeaderData(),
+                    (WriteableBuffer) idBuff});
+    }
+    
+    protected WriteableBuffer encodeHeaderData() {
         WriteableBuffer temp = new ArrayBuffer((nSkips + 1) * 4 + 16);
 
         //
@@ -317,21 +328,16 @@ public class IDPostings implements Postings, MergeablePostings {
             prevPos = skipPos[i];
         }
 
-        //
-        // Write the buffers.
-        offset[0] = out[0].position();
-        size[0] = out[0].write(new WriteableBuffer[]{
-                    temp,
-                    post == null ? 
-                    encodeIDs() : 
-                    (WriteableBuffer) post,
-                });
+        return temp;
     }
 
     protected WriteableBuffer encodeIDs() {
         WriteableBuffer b = new ArrayBuffer(ids.length * 2);
         int prev = 0;
         for(int i = 0; i < nIDs; i++) {
+            if(i > 0 && i % skipSize == 0) {
+                addSkip(ids[i], (int) b.position());
+            }
             try {
                 b.byteEncode(ids[i] - prev);
             } catch(ArithmeticException ex) {
@@ -382,13 +388,13 @@ public class IDPostings implements Postings, MergeablePostings {
             return;
         }
 
-        if(post == null) {
-            post = new ArrayBuffer((int) other.post.limit());
+        if(idBuff == null) {
+            idBuff = new ArrayBuffer((int) other.idBuff.limit());
         }
 
         //
         // We'll need to know where we started this entry.
-        int index = (int) post.position();
+        int index = (int) idBuff.position();
 
         //
         // This is tricky, so pay attention: The skip positions for the
@@ -400,9 +406,9 @@ public class IDPostings implements Postings, MergeablePostings {
         // it will be a delta between two larger numbers).  So, we need to
         // figure out the difference between the old number of bytes and
         // the new number of bytes.  This is the adj variable.
-        int adj = (int) other.post.position();
-        int firstID = ((ReadableBuffer) other.post).byteDecode();
-        adj = (int) (other.post.position() - adj);
+        int adj = (int) other.idBuff.position();
+        int firstID = ((ReadableBuffer) other.idBuff).byteDecode();
+        adj = (int) (other.idBuff.position() - adj);
 
         //
         // Get the first document sequence number off the entry we're
@@ -411,14 +417,14 @@ public class IDPostings implements Postings, MergeablePostings {
         // encoding the integer tells us the new number of bits, which we
         // divide by 8 to get the number of bytes.
         int newID = firstID + start - 1;
-        int nb = ((WriteableBuffer) post).byteEncode(newID - lastID);
+        int nb = ((WriteableBuffer) idBuff).byteEncode(newID - lastID);
         adj = nb - adj;
 
         //
         // Get a buffer for the remaining postings, and make sure that it
         // looks like a buffer that was written and not read by slicing and
         // manipulating the position.
-        ((WriteableBuffer) post).append((ReadableBuffer) other.post);
+        ((WriteableBuffer) idBuff).append((ReadableBuffer) other.idBuff);
 
         //
         // The last ID on this entry is now the last ID from the entry we
@@ -466,8 +472,8 @@ public class IDPostings implements Postings, MergeablePostings {
 
     public void append(Postings p, int start, int[] idMap) {
         
-        if(post == null) {
-            post = new ArrayBuffer(p.getN() * 2);
+        if(idBuff == null) {
+            idBuff = new ArrayBuffer(p.getN() * 2);
         }
 
         //
@@ -480,7 +486,7 @@ public class IDPostings implements Postings, MergeablePostings {
         //
         // We'll iterate through the postings.
         PostingsIterator pi = p.iterator(null);
-        WriteableBuffer wpost = (WriteableBuffer) post;
+        WriteableBuffer wpost = (WriteableBuffer) idBuff;
         while(pi.next()) {
             int origID = pi.getID();
             int mapID = idMap[origID];
@@ -495,7 +501,7 @@ public class IDPostings implements Postings, MergeablePostings {
             // Increment our ID count, and see if we need to add a skip.
             nIDs++;
             if(nIDs % skipSize == 0) {
-                addSkip(mapID, (int) post.position());
+                addSkip(mapID, (int) idBuff.position());
             }
 
             wpost.byteEncode(mapID - lastID);
@@ -669,7 +675,7 @@ public class IDPostings implements Postings, MergeablePostings {
          */
         public CompressedIDIterator(PostingsIteratorFeatures features) {
             this.features = features;
-            rp = ((ReadableBuffer) post).duplicate();
+            rp = ((ReadableBuffer) idBuff).duplicate();
             rp.position(dataStart);
             done = nIDs == 0;
         }

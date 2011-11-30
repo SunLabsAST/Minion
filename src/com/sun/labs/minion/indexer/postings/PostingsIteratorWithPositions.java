@@ -28,19 +28,16 @@ package com.sun.labs.minion.indexer.postings;
  * An interface for postings iterators that can return positions associated
  * with IDs.
  */
-public interface PosPostingsIterator extends PostingsIterator {
+public interface PostingsIteratorWithPositions extends PostingsIterator {
 
     /**
-     * Returns the positions associated with the current ID.  The positions
-     * are divided by field.
+     * Returns the word positions associated with the current ID.
      *
-     * @return A two-dimensional array of int.  The contents of the
-     * <em>i<sup>th</sup></em> element of the array are the positions for
-     * the field whose ID is <em>i</em>.  The positions stored at element 0
-     * are those positions that are not in any named field.  For each of the sub-arrays,
-     * the zeroth element of the array gives the number of word positions in that
-     * field.
+     * @return an array containing the positions of the occurrences of this
+     * entry.  This array will be re-used during the course of the iteration, so
+     * if you are going to retain the positions for an entry, you must copy them
+     * out.
      */
-    public int[][] getPositions();
+    public int[] getPositions();
     
 }// PosPostingsIterator

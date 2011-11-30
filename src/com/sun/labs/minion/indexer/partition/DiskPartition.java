@@ -45,6 +45,7 @@ import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -140,6 +141,9 @@ public class DiskPartition extends Partition implements Closeable {
      * The limit for variant entries relationship to a stemmed entry.
      */
     protected static float MATCH_CUT_OFF = (float) 0.65;
+    
+    protected static Set<String> allPostingsChannelNames = 
+            new ConcurrentSkipListSet<String>();
 
     /**
      * Opens a partition with a given number
@@ -164,12 +168,7 @@ public class DiskPartition extends Partition implements Closeable {
 
         //
         // Open the dictionary and postings files.
-        File[] files = getMainFiles();
-        dictFile = new RandomAccessFile(files[0], "rw");
-        postFiles = new RandomAccessFile[files.length - 1];
-        for(int i = 1; i < files.length; i++) {
-            postFiles[i - 1] = new RandomAccessFile(files[i], "r");
-        }
+        dictFile = new RandomAccessFile(manager.makeDictionaryFile(partNumber), "rw");
 
         //
         // Jump to where the partition header is and read it.  We don't need
@@ -178,6 +177,14 @@ public class DiskPartition extends Partition implements Closeable {
         long headerOffset = dictFile.readLong();
         dictFile.seek(headerOffset);
         header = new PartitionHeader(dictFile);
+
+        String[] pcn = header.getPostingsChannelNames();
+        File[] pf = manager.makePostingsFiles(partNumber, pcn);
+        postFiles = new RandomAccessFile[pf.length];
+        for(int i = 0; i < pf.length; i++) {
+            allPostingsChannelNames.add(pcn[i]);
+            postFiles[i] = new RandomAccessFile(pf[i], "r");
+        }
 
         dictFile.seek(header.getDocDictOffset());
         docDict = new DiskDictionary<String>(
@@ -297,10 +304,16 @@ public class DiskPartition extends Partition implements Closeable {
     public void delete() {
         close();
 
-        File[] files = getMainFiles();
         boolean fail = false;
-        for(int i = 0; i < files.length; i++) {
-            if(!files[i].delete()) {
+
+        File df = manager.makeDictionaryFile(partNumber);
+        if(!df.delete()) {
+            fail = true;
+        }
+        
+        File[] pf = manager.makePostingsFiles(partNumber, header.getPostingsChannelNames());
+        for(int i = 0; i < pf.length; i++) {
+            if(!pf[i].delete()) {
                 fail = true;
             }
         }
@@ -330,20 +343,25 @@ public class DiskPartition extends Partition implements Closeable {
 
         //
         // Remove the data files.
-        File[] files = getMainFiles(m, n);
+        File df = m.makeDictionaryFile(n);
+        if((!df.delete()) && (df.exists())) {
+            logger.warning(String.format("Failed to delete %s", df));
+        }
+        
+        File[] files = m.makePostingsFiles(n, allPostingsChannelNames.toArray(new String[0]));
         for(File f : files) {
             if((!f.delete()) && (f.exists())) {
-                logger.warning("Failed to delete: " + f);
+                logger.warning(String.format("Failed to delete %s", f));
             }
         }
 
         //
         // Remove the deletion bitmap and the removed partition files.
         if(!m.makeDeletedDocsFile(n).delete()) {
-            logger.severe("Failed to reap partition " + n);
+            logger.warning(String.format("Failed to delete deleted docs for %d", n));
         }
         if(!m.makeRemovedPartitionFile(n).delete()) {
-            logger.severe("Failed to reap partition " + n);
+            logger.warning(String.format("Failed to delete removed file for %d", n));
         }
     }
 

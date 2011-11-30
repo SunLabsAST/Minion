@@ -169,6 +169,13 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         this.factory = factory;
     }
 
+    public String[] getPostingsChannelNames() {
+        if(factory != null) {
+            return factory.getPostingsChannelNames();
+        }
+        return null;
+    }
+    
     public Set<N> getKeys() {
         return map.keySet();
     }

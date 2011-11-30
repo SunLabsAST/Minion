@@ -101,6 +101,20 @@ public class InvFileDiskPartition extends DiskPartition {
         }
     }
 
+    @Override
+    public String[] getPostingsChannelNames() {
+        String[] max = null;
+        for(DiskField field : fields) {
+            if(field != null) {
+                String[] t = field.getPostingsChannelNames();
+                if(max == null || t.length > max.length) {
+                    max = t;
+                }
+            }
+        }
+        return max;
+    }
+    
     public QueryEntry get(String field, String term, boolean caseSensitive) {
         DiskField df = getDF(field);
         if (df == null) {
@@ -462,29 +476,12 @@ public class InvFileDiskPartition extends DiskPartition {
      * @param n The partition number to reap.
      */
     protected static void reap(PartitionManager m, int n) {
-        File[] files = getMainFiles(m, n);
-        for (File f : files) {
-            if ((!f.delete()) && (f.exists())) {
-                logger.warning(String.format("Failed to delete %s", f));
-            }
-        }
+        DiskPartition.reap(m, n);
 
         File vlf = m.makeVectorLengthFile(n);
         if (!vlf.delete()) {
-            logger.severe(String.format(
-                    "Failed to delete vector lengths file %s", vlf));
-        }
-
-        //
-        // Remove the deletion bitmap and the removed partition files.
-        File delFile = m.makeDeletedDocsFile(n);
-        if (delFile.exists() && !delFile.delete()) {
-            logger.severe(String.format("Failed to remove del file for DP: %d", n));
-        }
-        
-        if (!m.makeRemovedPartitionFile(n).delete()) {
-            logger.severe(String.format("Failed to remove removed file for DP: %d", n));
+            logger.warning(String.format(
+                    "Failed to delete vector lengths file for %d", n));
         }
     }
-
 }

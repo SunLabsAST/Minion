@@ -28,7 +28,6 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.partition.Partition;
-import java.util.Iterator;
 
 /**
  * An interface for dictionaries.  This interface only supports a few
@@ -45,7 +44,13 @@ import java.util.Iterator;
  * @see com.sun.labs.minion.indexer.entry.Entry
  */
 public interface Dictionary<N extends Comparable> extends Iterable<Entry> {
-
+    
+    /**
+     * Gets the names of the channels needed to read or write the postings
+     * associated with the entries in this dictionary.
+     */
+    public String[] getPostingsChannelNames();
+    
     /**
      * Gets the partition to which this dictionary belongs.
      *

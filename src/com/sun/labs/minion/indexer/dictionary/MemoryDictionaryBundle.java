@@ -122,10 +122,18 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
     protected CDateParser dateParser;
 
-    public MemoryDictionaryBundle(MemoryField field, EntryFactory factory) {
+    public MemoryDictionaryBundle(MemoryField field) {
         this.field = field;
         info = field.getInfo();
         dicts = new MemoryDictionary[Type.values().length];
+        
+        EntryFactory factory;
+        
+        if(info.hasAttribute(FieldInfo.Attribute.POSITIONS)) {
+            factory = new EntryFactory(Postings.Type.ID_FREQ_POS);
+        } else {
+            factory = new EntryFactory(Postings.Type.ID_FREQ);
+        }
 
         if(field.isTokenized() && field.isCased()) {
             dicts[Type.CASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
@@ -136,8 +144,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
 
         if(field.isTokenized() && field.isStemmed()) {
-            dicts[Type.STEMMED_TOKENS.ordinal()] = new MemoryDictionary<String>(
-                    factory);
+            dicts[Type.STEMMED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
         }
 
         if(field.isVectored()) {
@@ -165,6 +172,19 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
     }
 
+    public String[] getPostingsChannelNames() {
+        String[] max = null;
+        for(MemoryDictionary dict : dicts) {
+            if(dict != null) {
+                String[] t = dict.getPostingsChannelNames();
+                if(max == null || t.length > max.length) {
+                    max = t;
+                }
+            }
+        }
+        return max;
+    }
+    
     public void startDocument(Entry docKey) {
         String key = docKey.getName().toString();
         maxDocID = Math.max(maxDocID, docKey.getID());

@@ -34,7 +34,11 @@ public class DiskField extends Field {
             EntryFactory entryFactory) throws java.io.IOException {
         super(partition, info, entryFactory);
         bundle = new DiskDictionaryBundle(this, dictFile, vectorLengthsFile,
-                postIn, entryFactory);
+                postIn);
+    }
+    
+    public String[] getPostingsChannelNames() {
+        return bundle.getPostingsChannelNames();
     }
 
     @Override

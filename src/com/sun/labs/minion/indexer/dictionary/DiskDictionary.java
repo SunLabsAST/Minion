@@ -375,6 +375,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         bst = new BinarySearchTree(256);
     }
 
+    public String[] getPostingsChannelNames() {
+        return factory.getPostingsChannelNames();
+    }
+
     public DictionaryHeader getHeader() {
         return dh;
     }

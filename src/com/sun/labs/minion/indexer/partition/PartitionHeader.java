@@ -3,8 +3,11 @@ package com.sun.labs.minion.indexer.partition;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -14,6 +17,11 @@ import java.util.logging.Logger;
 public class PartitionHeader {
     
     private static final Logger logger = Logger.getLogger(PartitionHeader.class.getName());
+    
+    /**
+     * The types of postings files in this partition.
+     */
+    private String[] postingsChannelNames;
 
     /**
      * The number of documents in the partition.
@@ -53,6 +61,14 @@ public class PartitionHeader {
         }
         nDocs = raf.readInt();
         maxDocID = raf.readInt();
+        int ncn = raf.readInt();
+        postingsChannelNames = new String[ncn];
+        for(int i = 0; i < postingsChannelNames.length; i++) {
+            int nb = raf.readInt();
+            byte[] bs = new byte[nb];
+            raf.read(bs);
+            postingsChannelNames[i] = new String(bs, "utf-8");
+        }
     }
 
     public void addOffset(int id, long offset) {
@@ -88,6 +104,14 @@ public class PartitionHeader {
         this.maxDocID = maxDocID;
     }
 
+    public String[] getPostingsChannelNames() {
+        return postingsChannelNames;
+    }
+
+    public void setPostingsChannelNames(String[] postingsChannelNames) {
+        this.postingsChannelNames = postingsChannelNames;
+    }
+
     public void write(RandomAccessFile raf) throws java.io.IOException {
         raf.writeLong(docDictOffset);
         raf.writeInt(fieldOffsets.size());
@@ -96,24 +120,43 @@ public class PartitionHeader {
         }
         raf.writeInt(nDocs);
         raf.writeInt(maxDocID);
+        raf.writeInt(postingsChannelNames.length);
+        for(String pcn : postingsChannelNames) {
+            byte[] bs = pcn.getBytes("utf-8");
+            raf.writeInt(bs.length);
+            raf.write(bs);
+        }
    }
     
-    public void write(WriteableBuffer b) {
-        b.byteEncode(docDictOffset, 8);
-        b.byteEncode(fieldOffsets.size(), 4);
+    public void write(WriteableBuffer buff) {
+        buff.byteEncode(docDictOffset, 8);
+        buff.byteEncode(fieldOffsets.size(), 4);
         for(FieldOffset fo : fieldOffsets) {
-            fo.write(b);
+            fo.write(buff);
         }
-        b.byteEncode(nDocs, 4);
-        b.byteEncode(maxDocID, 4);
-        
+        buff.byteEncode(nDocs, 4);
+        buff.byteEncode(maxDocID, 4);
+        buff.byteEncode(postingsChannelNames.length, 4);
+        for(String pcn : postingsChannelNames) {
+            try {
+                byte[] bs = pcn.getBytes("utf-8");
+                buff.byteEncode(bs.length, 4);
+                for(byte b : bs) {
+                    buff.put(b);
+                }
+            } catch(UnsupportedEncodingException ex) {
+                logger.log(Level.SEVERE, String.format("No utf-8? WTF?"), ex);
+            }
+        }
     }
 
     @Override
     public String toString() {
         return "PartitionHeader{" + "nDocs=" + nDocs + " maxDocID=" + maxDocID +
                 " nFields=" + nFields + " fieldOffsets=" + fieldOffsets +
-                " docDictOffset=" + docDictOffset + '}';
+                " docDictOffset=" + docDictOffset + 
+                " postingsChannelNames=" + Arrays.toString(postingsChannelNames) +
+                '}';
     }
 
     protected static class FieldOffset {

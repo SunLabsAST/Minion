@@ -1652,6 +1652,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         return new File(iD, fn); 
     }
 
+    public File[] makePostingsFiles(int partNumber, String[] types) {
+        File[] ret = new File[types.length];
+        for(int i = 0; i < types.length; i++) {
+            ret[i] = makePostingsFile(partNumber, types[i]);
+        }
+        return ret;
+    }
+    
     /**
      * Makes a <code>File</code> for a postings file.
      *

@@ -141,8 +141,8 @@ public class IDFreqPostings extends IDPostings {
 
     public void append(Postings p, int start, int[] idMap) {
 
-        if(post == null) {
-            post = new ArrayBuffer(p.getN() * 2);
+        if(idBuff == null) {
+            idBuff = new ArrayBuffer(p.getN() * 2);
         }
 
         //
@@ -155,7 +155,7 @@ public class IDFreqPostings extends IDPostings {
         //
         // We'll iterate through the postings.
         PostingsIterator pi = p.iterator(null);
-        WriteableBuffer wpost = (WriteableBuffer) post;
+        WriteableBuffer wpost = (WriteableBuffer) idBuff;
         while(pi.next()) {
             int origID = pi.getID();
             int mapID = idMap[origID];
@@ -170,7 +170,7 @@ public class IDFreqPostings extends IDPostings {
             // Increment our ID count, and see if we need to add a skip.
             nIDs++;
             if(nIDs % skipSize == 0) {
-                addSkip(mapID, (int) post.position());
+                addSkip(mapID, (int) idBuff.position());
             }
             
             wpost.byteEncode(mapID - lastID);

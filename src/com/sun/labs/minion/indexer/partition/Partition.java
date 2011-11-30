@@ -92,41 +92,11 @@ public abstract class Partition implements Comparable<Partition> {
     protected void setPartitionManager(PartitionManager manager) {
         this.manager = manager;
     }
-
-    /**
-     * Gets the files associated with the main postings for a partition.
-     *
-     * @return an array of files.  The first is for the dictionary, and the
-     * remaining are for the postings files.
-     */
-    public File[] getMainFiles() {
-        return getMainFiles(manager, partNumber);
+    
+    public String[] getPostingsChannelNames() {
+        return new String[] {"post"};
     }
-
-    /**
-     * Gets the files associated with the main postings for a partition.
-     *
-     * @param partNumber the partition number for which we want the files.
-     * @return an array of files.  The first is for the dictionary, and the
-     * remaining are for the postings files.
-     */
-    public static File[] getMainFiles(PartitionManager manager,
-            int partNumber) {
-
-        int nFiles = manager.getNumPostingsChannels();
-        File[] ret = new File[nFiles + 1];
-        ret[0] = manager.makeDictionaryFile(partNumber);
-        if(nFiles == 1) {
-            ret[1] = manager.makePostingsFile(partNumber, null);
-        } else {
-            for(int i = 1; i <= nFiles; i++) {
-                ret[i] = manager.makePostingsFile(partNumber, i);
-            }
-        }
-
-        return ret;
-    }
-
+    
     /**
      * Compares two partitions by their partition numbers.
      * @param p the partition to compare to.

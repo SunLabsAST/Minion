@@ -52,7 +52,7 @@ public interface Postings {
                 case ID_FREQ:
                     return new IDFreqPostings();
                 case ID_FREQ_POS:
-                    return new IDFreqPostings();
+                    return new PositionPostings();
                 case DOC_VECTOR:
                     return new DocumentVectorPostings();
                 default:
@@ -67,7 +67,7 @@ public interface Postings {
                 case ID_FREQ:
                     return new IDFreqPostings(in, offset, size);
                 case ID_FREQ_POS:
-                    return new IDFreqPostings(in, offset, size);
+                    return new PositionPostings(in, offset, size);
                 case DOC_VECTOR:
                     return new DocumentVectorPostings(in, offset, size);
                 default:
@@ -186,13 +186,6 @@ public interface Postings {
      * warning should be logged and <code>null</code> will be returned.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features);
-    
-    /**
-     * Reads secondary postings information.  Useful when there is data in
-     * a separate postings input that we don't always want to read, like
-     * position information.
-     */
-    public void readSecondaryInformation(ReadableBuffer[] buffs);
     
     /**
      * Clears the data from this postings object, which will allow it to be

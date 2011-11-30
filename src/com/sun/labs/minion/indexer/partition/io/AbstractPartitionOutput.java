@@ -145,8 +145,8 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
             this.partition = partition;
             partitionHeader = new PartitionHeader();
             partitionNumber = partitionManager.getMetaFile().getNextPartitionNumber();
-            File[] files = MemoryPartition.getMainFiles(partitionManager, partitionNumber);
-            postOutFiles = Arrays.copyOfRange(files, 1, files.length);
+            postOutFiles = partitionManager.makePostingsFiles(partitionNumber, 
+                    partition.getPostingsChannelNames());
         } catch(FileLockException ex) {
             throw new IOException("Error getting partition number", ex);
         }

@@ -20,18 +20,12 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
     private static final Logger logger = Logger.getLogger(RAMPartitionOutput.class.getName());
 
     /**
-     * Creates a dump state that can be passed around during dumping.
-     * @param partNumber the partition number that we're dumping
+     * Creates a partition output that will marshall data into in-memory buffers
      * @param manager the manager responsible for the partition that we're dumping
-     * @param files the files into which we'll write the partition data.
      */
     public RAMPartitionOutput(PartitionManager manager) throws IOException {
         super(manager);
         partDictOut = new RAMDictionaryOutput(manager.getIndexDir());
-        postOut = new PostingsOutput[MemoryPartition.getMainFiles(manager, 0).length];
-        for(int i = 0; i < postOut.length; i++) {
-            postOut[i] = new RAMPostingsOutput();
-        }
     }
 
     @Override
@@ -46,6 +40,20 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
         }
         return termStatsDictOut;
     }
+
+    @Override
+    public int startPartition(MemoryPartition partition) throws IOException {
+        int ret = super.startPartition(partition);
+        if(postOut == null) {
+            postOut = new PostingsOutput[postOutFiles.length];
+            for(int i = 0; i < postOutFiles.length; i++) {
+                postOut[i] = new RAMPostingsOutput();
+            }
+        }
+        return ret;
+    }
+    
+    
 
     @Override
     public void flush() throws IOException {

@@ -36,7 +36,7 @@ import java.util.ArrayList;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
-import com.sun.labs.minion.indexer.postings.PosPostingsIterator;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.util.Util;
@@ -81,7 +81,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      * A set of postings iterators for the terms that can be used to get
      * position info for proximity queries or for highlighting.
      */
-    protected PosPostingsIterator[] pis;
+    protected PostingsIteratorWithPositions[] pis;
 
     /**
      * An array that will hold per-field word positions.  This will be
@@ -523,9 +523,9 @@ public class DictTerm extends QueryTerm implements Comparator {
         if(pis == null) {
             feat.setQueryStats(qs);
 
-            pis = new PosPostingsIterator[dictEntries.length];
+            pis = new PostingsIteratorWithPositions[dictEntries.length];
             for(int i = 0; i < dictEntries.length; i++) {
-                pis[i] = (PosPostingsIterator) dictEntries[i].iterator(feat);
+                pis[i] = (PostingsIteratorWithPositions) dictEntries[i].iterator(feat);
             }
 
             posns = new int[searchFields.length][];
@@ -550,23 +550,20 @@ public class DictTerm extends QueryTerm implements Comparator {
             //
             // Get the positions for this document.
             if(pis[i].findID(d)) {
-                int[][] curr = pis[i].getPositions();
-                for(int j = 0; j < curr.length; j++) {
-                    int[] fpos = curr[j];
-                    int n = fpos[0];
-                    if(n == 0) {
-                        continue;
-                    }
-
-                    if(posns[j][0] + 1 + n >= posns[j].length) {
-                        posns[j] = Arrays.copyOf(posns[j],
-                                                  (posns[j].length + n + 1) * 2);
-                    }
-                    System.arraycopy(fpos, 1,
-                                     posns[j], posns[j][0] + 1,
-                                     n);
-                    posns[j][0] += n;
+                int[] fpos = pis[i].getPositions();
+                int n = fpos[0];
+                if(n == 0) {
+                    continue;
                 }
+
+                if(posns[0][0] + 1 + n >= posns[0].length) {
+                    posns[0] = Arrays.copyOf(posns[0],
+                            (posns[0].length + n + 1) * 2);
+                }
+                System.arraycopy(fpos, 1,
+                        posns[0], posns[0][0] + 1,
+                        n);
+                posns[0][0] += n;
             }
         }
 

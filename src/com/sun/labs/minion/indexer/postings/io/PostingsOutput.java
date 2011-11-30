@@ -30,6 +30,8 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * An interface to be implemented by things that write postings.
  */
 public interface PostingsOutput {
+    
+    public int write(WriteableBuffer buff) throws java.io.IOException;
 
     /**
      * Writes out the buffers containing a set of postings information.

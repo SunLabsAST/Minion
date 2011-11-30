@@ -20,12 +20,18 @@ public class EntryFactory<N extends Comparable> implements Configurable {
     public static final String POST_TYPE = "post_type";
     
     protected Type type;
-
+    
+    /**
+     * An exemplar postings.
+     */
+    protected Postings post;
+    
     public EntryFactory() {
     }
 
     public EntryFactory(Postings.Type type) {
         this.type = type;
+        post = Postings.Type.getPostings(type);
     }
 
     public IndexEntry getIndexEntry(N name, int id) {
@@ -34,6 +40,14 @@ public class EntryFactory<N extends Comparable> implements Configurable {
 
     public QueryEntry getQueryEntry(N name, ReadableBuffer b) {
         return new QueryEntry(name, type, b);
+    }
+    
+    /**
+     * Gets the names of the postings channels that this entry is going to need
+     * for reading or writing it's postings.
+     */
+    public String[] getPostingsChannelNames() {
+        return post.getChannelNames();
     }
 
     @Override

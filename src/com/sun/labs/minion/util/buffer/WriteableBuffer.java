@@ -68,7 +68,7 @@ public interface WriteableBuffer extends Buffer {
      * @return This buffer, for chained invocations.
      */
     public WriteableBuffer put(byte b);
-
+    
     /**
      * Puts a single byte onto this buffer at the given position.
      * @param p The position where the byte should be put.

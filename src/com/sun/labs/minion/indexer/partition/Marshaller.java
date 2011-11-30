@@ -107,7 +107,7 @@ public class Marshaller implements Configurable {
     /**
      * The partition outputs that we'll use for marshalling data.
      */
-    private RAMPartitionOutput[] partOuts;
+    private RAMPartitionOutput[] partitionOutputs;
 
     /**
      * A thread to flush things to disk.
@@ -145,7 +145,7 @@ public class Marshaller implements Configurable {
     }
     
     public void setLongIndexingRun(boolean longIndexingRun) {
-        for(PartitionOutput po : partOuts) {
+        for(PartitionOutput po : partitionOutputs) {
             ((AbstractPartitionOutput) po).setLongIndexingRun(longIndexingRun);
         }
     }
@@ -177,7 +177,7 @@ public class Marshaller implements Configurable {
         } catch(InterruptedException ex) {
         }
 
-        for(RAMPartitionOutput po : partOuts) {
+        for(RAMPartitionOutput po : partitionOutputs) {
             try {
                 po.close();
             } catch(IOException ex) {
@@ -199,13 +199,13 @@ public class Marshaller implements Configurable {
 
         toMarshall = new ArrayBlockingQueue<MPHolder>(queueLength);
         poPool = new ArrayBlockingQueue<PartitionOutput>(poolSize);
-        partOuts = new RAMPartitionOutput[poolSize];
-        for(int i = 0; i < partOuts.length; i++) {
+        partitionOutputs = new RAMPartitionOutput[poolSize];
+        for(int i = 0; i < partitionOutputs.length; i++) {
             try {
-                partOuts[i] = new RAMPartitionOutput(partitionManager);
-                ((RAMPartitionOutput) partOuts[i]).setName("PO-" + i);
-                ((RAMPartitionOutput) partOuts[i]).setLongIndexingRun(longIndexingRun);
-                poPool.put(partOuts[i]);
+                partitionOutputs[i] = new RAMPartitionOutput(partitionManager);
+                ((RAMPartitionOutput) partitionOutputs[i]).setName("PO-" + i);
+                ((RAMPartitionOutput) partitionOutputs[i]).setLongIndexingRun(longIndexingRun);
+                poPool.put(partitionOutputs[i]);
             } catch(Exception ex) {
                 throw new PropertyException(ex, ps.getInstanceName(), PROP_POOL_SIZE, "Error creating output pool");
             }

@@ -32,7 +32,7 @@ public class MemoryField extends Field {
     /**
      * The dictionaries for this field.
      */
-    private MemoryDictionaryBundle<Comparable> dicts;
+    private MemoryDictionaryBundle<Comparable> bundle;
     
     /**
      * The indexing pipeline for this field.
@@ -43,7 +43,7 @@ public class MemoryField extends Field {
 
     public MemoryField(MemoryPartition partition, FieldInfo info, EntryFactory factory) {
         super(partition, info, factory);
-        dicts = new MemoryDictionaryBundle<Comparable>(this, factory);
+        bundle = new MemoryDictionaryBundle<Comparable>(this);
         String pipelineFactoryName = info.getPipelineFactoryName();
         if(pipelineFactoryName != null) {
             PipelineFactory pf = (PipelineFactory) ((SearchEngineImpl) partition.getPartitionManager().getEngine()).getConfigurationManager().lookup(pipelineFactoryName);
@@ -57,9 +57,13 @@ public class MemoryField extends Field {
             pipeline.setField(this);
         }
     }
+    
+    public String[] getPostingsChannelNames() {
+        return bundle.getPostingsChannelNames();
+    }
 
     public void startDocument(Entry docKey) {
-        dicts.startDocument(docKey);
+        bundle.startDocument(docKey);
     }
 
     /**
@@ -98,7 +102,7 @@ public class MemoryField extends Field {
      * @param data The actual field data.
      */
     public void save(int docID, Object data) {
-        dicts.save(docID, data);
+        bundle.save(docID, data);
     }
 
     /**
@@ -106,11 +110,11 @@ public class MemoryField extends Field {
      * @param t the token to add.
      */
     public void token(Token t) {
-        dicts.token(t);
+        bundle.token(t);
     }
 
     public int getMaximumDocumentID() {
-        return dicts.getMaxDocID();
+        return bundle.getMaxDocID();
     }
 
     /**
@@ -132,18 +136,18 @@ public class MemoryField extends Field {
             java.io.IOException {
         //
         // If there's nothing in the field, then call it a day.
-        if(dicts.getMaxDocID() == 0) {
+        if(bundle.getMaxDocID() == 0) {
             return MarshallResult.NOTHING_DUMPED;
         }
-        return dicts.marshall(partOut);
+        return bundle.marshall(partOut);
     }
     
     public void clear() {
-        dicts.clear();
+        bundle.clear();
     }
 
     public MemoryDictionary getTermDictionary(boolean cased) {
-        return dicts.getTermDictionary(cased);
+        return bundle.getTermDictionary(cased);
     }
 
     private class FieldStage extends StageAdapter {

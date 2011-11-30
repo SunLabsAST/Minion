@@ -34,22 +34,7 @@ import java.util.logging.Logger;
 
 /**
  * A class for holding a partition in memory while it is under
- * construction.  A partition consists of four files:
- *
- * <ol>
- * <li> The dictionary, which contains a mapping from terms to various
- * offset information.
- * <li> The postings data for the files in the partition.
- * <li> The "document dictionary", which contains information about the
- * documents indexed in this partition (e.g., the title)
- * <li> The taxonomy for the terms indexed in the partition.
- * </ol>
- *
- * Such a partition cannot be used for searching.
- *
- * @see DiskPartition
- * @see com.sun.labs.minion.indexer.dictionary.MemoryDictionary
- * @see com.sun.labs.minion.indexer.dictionary.MemoryFieldStore
+ * construction. 
  */
 public abstract class MemoryPartition extends Partition {
 
@@ -109,6 +94,7 @@ public abstract class MemoryPartition extends Partition {
                 docDict.size(), dur));
         
         PartitionHeader partHeader = partOut.getPartitionHeader();
+        partHeader.setPostingsChannelNames(getPostingsChannelNames());
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 
         //
@@ -146,6 +132,7 @@ public abstract class MemoryPartition extends Partition {
         // Write the partition header, then return to the top of the file to
         // say where it is.
         long phoffset = partDictOut.position();
+        logger.info(String.format("partHeader: %s", partHeader));
         partHeader.write(partDictOut);
         long pos = partDictOut.position();
         partDictOut.position(phoffsetpos);

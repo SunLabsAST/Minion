@@ -66,11 +66,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
     private DiskDictionary[] dicts;
 
     /**
-     * An entry factory for the token dictionaries.
-     */
-    private EntryFactory entryFactory;
-
-    /**
      * The field we're associated with.
      */
     private DiskField field;
@@ -100,12 +95,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
     public DiskDictionaryBundle(DiskField field,
             RandomAccessFile dictFile,
             RandomAccessFile vectorLengthsFile,
-            RandomAccessFile[] postIn,
-            EntryFactory entryFactory) throws
+            RandomAccessFile[] postIn) throws
             java.io.IOException {
         this.field = field;
         this.dictFile = dictFile;
-        this.entryFactory = entryFactory;
         info = field.getInfo();
 
         headerPos = dictFile.getFilePointer();
@@ -114,8 +107,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         for(Type type : Type.values()) {
             int ord = type.ordinal();
-            NameDecoder decoder;
-            EntryFactory fact;
+            NameDecoder decoder = null;
+            EntryFactory fact = null;
             if(header.dictOffsets[ord] >= 0) {
                 dictFile.seek(header.dictOffsets[ord]);
             } else {
@@ -123,6 +116,17 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
 
             switch(type) {
+                case CASED_TOKENS:
+                case UNCASED_TOKENS:
+                case STEMMED_TOKENS:
+                    decoder = new StringNameHandler();
+                    if(info.hasAttribute(FieldInfo.Attribute.POSITIONS)) {
+                        fact = new EntryFactory(Postings.Type.ID_FREQ_POS);
+                    } else {
+                        fact = new EntryFactory(Postings.Type.ID_FREQ);
+                    }
+                    break;
+                    
                 case RAW_SAVED:
                 case UNCASED_SAVED:
                     decoder = getDecoder();
@@ -157,8 +161,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     dicts[ord].setPartition(field.getPartition());
                     continue;
                 default:
-                    decoder = new StringNameHandler();
-                    fact = entryFactory;
             }
 
             dicts[ord] = new DiskDictionary(fact, decoder, dictFile, postIn);
@@ -184,6 +186,19 @@ public class DiskDictionaryBundle<N extends Comparable> {
             dvl = new DocumentVectorLengths(vectorLengthsFile, 8192);
         }
 
+    }
+    
+    public String[] getPostingsChannelNames() {
+        String[] max = null;
+        for(DiskDictionary dict : dicts) {
+            if(dict != null) {
+                String[] t = dict.getPostingsChannelNames();
+                if(max == null || t.length > max.length) {
+                    max = t;
+                }
+            }
+        }
+        return max;
     }
     
     public DiskDictionary getSavedValuesDictionary() {
