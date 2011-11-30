@@ -26,7 +26,6 @@ package com.sun.labs.minion.indexer.entry;
 
 import java.io.IOException;
 import com.sun.labs.minion.indexer.postings.Occurrence;
-import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
@@ -69,21 +68,26 @@ public class TermStatsQueryEntry extends QueryEntry<String> {
     public void append(QueryEntry qe, int start, int[] idMap) {
     }
 
+    @Override
     public int getN() {
         return ts.getDocFreq();
     }
 
+    @Override
     public long getTotalOccurrences() {
         return ts.getTotalOccurrences();
     }
 
+    @Override
     public int getMaxFDT() {
         return ts.getMaxFDT();
     }
 
+    @Override
     public void readPostings() throws IOException {
     }
 
+    @Override
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
         return null;
     }

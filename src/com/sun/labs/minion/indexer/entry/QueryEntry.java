@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.indexer.entry;
 
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -49,6 +50,11 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
      * entry.
      */
     protected PostingsInput[] postIn;
+    
+    /**
+     * The field from which this term was drawn.
+     */
+    private FieldInfo field;
 
     /**
      * Creates an entry.
@@ -80,6 +86,14 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
         return false;
     }
 
+    public FieldInfo getField() {
+        return field;
+    }
+
+    public void setField(FieldInfo field) {
+        this.field = field;
+    }
+    
     /**
      * Gets an iterator that will iterate through the postings associated
      * with this entry.

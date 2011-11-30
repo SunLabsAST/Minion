@@ -47,9 +47,7 @@ public class ScoredQuickOr extends QuickOr {
      */
     float sqw = 0;
 
-    protected static Logger logger = Logger.getLogger(ScoredQuickOr.class.getName());
-
-    protected static String logTag = "SQO";
+    protected static final Logger logger = Logger.getLogger(ScoredQuickOr.class.getName());
 
     /**
      * Creates a quick or for a given partition.  The estimated size of the
@@ -68,19 +66,12 @@ public class ScoredQuickOr extends QuickOr {
         }
     } // ScoredQuickOr constructor
 
-    public String toString() {
-        return String.format("part: %s storeAll: %s nDocs: %d size: %d", part, storeAll, part.getNDocs(), p);
-    }
-
-    /**
-     * Adds the contents of a postings iterator to this quick or.
-     *
-     * @param pi the iterator for the postings.
-     */
+    @Override
     public void add(PostingsIterator pi) {
         add(pi, 1);
     }
 
+    @Override
     public void add(PostingsIterator pi, float qw) {
         if(pi == null) {
             return;
@@ -141,14 +132,7 @@ public class ScoredQuickOr extends QuickOr {
         qs.unionW.stop();
     }
 
-    /**
-     * Adds an explicit set of documents and weights to this quick or.
-     *
-     * @param d the documents to add
-     * @param w the weights associated with the documents
-     * @param qw a weight associated with a query term, which will be
-     * multiplied against the weights in the array.
-     */
+    @Override
     public void add(int[] d, float[] w, float qw) {
 
         added++;
@@ -177,18 +161,12 @@ public class ScoredQuickOr extends QuickOr {
         }
     }
 
-    /**
-     * Adds only a weight to this QuickOr.  This allows for document
-     * representations where not all terms from a document appear
-     * in the partition that this QuickOr corresponds to.  We still want
-     * those terms' weights to be accounted for.
-     *
-     * @param qw the query weight of a term to add to this QuickOr
-     */
+    @Override
     public void addWeightOnly(float qw) {
         sqw += qw * qw;
     }
 
+    @Override
     public ArrayGroup getGroup() {
 
         if(storeAll) {
@@ -226,5 +204,10 @@ public class ScoredQuickOr extends QuickOr {
             }
         }
         return new ScoredGroup(part, docs, weights, p, sqw);
+    }
+    @Override
+    public String toString() {
+        return String.format("part: %s storeAll: %s nDocs: %d size: %d", part,
+                             storeAll, part.getNDocs(), p);
     }
 } // ScoredQuickOr

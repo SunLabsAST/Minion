@@ -211,9 +211,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @return
      */
     public QueryEntry getTerm(String name, boolean caseSensitive) {
+        QueryEntry ret = null;
         if(caseSensitive) {
             if(field.cased) {
-                return dicts[Type.CASED_TOKENS.ordinal()].get(name);
+                ret = dicts[Type.CASED_TOKENS.ordinal()].get(name);
             } else {
                 logger.warning(
                         String.format(
@@ -221,13 +222,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         + "but this field only has case insensitive terms stored",
                         name, info.getName()));
             }
-        }
-
-        if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-            return dicts[Type.UNCASED_TOKENS.ordinal()].get(CharUtils.
+        } else if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
+            ret = dicts[Type.UNCASED_TOKENS.ordinal()].get(CharUtils.
                     toLowerCase(name));
         }
-        return null;
+        
+        if(ret != null) {
+            ret.setField(info);
+        }
+        return ret;
     }
 
     /**
@@ -240,9 +243,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @return
      */
     public QueryEntry getTerm(int id, boolean caseSensitive) {
+        QueryEntry ret = null;
         if(caseSensitive) {
             if(field.cased) {
-                return dicts[Type.CASED_TOKENS.ordinal()].getByID(id);
+                ret = dicts[Type.CASED_TOKENS.ordinal()].getByID(id);
             } else {
                 logger.warning(
                         String.format(
@@ -252,19 +256,28 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
 
         if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-            return dicts[Type.UNCASED_TOKENS.ordinal()].getByID(id);
+            ret = dicts[Type.UNCASED_TOKENS.ordinal()].getByID(id);
         }
-        return null;
+        if(ret != null) {
+            ret.setField(info);
+        }
+        return ret;
     }
 
     public QueryEntry getStem(String stem) {
+        QueryEntry ret = null;
         if(dicts[Type.STEMMED_TOKENS.ordinal()] != null) {
-            return dicts[Type.STEMMED_TOKENS.ordinal()].get(stem);
+            ret = dicts[Type.STEMMED_TOKENS.ordinal()].get(stem);
         }
-        return null;
+        
+        if(ret != null) {
+            ret.setField(info);
+        }
+        return ret;
     }
 
     public QueryEntry getVector(String key, boolean caseSensitive) {
+        QueryEntry ret = null;
         if(!field.vectored) {
             logger.warning(
                     String.format("Requested vector for non-vectored field %s", info.
@@ -272,10 +285,16 @@ public class DiskDictionaryBundle<N extends Comparable> {
             return null;
         }
         if(caseSensitive) {
-            return dicts[Type.RAW_VECTOR.ordinal()].get(key);
+            ret = dicts[Type.RAW_VECTOR.ordinal()].get(key);
         } else {
-            return dicts[Type.STEMMED_VECTOR.ordinal()].get(key);
+            ret = dicts[Type.STEMMED_VECTOR.ordinal()].get(key);
         }
+        
+        if(ret != null) {
+            ret.setField(info);
+        }
+        return ret;
+
     }
 
     /**

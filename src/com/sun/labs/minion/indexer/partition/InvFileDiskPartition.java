@@ -145,7 +145,6 @@ public class InvFileDiskPartition extends DiskPartition {
     }
 
     public DiskField getDF(int fieldID) {
-
         if (fieldID < 0 || fieldID >= fields.length) {
             return null;
         }

@@ -74,7 +74,7 @@ public class DocumentVectorLengths {
      */
     protected static int BUFF_SIZE = 8192;
 
-    static Logger logger = Logger.getLogger(
+    private static final Logger logger = Logger.getLogger(
             DocumentVectorLengths.class.getName());
 
     /**

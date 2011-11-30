@@ -88,9 +88,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      */
     protected int[][] posns;
 
-    protected static Logger logger = Logger.getLogger(DictTerm.class.getName());
-
-    protected static String logTag = "DT";
+    private static final Logger logger = Logger.getLogger(DictTerm.class.getName());
 
     /**
      * Creates a dictionary term for a given query term.  This query term
@@ -254,6 +252,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                     part, estSize);
             or.setQueryStats(qs);
             for(QueryEntry qe : dictEntries) {
+                wc.setField(qe.getField());
                 wc.setTerm((String) qe.getName());
                 or.add(qe.iterator(feat), wf.initTerm(wc));
             }

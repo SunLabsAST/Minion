@@ -224,8 +224,7 @@ public class WeightingComponents {
      */
     public WeightingComponents setTerm(String name) {
         if(cs == null) {
-            logger.warning("No collection stats to get term stats for: " +
-                    name);
+            logger.warning(String.format("No collection stats to get term stats for: %s", name));
         } else {
             ts = cs.getTermStats(name, field);
             if(ts == null) {
