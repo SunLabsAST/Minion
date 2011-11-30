@@ -6,7 +6,6 @@ import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
-import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.pipeline.PipelineFactory;
@@ -90,6 +89,7 @@ public class MemoryField extends Field {
         if(pipeline != null) {
             fieldStage.setDocID(docID);
             pipeline.process(data.toString());
+            pipeline.reset();
         }
     }
 
@@ -132,7 +132,7 @@ public class MemoryField extends Field {
      * @throws java.io.IOException if there is an error during the
      * writing.
      */
-    public MarshallResult dump(PartitionOutput partOut) throws
+    public MarshallResult marshall(PartitionOutput partOut) throws
             java.io.IOException {
         //
         // If there's nothing in the field, then call it a day.

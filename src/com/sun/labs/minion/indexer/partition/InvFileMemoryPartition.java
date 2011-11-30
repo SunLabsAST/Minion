@@ -219,7 +219,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
             
             //
             // Dump the dictionary and deal with the result.
-            switch(mf.dump(partOut)) {
+            switch(mf.marshall(partOut)) {
                 case NOTHING_DUMPED:
                     logger.finer(String.format("No dicts dumped"));
                     fieldOffset = -1;

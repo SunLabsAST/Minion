@@ -187,8 +187,9 @@ public class DocumentVectorLengths {
             
             //
             // The entry to use for the merged global term stats dictionary.
-            TermStatsIndexEntry we;
-
+            TermStatsIndexEntry we = null;
+            
+            try {
             if(cmp == 0) {
                 //
                 // Both iterators have the term.  Combine stats!
@@ -219,6 +220,10 @@ public class DocumentVectorLengths {
                 // Only the global file has the stats.  Keep them.
                 we = new TermStatsIndexEntry(gte);
                 gte = null;
+            }
+            } catch (RuntimeException ex) {
+                logger.log(Level.SEVERE, String.format("Error on entry %s", we == null ? null : we.getName()));
+                throw(ex);
             }
 
             //
@@ -260,8 +265,7 @@ public class DocumentVectorLengths {
      * @param pi the iterator
      * @param vl the lengths to add to.
      */
-    private static void addPostings(PostingsIterator pi,
-                                    float[] vl) {
+    private static void addPostings(PostingsIterator pi, float[] vl) {
         if(pi != null) {
             while(pi.next()) {
                 float w = pi.getWeight();

@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import sun.font.Type1Font;
 
 /**
  * A bundle of dictionaries to be used at query time.
@@ -945,6 +944,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 for(int i = 0; i < postOutFiles.length; i++) {
                     mPostRAF[i] = new RandomAccessFile(postOutFiles[i], "rw");
                 }
+                try {
                 WriteableBuffer vlb = mergeState.partOut.getVectorLengthsBuffer();
                 mergeHeader.vectorLengthOffset = vlb.position();
                 fieldDictOut.position(mdp);
@@ -965,6 +965,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     mprf.close();
                 }
                 fieldDictOut.position(mdsp);
+                } catch(RuntimeException ex) {
+                    logger.log(Level.SEVERE, String.format("Exception computing vectors for merged partition on field %s", mergeState.info.getName()));
+                    throw(ex);
+                }
 
             } else {
                 mergeHeader.vectorLengthOffset = -1;

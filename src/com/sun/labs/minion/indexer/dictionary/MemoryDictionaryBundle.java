@@ -332,7 +332,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      */
     public MemoryField.MarshallResult marshall(PartitionOutput partOut) throws
             java.io.IOException {
-        boolean debug = field.getInfo().getName().equals("text");
+        boolean debug = field.getInfo().getName().equals("title");
 
         MemoryField.MarshallResult ret = MemoryField.MarshallResult.DICTS_DUMPED;
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
@@ -348,7 +348,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         //
         // The ID maps from each of the dictionaries.
         int[][] entryIDMaps = new int[Type.values().length][];
-
+        
         //
         // Dump the dictionaries in this bundle.  This loop is a little gross, what
         // with the pre-dump and post-dump switches based on the type of dictionary
