@@ -338,6 +338,7 @@ public class PositionPostings implements Postings {
 
     public void append(Postings p, int start) {
         PositionPostings other = (PositionPostings) p;
+        other.readPositions();
 
         //
         // Check for empty postings on the other side.
@@ -439,7 +440,10 @@ public class PositionPostings implements Postings {
 
         if(idMap == null) {
             append(p, start);
+            return;
         }
+        
+        ((PositionPostings) p).readPositions();
         
         //
         // We'll iterate through the postings.
@@ -478,14 +482,20 @@ public class PositionPostings implements Postings {
             lastID = mapID;
         }
     }
-
-    public PostingsIterator iterator(PostingsIteratorFeatures features) {
-        if(features.positions && posnBuff == null) {
+    
+    private void readPositions() {
+        if(posnBuff == null) {
             try {
                 posnBuff = posnInput.read(posnOffset, posnSize);
             } catch(IOException ex) {
                 logger.log(Level.SEVERE, String.format("Unable to read positions"), ex);
-            }
+            }            
+        }
+    }
+
+    public PostingsIterator iterator(PostingsIteratorFeatures features) {
+        if(features != null && features.positions) {
+            readPositions();
         }
         return new CompressedIterator(features);
     }

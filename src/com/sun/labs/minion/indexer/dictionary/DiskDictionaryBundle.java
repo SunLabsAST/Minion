@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import sun.font.Type1Font;
 
 /**
  * A bundle of dictionaries to be used at query time.
@@ -108,7 +109,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         for(Type type : Type.values()) {
             int ord = type.ordinal();
             NameDecoder decoder = null;
-            EntryFactory fact = null;
+            EntryFactory entryFactory = null;
             if(header.dictOffsets[ord] >= 0) {
                 dictFile.seek(header.dictOffsets[ord]);
             } else {
@@ -121,21 +122,21 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 case STEMMED_TOKENS:
                     decoder = new StringNameHandler();
                     if(info.hasAttribute(FieldInfo.Attribute.POSITIONS)) {
-                        fact = new EntryFactory(Postings.Type.ID_FREQ_POS);
+                        entryFactory = new EntryFactory(Postings.Type.ID_FREQ_POS);
                     } else {
-                        fact = new EntryFactory(Postings.Type.ID_FREQ);
+                        entryFactory = new EntryFactory(Postings.Type.ID_FREQ);
                     }
                     break;
                     
                 case RAW_SAVED:
                 case UNCASED_SAVED:
                     decoder = getDecoder();
-                    fact = new EntryFactory(Postings.Type.ID);
+                    entryFactory = new EntryFactory(Postings.Type.ID);
                     break;
                 case RAW_VECTOR:
                 case STEMMED_VECTOR:
                     decoder = new StringNameHandler();
-                    fact = new EntryFactory(Postings.Type.ID_FREQ);
+                    entryFactory = new EntryFactory(Postings.Type.ID_FREQ);
                     break;
                 case TOKEN_BIGRAMS:
                     DiskDictionary tokenDict =
@@ -163,7 +164,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 default:
             }
 
-            dicts[ord] = new DiskDictionary(fact, decoder, dictFile, postIn);
+            dicts[ord] = new DiskDictionary(entryFactory, decoder, dictFile, postIn);
             dicts[ord].setPartition(field.getPartition());
         }
 
@@ -199,6 +200,14 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
         }
         return max;
+    }
+    
+    public Postings.Type getTokenPostingsType() {
+        if(info.hasAttribute(FieldInfo.Attribute.POSITIONS)) {
+            return Postings.Type.ID_FREQ_POS;
+        } else {
+            return Postings.Type.ID_FREQ;
+        }
     }
     
     public DiskDictionary getSavedValuesDictionary() {
@@ -695,6 +704,16 @@ public class DiskDictionaryBundle<N extends Comparable> {
         mergeHeader.fieldID = mergeState.info.getID();
         mergeHeader.maxDocID = mergeState.maxDocID;
         mergeHeader.write(fieldDictOut);
+        DiskDictionaryBundle exemplar = null;
+        
+        //
+        // Find a non-null bundle for when we need an actual bundle.
+        for(DiskDictionaryBundle bundle : bundles) {
+            if(bundle != null) {
+                exemplar = bundle;
+                break;
+            }
+        }
 
         //
         // ID maps for the entries in the dictionaries.  We'll store them all, 
@@ -930,7 +949,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 mergeHeader.vectorLengthOffset = vlb.position();
                 fieldDictOut.position(mdp);
                 DiskDictionary newMainDict =
-                        new DiskDictionary(mergeState.entryFactory,
+                        new DiskDictionary(new EntryFactory(exemplar.getTokenPostingsType()),
                         new StringNameHandler(),
                         fieldDictOut,
                         mPostRAF);

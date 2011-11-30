@@ -178,7 +178,6 @@ public class NIOBuffer extends StdBufferImpl {
         units.put(b);
         return this;
     }
-        
 
     /**
      * Puts a single byte onto this buffer at the given position.
@@ -191,6 +190,14 @@ public class NIOBuffer extends StdBufferImpl {
         units.put((int) p, b);
         return this;
     }
+
+    public WriteableBuffer put(byte[] bytes) {
+        checkBounds(units.position() + bytes.length);
+        units.put(bytes);
+        return this;
+    }
+    
+    
 
     /**
      * Appends a given number of bytes from a readable buffer onto this

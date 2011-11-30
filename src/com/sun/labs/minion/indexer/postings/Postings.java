@@ -27,7 +27,6 @@ package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.io.IOException;
 
 /**

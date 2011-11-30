@@ -35,6 +35,7 @@ import java.nio.channels.WritableByteChannel;
 import com.sun.labs.minion.util.ChannelUtil;
 import com.sun.labs.util.LabsLogFormatter;
 import java.io.FileOutputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -213,6 +214,29 @@ public class FileWriteableBuffer implements WriteableBuffer {
         return this;
     }
 
+    public WriteableBuffer put(byte[] bytes) {
+
+        if(bPos + bytes.length >= buff.length) {
+            flush();
+        } else {
+            if(bytes.length >= buff.length) {
+                try {
+                    raf.write(bytes, 0, bytes.length);
+                } catch(java.io.IOException ioe) {
+                    logger.log(Level.SEVERE, "Error writing file", ioe);
+                    buff = null;
+                }
+                return this;
+            } else {
+
+                System.arraycopy(bytes, 0, buff, bPos, bytes.length);
+                bPos += bytes.length;
+            }
+        }
+        return this;
+    }    
+    
+
     /**
      * Puts a single byte onto this buffer at the given position.  This is
      * horribly inefficient, but it will work.  If you need to do absolute
@@ -369,6 +393,13 @@ public class FileWriteableBuffer implements WriteableBuffer {
                 put((byte) ((c & 0x3f) | 0x80));
             }
         }
+        return this;
+    }
+
+    public WriteableBuffer encodeAsBytes(String s, Charset cs) {
+        byte[] bytes = s.getBytes(cs);
+        byteEncode(bytes.length, 4);
+        put(bytes);
         return this;
     }
 

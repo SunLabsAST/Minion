@@ -274,6 +274,10 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         return this;
     }
 
+    public WriteableBuffer put(byte[] bytes) {
+        return put(bytes, 0, bytes.length);
+    }
+
     /**
      * Appends a given number of bytes from a readable buffer onto this
      * buffer.

@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -386,6 +387,13 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.put(b);
     }
 
+    public WriteableBuffer put(byte[] bytes) {
+        if(started && !finished) {
+            throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
+        }
+        return completed.put(bytes);
+    }
+
     public WriteableBuffer or(ReadableBuffer b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -402,6 +410,13 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
         return completed.encode(s);
+    }
+
+    public WriteableBuffer encodeAsBytes(String s, Charset cs) {
+        if(started && !finished) {
+            throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
+        }
+        return completed.encodeAsBytes(s, cs);
     }
 
     public WriteableBuffer encode(float f) {

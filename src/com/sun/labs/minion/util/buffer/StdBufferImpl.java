@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.util.buffer;
 
+import java.nio.charset.Charset;
 import java.util.logging.Logger;
 
 
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
 public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
     
     private static final Logger logger = Logger.getLogger(StdBufferImpl.class.getName()); 
-
+    
     /**
      * Gets the number of bytes required to directly encode a given number.
      * @return The number of bytes required to directly encode the
@@ -233,6 +234,13 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
                 put((byte) (        (c & 0x3f) | 0x80));
             }
         }
+        return this;
+    }
+
+    public WriteableBuffer encodeAsBytes(String s, Charset cs) {
+        byte[] bytes = s.getBytes(cs);
+        byteEncode(bytes.length, 4);
+        put(bytes);
         return this;
     }
 

@@ -73,8 +73,9 @@ public class InvFileDiskPartition extends DiskPartition {
      * @see com.sun.labs.minion.indexer.dictionary.Dictionary
      *
      */
-    public InvFileDiskPartition(int partNumber, PartitionManager manager, 
-                                                EntryFactory mainDictEntryFactory)
+    public InvFileDiskPartition(int partNumber,
+            PartitionManager manager,
+            EntryFactory mainDictEntryFactory)
             throws java.io.IOException {
         super(partNumber, manager, Postings.Type.NONE);
 
@@ -97,7 +98,7 @@ public class InvFileDiskPartition extends DiskPartition {
             FieldInfo info = manager.getMetaFile().getFieldInfo(offset.getId());
             fields[offset.getId()] =
                     new DiskField(this, info, dictFile, vectorLengths,
-                    postFiles, mainDictEntryFactory);
+                    postFiles);
         }
     }
 
@@ -374,7 +375,6 @@ public class InvFileDiskPartition extends DiskPartition {
                 fieldOffset = -1;
             } else {
                 mergeState.info = fi;
-                mergeState.entryFactory = merger.getEntryFactory();
                 DiskField.merge(mergeState, mFields);
             }
             mergeState.partOut.getPartitionHeader().addOffset(fi.getID(), fieldOffset);

@@ -4,6 +4,7 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -47,7 +48,7 @@ public class PartitionHeader {
      * The offset of the document dictionary for the partition.
      */
     private long docDictOffset;
-
+    
     public PartitionHeader() {
         fieldOffsets = new ArrayList<FieldOffset>();
     }
@@ -63,11 +64,12 @@ public class PartitionHeader {
         maxDocID = raf.readInt();
         int ncn = raf.readInt();
         postingsChannelNames = new String[ncn];
+        Charset utf8 = Charset.forName("utf-8");
         for(int i = 0; i < postingsChannelNames.length; i++) {
             int nb = raf.readInt();
             byte[] bs = new byte[nb];
             raf.read(bs);
-            postingsChannelNames[i] = new String(bs, "utf-8");
+            postingsChannelNames[i] = new String(bs, utf8);
         }
     }
 
@@ -121,8 +123,10 @@ public class PartitionHeader {
         raf.writeInt(nDocs);
         raf.writeInt(maxDocID);
         raf.writeInt(postingsChannelNames.length);
+        Charset utf8 = Charset.forName("utf-8");
+        
         for(String pcn : postingsChannelNames) {
-            byte[] bs = pcn.getBytes("utf-8");
+            byte[] bs = pcn.getBytes(utf8);
             raf.writeInt(bs.length);
             raf.write(bs);
         }
@@ -137,16 +141,9 @@ public class PartitionHeader {
         buff.byteEncode(nDocs, 4);
         buff.byteEncode(maxDocID, 4);
         buff.byteEncode(postingsChannelNames.length, 4);
+        Charset utf8 = Charset.forName("utf-8");
         for(String pcn : postingsChannelNames) {
-            try {
-                byte[] bs = pcn.getBytes("utf-8");
-                buff.byteEncode(bs.length, 4);
-                for(byte b : bs) {
-                    buff.put(b);
-                }
-            } catch(UnsupportedEncodingException ex) {
-                logger.log(Level.SEVERE, String.format("No utf-8? WTF?"), ex);
-            }
+            buff.encodeAsBytes(pcn, utf8);
         }
     }
 

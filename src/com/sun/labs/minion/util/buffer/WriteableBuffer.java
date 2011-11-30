@@ -24,12 +24,14 @@
 
 package com.sun.labs.minion.util.buffer;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.OutputStream;
 
 import java.nio.ByteBuffer;
 
 import java.nio.channels.WritableByteChannel;
+import java.nio.charset.Charset;
 
 
 /**
@@ -76,6 +78,11 @@ public interface WriteableBuffer extends Buffer {
      * @return This buffer, for chained invocations.
      */
     public WriteableBuffer put(long p, byte b);
+    
+    /**
+     * Puts an array of bytes onto this buffer at the current position.
+     */
+    public WriteableBuffer put(byte[] bytes);
 
     /**
      * Encodes a long directly, using a given number of
@@ -164,6 +171,14 @@ public interface WriteableBuffer extends Buffer {
      * @return The buffer, to allow chained invocations.
      */
     public WriteableBuffer encode(CharSequence s);
+    
+    /**
+     * Encodes this string as a number of UTF-8 bytes.  This method
+     * is different from {@link #encode(java.lang.CharSequence)} in that the 
+     * number of bytes is encoded using 4 bytes, so that the data can be read
+     * in by a {@link DataInput}.
+     */
+    public WriteableBuffer encodeAsBytes(String s, Charset cs);
 
     /**
      * Sets the given bit to 1.

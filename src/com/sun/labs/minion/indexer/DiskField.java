@@ -30,9 +30,8 @@ public class DiskField extends Field {
             FieldInfo info,
             RandomAccessFile dictFile,
             RandomAccessFile vectorLengthsFile,
-            RandomAccessFile[] postIn,
-            EntryFactory entryFactory) throws java.io.IOException {
-        super(partition, info, entryFactory);
+            RandomAccessFile[] postIn) throws java.io.IOException {
+        super(partition, info);
         bundle = new DiskDictionaryBundle(this, dictFile, vectorLengthsFile,
                 postIn);
     }

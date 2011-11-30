@@ -131,8 +131,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
             fields = Arrays.copyOf(fields, fid * 2);
         }
         if(fields[fid] == null) {
-            fields[fid] = new MemoryField(this, fi, new EntryFactory(
-                    Postings.Type.ID_FREQ));
+            fields[fid] = new MemoryField(this, fi);
             
             //
             // We might have just started this document!

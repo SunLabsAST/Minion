@@ -33,17 +33,14 @@ public abstract class Field {
 
     protected Partition partition;
     
-    protected EntryFactory entryFactory;
-
     /**
      * A stemmer for stemming.
      */
     protected Stemmer stemmer;
 
-    public Field(Partition partition, FieldInfo info, EntryFactory entryFactory) {
+    public Field(Partition partition, FieldInfo info) {
         this.partition = partition;
         this.info = info;
-        this.entryFactory = entryFactory;
         tokenized = info.hasAttribute(FieldInfo.Attribute.TOKENIZED);
         stemmed = info.hasAttribute(FieldInfo.Attribute.STEMMED);
         saved = info.hasAttribute(FieldInfo.Attribute.SAVED);
@@ -72,10 +69,6 @@ public abstract class Field {
         return stemmer;
     }
     
-    public EntryFactory getEntryFactory() {
-        return entryFactory;
-    }
-
     public boolean isCased() {
         return cased;
     }

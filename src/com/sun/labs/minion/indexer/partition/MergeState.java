@@ -26,11 +26,6 @@ public class MergeState implements Cloneable {
     public DiskPartition[] partitions;
     
     /**
-     *  A factory for the entries in the token dictionaries being merged.
-     */
-    public EntryFactory entryFactory;
-    
-    /**
      * A dictionary output for the merged dictionaries.
      */
     public PartitionOutput partOut;
