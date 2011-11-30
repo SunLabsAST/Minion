@@ -29,42 +29,26 @@ import java.util.Date;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
-public class DateNameHandler extends LongNameHandler {
+public class DateNameHandler implements NameEncoder<Date>, NameDecoder<Date> {
     
     /**
-     * Encodes the name of an entry, given the name of the previous entry
-     * in the dictionary.
-     *
-     * @param prev The name of the previous entry in the dictionary.
-     * @param curr The name of the entry to encode.
-     * @param b The buffer onto which the name of the term should be
-     * encoded.
+     * We'll store the longs representing the dates, so we'll hand off encoding
+     * to a long name handler.
      */
-    public void encodeName(Object prev, Object curr, WriteableBuffer b) {
-        Long d1 = null;
-        if(prev != null) {
-            d1 = new Long(((Date) prev).getTime());
-        }
-        super.encodeName(d1, new Long(((Date) curr).getTime()),
-                         b);
+    private LongNameHandler lnh = new LongNameHandler();
+    
+    public void encodeName(Date prev, Date curr, WriteableBuffer b) {
+        Long d1 = prev == null ? null : prev.getTime();
+        lnh.encodeName(d1, curr.getTime(), b);
     }
 
-    /**
-     * Decodes the name of an entry, given a buffer of encoded names and
-     * the name of the previous entry in the dictionary.
-     *
-     * @param prev The name of the previous entry in the dictionary.
-     * @param b The buffer onto which the name of the term should be
-     * encoded.
-     * @return The decoded name.
-     */
-    public Object decodeName(Object prev, ReadableBuffer b) {
+    public Date decodeName(Date prev, ReadableBuffer b) {
+        Long d1 = prev == null ? null : prev.getTime();
+        return new Date(lnh.decodeName(d1, b));
+    }
 
-        Long d1 = null;
-        if(prev != null) {
-            d1 = new Long(((Date) prev).getTime());
-        }
-        return new Date(((Long) super.decodeName(d1, b)).longValue());
+    public boolean startsWith(Date n, Date m) {
+        return n.equals(m);
     }
     
 } // DateNameHandler

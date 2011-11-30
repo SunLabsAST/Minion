@@ -24,6 +24,7 @@
 package com.sun.labs.minion.indexer;
 
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 
 
 /**
@@ -122,5 +123,17 @@ class FieldHeader {
         f.writeLong(dtvOffset);
         f.writeLong(vectorLengthOffset);
     }
+
+    @Override
+    public String toString() {
+        return "FieldHeader{\n " + "fieldID=" + fieldID + "\n maxDocID="
+                + maxDocID + "\n dictOffsets=" + Arrays.toString(dictOffsets)
+                + "\n tokenBGOffset=" + tokenBGOffset + "\n savedBGOffset="
+                + savedBGOffset + "\n dtvPosOffset=" + dtvPosOffset
+                + "\n dtvOffset=" + dtvOffset + "\n vectorLengthOffset="
+                + vectorLengthOffset + "\n}";
+    }
+    
+    
 } // SavedFieldHeader
 

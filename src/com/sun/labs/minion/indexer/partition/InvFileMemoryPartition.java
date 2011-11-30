@@ -90,6 +90,8 @@ public class InvFileMemoryPartition extends MemoryPartition {
             deletions.delete(old.getID());
         }
         dockey = docDict.put(key);
+        
+        maxDocumentID = dockey.getID();
 
         for(MemoryField field : fields) {
             if(field != null) {

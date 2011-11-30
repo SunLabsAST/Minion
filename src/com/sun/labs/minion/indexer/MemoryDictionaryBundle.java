@@ -331,6 +331,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         
         IndexEntry[] sortedSaved = null;
         
+        boolean trace = info.getName().equals("headline");
+
+        logger.info(String.format("Dumping saved values for %s, maxID: %d", info, maxID));
 
         //
         // Dump the dictionaries in this bundle.  This loop is a little gross, what
@@ -352,6 +355,22 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             int[] currentTokenIDMap = null;
             switch(type) {
                 case RAW_SAVED:
+                    //
+                    // We didn't add any occurrence data to the dictionary
+                    // while we were adding values, since
+                    // we might have added data in non-document ID order.  
+                    // We can do that now since we can process things 
+                    // in document ID order.
+                    Occurrence o = new OccurrenceImpl();
+                    for(int i = 0; i < dv.length; i++) {
+                        if(dv[i] != null) {
+                            o.setID(i);
+                            for(IndexEntry e : (List<IndexEntry>) dv[i]) {
+                                e.add(o);
+                            }
+                        }
+                    }
+
                 case UNCASED_SAVED:
                     encoder = getEncoder(info);
                     break;
@@ -417,20 +436,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             header.savedBGOffset = -1;
         }
 
-        //
-        // We didn't add any occurrence data while we were adding values, since
-        // we might have added data in non-document ID order.  We can do that now
-        // since we can process things in document ID order.
-        Occurrence o = new OccurrenceImpl();
-        for(int i = 0; i < dv.length; i++) {
-            if(dv[i] != null) {
-                o.setID(i);
-                for(IndexEntry e : (List<IndexEntry>) dv[i]) {
-                    e.add(o);
-                }
-            }
-        }
-
+      
         if(field.saved) {
 
             //
@@ -438,9 +444,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             // ID, and collect the positions in the buffer where the data for each
             // document is recorded.
             WriteableBuffer dtv = new ArrayBuffer(maxID * 4);
-            WriteableBuffer dtvPos = new ArrayBuffer(maxID * 4);
+            WriteableBuffer dtvOffsets = new ArrayBuffer(maxID * 4);
             for(int i = 1; i <= maxID; i++) {
-                dtvPos.byteEncode(dtv.position(), 4);
+                
+                dtvOffsets.byteEncode(dtv.position(), 4);
 
                 //
                 // If there's no set here, or we're past the end of the array,
@@ -462,7 +469,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             header.dtvOffset = fieldDictFile.getFilePointer();
             dtv.write(fieldDictFile);
             header.dtvPosOffset = fieldDictFile.getFilePointer();
-            dtvPos.write(fieldDictFile);
+            dtvOffsets.write(fieldDictFile);
         } else {
             header.dtvOffset = -1;
             header.dtvPosOffset = -1;

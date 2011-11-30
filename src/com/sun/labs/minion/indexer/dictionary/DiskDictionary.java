@@ -711,17 +711,17 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // there do we need to venture to get the entry at this position?
         int ui = posn / 4;
         int n = posn % 4;
-        N name = getUncompressedName(ui, lus);
+        N localName = getUncompressedName(ui, lus);
 
         //
         // Walk ahead and get the name of the entry we want.
         for(int i = 0; i < n; i++) {
-            name = decoder.decodeName(name, lus.localNames);
+            localName = decoder.decodeName(localName, lus.localNames);
         }
 
         //
         // Get an entry and return it.
-        return newEntry(name, posn, lus, postIn);
+        return newEntry(localName, posn, lus, postIn);
     }
 
     /**
