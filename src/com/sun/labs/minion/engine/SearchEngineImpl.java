@@ -26,7 +26,6 @@ package com.sun.labs.minion.engine;
 import com.sun.labs.minion.Document;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldFrequency;
-import com.sun.labs.minion.IndexableString;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.lang.management.ManagementFactory;
@@ -1689,16 +1688,6 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
 
         public void addField(String name, String value) {
-            FieldInfo fi = getFieldInfo(name);
-            if(fi == null) {
-                logger.warning(String.format("Unknown field %s for %s", name,
-                                             key));
-                return;
-            }
-            part.addField(fi, value);
-        }
-
-        public void addField(String name, IndexableString value) {
             FieldInfo fi = getFieldInfo(name);
             if(fi == null) {
                 logger.warning(String.format("Unknown field %s for %s", name,
