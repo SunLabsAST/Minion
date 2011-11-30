@@ -4,6 +4,7 @@ import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -43,6 +44,10 @@ public class DiskField extends Field {
 
     public DiskDictionary getTermDictionary(boolean cased) {
         return bundle.getTermDictionary(cased);
+    }
+    
+    public DiskDictionary getDictionary(MemoryDictionaryBundle.Type type) {
+        return bundle.getDictionary(type);
     }
 
     /**

@@ -319,7 +319,9 @@ public class IDPostings implements Postings, MergeablePostings {
         // Return the buffers.
         return new WriteableBuffer[]{
                     temp,
-                    post == null ? encodeIDs() : (WriteableBuffer) post,
+                    post == null ? 
+                    encodeIDs() : 
+                    (WriteableBuffer) post,
                 };
     }
 
@@ -328,10 +330,10 @@ public class IDPostings implements Postings, MergeablePostings {
         int prev = 0;
         for(int i = 0; i < nIDs; i++) {
             try {
-            b.byteEncode(ids[i] - prev);
-            } catch (ArithmeticException ex) {
+                b.byteEncode(ids[i] - prev);
+            } catch(ArithmeticException ex) {
                 logger.log(Level.SEVERE, String.format("Caught AX, nIDs = %d i = %d ids[i] = %d prev = %d", nIDs, i, ids[i], prev));
-                throw(ex);
+                throw (ex);
             }
             prev = ids[i];
             encodeOtherData(b, i);
@@ -454,35 +456,11 @@ public class IDPostings implements Postings, MergeablePostings {
     }
 
     /**
-     * Re-encodes the data from another postings onto this one.
-     *
-     * @param currID The current ID
-     * @param prevID The previous ID.
-     * @param pi An iterator for the other postings list.
-     */
-    protected void recodeID(int currID, int prevID, PostingsIterator pi) {
-        ((WriteableBuffer) post).byteEncode(currID - prevID);
-    }
-
-    /**
      * Skips a set of postings from another postings entry.
      */
     protected void skip(ReadableBuffer b) {
     }
 
-    /**
-     * Appends another set of postings to this one, removing any data
-     * associated with deleted documents.
-     *
-     * @param p The postings to append.  Implementers can safely assume
-     * that the postings being passed in are of the same class as the
-     * implementing class.
-     * @param start The new starting document ID for the partition
-     * that the entry was drawn from.
-     * @param idMap A map from old IDs in the given postings to new IDs
-     * with gaps removed for deleted data.  If this is null, then there are
-     * no deleted documents.
-     */
     public void append(Postings p, int start, int[] idMap) {
         
         if(post == null) {
@@ -499,6 +477,7 @@ public class IDPostings implements Postings, MergeablePostings {
         //
         // We'll iterate through the postings.
         PostingsIterator pi = p.iterator(null);
+        WriteableBuffer wpost = (WriteableBuffer) post;
         while(pi.next()) {
             int origID = pi.getID();
             int mapID = idMap[origID];
@@ -508,7 +487,7 @@ public class IDPostings implements Postings, MergeablePostings {
             if(mapID < 0) {
                 continue;
             }
-
+            
             //
             // Increment our ID count, and see if we need to add a skip.
             nIDs++;
@@ -516,7 +495,7 @@ public class IDPostings implements Postings, MergeablePostings {
                 addSkip(mapID, (int) post.position());
             }
 
-            recodeID(mapID, lastID, pi);
+            wpost.byteEncode(mapID - lastID);
 
             //
             // Set the new last document for our entry.

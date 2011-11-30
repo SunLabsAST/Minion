@@ -28,9 +28,11 @@ import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
 
+import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -136,24 +138,51 @@ public class IDFreqPostings extends IDPostings {
         b.byteEncode(freqs[i]);
     }
 
-    /**
-     * Re-encodes the data from another postings onto this one.  A
-     * PostingsIterator is passed in, adjusted to the current posting
-     * being encoded.  This allows additional postings data about the
-     * current ID to be retrieved.
-     *
-     * @param currID The current ID
-     * @param lastID The last ID.
-     * @param pi the iterator of another postings.
-     */
-    @Override
-    protected void recodeID(int currID, int lastID, PostingsIterator pi) {
-        super.recodeID(currID, lastID, pi);
-        to += pi.getFreq();
-        maxfdt = Math.max(pi.getFreq(), maxfdt);
-        ((WriteableBuffer) post).byteEncode(pi.getFreq());
-    }
+    public void append(Postings p, int start, int[] idMap) {
 
+        if(post == null) {
+            post = new ArrayBuffer(p.getN() * 2);
+        }
+
+        //
+        // If there's no id mapping to be done, then do a simple append.
+        if(idMap == null) {
+            append(p, start);
+            return;
+        }
+
+        //
+        // We'll iterate through the postings.
+        PostingsIterator pi = p.iterator(null);
+        WriteableBuffer wpost = (WriteableBuffer) post;
+        while(pi.next()) {
+            int origID = pi.getID();
+            int mapID = idMap[origID];
+
+            //
+            // Skip deleted documents.
+            if(mapID < 0) {
+                continue;
+            }
+
+            //
+            // Increment our ID count, and see if we need to add a skip.
+            nIDs++;
+            if(nIDs % skipSize == 0) {
+                addSkip(mapID, (int) post.position());
+            }
+            
+            wpost.byteEncode(mapID - lastID);
+            to += pi.getFreq();
+            maxfdt = Math.max(pi.getFreq(), maxfdt);
+            wpost.byteEncode(pi.getFreq());
+
+            //
+            // Set the new last document for our entry.
+            lastID = mapID;
+        }
+    }
+    
     @Override
     public void merge(MergeablePostings mp, int[] map) {
 

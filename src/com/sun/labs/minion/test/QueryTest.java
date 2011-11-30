@@ -77,6 +77,7 @@ import java.net.URL;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.util.LabsLogFormatter;
@@ -590,6 +591,44 @@ public class QueryTest extends SEMain {
 
             public String getHelp() {
                 return "[term...] Perform a case insensitive lookup for one or more terms";
+            }
+        });
+        
+        shell.add("tbid", "Terms", new CommandInterface() {
+
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length != 5) {
+                    return "Must specify a partition, a field, a dictionary type and ID";
+                }
+                
+                int partNum = Integer.parseInt(args[1]);
+                String fieldName = args[2];
+                MemoryDictionaryBundle.Type type = MemoryDictionaryBundle.Type.valueOf(args[3].toUpperCase());
+                int termID = Integer.parseInt(args[4]);
+                
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    if(p.getPartitionNumber() == partNum) {
+                        DiskField df = ((InvFileDiskPartition) p).getDF(fieldName);
+                        if(df == null) {
+                            return String.format("No such field %s", fieldName);
+                        }
+                        DiskDictionary dict = df.getDictionary(type);
+                        if(dict == null) {
+                            return String.format("No dictionary of type %s for %s", type, fieldName);
+                        }
+                        QueryEntry qe = dict.getByID(termID);
+                        if(qe == null) {
+                            return String.format("No term with ID %d in %s of %s", termID, type, fieldName);
+                        }
+                        shell.out.format("Entry: %s\n", qe);
+                        return "";
+                    }
+                }
+                return String.format("No such partition: %d", partNum);
+            }
+
+            public String getHelp() {
+                return "partNum field dict id - Gets a term by term id from a particular dictionary and partition";
             }
         });
         
