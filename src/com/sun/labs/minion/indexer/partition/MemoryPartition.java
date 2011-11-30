@@ -30,8 +30,6 @@ import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.StopWatch;
-import com.sun.labs.minion.util.buffer.Buffer.DecodeMode;
-import com.sun.labs.minion.util.buffer.Buffer.Portion;
 import java.util.logging.Logger;
 
 /**
@@ -120,6 +118,7 @@ public abstract class MemoryPartition extends Partition {
 
         //
         // Set the number of documents.
+        dumpState.maxDocID = maxDocumentID;
         dumpState.partHeader.setnDocs(docDict.size());
         dumpState.partHeader.setMaxDocID(maxDocumentID);
 

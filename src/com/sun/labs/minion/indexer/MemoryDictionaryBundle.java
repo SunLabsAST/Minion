@@ -313,8 +313,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         
         MemoryField.DumpResult ret = MemoryField.DumpResult.DICTS_DUMPED;
         
-        logger.info(String.format("dumping: %s", info.getName()));
-        
         int headerPos = dumpState.fieldDictOut.position();
         FieldHeader header = new FieldHeader();
         header.write(dumpState.fieldDictOut);
@@ -341,7 +339,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 header.dictOffsets[ord] = -1;
                 continue;
             }
-
+            
             //
             // Figure out the encoder for the type of dictionary.
             dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
@@ -402,7 +400,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     dumpState.encoder = new StringNameHandler();
             }
             
-            logger.info(String.format("dump: %s %d", type, dicts[ord].size()));
             header.dictOffsets[ord] = dumpState.fieldDictOut.position();
             sortedEntries[ord] = dicts[ord].dump(dumpState);
         }
@@ -450,7 +447,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
       
         if(field.saved) {
-
+            
             //
             // Dump the map from document IDs to the values saved for that document
             // ID, and collect the positions in the buffer where the data for each
