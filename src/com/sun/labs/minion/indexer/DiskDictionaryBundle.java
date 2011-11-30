@@ -39,6 +39,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -443,6 +444,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     getName()));
             return null;
         }
+
         QueryEntry[] qes = dicts[Type.RAW_SAVED.ordinal()].getMatching(
                 savedBigrams, val,
                 caseSensitive,

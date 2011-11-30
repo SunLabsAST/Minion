@@ -714,9 +714,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Bounds check.
         if(posn < 0 || posn >= dh.size) {
-            if(posn < 0) {
-            logger.log(Level.INFO, String.format("posn: %d size: %d", posn, dh.size), new Exception("Negative posn?"));
-            }
             return null;
         }
 
