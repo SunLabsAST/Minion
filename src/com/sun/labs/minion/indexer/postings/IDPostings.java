@@ -131,7 +131,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * The number of documents in a skip.
      */
     protected int skipSize = 256;
-
+    
     /**
      * Makes a postings entry that is useful during indexing.
      *
@@ -299,9 +299,7 @@ public class IDPostings implements Postings, MergeablePostings {
         //
         // Write the buffers.
         offset[0] = out[0].position();
-        if(idBuff == null) {
-            idBuff = encodeIDs();
-        }
+        encodeIDs();
         size[0] = out[0].write(
                  new WriteableBuffer[]{
                     encodeHeaderData(),
@@ -332,22 +330,29 @@ public class IDPostings implements Postings, MergeablePostings {
     }
 
     protected WriteableBuffer encodeIDs() {
-        WriteableBuffer b = new ArrayBuffer(ids.length * 2);
+        
+        if(idBuff == null) {
+            idBuff = new ArrayBuffer(nIDs * 2);
+        }
+        if(idBuff.position() > 0) {
+            return (WriteableBuffer) idBuff;
+        }
+        WriteableBuffer wIDBuff = (WriteableBuffer) idBuff;
         int prev = 0;
         for(int i = 0; i < nIDs; i++) {
             if(i > 0 && i % skipSize == 0) {
-                addSkip(ids[i], (int) b.position());
+                addSkip(ids[i], (int) wIDBuff.position());
             }
             try {
-                b.byteEncode(ids[i] - prev);
+                wIDBuff.byteEncode(ids[i] - prev);
             } catch(ArithmeticException ex) {
                 logger.log(Level.SEVERE, String.format("Caught AX, nIDs = %d i = %d ids[i] = %d prev = %d", nIDs, i, ids[i], prev));
                 throw (ex);
             }
             prev = ids[i];
-            encodeOtherData(b, i);
+            encodeOtherData(wIDBuff, i);
         }
-        return b;
+        return wIDBuff;
     }
 
     protected void encodeOtherData(WriteableBuffer b, int i) {
@@ -380,6 +385,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * that the entry was drawn from.
      */
     public void append(Postings p, int start) {
+        
         IDPostings other = (IDPostings) p;
 
         //
@@ -582,6 +588,9 @@ public class IDPostings implements Postings, MergeablePostings {
         currentID = -1;
         lastID = 0;
         nSkips = 0;
+        if(idBuff != null) {
+            ((WriteableBuffer) idBuff).clear();
+        }
     }
 
     /**

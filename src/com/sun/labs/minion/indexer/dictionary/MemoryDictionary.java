@@ -372,7 +372,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      *  @param partOut the output where the dictionary should be marshalled.
      */
     public IndexEntry[] marshall(PartitionOutput partOut) throws java.io.IOException {
-        logger.fine(String.format("Dumping %d entries", map.size()));
+        logger.fine(String.format("Marshalling %d entries", map.size()));
 
         DictionaryOutput dout = partOut.getPartitionDictionaryOutput();
         PostingsOutput[] postOut = partOut.getPostingsOutput();

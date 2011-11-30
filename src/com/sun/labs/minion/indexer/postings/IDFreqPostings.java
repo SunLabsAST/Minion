@@ -139,6 +139,7 @@ public class IDFreqPostings extends IDPostings {
         b.byteEncode(freqs[i]);
     }
 
+    @Override
     public void append(Postings p, int start, int[] idMap) {
 
         if(idBuff == null) {
