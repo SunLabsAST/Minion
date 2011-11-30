@@ -132,13 +132,19 @@ public class IDFreqPostingsTest {
         rb = buffs[1].getReadableBuffer();
 
         int prev = 0;
-        for(Integer x : data.unique) {
+        for(int i = 0; i < data.ids.length; i++) {
             int gap = rb.byteDecode();
+            int freq = rb.byteDecode();
             int curr = prev + gap;
             assertTrue(String.format(
                     "Incorrect ID: %d should be %d, decoded: %d", curr,
-                    x, gap),
-                       curr == x);
+                    data.ids[i], gap),
+                       curr == data.ids[i]);
+            assertTrue(String.format(
+                    "Incorrect freq: %d should be %d", freq,
+                    data.freqs[i]),
+                       freq == data.freqs[i]);
+
             prev = curr;
         }
     }
@@ -158,7 +164,7 @@ public class IDFreqPostingsTest {
         randomAddTest(8192);
     }
 
-//    @Test
+    @Test
     public void extraLargeRandomAddTest() throws Exception {
         randomAddTest(1024 * 1024);
     }
@@ -186,7 +192,8 @@ public class IDFreqPostingsTest {
         }
     }
 
-    private long writePostings(File of, IDFreqPostings p) throws java.io.IOException {
+    private long writePostings(File of, IDFreqPostings p) throws
+            java.io.IOException {
         OutputStream os = new FileOutputStream(of);
         PostingsOutput postOut = new StreamPostingsOutput(os);
         long ret = postOut.write(p);
@@ -199,7 +206,8 @@ public class IDFreqPostingsTest {
             java.io.IOException {
         RandomAccessFile raf = new RandomAccessFile(f, "r");
         PostingsInput postIn = new StreamPostingsInput(raf, 8192);
-        return (IDFreqPostings) postIn.read(Postings.Type.ID_FREQ, 0L, (int) size);
+        return (IDFreqPostings) postIn.read(Postings.Type.ID_FREQ, 0L,
+                                            (int) size);
     }
 
     /**
@@ -243,9 +251,9 @@ public class IDFreqPostingsTest {
             RandomAccessFile raf = new RandomAccessFile(of, "r");
             StreamPostingsInput pi = new StreamPostingsInput(raf, 8192);
             IDFreqPostings append = new IDFreqPostings();
-            idp1 = (IDFreqPostings) pi.read(Postings.Type.ID, 0, (int) s1);
+            idp1 = (IDFreqPostings) pi.read(Postings.Type.ID_FREQ, 0, (int) s1);
             append.append(idp1, 1);
-            idp2 = (IDFreqPostings) pi.read(Postings.Type.ID, s1, (int) s2);
+            idp2 = (IDFreqPostings) pi.read(Postings.Type.ID_FREQ, s1, (int) s2);
             append.append(idp2, lastID + 1);
             TestData atd = new TestData(d1, d2, lastID + 1);
             atd.iteration(append);
@@ -338,6 +346,7 @@ public class IDFreqPostingsTest {
         public IDFreqPostings encode() {
             IDFreqPostings p = new IDFreqPostings();
             OccurrenceImpl o = new OccurrenceImpl();
+            o.setCount(1);
             logger.info(String.format("Encoding %d ids (%d unique)",
                                       ids.length,
                                       unique.size()));
@@ -365,14 +374,16 @@ public class IDFreqPostingsTest {
                 int expectedID = ids[i];
                 int expectedFreq = freqs[i];
                 assertTrue(String.format(
-                            "Couldn't match id %d, got %d",
-                            expectedID, pi.getID()), expectedID == pi.getID());
+                        "Couldn't match id %d, got %d",
+                        expectedID, pi.getID()), expectedID == pi.getID());
                 assertTrue(String.format(
-                            "Incorrect freq %d, got %d",
-                            expectedFreq, pi.getFreq()), expectedFreq == pi.getFreq());
+                        "Incorrect freq %d, got %d",
+                        expectedFreq, pi.getFreq()), expectedFreq
+                        == pi.getFreq());
+                i++;
             }
         }
-        
+
         public void dump(PrintWriter out) throws java.io.IOException {
             for(int id : ids) {
                 out.format("%d ", id);

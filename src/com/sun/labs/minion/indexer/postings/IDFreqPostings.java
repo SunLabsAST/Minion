@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.indexer.postings.Postings.Type;
@@ -49,6 +48,11 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * </ol>
  */
 public class IDFreqPostings extends IDPostings {
+
+    /**
+     * The position where we're collecting data.
+     */
+    private int pos = -1;
 
     /**
      * The frequencies for these postings.
@@ -97,6 +101,7 @@ public class IDFreqPostings extends IDPostings {
      * reading.  If this value is greater than 0, then we need to share the
      * bit buffer, since we may be part of a larger postings entry that
      * will need multiple readers.
+     * @param size the size of the postings in bytes
      */
     public IDFreqPostings(ReadableBuffer b, int offset, int size) {
         super(b, offset, size);
@@ -113,19 +118,19 @@ public class IDFreqPostings extends IDPostings {
      * @param o The occurrence to add.
      */
     public void add(Occurrence o) {
-
-        if(o.getID() != curr) {
-            if(curr != 0) {
-                nIDs++;
-            }
+        int oid = o.getID();
+        if(oid != curr) {
+            nIDs++;
+            pos++;
             if(ids == null || nIDs >= ids.length) {
-                ids = Util.expandInt(ids, (nIDs+1) * 2);
+                ids = Util.expandInt(ids, (nIDs + 1) * 2);
                 freqs = Util.expandInt(freqs, ids.length);
             }
-            ids[nIDs] = o.getID();
-            curr = o.getID();
+            ids[pos] = oid;
+            curr = oid;
+            lastID = curr;
         }
-        freqs[nIDs] += o.getCount();
+        freqs[pos] += o.getCount();
     }
 
     @Override
@@ -245,7 +250,7 @@ public class IDFreqPostings extends IDPostings {
     }
 
     public class UncompressedIDFreqIterator extends UncompressedIDIterator {
-        
+
         /**
          * The weighting function.
          */
@@ -280,8 +285,6 @@ public class IDFreqPostings extends IDPostings {
             wc.fdt = freq;
             return wf.termWeight(wc);
         }
-
-
     }
 
     public class CompressedIDFreqIterator extends CompressedIDIterator {
@@ -300,7 +303,7 @@ public class IDFreqPostings extends IDPostings {
          * A set of weighting components.
          */
         protected WeightingComponents wc;
-        
+
         /**
          * Creates a postings iterator for this postings type.
          */
