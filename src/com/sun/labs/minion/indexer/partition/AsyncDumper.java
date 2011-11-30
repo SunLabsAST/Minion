@@ -146,12 +146,10 @@ public class AsyncDumper implements Runnable, Dumper {
                     try {
                         
                         PartitionOutput partOut = mph.part.dump();
-                        NanoWatch fw = new NanoWatch();
-                        fw.start();
-                        partOut.flush(mph.part.getDocumentDictionary().getKeys());
-                        fw.stop();
-                        logger.info(String.format("Part flush took %.3fms", fw.getTimeMillis()));
-                        partOut.close();
+                        if(partOut != null) {
+                            partOut.flush(mph.part.getDocumentDictionary().getKeys());
+                            partOut.close();
+                        }
                         
                         //
                         // Merges will happen synchronously in the thread
@@ -193,7 +191,10 @@ public class AsyncDumper implements Runnable, Dumper {
             if(sh.time.after(pm.getLastPurgeTime())) {
                 try {
                     PartitionOutput partOut = sh.part.dump();
-                    partOut.flush(sh.part.getDocumentDictionary().getKeys());
+                    if(partOut != null) {
+                        partOut.flush(sh.part.getDocumentDictionary().getKeys());
+                        partOut.close();
+                    }
                 } catch(IOException ex) {
 
                     logger.log(Level.SEVERE, String.format(
