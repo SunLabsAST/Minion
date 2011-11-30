@@ -26,7 +26,6 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
-import com.sun.labs.minion.indexer.*;
 
 /**
  * An implementation of <code>EntryMapper</code> that is used to remap the

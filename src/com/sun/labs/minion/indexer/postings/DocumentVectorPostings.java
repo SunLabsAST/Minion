@@ -53,17 +53,8 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * <p>
  *
  * During indexing, we will encounter term IDs in a (seemingly) random
- * order, so in this case we store the IDs and frequencies in an array of
- * integers. At dump time, we use the <code>remap</code> method to remap
- * the IDs in the postings to the renumbered IDs from the main dictionary
- * and we actually encode the data onto the buffer.
- *
- * <p>
- *
- * Along with the usual functionalities, these postings will calculate
- * document vector lengths at postings dump and merge time so that the
- * lengths are readily available from document dictionary entries.
- *
+ * order, so in this case we store the entries from the dictionaries and their
+ * frequencies.
  */
 public class DocumentVectorPostings extends IDFreqPostings implements MergeablePostings {
 
@@ -71,8 +62,6 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
      * Storage for the entries making up this set of postings.
      */
     protected Map<Object, EntryFreq> entries;
-
-    protected static String logTag = "DVP";
 
     /**
      * Creates a set of postings suitable for use during indexing.

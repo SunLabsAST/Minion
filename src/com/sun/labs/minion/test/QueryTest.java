@@ -25,7 +25,7 @@ package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.Document;
 import com.sun.labs.minion.engine.SearchEngineImpl;
-import com.sun.labs.minion.indexer.entry.TermStatsEntry;
+import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 
 import com.sun.labs.minion.util.FileLockException;
 import java.io.BufferedReader;
@@ -554,7 +554,7 @@ public class QueryTest extends SEMain {
             output.println("Term stats dictionary has: " + tsd.size());
             DictionaryIterator di = tsd.iterator();
             while(di.hasNext()) {
-                TermStatsEntry tse = (TermStatsEntry) di.next();
+                TermStatsQueryEntry tse = (TermStatsQueryEntry) di.next();
                 output.println(tse.getTermStats());
             }
         } else if(q.startsWith(":class ")) {

@@ -40,7 +40,6 @@ import com.sun.labs.minion.indexer.dictionary.DiskBiGramDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
 import com.sun.labs.minion.indexer.dictionary.DiskFieldStore;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -496,13 +495,11 @@ public class InvFileDiskPartition extends DiskPartition {
         }
         try {
             if(fields != null) {
-                fields.close();
                 fieldDictFile.close();
                 fieldPostFile.close();
             }
 
             if(bigramDict != null) {
-                bigramDict.close();
                 bigramDictFile.close();
                 bigramPostFile.close();
             }
@@ -700,20 +697,4 @@ public class InvFileDiskPartition extends DiskPartition {
         return taxonomy;
     }
 
-    /**
-     * Exports the data in this partition to an XML file format.
-     *
-     * @param o the writer to which the data will be output.
-     */
-    public void export(PrintWriter o) {
-        for(DictionaryIterator di = docDict.iterator(); di.hasNext();) {
-            DocKeyEntry dke = (DocKeyEntry) di.next();
-            if(isDeleted(dke.getID())) {
-                continue;
-            }
-
-            DocumentImpl d = new DocumentImpl(manager.engine, this, dke.getID());
-            d.export(o);
-        }
-    }
 }

@@ -29,7 +29,7 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 /**
  * An interface for encoding the names of entries in a dictionary.
  */
-public interface NameEncoder {
+public interface NameEncoder<N extends Comparable> {
 
     /**
      * Encodes the name of an entry, given the name of the previous entry
@@ -40,6 +40,6 @@ public interface NameEncoder {
      * @param b The buffer onto which the name of the term should be
      * encoded.
      */
-    public void encodeName(Object prev, Object curr, WriteableBuffer b);
+    public void encodeName(N prev, N curr, WriteableBuffer b);
     
 }// NameEncoder

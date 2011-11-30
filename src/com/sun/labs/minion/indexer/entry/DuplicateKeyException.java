@@ -29,17 +29,19 @@ package com.sun.labs.minion.indexer.entry;
  * merge.
  */
 public class DuplicateKeyException extends RuntimeException {
-    DocKeyEntry dke;
-    public DuplicateKeyException(DocKeyEntry dke) {
+
+    private QueryEntry dke;
+    
+    public DuplicateKeyException(QueryEntry dke) {
         this.dke = dke;
     }
     
-    public DocKeyEntry getEntry() {
+    public QueryEntry getEntry() {
         return dke;
     }
     
     public String getMessage() {
-        return "Duplicate document key from " + dke.dict.getPartition() +  
+        return "Duplicate document key from " + dke.getPartition() +  
                 ": \"" + dke.getName() + "\"";
     }
 }

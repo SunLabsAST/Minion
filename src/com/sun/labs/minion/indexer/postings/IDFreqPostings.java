@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.indexer.postings;
 
+import com.sun.labs.minion.indexer.postings.Postings.Type;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
@@ -103,6 +104,11 @@ public class IDFreqPostings extends IDPostings {
      */
     public IDFreqPostings(ReadableBuffer b, int offset, int size) {
         super(b, offset, size);
+    }
+
+    @Override
+    public Type getType() {
+        return Type.ID_FREQ;
     }
 
     /**
@@ -272,21 +278,53 @@ public class IDFreqPostings extends IDPostings {
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
 
-        //
-        // We only support the cases where there are no features at all or
-        // only weighting related features.
-        if(features != null &&
-                (features.getMult() != null ||
-                features.getPositions())) {
-            logger.warning("Requested unsupported features for " +
-                    "IDFreqPostings");
-            return null;
+        if(ids != null) {
+            return new CompressedIDFreqIterator(features);
         }
-            
-        return new IDFreqIterator(features);
+        return new UncompressedIDFreqIterator(features);
     }
 
-    public class IDFreqIterator extends IDIterator {
+    public class UncompressedIDFreqIterator extends UncompressedIDIterator {
+        
+        /**
+         * The weighting function.
+         */
+        protected WeightingFunction wf;
+
+        /**
+         * A set of weighting components.
+         */
+        protected WeightingComponents wc;
+
+        /**
+         * Creates a postings iterator for this postings type.
+         */
+        public UncompressedIDFreqIterator(PostingsIteratorFeatures features) {
+            super(features);
+            if(features != null) {
+                wf = features.getWeightingFunction();
+                wc = features.getWeightingComponents();
+            }
+        }
+
+        @Override
+        public int getFreq() {
+            return freqs[pos];
+        }
+
+        @Override
+        public float getWeight() {
+            if(wf == null) {
+                return freq;
+            }
+            wc.fdt = freq;
+            return wf.termWeight(wc);
+        }
+
+
+    }
+
+    public class CompressedIDFreqIterator extends CompressedIDIterator {
 
         /**
          * The current frequency.
@@ -306,7 +344,7 @@ public class IDFreqPostings extends IDPostings {
         /**
          * Creates a postings iterator for this postings type.
          */
-        public IDFreqIterator(PostingsIteratorFeatures features) {
+        public CompressedIDFreqIterator(PostingsIteratorFeatures features) {
             super(features);
             if(features != null) {
                 wf = features.getWeightingFunction();

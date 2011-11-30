@@ -27,7 +27,7 @@ package com.sun.labs.minion.indexer.dictionary;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
-public class LongNameHandler implements NameEncoder, NameDecoder {
+public class LongNameHandler implements NameEncoder<Long>, NameDecoder<Long> {
     
     /**
      * Encodes the long name of an entry, given the name of the previous
@@ -38,8 +38,7 @@ public class LongNameHandler implements NameEncoder, NameDecoder {
      * @param b The buffer onto which the name of the term should be
      * encoded.
      */
-    public void encodeName(Object prev, Object curr,
-                           WriteableBuffer b) {
+    public void encodeName(Long prev, Long curr, WriteableBuffer b) {
 
         int shared = 0;
 
@@ -47,8 +46,7 @@ public class LongNameHandler implements NameEncoder, NameDecoder {
 
             //
             // Get the shared initial context.
-            shared = getShared(((Long) prev).longValue(),
-                               ((Long) curr).longValue());
+            shared = getShared(prev.longValue(), curr.longValue());
         }
         
         //
@@ -57,7 +55,7 @@ public class LongNameHandler implements NameEncoder, NameDecoder {
 
         //
         // Encode the remaining bytes.
-        b.byteEncode(((Long) curr).longValue(), 8 - shared);
+        b.byteEncode(curr.longValue(), 8 - shared);
     }
 
     /**
@@ -69,7 +67,7 @@ public class LongNameHandler implements NameEncoder, NameDecoder {
      * encoded.
      * @return The decoded name.
      */
-    public Object decodeName(Object prev, ReadableBuffer b) {
+    public Long decodeName(Long prev, ReadableBuffer b) {
         //
         // Get the shared context and the remaining bytes.
         int shared = b.byteDecode();
@@ -90,14 +88,14 @@ public class LongNameHandler implements NameEncoder, NameDecoder {
 
         //
         // Set the name.
-        return new Long(val);
+        return val;
     }
 
     /**
      * Determines whether one long starts with another, which is true only
      * if they are equal!
      */
-    public boolean startsWith(Object n, Object m) {
+    public boolean startsWith(Long n, Long m) {
         return n.equals(m);
     }
 

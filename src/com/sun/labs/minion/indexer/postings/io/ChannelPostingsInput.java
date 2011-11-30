@@ -24,6 +24,9 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
+import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.indexer.postings.Postings.Type;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import java.nio.channels.FileChannel;
@@ -91,5 +94,12 @@ public class ChannelPostingsInput implements PostingsInput {
             return new ChannelReadableBuffer(chan, offset, size, 512);
         }
     }
+
+    @Override
+    public Postings read(Type type, long offset, int size) throws IOException {
+        return Postings.Type.getPostings(type, read(offset, size));
+    }
+
+
 
 } // PostingsInputChannel

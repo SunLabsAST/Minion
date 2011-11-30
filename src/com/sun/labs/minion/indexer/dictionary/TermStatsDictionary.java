@@ -25,7 +25,7 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.Closeable;
-import com.sun.labs.minion.indexer.entry.TermStatsEntry;
+import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 
 /**
  * An interface for term statistics dictionaries, so that we can configure
@@ -46,7 +46,7 @@ public interface TermStatsDictionary extends Closeable {
      * @return the term statistics associated with the given term, or <code>null</code>
      * if that term does not occur in the index
      */
-    public TermStatsEntry getTermStats(String term);
+    public TermStatsQueryEntry getTermStats(String term);
 
     /**
      * Gets an for this dictionary.

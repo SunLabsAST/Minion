@@ -25,6 +25,7 @@
 package com.sun.labs.minion.indexer.postings;
 
 
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
 /**
@@ -33,10 +34,47 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 public interface Postings {
 
     /**
-     * Sets the skip size used for building the skip table.  A larger
-     * number will result in more IDs being encoded per skip.
+     * The types of postings that we support.
      */
-    public void setSkipSize(int size);
+    public enum Type {
+        ID,
+        ID_FREQ,
+        ID_FREQ_POS,
+        NONE;
+
+        public static Postings getPostings(Type type) {
+            switch(type) {
+                case ID:
+                    return new IDPostings();
+                case ID_FREQ:
+                    return new IDFreqPostings();
+                case ID_FREQ_POS:
+                    return new IDFreqPostings();
+                default:
+                    return null;
+            }
+        }
+
+        public static Postings getPostings(Type type, ReadableBuffer b) {
+            switch(type) {
+                case ID:
+                    return new IDPostings(b);
+                case ID_FREQ:
+                    return new IDFreqPostings(b);
+                case ID_FREQ_POS:
+                    return new IDFreqPostings(b);
+                default:
+                    return null;
+            }
+        }
+    }
+
+    /**
+     * Gets the type of these postings.
+     * 
+     * @return the type of these postings.
+     */
+    public Type getType();
 
     /**
      * Adds an occurrence to the postings list.
@@ -47,11 +85,13 @@ public interface Postings {
 
     /**
      * Gets the number of IDs in the postings list.
+     * @return the number of IDs in the list
      */
     public int getN();
     
     /**
      * Gets the last ID in the postings list.
+     * @return the last ID
      */
     public int getLastID();
 
@@ -79,11 +119,6 @@ public interface Postings {
      * dumped.
      */
     public void finish();
-
-    /**
-     * Gets the size of the postings, in bytes.
-     */
-    public int size();
 
     /**
      * Gets a number of <code>Buffers</code> whose contents represent the

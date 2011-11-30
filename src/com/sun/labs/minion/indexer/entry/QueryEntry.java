@@ -25,6 +25,8 @@
 package com.sun.labs.minion.indexer.entry;
 
 
+import com.sun.labs.minion.QueryStats;
+import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
@@ -32,60 +34,105 @@ import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An entry that is returned from dictionaries during querying operations.
+ * @param <N> the type of the name that this entry has.
  */
-public interface QueryEntry extends Entry {
+public class QueryEntry<N extends Comparable> extends Entry<N> implements Cloneable {
     
+    private static Logger logger = Logger.getLogger(QueryEntry.class.getName());
+
     /**
-     * Sets the inputs that will be used to read postings for this entry.
-     * This allows us to use different input implementation strategies at
-     * different times.
+     * The input channels that are associated with the postings for this
+     * entry.
+     */
+    protected PostingsInput[] postIn;
+
+    /**
+     * Creates an entry.
+     * @param name the name of the entry
+     * @param type the type of postings associated with the entry.
+     * @param b a buffer from which the entry's information can be decoded.
+     */
+    public QueryEntry(N name, Postings.Type type, ReadableBuffer b) {
+        this.name = name;
+        this.type = type;
+        n = b.byteDecode();
+        id = b.byteDecode();
+        size = b.byteDecode();
+        offset = b.byteDecodeLong();
+    }
+
+    /**
+     * Reads the postings associated with this entry.
      *
-     * @param postIn The channels from which the postings data can be read.
+     * @throws java.io.IOException if there is an error reading the postings.
      */
-    public void setPostingsInput(PostingsInput[] postIn);
-    
-    /**
-     * Decodes the postings information associated with this entry.
-     *
-     * @param b The buffer containing the encoded postings information.
-     * @param pos The position in <code>b</code> where the postings
-     * information can be found.
-     */
-    public void decodePostingsInfo(ReadableBuffer b, int pos);
-    
-    /**
-     * Reads the postings data for this entry.  This method must load all
-     * available postings information, since this will be used at
-     * dictionary merge time to append postings from one entry onto
-     * another.
-     *
-     * @throws java.io.IOException if there is any error reading the
-     * postings.
-     */
-    public void readPostings() throws java.io.IOException;
-    
-    /**
-     * Indicates whether the postings associated with this entry have
-     * position information.
-     */
-    public boolean hasPositionInformation();
-    
-    /**
-     * Indicates whether the postings associated with this entry have 
-     * field information.
-     */
-    public boolean hasFieldInformation();
-    
+    public void readPostings() throws java.io.IOException {
+        post = postIn[0].read(type, offset, size);
+    }
+
+    public boolean hasPositionInformation() {
+        return false;
+    }
+
     /**
      * Gets an iterator that will iterate through the postings associated
      * with this entry.
      *
      * @param features A set of features that the iterator must support.
-     * @return An iterator for the postings.
+     * @return An iterator for the postings.  Returns null if there are no
+     * postings.
      */
-    public PostingsIterator iterator(PostingsIteratorFeatures features);
-    
-}// QueryEntry
+    public PostingsIterator iterator(PostingsIteratorFeatures features) {
+        if(post == null) {
+            QueryStats qs = features == null ? null : features.getQueryStats();
+            try {
+                if(qs != null) {
+                    qs.postReadW.start();
+                    qs.postingsSize += size;
+                }
+                readPostings();
+            } catch(java.io.IOException ioe) {
+                logger.severe("Error reading postings for " + name);
+                return null;
+            } finally {
+                if(qs != null) {
+                    qs.postReadW.stop();
+                }
+            }
+        }
+
+        //
+        // p could still be null here if there were no postings
+        if(post == null) {
+            return null;
+        }
+        return post.iterator(features);
+    }
+
+    /**
+     * Sets the inputs that will be used to read postings for this
+     * entry.  This allows us to use different kinds of inputs at different times.
+     *
+     * @param postIn The inputs from which the postings data can be read.
+     */
+    public void setPostingsInput(PostingsInput[] postIn) {
+        this.postIn = postIn;
+    }
+
+    public Object clone() {
+        try {
+            QueryEntry qe = (QueryEntry) super.clone();
+            qe.postIn = null;
+            return qe;
+        } catch(CloneNotSupportedException ex) {
+            logger.log(Level.SEVERE, String.format("Error cloning query entry"), ex);
+            return null;
+        }
+    }
+
+}

@@ -101,7 +101,7 @@ public class ClusterMemoryPartition extends MemoryPartition
             if (old != null) {
                 logger.fine("Duplicate cluster in partition: " + docName +
                          " deleting old version: " + old.getID());
-                del.delete(old.getID());
+                deletions.delete(old.getID());
                 clusterEntry.merge(old, null);
             }
 

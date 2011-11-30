@@ -23,34 +23,18 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import com.sun.labs.util.props.PropertyException;
-import com.sun.labs.util.props.PropertySheet;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-
-
-import com.sun.labs.minion.IndexConfig;
-import java.util.ArrayList;
-import java.util.List;
-import com.sun.labs.minion.engine.SearchEngineImpl;
-
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
-import com.sun.labs.minion.indexer.entry.Entry;
-import com.sun.labs.minion.indexer.entry.IndexEntry;
-import com.sun.labs.minion.indexer.postings.DocOccurrence;
-
+import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
-import com.sun.labs.minion.util.FileLockException;
-import com.sun.labs.minion.util.StopWatch;
-import java.util.Date;
-import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A class for holding a partition in memory while it is under
@@ -73,52 +57,22 @@ import java.util.logging.Level;
  */
 public abstract class MemoryPartition extends Partition {
 
-    /**
-     * The main dictionary.
-     */
-    protected MemoryDictionary mainDict;
+    private static Logger logger = Logger.getLogger(MemoryPartition.class.
+            getName());
 
     /**
-     * The document dictionary.
+     * A partition-wide document dictionary, which we'll use to assign doc IDs.
      */
     protected MemoryDictionary docDict;
 
     /**
-     * The key for the document that we're currently processing, from the
-     * document dictionary.
+     * A deletion map.
      */
-    protected DocKeyEntry dockey;
+    protected DelMap deletions;
 
-    /**
-     * An occurrence that we can use to add data to postings for the
-     * document dictionary entries.
-     */
-    protected DocOccurrence ddo;
-
-    /**
-     * A deleted map to use when the same document comes along in the same
-     * partition.
-     */
-    protected DelMap del;
-
-    /**
-     * The number of bytes of postings data we've encoded so far.
-     */
-    protected long postBytes;
-
-    /**
-     * The number of words in the current document.
-     */
-    protected int nWords;
-
-    /**
-     * The tag for this module.
-     */
-    protected static String logTag = "MP";
-
-    protected String name;
-
-    public MemoryPartition() {
+    public MemoryPartition(PartitionManager manager, Postings.Type type) {
+        this.manager = manager;
+        docDict = new MemoryDictionary<String>(new EntryFactory(type));
     }
 
     /**
@@ -129,22 +83,19 @@ public abstract class MemoryPartition extends Partition {
      * data to disk
      */
     protected int dump() throws java.io.IOException {
-        Date startTime = new Date();
-        
+
         //
         // Do nothing if we have no data.
         if(docDict.size() == 0) {
             return -1;
         }
 
-        long start = System.currentTimeMillis();
-
         partNumber = manager.getNextPartitionNumber();
 
         File[] files = getMainFiles();
 
         //
-        // Get a channel for the main dictionaries.
+        // Get a file for the dictionaries.
         RandomAccessFile dictFile = new RandomAccessFile(files[0], "rw");
 
         //
@@ -154,42 +105,21 @@ public abstract class MemoryPartition extends Partition {
         for(int i = 1; i < files.length; i++) {
             postStream[i - 1] =
                     new BufferedOutputStream(new FileOutputStream(files[i]),
-                    32768);
+                                             32768);
             postOut[i - 1] = new StreamPostingsOutput(postStream[i - 1]);
         }
 
         String indexDir = manager.getIndexDir();
 
-        //
-        // Dump the main dictionary
-        StopWatch sw = new StopWatch();
-        sw.start();
-        IndexEntry[] sorted = mainDict.dump(indexDir,
-                new StringNameHandler(),
-                stats,
-                dictFile, postOut,
-                MemoryDictionary.Renumber.RENUMBER,
-                MemoryDictionary.IDMap.NEWTOOLD,
-                null);
-
-        sw.stop();
-        logger.fine("Main dictionary dump: " + sw.getTime());
-        sw.reset();
+        PartitionHeader ph = new PartitionHeader();
 
         //
-        // Close off those files.
-        dictFile.close();
-        for(int i = 0; i < postOut.length; i++) {
-            postStream[i].close();
-        }
-
-        //
-        // Get channels for the document key dictionary.
-        files = getDocFiles();
-        dictFile = new RandomAccessFile(files[0], "rw");
-        BufferedOutputStream dictPostStream =
-                new BufferedOutputStream(new FileOutputStream(files[1]),
-                8196);
+        // Dump the document dictionary.
+        ph.setDocDictOffset(dictFile.getFilePointer());
+        docDict.dump(indexDir, new StringNameHandler(),
+                     dictFile, postOut,
+                     MemoryDictionary.Renumber.NONE, MemoryDictionary.IDMap.NONE,
+                     null);
 
         //
         // Set the number of documents.
@@ -201,113 +131,18 @@ public abstract class MemoryPartition extends Partition {
         stats.write(dictFile);
 
         //
-        // Dump the document dictionary and postings.  We won't remap the
-        // IDs assigned to the keys, but we will need to remap the IDs in
-        // the postings list using the ID map from the case insensitive
-        // dictionary.
-        sw.start();
-        docDict.dump(indexDir,
-                new StringNameHandler(),
-                dictFile,
-                new PostingsOutput[]{
-                    new StreamPostingsOutput(dictPostStream)
-                },
-                MemoryDictionary.Renumber.NONE,
-                MemoryDictionary.IDMap.NONE,
-                mainDict.getIdMap());
-        dictFile.close();
-        dictPostStream.close();
-        sw.stop();
-        logger.fine("Document dictionary dump: " + sw.getTime());
-        sw.reset();
-
-        //
         // If we deleted some documents along the way, then dump that data
         // now.
-        if(del.getNDeleted() > 0) {
+        if(deletions.getNDeleted() > 0) {
             logger.fine("Dump deleted documents");
-            del.write(manager.makeDeletedDocsFile(partNumber));
+            deletions.write(manager.makeDeletedDocsFile(partNumber));
         }
 
         //
         // Dump any custom data -- to be filled in by subclasses.
-        dumpCustom(sorted);
-
-        //
-        // Reset the per-partition data.
-        postBytes = 0;
-        del = new DelMap();
-
-        //
-        // If we're calculating vector lengths and we're not in the middle of a
-        // long indexing run, then initialize the document vectors for the new
-        // partition and (while we're there) build new term statistics for the 
-        // index.
-        DiskPartition ndp = manager.newDiskPartition(partNumber, manager);
-        try {
-            if(manager.getCalculateDVL() &&
-                    !((SearchEngineImpl) manager.getEngine()).getLongIndexingRun()) {
-                sw.start();
-                DocumentVectorLengths.calculate(ndp, manager.
-                        getTermStatsDict(), true);
-                sw.stop();
-                logger.fine("Create DVL: " + sw.getTime());
-            }
-        } catch(FileLockException ex) {
-            logger.log(Level.SEVERE, "Exception writing document vectors", ex);
-        }
-
-        //
-        // Log the dump.
-        if(logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("%d Dump: %d %s%d docs, %d terms, %dms",
-                    manager.getRandID(),
-                    partNumber,
-                    deleted.size() > 0 ? (deleted + " deleted docs ") : "",
-                    docDict.size(),
-                    mainDict.size(),
-                    (System.currentTimeMillis() - start)));
-        } else {
-            logger.info(String.format("Dump: %d %d docs, %d terms, %dms",
-                    partNumber,
-                    docDict.size(),
-                    mainDict.size(),
-                    (System.currentTimeMillis() - start)));
-        }
-
-        //
-        // Check to see if a purge happened while dumping.  If so, we don't
-        // want to add this partition to the manager.
-        if(!startTime.after(manager.getLastPurgeTime())) {
-            logger.info("Dump of " + partNumber + " started before " +
-                    "a purge, removing");
-            ndp.removedFile.createNewFile();
-        } else {
-            manager.addNewPartition(ndp, docDict.getKeys());
-        }
-
-        //
-        // Some stats for our partition.
-        stats = new PartitionStats();
-
-        //
-        // Clear the dictionaries for the next chunk.
-        mainDict.clear();
-        docDict.clear();
+        dumpCustom(indexDir, partNumber, ph, dictFile, postOut);
 
         return partNumber;
-    }
-
-    /**
-     * Gets an entry from the in-memory document dictionary.  This can be
-     * used to get a document vector for a document that has not been committed
-     * to disk.
-     * @param key the key of the document that we want the entry for
-     * @return the entry for the given key, or <code>null</code> if this key 
-     * doesn't occur in this partition.
-     */
-    public DocKeyEntry getDocumentTerm(String key) {
-        return (DocKeyEntry) docDict.get(key);
     }
 
     /**
@@ -315,66 +150,18 @@ public abstract class MemoryPartition extends Partition {
      * exists to be overridden in a subclass and provides no functionality
      * at this level.
      *
-     * @param sorted the sorted array of main dictionary entries, which might
-     *        be useful in a subclass
+     * @param partNumber the number of the partition that we're dumping.
+     * @param indexDir the directory where we're dumping the data
+     * @param ph a header for this partition
+     * @param dictFile a file where dictionaries can be dumped
+     * @param postOut where postings can be dumped
      * @throws java.io.IOException if there is any error writing the data
      * to disk
      */
-    protected void dumpCustom(Entry[] sorted) throws java.io.IOException {
-    }
-
-    /**
-     * Tells a stage that its data must be dumped to the index.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void dump(IndexConfig iC) {
-        try {
-            dump();
-        } catch(java.io.IOException ioe) {
-            logger.log(Level.SEVERE, "Error dumping partition", ioe);
-        }
-    }
-    protected List<Integer> deleted = new ArrayList<Integer>();
-
-    /**
-     * Shut down the indexing stage, dumping any collected data and
-     * reporting on our final progress.
-     *
-     * @param iC The configuration for the index, which can be used to
-     * retrieve things like the index directory.
-     */
-    public void shutdown(IndexConfig iC) {
-//        try {
-//            dump();
-//        } catch (java.io.IOException ioe) {
-//        logger.severe("IO exception writing partition");
-//        }
-    }
-
-    public void newProperties(PropertySheet ps) throws PropertyException {
-        super.newProperties(ps);
-
-        //
-        // Our main dictionary.
-        mainDict = mainDictFactory.getMemoryDictionary(this);
-
-        //
-        // An occurrences that we can reuse.
-        ddo = new DocOccurrence();
-
-        //
-        // A dictionary for our document keys.
-        docDict = docDictFactory.getMemoryDictionary(this);
-
-        //
-        // Our statistics.
-        stats = new PartitionStats();
-
-        //
-        // Our deleted docs map.
-        del = new DelMap();
-        del.setPartition(this);
-    }
+    protected abstract void dumpCustom(
+            String indexDir,
+            int partNumber,
+            PartitionHeader ph,
+            RandomAccessFile dictFile, PostingsOutput[] postOut) throws java.io.IOException;
 } // MemoryPartition
+

@@ -25,10 +25,10 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 
-import com.sun.labs.minion.indexer.entry.IndexEntry;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
 
+import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.partition.Partition;
+import java.util.Iterator;
 
 /**
  * An interface for dictionaries.  This interface only supports a few
@@ -41,29 +41,10 @@ import com.sun.labs.minion.indexer.partition.Partition;
  *
  * <p>
  *
+ * @param <N> the type of the names in the dictionary.
  * @see com.sun.labs.minion.indexer.entry.Entry
  */
-public interface Dictionary extends Iterable<QueryEntry> {
-
-    /**
-     * Puts a entry into the dictionary.  This will assign an ID to the entry
-     * if it is not already in the dictionary.
-     *
-     * @param name The name of the entry to put in the dictionary.
-     * @param e The entry to put in the dictionary.
-     * @return Any previous entry stored in the dictionary under the given
-     * name.
-     */
-    public IndexEntry put(Object name, IndexEntry e);
-
-    /**
-     * Gets a entry from the dictionary, given the name for the entry.
-     *
-     * @param name The name of the entry.
-     * @return The entry associated with the name, or <code>null</code> if
-     * the name doesn't appear in the dictionary.
-     */
-    public QueryEntry get(Object name);
+public interface Dictionary<N extends Comparable> extends Iterable<Entry> {
 
     /**
      * Gets the partition to which this dictionary belongs.
@@ -84,6 +65,7 @@ public interface Dictionary extends Iterable<QueryEntry> {
      *
      * @return An iterator for the entries in the dictionary.
      */
-    public DictionaryIterator iterator();
+    @Override
+    public Iterator<Entry> iterator();
 
 } // Dictionary

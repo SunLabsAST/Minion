@@ -25,9 +25,7 @@
 package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.QueryStats;
-import java.util.Map;
 
-import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
@@ -53,22 +51,9 @@ public class PostingsIteratorFeatures implements Cloneable {
     protected WeightingComponents wc;
 
     /**
-     * The fields that we want to return postings for.  If the
-     * <em>i<sup>th</sup></em> element of this array is greater than zero,
-     * then the iterator will return postings for the field whose ID is
-     * <em>i</em>.  If element 0 of the array is greater than zero, then
-     * postings that are not in any field will be returned.
+     * The multiplier that we wish to apply to scores.
      */
-    protected int[] fields;
-
-    /**
-     * The multipliers that we wish to apply to scores from certain fields.
-     * The value in the <em>i<sup>th</sup></em> position indicates the
-     * weight that will be used to multiply the score of a term that has
-     * occurrences in the field whose ID is <em>i</em>.  If this array is
-     * <code>null</code>, then no multipliers will be applied.
-     */
-    protected float[] mult;
+    protected float multiplier;
 
     /**
      * Whether the iterator must be able to return positions.  If
@@ -78,16 +63,10 @@ public class PostingsIteratorFeatures implements Cloneable {
     protected boolean positions;
 
     /**
-     * Whether the iterator will return postings for case-sensitive or case
-     * insensitive variations.
-     */
-    protected boolean caseSensitive;
-    
-    /**
      * Creates a default set of features.
      */
     public PostingsIteratorFeatures() {
-    } // PostingsIteratorFeatures constructor
+    }
 
     /**
      * Creates a set of features.
@@ -100,7 +79,7 @@ public class PostingsIteratorFeatures implements Cloneable {
      */
     public PostingsIteratorFeatures(WeightingFunction wf,
                                     WeightingComponents wc) {
-        this(wf, wc, null, null, false, false);
+        this(wf, wc, 1.0f, false);
     } // PostingsIteratorFeatures constructor
 
 
@@ -131,17 +110,13 @@ public class PostingsIteratorFeatures implements Cloneable {
      */
     public PostingsIteratorFeatures(WeightingFunction wf,
                                     WeightingComponents wc,
-                                    int[] fields,
-                                    float[] mult,
-                                    boolean positions,
-                                    boolean caseSensitive) {
+                                    float mult,
+                                    boolean positions) {
         
         this.wf            = wf;
         this.wc            = wc;
-        this.fields        = fields;
-        this.mult          = mult;
+        this.multiplier          = mult;
         this.positions     = positions;
-        this.caseSensitive = caseSensitive;
     }
 
     /**
@@ -199,72 +174,16 @@ public class PostingsIteratorFeatures implements Cloneable {
     }
 
     /**
-     * Sets the case sensitiveness of the postings.
-     *
-     * @param caseSensitive if <code>true</code>, postings will be returned
-     * for case sensitive instances of an entry in a dictionary.
-     */
-    public void setCaseSensitive(boolean caseSensitive) {
-        this.caseSensitive = caseSensitive;
-    }
-
-    /**
-     * Gets the required case sensitivity for the postings.
-     */
-    public boolean getCaseSensitive() {
-        return caseSensitive;
-    }
-
-    /**
-     * Sets the fields that we should use.
-     */
-    public void setFields(int[] fields) {
-        this.fields = fields;
-    }
-
-    /**
-     * Sets the fields that we should use.
-     *
-     * @param fields The names of the fields of interest.
-     * @param dp A partition that we can use to map field names to field
-     * IDs.
-     */
-    public void setFields(String[] fields, InvFileDiskPartition dp) {
-        setFields(dp.getFieldStore().getFieldArray(fields));
-    }
-
-    /**
-     * Gets the fields that we're currently using.
-     */
-    public int[] getFields() {
-        return fields;
-    }
-
-    /**
      * Sets the fied multipliers that we should be using.
      */
-    public void setMult(float[] mult) {
-        this.mult = mult;
+    public void setMultiplier(float multiplier) {
+        this.multiplier = multiplier;
     }
 
-    /**
-     * Sets the field multipliers that we should be using.
-     *
-     * @param mult A map from field names to multiplier values.
-     * @param dp A partition that we can use to map field names to field
-     * IDs.
-     */
-    public void setMult(Map mult, InvFileDiskPartition dp) {
-        this.mult = dp.getFieldStore().getMultArray(mult);
+    public float getMultiplier() {
+        return multiplier;
     }
 
-    /**
-     * Gets the field multipliers that we're currently using.
-     */
-    public float[] getMult() {
-        return mult;
-    }
-    
     /**
      * Clones this set of features.
      */
@@ -276,28 +195,6 @@ public class PostingsIteratorFeatures implements Cloneable {
             throw new InternalError();
         }
         return result;
-    }
-
-    public String toString() {
-        StringBuilder b = new StringBuilder();
-        boolean first = true;
-        if(fields != null) {
-            b.append("fields: ");
-            for(int i = 0; i < fields.length; i++) {
-                if(fields[i] != 0) {
-                    if(!first) {
-                        b.append(",");
-                    }
-                    b.append(i);
-                    first = false;
-                }
-            }
-        }
-        return b.toString() +
-            (mult != null ? " mult " : "") +
-            (positions ? " positions " : "") +
-            (caseSensitive ? " case sensitive " : "") +
-            " wc: " + wc + " wf: " + wf;
     }
 
 } // PostingsIteratorFeatures

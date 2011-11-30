@@ -21,13 +21,12 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
-public class StringNameHandler implements NameEncoder, NameDecoder {
+public class StringNameHandler implements NameEncoder<String>, NameDecoder<String> {
 
     /**
      * Encodes the name of an entry, given the name of the previous entry
@@ -38,18 +37,17 @@ public class StringNameHandler implements NameEncoder, NameDecoder {
      * @param b The buffer onto which the name of the term should be
      * encoded.
      */
-    public void encodeName(Object prev, Object curr, WriteableBuffer b) {
+    public void encodeName(String prev, String curr, WriteableBuffer b) {
         if(prev == null) {
             b.byteEncode(0);
-			b.encode((String) curr);
-		} else {
-			int init = getShared((String) prev, (String) curr);
-			b.byteEncode(init);
-			b.encode(((String) curr).substring(init));
-		}
+            b.encode(curr);
+        } else {
+            int init = getShared(prev, curr);
+            b.byteEncode(init);
+            b.encode(curr.substring(init));
+        }
     }
-    
-    
+
     /**
      * Decodes the name of an entry, given a buffer of encoded names and
      * the name of the previous entry in the dictionary.
@@ -59,7 +57,7 @@ public class StringNameHandler implements NameEncoder, NameDecoder {
      * encoded.
      * @return The decoded name.
      */
-    public Object decodeName(Object prev, ReadableBuffer b) {
+    public String decodeName(String prev, ReadableBuffer b) {
         if(prev == null) {
             b.byteDecode();
             return b.getString();
@@ -73,11 +71,10 @@ public class StringNameHandler implements NameEncoder, NameDecoder {
      * Determines whether one string name starts with another.
      * 
      */
-    public boolean startsWith(Object n, Object m) {
-        return ((String) m).startsWith((String) n);
+    public boolean startsWith(String n, String m) {
+        return m.startsWith(n);
     }
 
-                                
     public static int getShared(String s1, String s2) {
         int l = Math.min(s1.length(), s2.length());
         for(int i = 0; i < l; i++) {
@@ -87,5 +84,5 @@ public class StringNameHandler implements NameEncoder, NameDecoder {
         }
         return l;
     }
-    
 } // StringNameHandler
+

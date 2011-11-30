@@ -123,7 +123,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         // Set up the features for our postings iterators once.
         if(feat == null) {
             feat = new PostingsIteratorFeatures();
-            searchFields = part.getManager().getMetaFile().getFieldArray(
+            searchFields = part.getPartitionManager().getMetaFile().getFieldArray(
                     searchFieldNames);
             feat.setFields(searchFields);
             feat.setCaseSensitive(matchCase);
@@ -155,7 +155,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         //We'll get the semantic expansions once, for all the partitions
         if(doExpand && semanticVariants == null) {
             Set semanticExpansions = new HashSet();
-            Iterator partitionIterator = part.getManager().getActivePartitions().
+            Iterator partitionIterator = part.getPartitionManager().getActivePartitions().
                     iterator();
             while(partitionIterator.hasNext()) {
                 InvFileDiskPartition p =
@@ -622,7 +622,7 @@ public class DictTerm extends QueryTerm implements Comparator {
             //
             // Make a place to store our positions while we're at it.
             if(searchFields == null) {
-                searchFields = new int[part.getManager().getMetaFile().size() +
+                searchFields = new int[part.getPartitionManager().getMetaFile().size() +
                         1];
                 for(int i = 0; i < searchFields.length; i++) {
                     searchFields[i] = 1;

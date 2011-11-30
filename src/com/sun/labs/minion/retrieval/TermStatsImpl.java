@@ -32,6 +32,8 @@ import com.sun.labs.minion.indexer.entry.Entry;
 
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
 /**
  * A class that holds collection-wide statistics for a term.
@@ -63,6 +65,18 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
      */
     public TermStatsImpl(String name) {
         this.name = name;
+    }
+
+    public TermStatsImpl(String name, ReadableBuffer b) {
+        this.name = name;
+        decode(b);
+    }
+
+    public TermStatsImpl(TermStatsImpl tsi) {
+        name = tsi.name;
+        maxfdt = tsi.maxfdt;
+        ft = tsi.ft;
+        Ft = tsi.Ft;
     }
     
     /**
@@ -170,6 +184,18 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
     
     public void setMaxFDT(int maxfdt) {
         this.maxfdt = maxfdt;
+    }
+
+    public void encode(WriteableBuffer b) {
+        b.byteEncode(getDocFreq());
+        b.byteEncode(getTotalOccurrences());
+        b.byteEncode(getMaxFDT());
+    }
+
+    public void decode(ReadableBuffer b) {
+        ft = b.byteDecode();
+        Ft = b.byteDecode();
+        maxfdt = b.byteDecode();
     }
     
     public String toString() {

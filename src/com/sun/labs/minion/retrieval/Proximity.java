@@ -186,7 +186,7 @@ public abstract class Proximity extends Operator {
             // Figure out what fields we need.
             int[] doFields;
             if((searchFields == null) && (part instanceof InvFileDiskPartition)) {
-                doFields = new int[part.getManager().getMetaFile().size() + 1];
+                doFields = new int[part.getPartitionManager().getMetaFile().size() + 1];
                 for(int i = 0; i < doFields.length; i++) {
                     doFields[i] = 1;
                 }
@@ -246,7 +246,7 @@ public abstract class Proximity extends Operator {
         // we'll do only those, otherwise, we'll do everything.
         int[] doFields;
         if((searchFields == null) && (part instanceof InvFileDiskPartition)) {
-            doFields = new int[((InvFileDiskPartition) part).getManager().
+            doFields = new int[((InvFileDiskPartition) part).getPartitionManager().
                     getMetaFile().size() + 1];
             for(int i = 0; i < doFields.length; i++) {
                 doFields[i] = 1;

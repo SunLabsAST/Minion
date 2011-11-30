@@ -128,7 +128,7 @@ public class BigQuery {
 
         //
         // Figure out the ID of the field of interest.
-        fromFieldID = part.getManager().getMetaFile().getVectoredFieldID(
+        fromFieldID = part.getPartitionManager().getMetaFile().getVectoredFieldID(
                 fromField);
 
         this.wf = wf;

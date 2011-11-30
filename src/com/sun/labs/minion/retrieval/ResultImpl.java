@@ -268,7 +268,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
 
         //
         // Do the lookup once, to get the field info and then use that.
-        FieldInfo fi = ag.part.getManager().getFieldInfo(name);
+        FieldInfo fi = ag.part.getPartitionManager().getFieldInfo(name);
         if(fi == null) {
             return Double.POSITIVE_INFINITY;
         }
@@ -287,7 +287,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
 
         //
         // Do the lookup once, to get the field info and then use that.
-        FieldInfo fi = ag.part.getManager().getFieldInfo(name);
+        FieldInfo fi = ag.part.getPartitionManager().getFieldInfo(name);
         if(fi == null) {
             for(int i = 0; i < ret.length; i++) {
                 ret[i] = Double.POSITIVE_INFINITY;

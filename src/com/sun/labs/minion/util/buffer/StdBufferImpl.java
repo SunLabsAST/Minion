@@ -112,6 +112,22 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         return 0;
     }
 
+    /**
+     * Gets the number of bytes required to byte-encode a given number.
+     *
+     * @param n the number to test
+     * @return the number of bytes require to byte encode the given number.
+     */
+    public static final int bytesForByteEncoding(long n) {
+        int nBytes = 0;
+        do {
+            n >>>= 7;
+            nBytes++;
+        } while(n > 0);
+
+        return nBytes;
+    }
+
     //
     // The implementation of the Buffer methods is left abstract.
 

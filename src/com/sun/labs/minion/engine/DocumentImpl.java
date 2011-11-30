@@ -35,7 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -68,7 +68,7 @@ public class DocumentImpl implements Document {
     /**
      * The entry from the document dictionary for this document.
      */
-    private DocKeyEntry dke;
+    private QueryEntry dke;
 
     /**
      * The key associated with this document.
@@ -102,19 +102,19 @@ public class DocumentImpl implements Document {
         this.e = e;
         this.p = p;
         this.id = id;
-        dke = (DocKeyEntry) p.getDocumentTerm(id);
+        dke = p.getDocumentTerm(id);
         key = dke.getName().toString();
     }
 
     /**
      * Creates a document backed by a document in the index.
      */
-    public DocumentImpl(DocKeyEntry dke) {
+    public DocumentImpl(QueryEntry dke) {
         this.dke = dke;
         id = dke.getID();
         key = dke.getName().toString();
         p = (InvFileDiskPartition) dke.getPartition();
-        e = (SearchEngineImpl) p.getManager().getEngine();
+        e = (SearchEngineImpl) p.getPartitionManager().getEngine();
     }
 
     public String getKey() {
@@ -125,7 +125,7 @@ public class DocumentImpl implements Document {
         this.key = key;
     }
 
-    public DocKeyEntry getEntry() {
+    public QueryEntry getEntry() {
         return dke;
     }
 
@@ -142,7 +142,7 @@ public class DocumentImpl implements Document {
 
     private void checkSaved(String field) {
         FieldInfo fi = e.invFilePartitionManager.getFieldInfo(field);
-        if(fi == null || !fi.isSaved()) {
+        if(fi == null || !fi.hasAttribute(FieldInfo.Attribute.SAVED)) {
             throw new IllegalArgumentException(field +
                     " must name a saved field.");
         }
@@ -175,7 +175,7 @@ public class DocumentImpl implements Document {
 
     private void checkVectored(String field) {
         FieldInfo fi = e.invFilePartitionManager.getFieldInfo(field);
-        if(fi == null || !fi.isVectored()) {
+        if(fi == null || !fi.hasAttribute(FieldInfo.Attribute.VECTORED)) {
             throw new IllegalArgumentException(field +
                     " must name a vectored field.");
         }
@@ -190,7 +190,7 @@ public class DocumentImpl implements Document {
             return;
         }
         List<FieldInfo> vfs =
-                p.getManager().getMetaFile().getVectoredFieldInfo();
+                p.getPartitionManager().getMetaFile().getVectoredFieldInfo();
         List<Posting> lp = getPostings(dke, 0);
         if(lp != null) {
             vectoredFields.put(null, lp);
@@ -203,7 +203,7 @@ public class DocumentImpl implements Document {
         }
     }
 
-    private List<Posting> getPostings(DocKeyEntry e, int fieldID) {
+    private List<Posting> getPostings(QueryEntry e, int fieldID) {
         List<Posting> ret = new ArrayList<Posting>();
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures(null, null);
         int[] f = new int[fieldID + 1];
@@ -274,7 +274,7 @@ public class DocumentImpl implements Document {
             if(ent.getKey() != null) {
                 FieldInfo fi = e.invFilePartitionManager.getFieldInfo(
                         ent.getKey());
-                if(fi.isSaved() && savedFields.get(ent.getKey()) != null) {
+                if(fi.hasAttribute(FieldInfo.Attribute.SAVED) && savedFields.get(ent.getKey()) != null) {
                     continue;
                 }
             }
@@ -322,8 +322,8 @@ public class DocumentImpl implements Document {
             // We're going to skip fields that are saved, as they will have
             // been handled above.
             if(e.getKey() != null) {
-                FieldInfo fi = p.getManager().getFieldInfo(e.getKey());
-                if(fi.isSaved()) {
+                FieldInfo fi = p.getPartitionManager().getFieldInfo(e.getKey());
+                if(fi.hasAttribute(FieldInfo.Attribute.SAVED)) {
                     continue;
                 }
             }

@@ -26,17 +26,17 @@ package com.sun.labs.minion.indexer.dictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary.BufferType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary.PostingsInputType;
 import com.sun.labs.util.props.ConfigInteger;
-import com.sun.labs.util.props.ConfigString;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import com.sun.labs.minion.indexer.entry.Entry;
+import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.Partition;
+import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigEnum;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -45,96 +45,13 @@ import java.util.logging.Logger;
  */
 public class DictionaryFactory implements Configurable {
 
-    /**
-     * Creates a DictionaryFactory
-     */
-    public DictionaryFactory() {
-    }
     static Logger logger = Logger.getLogger(DictionaryFactory.class.getName());
 
-    protected static String logTag = "DF";
+    public static final String PROP_ENTRY_FACTORY = "entryFactory";
 
-    private boolean isCased;
+    @ConfigComponent(type=com.sun.labs.minion.indexer.entry.EntryFactory.class, mandatory=false)
+    private EntryFactory factory;
 
-    public void newProperties(PropertySheet ps) throws PropertyException {
-        entryClassName =
-                ps.getString(PROP_ENTRY_CLASS_NAME);
-        try {
-            entryClass = Class.forName(entryClassName);
-
-            //
-            // At this point we'll see whether this entry class is a cased entry
-            // type so that we can tell people later on without having to do
-            // an instantiation every time someone runs a query.
-            isCased =
-                    entryClass.newInstance() instanceof com.sun.labs.minion.indexer.entry.CasedEntry;
-        } catch(ClassNotFoundException ex) {
-            throw new PropertyException(ps.getInstanceName(),
-                    PROP_ENTRY_CLASS_NAME,
-                    "Cannot find entry class: " +
-                    entryClassName);
-        } catch(InstantiationException ie) {
-            throw new PropertyException(ps.getInstanceName(),
-                    PROP_ENTRY_CLASS_NAME,
-                    "Cannot instantiate entry class: " +
-                    entryClassName);
-        } catch(IllegalAccessException iae) {
-            throw new PropertyException(ps.getInstanceName(),
-                    PROP_ENTRY_CLASS_NAME,
-                    "Illegal access.  Cannot instantiate entry class: " +
-                    entryClassName);
-        }
-        cacheSize = ps.getInt(PROP_CACHE_SIZE);
-        postingsInputType = (PostingsInputType) ps.getEnum(PROP_POSTINGS_INPUT);
-        nameBufferSize = ps.getInt(PROP_NAME_BUFFER_SIZE);
-        offsetsBufferSize = ps.getInt(PROP_OFFSETS_BUFFER_SIZE);
-        infoBufferSize = ps.getInt(PROP_INFO_BUFFER_SIZE);
-        infoOffsetsBufferSize = ps.getInt(PROP_INFO_OFFSETS_BUFFER_SIZE);
-        fileBufferType = (BufferType) ps.getEnum(PROP_FILE_BUFFER_TYPE);
-    }
-    
-    @ConfigString(defaultValue = "com.sun.labs.minion.indexer.entry.IDEntry")
-    public static final String PROP_ENTRY_CLASS_NAME = "entry_class_name";
-
-    private String entryClassName;
-
-    protected Class entryClass;
-
-    public String getEntryClassName() {
-        return entryClassName;
-    }
-
-    public void setEntryClassName(String entryClassName) {
-        this.entryClassName = entryClassName;
-    }
-
-    public Class getEntryClass() {
-        return entryClass;
-    }
-
-    public void setEntryClass(Class entryClass) {
-        this.entryClass = entryClass;
-    }
-
-    public int getNumPostingsChannels() {
-        try {
-            return ((Entry) entryClass.newInstance()).getNumChannels();
-        } catch(Exception e) {
-            logger.log(Level.SEVERE, "Error instantiating main entry", e);
-            return 1;
-        }
-    }
-
-    /**
-     * Indicates whether the entry type used for this dictionary is cased.
-     *
-     * @return <code>true</code> if the entry type for this dictionary is a
-     * subclass of {@link com.sun.labs.minion.indexer.entry.CasedEntry}, <code>false</code>
-     * otherwise.
-     */
-    public boolean hasCasedEntry() {
-        return isCased;
-    }
     /**
      * The size of the entry cache
      */
@@ -193,6 +110,27 @@ public class DictionaryFactory implements Configurable {
     private DiskDictionary.BufferType fileBufferType;
 
     /**
+     * Creates a DictionaryFactory
+     */
+    public DictionaryFactory() {
+    }
+
+    public void newProperties(PropertySheet ps) throws PropertyException {
+
+        factory = (EntryFactory) ps.getComponent(PROP_ENTRY_FACTORY);
+        if(factory == null) {
+            factory = new EntryFactory(Postings.Type.ID_FREQ);
+        }
+        cacheSize = ps.getInt(PROP_CACHE_SIZE);
+        postingsInputType = (PostingsInputType) ps.getEnum(PROP_POSTINGS_INPUT);
+        nameBufferSize = ps.getInt(PROP_NAME_BUFFER_SIZE);
+        offsetsBufferSize = ps.getInt(PROP_OFFSETS_BUFFER_SIZE);
+        infoBufferSize = ps.getInt(PROP_INFO_BUFFER_SIZE);
+        infoOffsetsBufferSize = ps.getInt(PROP_INFO_OFFSETS_BUFFER_SIZE);
+        fileBufferType = (BufferType) ps.getEnum(PROP_FILE_BUFFER_TYPE);
+    }
+
+    /**
      * Gets a bigram dictionary.
      */
     public DiskBiGramDictionary getBiGramDictionary(
@@ -219,16 +157,16 @@ public class DictionaryFactory implements Configurable {
      * @param part The partition with which this dictionary is associated.
      * @throws java.io.IOException if there is any error loading the dictionary
      */
-    public DiskDictionary getDiskDictionary(Class entryClass,
+    public DiskDictionary getDiskDictionary(EntryFactory factory,
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles,
             DiskPartition part) throws IOException {
         DictionaryHeader dh = getDictHeader(dictFile);
         if(dh.size <= cacheSize) {
-            return new CachedDiskDictionary(entryClass, decoder, dictFile,
+            return new CachedDiskDictionary(factory, decoder, dictFile,
                     postFiles, postingsInputType, fileBufferType, part);
         }
-        return new DiskDictionary(entryClass, decoder, dictFile, postFiles,
+        return new DiskDictionary(factory, decoder, dictFile, postFiles,
                 postingsInputType, fileBufferType,
                 cacheSize, nameBufferSize, offsetsBufferSize,
                 infoBufferSize, infoOffsetsBufferSize, part);
@@ -252,13 +190,13 @@ public class DictionaryFactory implements Configurable {
         // darned thing.
         DictionaryHeader dh = getDictHeader(dictFile);
         if(dh.size <= cacheSize) {
-            return new CachedDiskDictionary(entryClass, decoder, dictFile, 
+            return new CachedDiskDictionary(factory, decoder, dictFile,
                     postFiles, postingsInputType, fileBufferType, part);
         }
 
         //
         // Normal disk-based dictionary.
-        return new DiskDictionary(entryClass, decoder, dictFile, postFiles,
+        return new DiskDictionary(factory, decoder, dictFile, postFiles,
                 postingsInputType, fileBufferType,
                 cacheSize, nameBufferSize, offsetsBufferSize,
                 infoBufferSize, infoOffsetsBufferSize, part);
@@ -270,11 +208,11 @@ public class DictionaryFactory implements Configurable {
     public DiskDictionary getCachedDiskDictionary(NameDecoder decoder,
             RandomAccessFile dictFile, RandomAccessFile[] postFiles,
             DiskPartition part) throws IOException {
-        return new CachedDiskDictionary(entryClass, decoder, dictFile, postFiles);
+        return new CachedDiskDictionary(factory, decoder, dictFile, postFiles);
     }
 
     public MemoryDictionary getMemoryDictionary(Partition p) {
-        MemoryDictionary ret = new MemoryDictionary(entryClass);
+        MemoryDictionary ret = new MemoryDictionary(factory);
         ret.setPartition(p);
         return ret;
     }

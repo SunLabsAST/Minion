@@ -37,13 +37,14 @@ import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
 
 import com.sun.labs.minion.indexer.entry.Entry;
+import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntrySizeComparator;
-import com.sun.labs.minion.indexer.entry.IDFreqEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.Partition;
 
+import com.sun.labs.minion.indexer.postings.Postings.Type;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
@@ -65,7 +66,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
                                  Partition part,
                                  DiskDictionary mainDict)
             throws java.io.IOException {
-        super(IDFreqEntry.class,
+        super(new EntryFactory(Type.ID_FREQ),
               new StringNameHandler(),
               dictFile,
               new RandomAccessFile[]{postFile},
@@ -418,8 +419,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
                        int[][] postIDMaps,
                        RandomAccessFile mDictFile,
                        PostingsOutput postOut) throws java.io.IOException {
-        ((DiskDictionary) dicts[0]).merge(new IDFreqEntry(),
-                                          new StringNameHandler(),
+        ((DiskDictionary) dicts[0]).merge(new StringNameHandler(),
                                           null,
                                           (DiskDictionary[]) dicts,
                                           null,

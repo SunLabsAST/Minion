@@ -97,9 +97,7 @@ public class CollectionStats {
             maxft             = Math.max(maxft, s.maxft);
             nd               += s.nd;
         }
-        if(nDocs > 0) {
-            avgDocLen = (float) nTokens / nDocs;
-        }
+        avgDocLen = (float) nTokens / nDocs;
     }
     
     /**

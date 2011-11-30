@@ -24,7 +24,7 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
-import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import com.sun.labs.minion.indexer.postings.Postings;
 
 /**
  * An interface for things that can be used to read postings.
@@ -32,8 +32,9 @@ import com.sun.labs.minion.util.buffer.ReadableBuffer;
 public interface PostingsInput {
 
     /**
-     * Reads a set of postings, returning them in a buffer suitable for
-     * decoding.
+     * Reads a set of postings, returning them as a set of postings of the
+     * appropriate type.
+     * @param type the type of the postings to return.
      * @param offset The offset in the input at which the postings can be
      * found.
      * @param size The number of bytes to read to get the postings.
@@ -41,6 +42,6 @@ public interface PostingsInput {
      * postings.
      * @return A readable buffer containing the postings.
      */
-    public ReadableBuffer read(long offset, int size) throws java.io.IOException;
+    public Postings read(Postings.Type type, long offset, int size) throws java.io.IOException;
     
 }// PostingsInput

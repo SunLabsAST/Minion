@@ -33,7 +33,7 @@ import java.util.TreeSet;
 
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
-import com.sun.labs.minion.indexer.entry.BaseEntry;
+import com.sun.labs.minion.indexer.entry.DictionaryEntry;
 import com.sun.labs.minion.indexer.entry.CasedDFOEntry;
 import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -187,7 +187,7 @@ public class IndexInverter {
          * @param entry a BaseEntry that encapsulates an ID and a name
          * @param position the position of this entry in the document
          */
-        public void setPosition(BaseEntry entry, int position) {
+        public void setPosition(DictionaryEntry entry, int position) {
             //message(this + " setPosition(" + entry + ", " + position + ")");
             entries.add(new WordPosition(entry.getName(), position));
         }

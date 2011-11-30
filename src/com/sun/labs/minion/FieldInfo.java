@@ -23,16 +23,17 @@
  */
 package com.sun.labs.minion;
 
-import com.sun.labs.util.props.ConfigBoolean;
+import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.EnumSet;
 import com.sun.labs.util.props.ConfigEnum;
+import com.sun.labs.util.props.ConfigEnumSet;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.logging.Logger;
 
 /**
@@ -55,7 +56,6 @@ import java.util.logging.Logger;
  * The disposition of the field data by the indexer is controlled
  * by the attributes that are assigned to the field.  The following attributes
  * are defined by the {@link Attribute} enumeration:
- *
  *
  * <dl>
  *
@@ -101,13 +101,15 @@ import java.util.logging.Logger;
  * are processed any further.
  * </dd>
  *
- * <dt><code>CASE_SENSITIVE</code></dt>
+ * <dt><code>CASED</code></dt>
  *
  * <dd>
- * This attribute indicates that a given saved string field should be treated
- * in a case sensitive manner.  If a saved field has the case sensitive attribute
- * set, then relational queries against that field <em>must</em> match the case
- * of the values stored in the field.
+ * This attribute indicates that a given string field should be stored so that
+ * case sensitive and case insensitive queries can be run against it.  If a
+ * string field does not have this attribute set, then queries against that
+ * field will be run in a case insensitive manner.  This attribute applies to both
+ * the saved field values as well as the tokens extracted from the field when the
+ * <code>TOKENIZED</code> attribute is set.
  * </dd>
  *
  * <dt><code>SAVED</code></dt>
@@ -137,7 +139,7 @@ import java.util.logging.Logger;
  * <dt><code>STRING</code></dt>
  *
  * <dd>A text field that consists of a variable number of characters. The
- * default variable width field is the empty string.</dd>
+ * default string field is the empty string.</dd>
  *
  * </dl>
  * </dl>
@@ -149,69 +151,94 @@ import java.util.logging.Logger;
  * <code>setAttribute</code> method.
  *
  */
-public class FieldInfo implements Cloneable,
-        Configurable {
-
-    /**
-     * The various attributes that a field can have.  Any field may specify
-     * any combination of these attributes.  If a field has the <code>SAVED</code>
-     * attribute, then it should also have a type specified.
-     */
-    public enum Attribute {
-
-        TOKENIZED, INDEXED, VECTORED, SAVED, TRIMMED, CASE_SENSITIVE
-
-    }
-
-    /**
-     * The types that a saved field can have.  Note the special type
-     * <code>NONE</code>, which means that the field is not saved and therefore
-     * has no type.
-     */
-    public enum Type {
-
-        NONE, STRING, INTEGER, FLOAT, DATE, FEATURE_VECTOR
-
-    }
-    /**
-     * The property name for the type.
-     */
-    @ConfigEnum(type = FieldInfo.Type.class, defaultValue = "NONE")
-    public static final String PROP_TYPE = "type";
-
-    /**
-     * The property name for the vectored attribute.
-     */
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_VECTORED = "vectored";
-
-    /**
-     * The property name for the tokenized attribute.
-     */
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_TOKENIZED = "tokenized";
-
-    /**
-     * The property name for the indexed attribute.
-     */
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_INDEXED = "indexed";
-
-    /**
-     * The property name for the saved attribute.
-     */
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_SAVED = "saved";
-
-    /**
-     * The property name for the trimmed attribute.
-     */
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_TRIMMED = "trimmed";
+public class FieldInfo implements Cloneable, Configurable {
 
     protected static Logger logger = Logger.getLogger(FieldInfo.class.getName());
 
-    public static final String logTag = "FI";
+    /**
+     * The various attributes that a field can have.  Any field may specify
+     * any combination of these attributes. 
+     */
+    public enum Attribute {
+
+        /**
+         * Values for the field will be broken into tokens.  The universal tokenizer
+         * is used by default.
+         */
+        TOKENIZED,
+
+        /**
+         * Values in the field will be placed into the main dictionary, for use as
+         * query terms.  This is useful in conjunction with the <code>TOKENIZED</code>
+         * attribute.
+         */
+        INDEXED,
+
+        /**
+         * The values tokenized from this field will be stored in a document vector
+         * for this field, which will allow document similarity computations to
+         * be done using the data from this field.
+         */
+        VECTORED,
+
+        /**
+         * When things are added to the field, they will be stored with their
+         * original case intact.
+         */
+        CASED,
+
+        /**
+         * When things are added to the field, they will be stored in an uncased
+         * way so that they can be looked up using any case.
+         */
+        UNCASED,
+
+        /**
+         * When tokens are indexed into the field, the tokens will be stored
+         * as stems.  At query time, search terms will be stemmed as well.
+         */
+        STEMMED,
+
+        /**
+         * When tokens are indexed into the field, the tokens will be stored
+         * unstemmed.   At query time, search terms will be expanded.
+         */
+        UNSTEMMED,
+
+        /**
+         * The values for this field will be stored as-is in the index for use in
+         * relational queries or for sorting search results.
+         */
+        SAVED;
+    }
+
+    /**
+     * The types of fields.  The type of the field influences the names that
+     * can be stored in the dictionary.
+     */
+    public enum Type {
+        STRING, INTEGER, FLOAT, DATE;
+    }
+    
+    /**
+     * The property name for the type.
+     */
+    @ConfigEnum(type = FieldInfo.Type.class, defaultValue = "STRING")
+    public static final String PROP_TYPE = "type";
+
+    /**
+     * The set of attributes for the class.
+     */
+    @ConfigEnumSet(type=FieldInfo.Attribute.class, defaultList={"INDEXED", "TOKENIZED", "VECTORED"})
+    public static final String PROP_ATTRIBUTES = "attributes";
+
+    /**
+     * A factory for stemmers.
+     */
+    @ConfigComponent(type=com.sun.labs.minion.StemmerFactory.class, mandatory=false)
+    public static final String PROP_STEMMER_FACTORY = "stemmerFactory";
+
+    private StemmerFactory stemmerFactory;
 
     /**
      * The name of this field.
@@ -234,7 +261,7 @@ public class FieldInfo implements Cloneable,
     private Type type;
 
     public FieldInfo() {
-        this(0, null, null, Type.NONE);
+        this(0, null, getDefaultAttributes(), Type.STRING);
     }
 
     /**
@@ -244,7 +271,7 @@ public class FieldInfo implements Cloneable,
      * @param name The name of the field.
      */
     public FieldInfo(String name) {
-        this(0, name, null, Type.NONE);
+        this(0, name, getDefaultAttributes(), Type.STRING);
     }
 
     /**
@@ -255,7 +282,7 @@ public class FieldInfo implements Cloneable,
      * @param name The name of the field.
      */
     public FieldInfo(int id, String name) {
-        this(id, name, null, Type.NONE);
+        this(id, name, getDefaultAttributes(), Type.STRING);
     }
 
     /**
@@ -269,7 +296,7 @@ public class FieldInfo implements Cloneable,
      */
     public FieldInfo(String name,
             EnumSet<Attribute> attributes) {
-        this(0, name, attributes, Type.NONE);
+        this(0, name, attributes, Type.STRING);
     }
 
     /**
@@ -296,8 +323,7 @@ public class FieldInfo implements Cloneable,
      * @param name The name of the field.
      * @param attributes A set of field attributes.  Note that we take a copy
      * of this set, so it is safe to modify or reuse the attributes.
-     * @param type A type that will be used if the attributes for the field
-     * includes the <code>SAVED</code> attribute.
+     * @param type The field type
      * @throws IllegalArgumentException if the attributes of the field specify
      * that a field is saved and the type of the field is <code>null</code> or
      * Type.NONE, or if a type other than Type.NONE is specified and the
@@ -311,27 +337,9 @@ public class FieldInfo implements Cloneable,
         if(attributes != null) {
             this.attributes = attributes.clone();
         } else {
-            this.attributes =
-                    EnumSet.noneOf(Attribute.class);
+            this.attributes = getDefaultAttributes();
         }
-        if(type != null) {
-            this.type = type;
-        } else {
-            this.type = Type.NONE;
-        }
-
-        //
-        // Quick checks to make sure that the saved attribute and the type
-        // make sense.
-        if(isSaved() && this.type == Type.NONE) {
-            throw new IllegalArgumentException("Saved field " + name +
-                    " must have a type specified");
-        }
-
-        if(!isSaved() && this.type != Type.NONE) {
-            throw new IllegalArgumentException("Unsaved field " + name +
-                    " should not specify " + this.type + " type");
-        }
+        this.type = type;
     }
 
     public FieldInfo clone() {
@@ -397,6 +405,10 @@ public class FieldInfo implements Cloneable,
         return attributes.clone();
     }
 
+    public boolean hasAttribute(Attribute attribute) {
+        return attributes.contains(attribute);
+    }
+
     /**
      * Gets the field type.
      * @return the type of this field.  If this field does not have the
@@ -415,7 +427,7 @@ public class FieldInfo implements Cloneable,
      * is not a saved field, <code>null</code> will be returned.
      */
     public Object getDefaultSavedValue() {
-        if(!isSaved()) {
+        if(!attributes.contains(Attribute.SAVED)) {
             return null;
         }
         switch(type) {
@@ -427,8 +439,6 @@ public class FieldInfo implements Cloneable,
                 return new Date(0);
             case STRING:
                 return "";
-            case FEATURE_VECTOR:
-                return new double[0];
             default:
                 logger.warning("Field: " + name + " " +
                         "has unknown SAVED type: " + type +
@@ -438,6 +448,10 @@ public class FieldInfo implements Cloneable,
 
     }
 
+    public Stemmer getStemmer() {
+        return stemmerFactory.getStemmer();
+    }
+
     /**
      * Gets the numeric id of this field.
      *
@@ -445,67 +459,6 @@ public class FieldInfo implements Cloneable,
      */
     public int getID() {
         return id;
-    }
-
-    /**
-     * Indicates whether the field is indexed or not.
-     * @return <code>true</code> if this field has the indexed attribute,
-     * <code>false</code> otherwise.
-     */
-    public boolean isIndexed() {
-        return attributes.contains(Attribute.INDEXED);
-    }
-
-    /**
-     * Tells whether the field is tokenized or not.
-     * @return <code>true</code> if this field has the tokenized attribute,
-     * <code>false</code> otherwise.
-     */
-    public boolean isTokenized() {
-        return attributes.contains(Attribute.TOKENIZED);
-    }
-
-    /**
-     * Tells whether the field is saved or not.
-     * @return <code>true</code> if this field has the saved attribute,
-     * <code>false</code> otherwise.
-     */
-    public boolean isSaved() {
-        return attributes.contains(Attribute.SAVED);
-    }
-
-    /**
-     * Tells whether this field should have tokens added to the document
-     * vector or not.
-     * @return <code>true</code> if this field has the vectored attribute,
-     * <code>false</code> otherwise.
-     */
-    public boolean isVectored() {
-        return attributes.contains(Attribute.VECTORED);
-    }
-
-    /**
-     * Tells whether a string saved field should have it's values trimmed of spaces
-     * before the values are stored in the index.
-     * @return <code>true</code> if the field values should be trimmed,
-     * <code>false</code>
-     * otherwise.
-     */
-    public boolean isTrimmed() {
-        return attributes.contains(Attribute.TRIMMED);
-    }
-
-    /**
-     * Tells whether this field is meant to be stored in a case sensitive
-     * fashion. This attribute only makes sense for fields of type
-     * <code>STRING</code>.  If a saved field has the case sensitive attribute
-     * set, then relational queries against that field <em>must</em> match the case
-     * of the values stored in the field.
-     * @return <code>true</code> if this field is case sensitive, <code>false</code>
-     * otherwise
-     */
-    public boolean isCaseSensitive() {
-        return attributes.contains(Attribute.CASE_SENSITIVE);
     }
 
     @Override
@@ -530,22 +483,9 @@ public class FieldInfo implements Cloneable,
         //
         // The name of the field will be the name of the configured component.
         name = ps.getInstanceName();
-        if(ps.getBoolean(PROP_TRIMMED)) {
-            attributes.add(Attribute.TRIMMED);
-        }
-        if(ps.getBoolean(PROP_SAVED)) {
-            attributes.add(Attribute.SAVED);
-        }
-        if(ps.getBoolean(PROP_VECTORED)) {
-            attributes.add(Attribute.VECTORED);
-        }
-        if(ps.getBoolean(PROP_TOKENIZED)) {
-            attributes.add(Attribute.TOKENIZED);
-        }
-        if(ps.getBoolean(PROP_INDEXED)) {
-            attributes.add(Attribute.INDEXED);
-        }
+        attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(PROP_ATTRIBUTES);
         type = (Type) ps.getEnum(PROP_TYPE);
+        stemmerFactory = (StemmerFactory) ps.getComponent(PROP_STEMMER_FACTORY);
     }
 
     /**
@@ -573,11 +513,12 @@ public class FieldInfo implements Cloneable,
     public void write(DataOutput out)
             throws IOException {
         out.writeUTF(name);
+        out.writeUTF(type.name());
         out.writeInt(id);
-        for(Attribute a : Attribute.values()) {
-            out.writeBoolean(attributes.contains(a));
+        out.writeInt(attributes.size());
+        for(FieldInfo.Attribute a : attributes) {
+            out.writeUTF(a.name());
         }
-        out.writeUTF(type.toString());
     }
 
     /**
@@ -589,15 +530,13 @@ public class FieldInfo implements Cloneable,
     public void read(DataInput in)
             throws java.io.IOException {
         name = in.readUTF();
-        id = in.readInt();
-        attributes =
-                EnumSet.noneOf(Attribute.class);
-        for(Attribute a : Attribute.values()) {
-            if(in.readBoolean()) {
-                attributes.add(a);
-            }
-        }
         setType(in.readUTF());
+        id = in.readInt();
+        int na = in.readInt();
+        attributes = EnumSet.noneOf(Attribute.class);
+        for(int i = 0; i < na; i++) {
+            attributes.add(Attribute.valueOf(in.readUTF()));
+        }
     }
 
     /**
@@ -609,5 +548,10 @@ public class FieldInfo implements Cloneable,
         return EnumSet.of(Attribute.INDEXED,
                 Attribute.TOKENIZED,
                 Attribute.VECTORED);
+    }
+
+    public static EnumSet<Attribute> getDefaultAttributes() {
+        return EnumSet.of(Attribute.INDEXED,
+                Attribute.TOKENIZED);
     }
 } // FieldInfo

@@ -24,13 +24,13 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.entry.TermStatsEntryFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import com.sun.labs.minion.indexer.entry.TermStatsEntry;
+import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A term statistics dictionary that will be cached entirely in memory.
@@ -52,7 +52,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
      * @throws java.io.IOException if there is any error opening the dictionary
      */
     public CachedTermStatsDictionary(File df) throws java.io.IOException {
-        super(TermStatsEntry.class,
+        super(new TermStatsEntryFactory(),
                 new StringNameHandler(),
                 new RandomAccessFile(df, "r"),
                 new RandomAccessFile[0],
@@ -66,8 +66,8 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
         this.df = df;
     }
 
-    public TermStatsEntry getTermStats(String term) {
-        return (TermStatsEntry) get(term);
+    public TermStatsQueryEntry getTermStats(String term) {
+        return (TermStatsQueryEntry) get(term);
     }
 
     @Override
@@ -127,7 +127,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
             logger.info("Making term stats dictionary: " + df);
             RandomAccessFile raf = new RandomAccessFile(df, "rw");
             MemoryDictionary tts =
-                    new MemoryDictionary(TermStatsEntry.class);
+                    new MemoryDictionary(new TermStatsEntryFactory());
             tts.dump(indexDir, new StringNameHandler(), raf,
                     new PostingsOutput[0],
                     MemoryDictionary.Renumber.RENUMBER,

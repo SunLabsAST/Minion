@@ -24,6 +24,8 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
+import com.sun.labs.minion.indexer.postings.Postings;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import java.nio.channels.FileChannel;
@@ -133,6 +135,13 @@ public class ChannelPostingsOutput implements PostingsOutput {
         }
         return written;
     }
+
+    @Override
+    public long write(Postings p) throws IOException {
+        return write(p.getBuffers());
+    }
+
+
 
     /**
      * Gets the position of the the channel.

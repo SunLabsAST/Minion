@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.entry.EntryFactory;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.Partition;
@@ -33,34 +34,33 @@ import java.util.Map;
 /**
  *
  */
-public class CachedDiskDictionary extends DiskDictionary {
+public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N> {
 
     /**
      * The entries in the dictionary, suitable for fetching by ID.
      */
-    private QueryEntry[] entries;
+    private QueryEntry<N>[] entries;
 
-    private Map<Object,QueryEntry> entriesByName;
+    private Map<N,QueryEntry> entriesByName;
 
     /**
      * The entries in the dictionary in the order they were in the dictionary.
      */
-    private QueryEntry[] dictOrderEntries;
+    private QueryEntry<N>[] dictOrderEntries;
 
     /**
      * Creates a disk dictionary that we can use for querying.
-     * @param entryClass The class of the entries that the dictionary
-     * contains.
+     * @param entryfactory a factory to generate entries from this dictionary.
      * @param decoder A decoder for the names in this dictionary.
      * @param dictFile The file containing the dictionary.
      * @param postFiles The files containing the postings associated with
      * the entries in this dictionary.
      * @throws java.io.IOException if there is any error opening the dictionary
      */
-    public CachedDiskDictionary(Class entryClass,
+    public CachedDiskDictionary(EntryFactory factory,
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles,
+        this(factory, decoder, dictFile, postFiles,
                 PostingsInputType.CHANNEL_FULL_POST, BufferType.FILEBUFFER, null);
     }
 
@@ -75,11 +75,11 @@ public class CachedDiskDictionary extends DiskDictionary {
      * @param part The partition with which this dictionary is associated.
      * @throws java.io.IOException if there is any error opening the dictionary
      */
-    public CachedDiskDictionary(Class entryClass,
+    public CachedDiskDictionary(EntryFactory factory,
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles,
             Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles,
+        this(factory, decoder, dictFile, postFiles,
                 PostingsInputType.CHANNEL_FULL_POST, BufferType.FILEBUFFER, part);
     }
 
@@ -95,12 +95,12 @@ public class CachedDiskDictionary extends DiskDictionary {
      * @param part The partition with which this dictionary is associated.
      * @throws java.io.IOException if there is any error opening the dictionary
      */
-    public CachedDiskDictionary(Class entryClass,
+    public CachedDiskDictionary(EntryFactory factory,
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles, PostingsInputType postingsInputType,
             BufferType fileBufferType,
             Partition part) throws java.io.IOException {
-        this(entryClass, decoder, dictFile, postFiles, postingsInputType,
+        this(factory, decoder, dictFile, postFiles, postingsInputType,
                 fileBufferType,
                 2048,
                 1024,
@@ -125,19 +125,19 @@ public class CachedDiskDictionary extends DiskDictionary {
      * @param part The partition with which this dictionary is associated.
      * @throws java.io.IOException if there is any error opening the dictionary
      */
-    public CachedDiskDictionary(Class entryClass,
+    public CachedDiskDictionary(EntryFactory factory,
             NameDecoder decoder, RandomAccessFile dictFile,
             RandomAccessFile[] postFiles, PostingsInputType postingsInputType, BufferType fileBufferType,
             int nameBufferSize,
             int offsetsBufferSize, int infoBufferSize, int infoOffsetsBufferSize,
             Partition part) throws java.io.IOException {
-        super(entryClass, decoder, dictFile, postFiles, postingsInputType,
+        super(factory, decoder, dictFile, postFiles, postingsInputType,
                 fileBufferType, -1,
                 nameBufferSize, offsetsBufferSize, infoBufferSize,
                 infoOffsetsBufferSize, part);
 
         entries = new QueryEntry[dh.maxEntryID];
-        entriesByName = new LinkedHashMap<Object, QueryEntry>(dh.maxEntryID);
+        entriesByName = new LinkedHashMap<N, QueryEntry>(dh.maxEntryID);
 
         if(idToPosn != null) {
             dictOrderEntries = new QueryEntry[dh.maxEntryID];
@@ -147,10 +147,9 @@ public class CachedDiskDictionary extends DiskDictionary {
         // Read everything into the cache now.
         int p = 0;
         DictionaryIterator di = super.iterator();
-        di.setUnbufferedPostings(true);
 
         for(DictionaryIterator i = super.iterator(); i.hasNext();) {
-            QueryEntry e = i.next();
+            QueryEntry<N> e = i.next();
             entries[e.getID() - 1] = e;
             entriesByName.put(e.getName(), e);
             if(dictOrderEntries != null) {
@@ -167,12 +166,12 @@ public class CachedDiskDictionary extends DiskDictionary {
      * the name doesn't appear in the dictionary.
      */
     @Override
-    public QueryEntry get(Object name) {
+    public QueryEntry get(N name) {
         QueryEntry e = entriesByName.get(name);
         if(e == null) {
             return null;
         }
-        return (QueryEntry) e.getEntry();
+        return (QueryEntry) e.clone();
     }
 
     /**
@@ -187,15 +186,7 @@ public class CachedDiskDictionary extends DiskDictionary {
         if(id < 1 || id > entries.length) {
             return null;
         }
-        return (QueryEntry) entries[id-1].getEntry();
-    }
-
-    @Override
-    public void close() {
-        super.close();
-        entries = null;
-        entriesByName.clear();
-        dictOrderEntries = null;
+        return (QueryEntry) entries[id-1].clone();
     }
 
     @Override

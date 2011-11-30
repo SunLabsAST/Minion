@@ -29,41 +29,12 @@ package com.sun.labs.minion.indexer.postings;
  * postings file entry.  Each class that implements <code>Entry</code> will
  * have to be able to generate an iterator that implements this interface.
  */
-public interface PostingsIterator {
+public interface PostingsIterator extends Comparable<PostingsIterator> {
 
     /**
      * Gets the number of IDs that this iterator will produce.
      */
     public int getN();
-    
-    /**
-     * Reads a number of IDs into the provided array.
-     */
-    public int get(int[] ids);
-    
-    /**
-     * Reads a number of IDs and frequencies into the provided arrays.
-     *
-     * @param ids an array into which IDs will be placed.  If possible,
-     * the array will be filled.
-     * @param freq an array into which frequencies will be placed.  If 
-     * possible, the array will be filled.
-     * @return the number of ids and frequencies read into the array, which may
-     * be smaller than the size of the array.
-     */
-    public int get(int[] ids, int[] freq);
-    
-    /**
-     * Reads a number of IDs and the associated weights into the provided arrays.
-      *
-     * @param ids an array into which IDs will be placed.  If possible,
-     * the array will be filled.
-     * @param weights an array into which weights will be placed.  If 
-     * possible, the array will be filled.
-     * @return the number of ids and frequencies read into the array, which may
-     * be smaller than the size of the array.
-    */
-    public int get(int[] ids, float[] weights);
     
     /**
      * Moves to the next document in this entry.  This method is different
@@ -118,12 +89,6 @@ public interface PostingsIterator {
      * Gets the frequency of the term in the current document.
      */
     public int getFreq();
-    
-    /**
-     * Compares this postings iterator to another one.  Typically this
-     * comparison should be based on the ID at the head of the iterator.
-     */
-    public int compareTo(Object o);
     
     /**
      * Gets the features that were used to create this iterator.

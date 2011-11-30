@@ -183,7 +183,7 @@ public class ClassifierMemoryPartition extends MemoryPartition {
             if(old != null) {
                 logger.warning("Duplicate class in partition: " + name +
                         " deleting old version: " + old.getID());
-                del.delete(old.getID());
+                deletions.delete(old.getID());
             }
 
             // add IDEntries to main dict for each cluster with the classifier doc id

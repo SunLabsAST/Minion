@@ -132,7 +132,7 @@ public class IDPostings implements Postings, MergeablePostings {
     /**
      * The number of documents in a skip.
      */
-    protected int skipSize = 64;
+    protected int skipSize = 1024;
 
     static Logger logger = Logger.getLogger(IDPostings.class.getName());
 
@@ -209,6 +209,11 @@ public class IDPostings implements Postings, MergeablePostings {
         }
     }
 
+    @Override
+    public Type getType() {
+        return Type.ID;
+    }
+
     /**
      * Adds a skip to the skip table.
      *
@@ -246,7 +251,7 @@ public class IDPostings implements Postings, MergeablePostings {
     /**
      * Adds an occurrence to the postings list.
      *
-     * @param o The occurrence.
+     * @param other The occurrence.
      */
     public void add(Occurrence o) {
 
@@ -445,11 +450,9 @@ public class IDPostings implements Postings, MergeablePostings {
             // this data.
             if(skipID != null) {
                 skipID = Util.expandInt(skipID,
-                        skipID.length +
-                        other.nSkips + 1);
+                                        skipID.length + other.nSkips + 1);
                 skipPos = Util.expandInt(skipPos,
-                        skipPos.length +
-                        other.nSkips + 1);
+                                         skipPos.length + other.nSkips + 1);
             } else {
                 skipID = new int[other.nSkips + 1];
                 skipPos = new int[other.nSkips + 1];
@@ -576,7 +579,7 @@ public class IDPostings implements Postings, MergeablePostings {
             int toadd = (nIDs - p2);
             if(np + toadd >= temp.length) {
                 temp = Util.expandInt(temp,
-                        Math.max(np + toadd, temp.length * 2));
+                                      Math.max(np + toadd, temp.length * 2));
             }
             System.arraycopy(ids, p2, temp, np, toadd);
             np += toadd;
@@ -596,22 +599,71 @@ public class IDPostings implements Postings, MergeablePostings {
      * <code>null</code> will be returned.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
+        if(ids != null) {
+            return new UncompressedIDIterator(features);
+        }
+        return new CompressedIDIterator(features);
+    }
 
-        //
-        // We only support the case where no features are set!
-        if(features == null ||
-                (features.getFields() == null &&
-                features.getMult() == null &&
-                features.getWeightingFunction() == null &&
-                !features.getPositions())) {
-            return new IDIterator(features);
-        } else {
-            logger.warning("Requested unsupported features for IDPostings");
-            return null;
+    /**
+     * A postings iterator than can be used for in-memory data.
+     */
+    public class UncompressedIDIterator implements PostingsIterator {
+
+        int pos = 0;
+
+        PostingsIteratorFeatures features;
+
+        public UncompressedIDIterator(PostingsIteratorFeatures features) {
+            this.features = features;
+        }
+
+        public int getN() {
+            return nIDs;
+        }
+
+        public boolean next() {
+            if(pos >= nIDs) {
+                return false;
+            }
+            pos++;
+            return true;
+        }
+
+        public boolean findID(int id) {
+            return Util.binarySearch(ids, 0, nIDs, id) > 0;
+        }
+
+        public void reset() {
+            pos = 0;
+        }
+
+        public int getID() {
+            return ids[pos];
+        }
+
+        public float getWeight() {
+            return 1 * features.getMultiplier();
+        }
+
+        public int getFreq() {
+            return 1;
+        }
+
+        public int compareTo(PostingsIterator other) {
+            return getID() - other.getID();
+        }
+
+        public PostingsIteratorFeatures getFeatures() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
-    public class IDIterator implements PostingsIterator {
+    /**
+     * A postings iterator that can be used for compressed data that's been
+     * read from disk.
+     */
+    public class CompressedIDIterator implements PostingsIterator {
 
         /**
          * A readable buffer for the postings.
@@ -638,7 +690,7 @@ public class IDPostings implements Postings, MergeablePostings {
         /**
          * Creates a postings iterator for this postings type.
          */
-        public IDIterator(PostingsIteratorFeatures features) {
+        public CompressedIDIterator(PostingsIteratorFeatures features) {
             this.features = features;
             rp = (ReadableBuffer) post;
             rp.position(dataStart);
@@ -829,48 +881,10 @@ public class IDPostings implements Postings, MergeablePostings {
          * greater than the ID at the head of this postings iterator,
          * respectively.
          */
-        public int compareTo(Object o) {
-            return getID() - ((PostingsIterator) o).getID();
+        public int compareTo(PostingsIterator other) {
+            return getID() - ((PostingsIterator) other).getID();
         }
 
-        /**
-         * Tests the equality of this postings iterator and another one.
-         *
-         * @return <code>true</code> if the iterators are pointing at the
-         * same ID, <code>false</code> otherwise.
-         */
-        public boolean equals(Object o) {
-            if(o instanceof PostingsIterator) {
-                return getID() == ((PostingsIterator) o).getID();
-            }
-            return false;
-        }
-
-        public int get(int[] ids) {
-            int p;
-            for(p = 0; p < ids.length && curr != lastID; p++) {
-                curr += rp.byteDecode();
-                ids[p] = curr;
-            }
-            return p;
-        }
-
-        public int get(int[] ids, int[] freq) {
-            int p;
-            for(p = 0; p < ids.length && curr != lastID; p++) {
-                curr += rp.byteDecode();
-                ids[p] = curr;
-            }
-            return p;
-        }
-
-        public int get(int[] ids, float[] weights) {
-            int p;
-            for(p = 0; p < ids.length && curr != lastID; p++) {
-                curr += rp.byteDecode();
-                ids[p] = curr;
-            }
-            return p;
-        }
     }
-} // IDPostings
+}
+

@@ -41,8 +41,9 @@ import java.util.logging.Logger;
 /**
  * A class that will write a dictionary to a file.  This can be used when
  * dumping or merging dictionaries.
+ * @param <N> the type of the names that we'll be writing.
  */
-public class DictionaryWriter {
+public class DictionaryWriter<N extends Comparable> {
 
     /**
      * A header for the dictionary we're writing.
@@ -63,7 +64,7 @@ public class DictionaryWriter {
     /**
      * The name of the previous entry added to the merged dictionary.
      */
-    protected Object prevName;
+    protected N prevName;
 
     /**
      * A buffer to hold names.
@@ -156,8 +157,8 @@ public class DictionaryWriter {
      * need to keep a map from entry ID to position in the dictionary.
      * @throws java.io.IOException if there was an error writing to disk
      */
-    public DictionaryWriter(String path,
-            NameEncoder encoder,
+    public DictionaryWriter(File path,
+            NameEncoder<N> encoder,
             PartitionStats partStats,
             int nChans,
             MemoryDictionary.Renumber renumber)
@@ -168,25 +169,20 @@ public class DictionaryWriter {
         dh = new DictionaryHeader(nChans);
 
         //
-        // Create the files to which we'll write our data.  We'll base the
-        // name on the path and the name of our thread.
-        String tname = Thread.currentThread().getName();
-
-        File pf = new File(path);
-
-        namesFile = Util.getTempFile(pf, "names", ".n");
+        // Temp files for the buffers we'll write.
+        namesFile = Util.getTempFile(path, "names", ".n");
         namesRAF = new RandomAccessFile(namesFile, "rw");
         names = new FileWriteableBuffer(namesRAF, OUT_BUFFER_SIZE);
 
-        nameOffsetsFile = Util.getTempFile(pf, "offsets", ".no");
+        nameOffsetsFile = Util.getTempFile(path, "offsets", ".no");
         nameOffsetsRAF = new RandomAccessFile(nameOffsetsFile, "rw");
         nameOffsets = new FileWriteableBuffer(nameOffsetsRAF, OUT_BUFFER_SIZE);
 
-        infoFile = Util.getTempFile(pf, "info", ".i");
+        infoFile = Util.getTempFile(path, "info", ".i");
         infoRAF = new RandomAccessFile(infoFile, "rw");
         info = new FileWriteableBuffer(infoRAF, OUT_BUFFER_SIZE);
 
-        infoOffsetsFile = Util.getTempFile(pf, "infooff", ".io");
+        infoOffsetsFile = Util.getTempFile(path, "infooff", ".io");
         infoOffsetsRAF = new RandomAccessFile(infoOffsetsFile, "rw");
         infoOffsets = new FileWriteableBuffer(infoOffsetsRAF, OUT_BUFFER_SIZE);
 
@@ -202,8 +198,9 @@ public class DictionaryWriter {
 
     /**
      * Writes an entry to the dictionary.
+     * @param e the entry to write
      */
-    public void write(IndexEntry e) {
+    public void write(IndexEntry<N> e) {
 
         //
         // See if this a entry that should be uncompressed.  If so, we need
@@ -224,7 +221,7 @@ public class DictionaryWriter {
         // this information is being encoded.
         infoOffsets.byteEncode(info.position(),
                 dh.entryInfoOffsetsBytes);
-        e.encodePostingsInfo(info);
+        e.encodeEntryInfo(info);
 
         //
         // Keep the ID to position map up to date, if necessary.
@@ -254,6 +251,7 @@ public class DictionaryWriter {
 
     /**
      * Finishes by writing the dictionary to the given file.
+     * @param dictFile the file where the complete dictionary will be written
      */
     public void finish(RandomAccessFile dictFile)
             throws java.io.IOException {

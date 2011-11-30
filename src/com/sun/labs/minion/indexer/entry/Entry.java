@@ -21,98 +21,168 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.entry;
 
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.partition.Partition;
-
+import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.indexer.postings.PostingsIterator;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import java.util.logging.Logger;
 
 /**
  * An interface describing things that can be stored in dictionaries,
  * either for indexing purposes or for querying purposes.  All entries have
  * a name that can be gotten.
+ * @param <N> the type of the name for the entry, which must implement comparable,
+ * so that entries can be sorted.
  */
-public interface Entry extends Comparable {
+public abstract class Entry<N extends Comparable> implements Comparable<Entry>, Cloneable {
+
+    private static Logger logger = Logger.getLogger(Entry.class.getName());
 
     /**
-     * Gets a new entry with the given name.
+     * The ID of this entry.
+     */
+    protected int id;
+
+    /**
+     * The name of this entry.
+     */
+    protected N name;
+
+    /**
+     * The dictionary that this entry was drawn from.
+     */
+    protected Dictionary dictionary;
+
+    /**
+     * The postings associated with this entry.
+     */
+    protected Postings post;
+
+    /**
+     * The type of postings associated with this entry.
+     */
+    protected Postings.Type type;
+
+    /**
+     * The number of postings associated with this entry.
+     */
+    protected int n;
+
+    /**
+     * The size of the postings, in bytes.
+     */
+    protected int size;
+
+    /**
+     * The offset of the postings in a postings file.
+     */
+    protected long offset;
+
+    /**
+     * Gets the name of this entry
      *
-     * @param name the name that we want to give the entry.
-     * @return a new entry.
+     * @return The name of this entry.
      */
-    public Entry getEntry(Object name);
+    public N getName() {
+        return name;
+    }
 
-    /**
-     * Gets a new entry that contains a copy of the data in this entry.
-     *
-     * @return a new entry.
-     */
-    public Entry getEntry();
-    
-    /**
-     * Gets the name of this entry, which can be any object.
-     */
-    public Object getName();
-
-    /**
-     * Sets the name of the entry, which can be any object.
-     */
-    public void setName(Object name);
+    public void setName(N name) {
+        this.name = name;
+    }
 
     /**
      * Gets the ID associated with this entry.
+     * @return the ID of this entry.
      */
-    public int getID();
+    public int getID() {
+        return id;
+    }
+
+    @Override
+    public int compareTo(Entry e) {
+        return name.compareTo(e.name);
+    }
 
     /**
-     * Sets the ID associated with this entry.
+     * Gets an iterator for the postings in this entry
+     * @param features the features that the iterator should have
+     * @return an iterator for the postings, or null if there are no
+     * postings associated with this entry
      */
-    public void setID(int id);
-    
+    public abstract PostingsIterator iterator(PostingsIteratorFeatures features);
+
     /**
-     * Gets the number of postings associated with this entry.  This can be
+     * Gets the number of postings associated with this entry.  This is
      * used to sort entries by their frequency during query operations.
      *
      * @return The number of postings associated with this entry.
      */
-    public int getN();
+    public int getN() {
+        return n;
+    }
 
     /**
      * Gets the total number of occurrences associated with this entry.
-     * This is useful when a single postings entry may comprise multiple
-     * occurrences.
-     *
-     * <p>
-     *
-     * At the moment, this is only really useful for entries from the main
-     * dictionary for a partition.
+     * For this base class, this is the same as n.
      *
      * @return The total number of occurrences associated with this entry.
      */
-    public long getTotalOccurrences();
+    public long getTotalOccurrences() {
+        return n;
+    }
 
     /**
-     * Gets the maximum document term frequency from this entry.  For all
-     * IDs asssociated with this entry, this is the maximum frequency
-     * across all the IDs.
+     * Gets the maximum frequency in the postings associated with this
+     * entry.  For this base class, this is always 1.
+     * @return the maximum frequency.
      */
-    public int getMaxFDT();
+    public int getMaxFDT() {
+        return post.getMaxFDT();
+    }
 
     /**
      * Sets the dictionary that this entry was drawn from.
+     * @param dict the dictionary containing this entry.
      */
-    public void setDictionary(Dictionary dict);
-    
+    public void setDictionary(Dictionary dict) {
+        this.dictionary = dict;
+    }
+
     /**
      * Gets the partition that this entry was drawn from.
+     * @return the partition
      */
-    public Partition getPartition();
-    
-    /**
-     * Returns the number of channels needed to store or retrieve the
-     * postings for this entry type.
-     */
-    public int getNumChannels();
+    public Partition getPartition() {
+        return dictionary.getPartition();
+    }
 
-}// Entry
+    @Override
+    public String toString() {
+        return String.format("%s (%s)", name, type);
+    }
+
+    /**
+     * Sets the ID associated with this entry.
+     *
+     * @param id The id to use for this entry.
+     */
+    public void setID(int id) {
+        this.id = id;
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        try {
+            Entry e = (Entry) super.clone();
+            e.post = null;
+            return e;
+        } catch(CloneNotSupportedException ex) {
+            throw(ex);
+        }
+    }
+
+}

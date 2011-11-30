@@ -28,7 +28,6 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
 /**
  *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public class IDWPostings extends IDPostings {
 
@@ -79,23 +78,10 @@ public class IDWPostings extends IDPostings {
      * returned.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
-
-        //
-        // We only support the cases where there are no features at all or
-        // only weighting related features.
-        if(features == null ||
-                (features.getFields() == null &&
-                features.getMult() == null &&
-                !features.getPositions())) {
-            return new IDWIterator(features);
-        } else {
-            logger.warning("Requested unsupported features for " +
-                    "IDFreqPostings");
-            return null;
-        }
+        return new IDWIterator(features);
     }
 
-    public class IDWIterator extends IDIterator {
+    public class IDWIterator extends CompressedIDIterator {
 
         /**
          * The current weight.

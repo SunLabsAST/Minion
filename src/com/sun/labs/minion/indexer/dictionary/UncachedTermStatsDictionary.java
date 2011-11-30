@@ -24,10 +24,12 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.entry.TermStatsEntryFactory;
+import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import com.sun.labs.minion.indexer.entry.TermStatsEntry;
+import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
@@ -39,8 +41,8 @@ import java.util.logging.Logger;
 /**
  * A term statistics dictionary that will live mostly on disk.
  */
-public class UncachedTermStatsDictionary extends DiskDictionary implements
-        TermStatsDictionary {
+public class UncachedTermStatsDictionary
+            extends DiskDictionary<String> implements TermStatsDictionary {
 
     private File df;
 
@@ -50,7 +52,8 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
 
     private boolean closed;
 
-    static Logger logger = Logger.getLogger(UncachedTermStatsDictionary.class.getName());
+    static Logger logger = Logger.getLogger(UncachedTermStatsDictionary.class.
+            getName());
 
     public UncachedTermStatsDictionary() {
     }
@@ -62,19 +65,18 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
      * @throws java.io.IOException if there is any error opening the dictionary
      */
     public UncachedTermStatsDictionary(File df) throws java.io.IOException {
-        super(TermStatsEntry.class,
-                new StringNameHandler(), new RandomAccessFile(df, "r"),
-                new RandomAccessFile[0],
-                DiskDictionary.PostingsInputType.CHANNEL_FULL_POST,
-                DiskDictionary.BufferType.NIOFILEBUFFER,
-                32768, BUFFER_SIZE,
-                BUFFER_SIZE, BUFFER_SIZE, BUFFER_SIZE, null);
+        super(new TermStatsEntryFactory(),
+              new StringNameHandler(), new RandomAccessFile(df, "r"),
+              new RandomAccessFile[0],
+              DiskDictionary.PostingsInputType.CHANNEL_FULL_POST,
+              DiskDictionary.BufferType.NIOFILEBUFFER,
+              32768, BUFFER_SIZE,
+              BUFFER_SIZE, BUFFER_SIZE, BUFFER_SIZE, null);
         this.df = df;
     }
 
-    @Override
-    public TermStatsEntry getTermStats(String term) {
-        return (TermStatsEntry) get(term);
+    public TermStatsQueryEntry getTermStats(String term) {
+        return (TermStatsQueryEntry) get(term);
     }
 
     @Override
@@ -107,7 +109,8 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
      * statistics.
      *
      */
-    public void recalculateTermStats(File df, Collection<DiskPartition> parts) throws java.io.IOException {
+    public void recalculateTermStats(File df, Collection<DiskPartition> parts)
+            throws java.io.IOException {
         PriorityQueue<HE> h = new PriorityQueue<HE>();
         for(DiskPartition p : parts) {
             HE el = new HE(p.getMainDictionaryIterator());
@@ -118,13 +121,14 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
 
         //
         // A writer for our output dictionary.
-        DictionaryWriter tsw = new DictionaryWriter(df.getParent(),
-                new StringNameHandler(), null, 0,
-                MemoryDictionary.Renumber.RENUMBER);
+        DictionaryWriter tsw =
+                new DictionaryWriter(df.getParent(),
+                                     new StringNameHandler(), null, 0,
+                                     MemoryDictionary.Renumber.RENUMBER);
         int nMerged = 0;
         while(h.size() > 0) {
             HE top = h.peek();
-            TermStatsEntry tse = new TermStatsEntry((String) top.curr.getName());
+            TermStatsIndexEntry tse = new TermStatsIndexEntry(top.curr);
             TermStatsImpl ts = tse.getTermStats();
             while(top != null && top.curr.getName().equals(tse.getName())) {
                 top = h.poll();
@@ -184,11 +188,11 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
             logger.fine("Making term stats dictionary: " + df);
             RandomAccessFile raf = new RandomAccessFile(df, "rw");
             MemoryDictionary tts =
-                    new MemoryDictionary(TermStatsEntry.class);
+                    new MemoryDictionary(new TermStatsEntryFactory());
             tts.dump(indexDir, new StringNameHandler(), raf,
-                    new PostingsOutput[0],
-                    MemoryDictionary.Renumber.RENUMBER,
-                    MemoryDictionary.IDMap.NONE, null);
+                     new PostingsOutput[0],
+                     MemoryDictionary.Renumber.RENUMBER,
+                     MemoryDictionary.IDMap.NONE, null);
             raf.close();
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Error creating term stats dictionary", ioe);
@@ -203,7 +207,7 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
 
         DictionaryIterator di;
 
-        QueryEntry curr;
+        TermStatsQueryEntry curr;
 
         public HE(DictionaryIterator di) {
             this.di = di;
@@ -211,14 +215,14 @@ public class UncachedTermStatsDictionary extends DiskDictionary implements
 
         public boolean next() {
             if(di.hasNext()) {
-                curr = di.next();
+                curr = (TermStatsQueryEntry) di.next();
                 return true;
             }
             return false;
         }
 
         public int compareTo(HE o) {
-            return ((Comparable) curr.getName()).compareTo(o.curr.getName());
+            return curr.getName().compareTo(o.curr.getName());
         }
     }
 }

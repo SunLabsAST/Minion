@@ -28,7 +28,6 @@ import com.sun.labs.minion.Document;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import com.sun.labs.minion.engine.DocumentImpl;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.util.Collection;
 
@@ -144,7 +143,7 @@ public class DocumentIterator implements Iterator<Document> {
             throw new NoSuchElementException("No more documents");
         }
         
-        return new DocumentImpl((DocKeyEntry) currEntry);
+        return new DocumentImpl(currEntry);
     }
 
     public void remove() {

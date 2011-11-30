@@ -62,7 +62,7 @@ public class Undefined extends UnaryOperator {
     public ArrayGroup eval(ArrayGroup ag) {
         
         NameTerm field = (NameTerm) operands.get(0);
-        FieldInfo fi = part.getManager().getMetaFile().getFieldInfo(field.getName());
+        FieldInfo fi = part.getPartitionManager().getMetaFile().getFieldInfo(field.getName());
         if(fi == null) {
             logger.warning(String.format("Unknown field %s in <undefined> operator", field.getName()));
             return new ArrayGroup(part, new int[0], 0);

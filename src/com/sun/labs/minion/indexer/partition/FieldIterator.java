@@ -21,17 +21,14 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.partition;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import java.util.PriorityQueue;
-import com.sun.labs.minion.indexer.entry.CasedIDEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.util.Collection;
-
 
 /**
  * A class that will iterate through all of the saved values in a set of
@@ -48,7 +45,7 @@ public class FieldIterator implements Iterator {
      * Used to store the frequency of the current field returned by "next()"
      */
     protected int freq;
-    
+
     /**
      * Creates an iterator for all of the unique field values in the given
      * partitions.
@@ -65,9 +62,8 @@ public class FieldIterator implements Iterator {
             }
         }
     } // FieldIterator constructor
-    
-    // Implementation of java.util.Iterator
 
+    // Implementation of java.util.Iterator
     /**
      * Unsupported operation.
      *
@@ -87,7 +83,7 @@ public class FieldIterator implements Iterator {
         if(h.size() == 0) {
             throw new NoSuchElementException("No more values");
         }
-        
+
         Object ret = h.peek().value;
         while(h.size() > 0 && h.peek().value.equals(ret)) {
             HE e = h.poll();
@@ -96,10 +92,10 @@ public class FieldIterator implements Iterator {
                 h.offer(e);
             }
         }
-            
+
         return ret;
     }
-    
+
     public int getFreq() {
         return freq;
     }
@@ -128,14 +124,14 @@ public class FieldIterator implements Iterator {
          * The next value from the iterator.
          */
         protected Object value;
- 
+
         /**
          * The number of times the value occurs
          */
         protected int freq;
 
         protected boolean ignoreCase;
-        
+
         protected HE(InvFileDiskPartition p, String field, boolean ignoreCase) {
             this.ignoreCase = ignoreCase;
             iter = p.getFieldIterator(field);
@@ -151,22 +147,11 @@ public class FieldIterator implements Iterator {
             if(iter == null) {
                 return false;
             }
-            
+
             while(iter.hasNext()) {
                 QueryEntry e = (QueryEntry) iter.next();
-                if(ignoreCase && e instanceof CasedIDEntry) {
-                    freq = ((CasedIDEntry) e).getNCaseInsensitive();
-                    if(freq == 0) {
-                        //
-                        // This only has case-sensitive postings, so we
-                        // don't want this one!
-                        continue;
-                    }
-                    value = e.getName();
-                } else {
-                    value = e.getName();
-                    freq = e.getN();
-                }
+                value = e.getName();
+                freq = e.getN();
                 return true;
             }
             return false;
@@ -175,10 +160,10 @@ public class FieldIterator implements Iterator {
         protected int getFreq() {
             return freq;
         }
-        
+
         public int compareTo(HE o) {
             return ((Comparable) value).compareTo(o.value);
         }
     }
-    
 } // FieldIterator
+

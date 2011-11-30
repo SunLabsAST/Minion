@@ -220,7 +220,7 @@ public class MetaFile {
         ret[0] = 1;
         for(Iterator i = idToInfo.values().iterator(); i.hasNext();) {
             FieldInfo fi = (FieldInfo) i.next();
-            if(fi.isVectored()) {
+            if(fi.hasAttribute(FieldInfo.Attribute.VECTORED)) {
                 ret[fi.getID()] = 1;
             }
         }
@@ -232,7 +232,7 @@ public class MetaFile {
                 new ArrayList<FieldInfo>();
         for(Iterator i = idToInfo.values().iterator(); i.hasNext();) {
             FieldInfo fi = (FieldInfo) i.next();
-            if(fi.isVectored()) {
+            if(fi.hasAttribute(FieldInfo.Attribute.VECTORED)) {
                 ret.add(fi);
             }
         }
@@ -500,7 +500,7 @@ public class MetaFile {
             return 0;
         } else {
             FieldInfo fi = getFieldInfo(name);
-            if(fi == null || !fi.isVectored()) {
+            if(fi == null || !fi.hasAttribute(FieldInfo.Attribute.VECTORED)) {
                 logger.warning(name + " is unknown or not a vectored field");
                 return 0;
             } else {

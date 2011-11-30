@@ -182,7 +182,7 @@ public class KeyWordProfiler implements Profiler, Configurable {
         }
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
         if(fromField != null) {
-            fields = mp.getManager().getMetaFile().getFieldArray(fromField);
+            fields = mp.getPartitionManager().getMetaFile().getFieldArray(fromField);
             for(int i = 0; i < fields.length; i++) {
                 if(fields[i] > 0) {
                     field = i;
@@ -194,7 +194,7 @@ public class KeyWordProfiler implements Profiler, Configurable {
 
         //
         // Get info for the field where we will put the classes.
-        FieldInfo fi = dp.getManager().getMetaFile().getFieldInfo(classField);
+        FieldInfo fi = dp.getPartitionManager().getMetaFile().getFieldInfo(classField);
         Set[] vm = new Set[dp.getMaxDocumentID() + 1];
         for(Map.Entry<String, List<String>> e : m.entrySet()) {
             float[] scores = new float[dp.getMaxDocumentID() + 1];
@@ -237,7 +237,7 @@ public class KeyWordProfiler implements Profiler, Configurable {
             }
 
             for(int i = 1; i < scores.length; i++) {
-                scores[i] /= dp.getDocumentLength(i);
+                scores[i] /= dp.getDocumentVectorLength(i);
             }
 
             float thresh = getThreshold(scores);

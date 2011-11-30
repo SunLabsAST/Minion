@@ -115,7 +115,7 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
         // entry to provide for the next call to next.
         if(nextEntry == null) {
             while(curr < end) {
-                nextEntry = (QueryEntry) entries[curr++].getEntry();
+                nextEntry = entries[curr++];
                 if(nextEntry != null) {
                     break;
                 }
@@ -151,12 +151,5 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
     public void setUnbufferedPostings(boolean unbufferedPostings) {
     }
 
-    public QueryEntry get(Object name) {
-        return dd.get(name);
-    }
-
-    public QueryEntry get(int id) {
-        return dd.getByID(id);
-    }
 } // ArrayDictionaryIterator
 

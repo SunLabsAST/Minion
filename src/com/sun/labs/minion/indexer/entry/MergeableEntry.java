@@ -25,10 +25,9 @@
 package com.sun.labs.minion.indexer.entry;
 
 /**
- *
- * @author Stephen Green <stephen.green@sun.com>
+ * An interface for entries whose data can be merged.
  */
-public interface MergeableEntry extends IndexEntry {
+public interface MergeableEntry {
     
     /**
      * Merges postings from another entry into this one.

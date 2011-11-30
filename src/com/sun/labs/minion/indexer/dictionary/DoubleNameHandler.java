@@ -27,7 +27,7 @@ package com.sun.labs.minion.indexer.dictionary;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
-public class DoubleNameHandler implements NameEncoder, NameDecoder {
+public class DoubleNameHandler implements NameEncoder<Double>, NameDecoder<Double> {
     
     /**
      * Encodes the double name of an entry, given the name of the previous
@@ -38,18 +38,18 @@ public class DoubleNameHandler implements NameEncoder, NameDecoder {
      * @param b The buffer onto which the name of the term should be
      * encoded.
      */
-    public void encodeName(Object prev, Object curr, WriteableBuffer b) {
+    public void encodeName(Double prev, Double curr, WriteableBuffer b) {
 
         int shared = 0;
 
         //
         // Put the bits into a long.
-        long cn = Double.doubleToRawLongBits(((Double) curr).doubleValue());
+        long cn = Double.doubleToRawLongBits(curr.doubleValue());
         
         if(prev != null) {
             
             
-            long pn = Double.doubleToRawLongBits(((Double) prev).doubleValue());
+            long pn = Double.doubleToRawLongBits(prev.doubleValue());
 
             //
             // Get the shared initial context.
@@ -74,7 +74,7 @@ public class DoubleNameHandler implements NameEncoder, NameDecoder {
      * encoded.
      * @return The decoded name.
      */
-    public Object decodeName(Object prev, ReadableBuffer b) {
+    public Double decodeName(Double prev, ReadableBuffer b) {
 
         //
         // Get the shared context and the remaining bytes.
@@ -87,7 +87,7 @@ public class DoubleNameHandler implements NameEncoder, NameDecoder {
             // Mask in the leading bytes.
             long mask = 0xff00000000000000L;
             long pn =
-                Double.doubleToRawLongBits(((Double) prev).doubleValue());
+                Double.doubleToRawLongBits(prev.doubleValue());
             
             for(int i = 0; i < shared; i++) {
                 val |= (pn & mask);
@@ -95,14 +95,14 @@ public class DoubleNameHandler implements NameEncoder, NameDecoder {
             }
         }
 
-        return new Double(Double.longBitsToDouble(val));
+        return Double.longBitsToDouble(val);
     }
 
     /**
      * Determines whether one double starts with another, which is true
      * only if they are equal!
      */
-    public boolean startsWith(Object n, Object m) {
+    public boolean startsWith(Double n, Double m) {
         return n.equals(m);
     }
 

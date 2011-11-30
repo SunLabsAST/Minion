@@ -114,6 +114,23 @@
         <property name="dumper" value="${dumper}"/>
     </component>
 
+    <component name="dff_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
+        <!-- The stages in the main indexing pipeline -->
+        <propertylist name="stages">
+            <item>universal_tokenizer</item>
+            <item>lower_case</item>
+            <item>dff_memory_partition</item>
+        </propertylist>
+
+        <!-- The stages in the highlighting pipeline -->
+        <propertylist name="hl_stages">
+            <item>universal_tokenizer_with_punct_and_white</item>
+            <item>highlight_stage</item>
+        </propertylist>
+
+        <property name="dumper" value="${dumper}"/>
+    </component>
+
     <!-- A pipeline factory that lowercases things and removes stopwords.  This requires a memory
     partition that doesn't use cased entries! -->
     <component name="uncased_stop_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">

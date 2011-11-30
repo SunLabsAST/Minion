@@ -32,7 +32,6 @@ import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.Buffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,12 +54,12 @@ public class DelMap implements Cloneable {
     /**
      * The number of deleted documents.
      */
-    protected AtomicInteger nDeleted;
+    protected int nDeleted;
 
     /**
      * The bitmap of deleted documents.
      */
-    protected ArrayBuffer delMap;
+    protected Buffer delMap;
 
     /**
      * Whether the bitmap has been modified since it was read.
@@ -84,7 +83,7 @@ public class DelMap implements Cloneable {
      */
     public DelMap() {
         delMap = new ArrayBuffer(32);
-        nDeleted = new AtomicInteger();
+        nDeleted = 0;
     }
 
     public void setPartition(Partition part) {
@@ -101,7 +100,6 @@ public class DelMap implements Cloneable {
     public DelMap(File delFile, FileLock lock) {
         this.delFile = delFile;
         this.lock = lock;
-        nDeleted = new AtomicInteger();
         read();
     }
 
@@ -110,12 +108,12 @@ public class DelMap implements Cloneable {
      * merely returns the buffer, it does not set the deletion bitmap!
      * @return the buffer containing the deletion bitmap.
      */
-    private synchronized ArrayBuffer readBuffer() {
+    protected synchronized Buffer readBuffer() {
 
         //
         // If the file doesn't exist, we're done.
         if(!delFile.exists()) {
-            return new ArrayBuffer(1);
+            return null;
         }
 
         //
@@ -130,13 +128,13 @@ public class DelMap implements Cloneable {
             int size = raf.readInt();
             byte[] b = new byte[size];
             raf.readFully(b);
-            ArrayBuffer ret = new ArrayBuffer(b);
+            Buffer ret = new ArrayBuffer(b);
             ret.position(ret.limit());
             raf.close();
             return ret;
         } catch(Exception e) {
             logger.log(Level.SEVERE, "Error reading delmap: " + delFile, e);
-            return new ArrayBuffer(1);
+            return null;
         } finally {
             try {
                 if(releaseNeeded) {
@@ -151,13 +149,19 @@ public class DelMap implements Cloneable {
      * Reads the deletion bitmap from the file, and computes the number of
      * deleted documents.
      */
-    private void read() {
+    protected synchronized void read() {
+
         delMap = readBuffer();
-        nDeleted.set(delMap.countBits());
+        if(delMap == null) {
+            nDeleted = 0;
+        } else {
+            nDeleted = ((ReadableBuffer) delMap).countBits();
+        }
         dirty = false;
     }
 
-    private void write(File f, WriteableBuffer m) throws java.io.IOException {
+    public static void write(File f, WriteableBuffer m)
+            throws java.io.IOException {
         RandomAccessFile raf = new RandomAccessFile(f, "rw");
         raf.writeInt(m.position());
         m.write(raf);
@@ -167,7 +171,7 @@ public class DelMap implements Cloneable {
     /**
      * Writes this map to a file.
      */
-    public void write() {
+    public synchronized void write() {
         write(delFile);
     }
 
@@ -177,7 +181,7 @@ public class DelMap implements Cloneable {
      */
     public synchronized void write(File delFile) {
 
-        if(!dirty || nDeleted.get() == 0) {
+        if(!dirty || nDeleted == 0 || delMap == null) {
             return;
         }
 
@@ -242,13 +246,15 @@ public class DelMap implements Cloneable {
             //
             // OK, the file exists, and we're dirty, so read the file,
             // combine the maps and write the file.
-            ArrayBuffer fmap = readBuffer();
+            Buffer fmap = readBuffer();
 
             //
             // We need to combine our map and theirs, and write the
             // results back to the file.
-            delMap.or(fmap);
-            nDeleted.set(delMap.countBits());
+            if(fmap != null) {
+                ((WriteableBuffer) delMap).or((ReadableBuffer) fmap);
+            }
+            nDeleted = ((ReadableBuffer) delMap).countBits();
             write();
         } catch(Exception e) {
             logger.log(Level.SEVERE, "Error syncing delmap: " + delFile, e);
@@ -281,14 +287,18 @@ public class DelMap implements Cloneable {
      */
     public synchronized boolean delete(int id) {
 
+        if(delMap == null) {
+            delMap = new ArrayBuffer(id);
+        }
+
         //
         // Only count each deletion once!
-        if(!delMap.test(id)) {
-            delMap.set(id);
+        if(!((ReadableBuffer) delMap).test(id)) {
+            ((WriteableBuffer) delMap).set(id);
 //            if(part != null && part instanceof DiskPartition) {
 //            logger.info(part + " del " + id);
 //            }
-            nDeleted.incrementAndGet();
+            nDeleted++;
             dirty = true;
             //
             // If we actually deleted something we'll return true, since 
@@ -313,6 +323,11 @@ public class DelMap implements Cloneable {
      * @param id the ID of the document that we want to check
      * @return <code>true</code> if the document has been deleted, <code>false</code>
      * otherwise.
+     *
+     * This is not synchronized because we know the underlying buffer can get the
+     * byte without having to do a read from the filesystem.  We may be opening
+     * ourselves to a race condition, but them's the breaks.
+     *
      */
     public boolean isDeleted(int id) {
         return delMap != null && ((ReadableBuffer) delMap).test(id);
@@ -323,8 +338,8 @@ public class DelMap implements Cloneable {
      * 
      */
     public synchronized void clear() {
-        delMap.clear();
-        nDeleted.set(0);
+        ((WriteableBuffer) delMap).clear();
+        nDeleted = 0;
     }
 
     /**
@@ -338,9 +353,9 @@ public class DelMap implements Cloneable {
             throw new InternalError();
         }
 
-        result.nDeleted = new AtomicInteger(nDeleted.get());
+        result.nDeleted = nDeleted;
         if(delMap != null) {
-            result.delMap = (ArrayBuffer) delMap.clone();
+            result.delMap = (ArrayBuffer) ((ArrayBuffer) delMap).clone();
         } else {
             result.delMap = null;
         }
@@ -352,7 +367,7 @@ public class DelMap implements Cloneable {
      * @return the number of deleted documents
      */
     public int getNDeleted() {
-        return nDeleted.get();
+        return nDeleted;
     }
 
     /**
@@ -362,10 +377,10 @@ public class DelMap implements Cloneable {
      * @see #syncGetMap
      */
     public ReadableBuffer getDelMap() {
-        if(nDeleted.get() == 0) {
-            return null;
+        if(delMap != null) {
+            return (ArrayBuffer) ((ArrayBuffer) delMap).clone();
         }
-        return delMap.duplicate();
+        return null;
     }
 
     public String toString() {

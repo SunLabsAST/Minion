@@ -92,7 +92,7 @@ public class TermCacheElement {
             return null;
         }
 
-        TermStatsImpl ets = part.getManager().getTermStats(
+        TermStatsImpl ets = part.getPartitionManager().getTermStats(
                 e.getName().toString());
         wc.setTerm(ets);
         float qw = wf.initTerm(wc);

@@ -76,6 +76,24 @@
         <property name="partition_manager" value="uncased_partition_manager"/>
     </component>
 
+   <!-- A partition manager for inverted file partitions that don't use cased
+    entries and only have field information in the postings. -->
+    <component name="dff_partition_manager" inherit="partition_manager">
+        <property name="partition_factory" value="dff_partition_factory"/>
+    </component>
+
+    <!-- A factory for inverted file partitions where the main dictionary doesn't use cased
+    entries -->
+    <component name="dff_partition_factory" inherit="partition_factory">
+        <property name="main_dict_factory" value="uncased_dff_factory"/>
+    </component>
+
+    <!-- A memory partition that doesn't use cased entries. -->
+    <component name="dff_memory_partition" inherit="memory_partition">
+        <property name="main_dict_factory" value="uncased_dff_factory"/>
+        <property name="partition_manager" value="dff_partition_manager"/>
+    </component>
+
     <!-- A partition manager for inverted file partitions that use simple id and 
     frequency entries -->
     <component name="simple_partition_manager" inherit="partition_manager">

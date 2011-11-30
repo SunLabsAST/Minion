@@ -23,49 +23,28 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
- *
+ * Document vector lengths that are cached.
  */
 public class CachedDocumentVectorLengths extends DocumentVectorLengths {
 
     private float[] cachedLens;
 
-    private float[][] cachedFieldLens;
-
-    public CachedDocumentVectorLengths(DiskPartition part, boolean adjustStats)
+    public CachedDocumentVectorLengths(RandomAccessFile vecLensFile)
             throws IOException {
-        super(part, adjustStats);
-        cachedLens = uncompressLens(vecLens.duplicate());
-        cachedFieldLens =
-                new float[fieldLens.length][];
-        for(int i = 0; i < cachedFieldLens.length; i++) {
-            if(fieldLens[i] != null) {
-                cachedFieldLens[i] = uncompressLens(fieldLens[i].duplicate());
-            }
+        super(vecLensFile, 8192);
+        cachedLens = new float[maxDocumentID+1];
+        for(int i = 1; i < cachedLens.length; i++) {
+            cachedLens[i] = vecLens.decodeFloat();
         }
     }
 
     @Override
-    public synchronized float getVectorLength(int docID) {
-        if(cachedLens == null) {
-        }
+    public float getVectorLength(int docID) {
         return cachedLens[docID];
-    }
-
-    @Override
-    public synchronized float getVectorLength(int docID, int fieldID) {
-        switch(fieldID) {
-            case -1:
-                return getVectorLength(docID);
-            default:
-                if(fieldLens[fieldID] == null) {
-                    return 1;
-                }
-                return cachedFieldLens[fieldID][docID];
-        }
     }
 
     /**
@@ -78,34 +57,9 @@ public class CachedDocumentVectorLengths extends DocumentVectorLengths {
      * @param fieldID the ID of the field that the scores were computed from and that
      * should be used for normalization.
      */
-    public void normalize(int[] docs, float[] scores, int p, float qw,
-                          int fieldID) {
-
-        float[] lvl;
-
-        synchronized(this) {
-            switch(fieldID) {
-                case -1:
-                    lvl = cachedLens;
-                    break;
-                default:
-                    if(fieldLens[fieldID] == null) {
-                        return;
-                    }
-                    lvl = cachedFieldLens[fieldID];
-                    break;
-            }
-        }
+    public void normalize(int[] docs, float[] scores, int p, float qw) {
         for(int i = 0; i < p; i++) {
-            scores[i] /= (lvl[docs[i]] * qw);
+            scores[i] /= (cachedLens[docs[i]] * qw);
         }
-    }
-
-    private float[] uncompressLens(ReadableBuffer b) {
-        float[] ret = new float[part.getMaxDocumentID() + 1];
-        for(int i = 1; i <= part.getMaxDocumentID(); i++) {
-            ret[i] = b.decodeFloat();
-        }
-        return ret;
     }
 }

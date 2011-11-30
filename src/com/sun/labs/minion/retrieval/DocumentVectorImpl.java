@@ -47,7 +47,7 @@ import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
-import com.sun.labs.minion.indexer.entry.TermStatsEntry;
+import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.retrieval.cache.TermCache;
 import com.sun.labs.minion.retrieval.cache.TermCacheElement;
@@ -679,7 +679,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
 
         //
         // Get an iterator for the term stats dictionary.
-        DictionaryIterator tsi = part.getManager().getTermStatsDict().iterator();
+        DictionaryIterator tsi = part.getPartitionManager().getTermStatsDict().iterator();
 
         //
         // Handle the partition that the document was drawn from first.  We'll
@@ -715,9 +715,9 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
             //
             // Get to the term stats for this term.
             String name = mde.getName().toString();
-            TermStatsEntry tse = null;
+            TermStatsQueryEntry tse = null;
             while(tsi.hasNext()) {
-                tse = (TermStatsEntry) tsi.next();
+                tse = (TermStatsQueryEntry) tsi.next();
                 if(tse.getName().equals(name)) {
                     break;
                 }
@@ -760,7 +760,7 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
                 continue;
             }
 
-            tsi = part.getManager().getTermStatsDict().iterator();
+            tsi = part.getPartitionManager().getTermStatsDict().iterator();
             for(WeightedFeature f : v) {
 
                 String mdin = mdi.getName().toString();
@@ -777,9 +777,9 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
 
                     //
                     // Get the term stats.
-                    TermStatsEntry tse = null;
+                    TermStatsQueryEntry tse = null;
                     while(tsi.hasNext()) {
-                        tse = (TermStatsEntry) tsi.next();
+                        tse = (TermStatsQueryEntry) tsi.next();
                         if(tse.getName().equals(f.getName())) {
                             break;
                         }

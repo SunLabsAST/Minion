@@ -24,43 +24,28 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.entry.Entry;
 import java.util.Iterator;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
 
 /**
  * An interface for iterators for a dictionary.
  */
-public interface DictionaryIterator extends Iterator<QueryEntry> {
+public interface DictionaryIterator extends Iterator<Entry> {
 
     /**
-     * Estimates the total size of the documents held in the postings for
+     * Estimates the total number of IDs held in the postings for
      * all of the terms in the iterator.
+     * @return an estimate of the number of IDs held in the postings for all
+     * of the terms in the iterator.
      */
     public int estimateSize();
 
     /**
      * Gets the number of entries that will be returned by this iterator.
+     * @return the number of entries that this iterator will return
      */
     public int getNEntries();
 
-    /**
-     * Modifies the iterator so that it only returns entries whose names have
-     * actually occurred in the indexed material.  So, for example, if the word
-     * <em>Dog</em> occurs in the indexed material, and is the only occurrence
-     * of that word, then the entry <em>dog</em> in a cased dictionary would not
-     * be returned if this method is called with a value of <code>true</code>.
-     *
-     * <p>
-     *
-     * Note that this option really only makes sense for dictionaries that
-     * use cased entries.
-     *
-     * @param actualOnly if <code>true</code> only entries with names
-     * that actually occurred in the indexed material will be returned.
-     * If <code>false</code> all entries will be returned.
-     */
-    public void setActualOnly(boolean actualOnly);
-    
     /**
      * Tells the iterator to not use the buffered postings that it may have.
      * This is useful in situations where we don't need the streaming

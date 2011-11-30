@@ -25,7 +25,7 @@ package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.indexer.dictionary.UncachedTermStatsDictionary;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.entry.TermStatsEntry;
+import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.Util;
 import java.io.File;
@@ -56,7 +56,7 @@ public class CheckTermStatsDict {
         boolean ret = true;
         List<TermStatsImpl> actual = new ArrayList();
         for (QueryEntry qe : dict) {
-            actual.add(((TermStatsEntry) qe).getTermStats());
+            actual.add(((TermStatsQueryEntry) qe).getTermStats());
         }
         List<TermStatsImpl> sorted = new ArrayList<TermStatsImpl>(actual);
         Collections.sort(sorted);
@@ -74,7 +74,7 @@ public class CheckTermStatsDict {
         }
 
         for (TermStatsImpl tsi : actual) {
-            TermStatsEntry ts = dict.getTermStats(tsi.getName());
+            TermStatsQueryEntry ts = dict.getTermStats(tsi.getName());
             if (ts == null) {
                 if (!quiet) {
                     output.format("Couldn't find: \"%s\"\n", 

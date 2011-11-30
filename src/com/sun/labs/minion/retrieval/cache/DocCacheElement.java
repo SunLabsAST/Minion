@@ -48,7 +48,7 @@ public class DocCacheElement {
      */
     public DocCacheElement(DocKeyEntry key, DiskPartition part, String field,
             WeightingFunction wf, WeightingComponents wc) {
-        dvi = new DocumentVectorImpl(part.getManager().getEngine(),
+        dvi = new DocumentVectorImpl(part.getPartitionManager().getEngine(),
                 key,
                 field, wf, wc);
     }

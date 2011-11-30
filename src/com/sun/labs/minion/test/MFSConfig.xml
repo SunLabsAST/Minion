@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- A config with asynchronous indexing and larger caches -->
+
+<config>
+    <property name="dumper" value="async_dumper"/>
+
+    <property name="num_pipelines" value="2"/>
+
+
+    <!-- A search engine that can be used to do classification -->
+    <component name="mfs_search_engine" inherit="search_engine">
+        <property name="inv_file_partition_manager" value="partition_manager"/>
+        <property name="pipeline_factory" value="pipeline_factory"/>
+        <property name="build_classifiers" value="true"/>
+        <property name="class_manager" value="class_manager"/>
+        <property name="class_memory_partition" value="class_memory_partition"/>
+        <property name="cluster_manager" value="cluster_manager"/>
+        <property name="cluster_memory_partition" value="cluster_memory_partition"/>
+    </component>
+
+    <!-- A factory for our the main partitions.  This adds a largish term cache
+         and cached document vector lengths to the standard factory -->
+    <component name="partition_factory" type="com.sun.labs.minion.indexer.partition.InvFilePartitionFactory">
+        <property name="term_cache_size" value="3000"/>
+        <property name="main_dict_factory" value="cased_dict_factory"/>
+        <property name="document_dict_factory" value="dockey_dict_factory"/>
+        <property name="cache_vector_lengths" value="true"/>
+        <property name="bigram_dict_factory" value="id_dict_factory"/>
+        <property name="field_store_dict_factory" value="id_dict_factory"/>
+    </component>
+
+    <!-- A factory for our main dictionaries, with an unlimited cache -->
+    <component name="cased_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.indexer.entry.CasedDFOEntry"/>
+        <property name="cache_size" value="2048"/>
+    </component>
+
+    <!-- A manager for classifier partitions -->
+    <component name="class_manager" type="com.sun.labs.minion.classification.ClassifierManager">
+        <property name="lock_dir" value="${lock_directory}"/>
+        <property name="classes_field" value="class"/>
+        <property name="index_config" value="index_config"/>
+        <property name="partition_factory" value="classifier_partition_factory"/>
+        <property name="calculate_dvl" value="false"/>
+    </component>
+
+    <!-- The factory for classifier partitions. -->
+    <component name="classifier_partition_factory" type="com.sun.labs.minion.classification.ClassifierPartitionFactory">
+        <property name="main_dict_factory" value="id_dict_factory"/>
+        <property name="document_dict_factory" value="feature_dict_factory"/>
+    </component>
+
+    <!-- A memory partition for classifiers. -->
+    <component name="class_memory_partition" type="com.sun.labs.minion.classification.ClassifierMemoryPartition">
+        <property name="partition_manager" value="class_manager"/>
+        <property name="part_manager" value="partition_manager"/>
+        <property name="cluster_memory_partition" value="cluster_memory_partition"/>
+        <property name="main_dict_factory" value="id_dict_factory"/>
+        <property name="doc_dict_factory" value="feature_dict_factory"/>
+        <property name="index_config" value="index_config"/>
+        <property name="stopwords" value="stopwords"/>
+    </component>
+
+    <!-- A manager for feature cluster partitions. -->
+    <component name="cluster_manager" type="com.sun.labs.minion.classification.ClusterManager">
+        <property name="lock_dir" value="${lock_directory}"/>
+        <property name="class_manager" value="class_manager"/>
+        <property name="index_config" value="index_config"/>
+        <property name="partition_factory" value="cluster_partition_factory"/>
+        <property name="calculate_dvl" value="false"/>
+    </component>
+
+    <!-- The factory for feature cluster partitions. -->
+    <component name="cluster_partition_factory" type="com.sun.labs.minion.classification.ClusterPartitionFactory">
+        <property name="main_dict_factory" value="id_dict_factory"/>
+        <property name="document_dict_factory" value="cluster_dict_factory"/>
+    </component>
+
+    <!-- A memory partition for feature clusters -->
+    <component name="cluster_memory_partition" type="com.sun.labs.minion.classification.ClusterMemoryPartition">
+        <property name="partition_manager" value="cluster_manager"/>
+        <property name="part_manager" value="partition_manager"/>
+        <property name="main_dict_factory" value="id_dict_factory"/>
+        <property name="doc_dict_factory" value="cluster_dict_factory"/>
+        <property name="index_config" value="index_config"/>
+    </component>
+</config>

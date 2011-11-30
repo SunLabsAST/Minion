@@ -69,9 +69,6 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.dictionary.FeatureVector;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDictionary;
 import com.sun.labs.minion.indexer.dictionary.TermStatsFactory;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
-import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
-import com.sun.labs.minion.indexer.entry.TermStatsEntry;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
@@ -201,8 +198,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         indexDirFile = new File(indexDir);
         lockDirFile = new File(lockDir);
         randID = (int) (Math.random() * Integer.MAX_VALUE);
-
-        collectionStats = new CollectionStats(this);
 
         //
         // Set up the query timer.
@@ -348,6 +343,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public List<DiskPartition> updateActiveParts(boolean addNew) throws
             Exception {
 
+        boolean releaseNeeded = false;
+
         //
         // Re-read the meta file.
         try {
@@ -356,11 +353,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             logger.warning("Error reading meta file in update: " + e);
         }
 
-        boolean releaseNeeded = false;
-        if(!activeFile.isLocked()) {
-            activeFile.lock();
-            releaseNeeded = true;
-        }
+        activeFile.lock();
 
         List<Integer> add = activeFile.read();
         List<Integer> currList = ActiveFile.getPartNumbers(activeParts);
@@ -433,9 +426,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             termStatsDict = null;
         }
 
-        if(releaseNeeded) {
-            activeFile.unlock();
-        }
+        activeFile.unlock();
 
         return newlyLoadedParts;
     }
@@ -534,7 +525,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // Write the active file.
             activeFile.write(activeParts);
         } catch(Exception ex) {
-            logger.log(Level.SEVERE, String.format("Exception adding %s", dp), ex);
+            logger.log(Level.SEVERE, String.format("Exception adding %s", ex));
         } finally {
             try {
                 activeFile.unlock();
@@ -618,8 +609,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      *
      * @return the index dir
      */
-    public String getIndexDir() {
-        return indexDir;
+    public File getIndexDir() {
+        return indexDirFile;
     }
 
     /**
@@ -1164,6 +1155,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     private static Pattern ppat = Pattern.compile("^p(\\d+).*\\.([^.]*)$");
 
+
+    /**
+     * A pattern for partition files that gets the partition number and the
+     * extension.
+     */
+    private static Pattern ppat = Pattern.compile("^p(\\d+).*\\.([^.]*)$");
+
     /**
      * A class that implements SimpleFilter so that we can find partition
      * files with various extensions.
@@ -1266,15 +1264,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // Write an empty active file, but leave the meta file since we
             // want to keep field definitions (and it doesn't matter if the
             // partition number or termstats number isn't reset)
-            try {
                 activeFile.write(activeParts);
-            } catch(FileLockException fle) {
-                logger.log(Level.SEVERE, "Exception locking active file during purge: " +
-                        fle);
-            } catch(java.io.IOException ioe) {
-                logger.log(Level.SEVERE, "Error writing active file during purge: " +
-                        ioe);
-            }
             logger.info("Purged index in: " + indexDir);
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Exception locking active file during purge: " +
@@ -2450,8 +2440,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
          */
         protected void closeThings(long time) {
             synchronized(thingsToClose) {
-                for(Iterator<Closeable> i = thingsToClose.iterator();
-                        i.hasNext();) {
+                for(Iterator<Closeable> i = thingsToClose.iterator(); i.hasNext();) {
                     Closeable clo = i.next();
                     if(clo.close(time)) {
                         clo.createRemoveFile();
@@ -2470,7 +2459,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // See if the file has changed.  This may not be perfect,
             // but it will keep us from over-locking.
             long stamp = activeFile.lastModified();
-            if(stamp == lastMod && ignored < MAX_IGNORE) {
+            if(ignored < MAX_IGNORE && stamp == lastMod) {
                 ignored++;
                 return;
             }
@@ -2504,15 +2493,18 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // out the updates to the active partition list, but don't put
             // them on the list yet!
             try {
+                List<DiskPartition> loaded = updateActiveParts(false);
+
                 //
                 // We have the list of updated partitions.  Get the
                 // updated deletion bitmaps without changing the copies
                 // in the partions.
-                for(DiskPartition dp : activeParts) {
-                    dp.syncDeletedMap();
+                synchronized(activeParts) {
+                    for(DiskPartition dp : activeParts) {
+                        dp.syncDeletedMap();
+                    }
+                    activeParts.addAll(loaded);
                 }
-                
-                updateActiveParts(true);
             } catch(Exception e) {
 
                 //
@@ -2529,6 +2521,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
             lastMod = stamp;
         }
+        
         /**
          * The last modified time for the active file.
          */
@@ -2761,8 +2754,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     private int maxMergeSize;
 
     @ConfigInteger(defaultValue = 1000)
-    public static final String PROP_ACTIVE_CHECK_INTERVAL =
-            "active_check_interval";
+    public static final String PROP_ACTIVE_CHECK_INTERVAL = "active_check_interval";
 
     private int activeCheckInterval;
 

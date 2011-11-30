@@ -118,8 +118,6 @@ public interface SavedField extends Comparable {
      * passed in.
      */
     public ArrayGroup getUndefined(ArrayGroup ag);
-
-    public void close();
     
     
     /**

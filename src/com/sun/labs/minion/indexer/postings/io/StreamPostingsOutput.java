@@ -24,6 +24,8 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
+import com.sun.labs.minion.indexer.postings.Postings;
+import java.io.IOException;
 import java.io.OutputStream;
 
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
@@ -111,6 +113,11 @@ public class StreamPostingsOutput implements PostingsOutput {
             ret += write(b[i]);
         }
         return ret;
+    }
+
+    @Override
+    public long write(Postings p) throws IOException {
+        return write(p.getBuffers());
     }
 
     /**

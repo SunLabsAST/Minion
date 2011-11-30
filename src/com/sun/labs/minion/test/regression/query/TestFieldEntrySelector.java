@@ -343,7 +343,7 @@ class FirstLastFieldEntrySelector implements FieldEntrySelector {
             
             /* find the first and last entries of the last field */
             String lastFieldName
-                = partition.getFieldStore().getFieldName(partition.getManager().getMetaFile().size() - 1);
+                = partition.getFieldStore().getFieldName(partition.getPartitionManager().getMetaFile().size() - 1);
             DictionaryIterator lastField =
                 partition.getFieldIterator(lastFieldName);
             List e = SelectorUtil.getFirstLastEntries(lastField);

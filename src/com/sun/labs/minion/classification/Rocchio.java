@@ -915,9 +915,9 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         // Now we have cross-cluster term stats and term counts.  Let's
         // calculate the weights.
         WeightingFunction wf =
-                sdp.getManager().getQueryConfig().getWeightingFunction();
+                sdp.getPartitionManager().getQueryConfig().getWeightingFunction();
         WeightingComponents wc =
-                sdp.getManager().getQueryConfig().getWeightingComponents();
+                sdp.getPartitionManager().getQueryConfig().getWeightingComponents();
         if(wc.N == 0) {
             wc.N = sdp.getNDocs();
         }
@@ -928,7 +928,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         PostingsIteratorFeatures feat = null;
         if(fromField != null) {
             feat = new PostingsIteratorFeatures(wf, wc);
-            feat.setFields(sdp.getManager().getMetaFile().getFieldArray(
+            feat.setFields(sdp.getPartitionManager().getMetaFile().getFieldArray(
                     fromField));
         }
 
@@ -954,7 +954,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         // normalized by the length of the document vector and by the length
         // of the classifier vector.
         int fromFieldID =
-                sdp.getManager().getMetaFile().getVectoredFieldID(fromField);
+                sdp.getPartitionManager().getMetaFile().getVectoredFieldID(fromField);
         clen = (float) Math.sqrt(clen);
         for(int i = 0; i < scores.length; i++) {
             if(scores[i] > 0) {
@@ -983,9 +983,9 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         float[] clen = new float[models.length];
 
         WeightingFunction wf =
-                sdp.getManager().getQueryConfig().getWeightingFunction();
+                sdp.getPartitionManager().getQueryConfig().getWeightingFunction();
         WeightingComponents wc =
-                sdp.getManager().getQueryConfig().getWeightingComponents();
+                sdp.getPartitionManager().getQueryConfig().getWeightingComponents();
         if(wc.N == 0) {
             wc.N = sdp.getNDocs();
         }
@@ -996,7 +996,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         PostingsIteratorFeatures feat = null;
         if(fromField != null) {
             feat = new PostingsIteratorFeatures(wf, wc);
-            feat.setFields(sdp.getManager().getMetaFile().getFieldArray(
+            feat.setFields(sdp.getPartitionManager().getMetaFile().getFieldArray(
                     fromField));
         }
         //
@@ -1040,7 +1040,7 @@ public class Rocchio implements ClassifierModel, BulkClassifier,
         // normalized by the length of the document vector and by the length
         // of the classifier vector.
         int fromFieldID =
-                sdp.getManager().getMetaFile().getVectoredFieldID(fromField);
+                sdp.getPartitionManager().getMetaFile().getVectoredFieldID(fromField);
         for(int i = 0; i < scores.length; i++) {
             Rocchio rocc = (Rocchio) models[i];
             float[] temp = scores[i];

@@ -26,7 +26,6 @@ package com.sun.labs.minion.indexer.postings;
 
 /**
  * An interface for postings that can be merged, not just appended.
- * @author stgreen
  */
 public interface MergeablePostings {
     

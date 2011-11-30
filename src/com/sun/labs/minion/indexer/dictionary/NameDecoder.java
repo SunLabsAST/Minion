@@ -29,7 +29,7 @@ import com.sun.labs.minion.util.buffer.ReadableBuffer;
 /**
  * An interface for decoding the names of entries stored in dictionaries.
  */
-public interface NameDecoder {
+public interface NameDecoder<N extends Comparable> {
     
     /**
      * Decodes the name of an entry, given a buffer of encoded names and
@@ -40,7 +40,7 @@ public interface NameDecoder {
      * encoded.
      * @return The decoded name.
      */
-    public Object decodeName(Object prev, ReadableBuffer b);
+    public N decodeName(N prev, ReadableBuffer b);
 
     /**
      * Determines whether the second name starts with the first name.
@@ -51,6 +51,6 @@ public interface NameDecoder {
      * @return <code>true</code> if <code>m</code> starts with
      * <code>n</code>, false otherwise.
      */
-    public boolean startsWith(Object n, Object m);
+    public boolean startsWith(N n, N m);
     
 }// NameDecoder

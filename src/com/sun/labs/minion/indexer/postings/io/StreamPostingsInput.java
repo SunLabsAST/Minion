@@ -23,6 +23,9 @@
  */
 package com.sun.labs.minion.indexer.postings.io;
 
+import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.indexer.postings.Postings.Type;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 
 
@@ -173,5 +176,10 @@ public class StreamPostingsInput implements PostingsInput {
         ret.position(0);
         ret.limit(size);
         return ret;
+    }
+
+    @Override
+    public Postings read(Type type, long offset, int size) throws IOException {
+        return Postings.Type.getPostings(type, read(offset, size));
     }
 } // StreamPostingsInput

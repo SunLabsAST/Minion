@@ -23,27 +23,21 @@
  */
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.entry.Entry;
 import java.io.RandomAccessFile;
-
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-
 import java.util.Set;
-import com.sun.labs.minion.indexer.entry.CasedPostingsEntry;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.logging.Logger;
+
+import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
-import com.sun.labs.minion.indexer.entry.Entry;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
-
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.PartitionStats;
-
-import com.sun.labs.minion.util.CharUtils;
-import com.sun.labs.minion.util.Util;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.io.File;
 
 /**
  * A dictionary that will be used during indexing.  The entries will be
@@ -69,8 +63,9 @@ import java.util.logging.Logger;
  *
  * Note that the size of the dictionary at dump time and the
  *
+ * @param <N> the type of the names in the dictionary.
  */
-public class MemoryDictionary implements Dictionary {
+public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
 
     /**
      * The partition with which this dictionary is associated.
@@ -80,12 +75,12 @@ public class MemoryDictionary implements Dictionary {
     /**
      * A map to hold the entries.
      */
-    protected Map<Object, Entry> map;
+    protected SortedMap<N, IndexEntry> map;
 
     /**
      * The class of the entries that we will be holding.
      */
-    protected Class entryClass;
+    protected EntryFactory factory;
 
     /**
      * The ID that we will assign to entries as they are added.
@@ -149,122 +144,38 @@ public class MemoryDictionary implements Dictionary {
         NEWTOOLD,
     }
 
+    protected MemoryDictionary() {
+    }
+
     /**
      * Creates a dictionary that can be used during indexing.
      *
+     * @param factory a factory that will generate entries for this dictionary
      */
-    public MemoryDictionary(Class entryClass) {
-        map = new HashMap<Object, Entry>();
+    public MemoryDictionary(EntryFactory factory) {
+        map = new TreeMap<N, IndexEntry>();
         id = 0;
-        this.entryClass = entryClass;
+        this.factory = factory;
     }
 
-    public Class getEntryClass() {
-        return entryClass;
-    }
-
-    public Set<Object> getKeys() {
+    public Set<N> getKeys() {
         return map.keySet();
     }
 
     /**
-     * Gets a new entry that can be added to this dictionary.
+     * Puts an entry into the dictionary.  
      *
      * @param name The name of the entry.
-     * @return a new entry for the dictionary, or <code>null</code> if there is
-     * an error instantiating the entry.
+     * @return The entry corresponding to the given name
      */
-    protected IndexEntry simpleNewEntry(Object name) {
-        try {
-            IndexEntry e = (IndexEntry) entryClass.newInstance();
-            e.setID(++id);
-            e.setName(name);
-            return e;
-        } catch(Exception e) {
-            logger.log(Level.SEVERE, "Error instantiating entry", e);
-            return null;
+    public IndexEntry put(N name) {
+        IndexEntry old = map.get(name);
+        if(old == null) {
+            old = factory.getIndexEntry(name, ++id);
+            old.setDictionary(this);
+            map.put(name, old);
         }
-    }
-
-    /**
-     * Gets a new, possibly cased, entry that can be added to this
-     * dictionary.  If the entry is cased, then this method assumes that
-     * the name provided is a string!  This method will take care to set
-     * the pointer to the lower-case version of the entry so that cased
-     * postings can be added correctly.
-     *
-     * @param name The name of the new entry.
-     * @return a new entry or <code>null</code> if there is an error instantiating
-     * the entry.
-     */
-    public IndexEntry newEntry(Object name) {
-        IndexEntry e = simpleNewEntry(name);
-        if(e instanceof CasedPostingsEntry) {
-
-            //
-            // We may need to set the pointer to the lowercase entry for
-            // this new entry.  First we lowercase the string.
-            String lc = CharUtils.toLowerCase((String) name);
-            IndexEntry lce = null;
-            if(lc.equals(name)) {
-
-                //
-                // If the uppercase version of the name is also equal to
-                // the name, then we only need one set of postings, so only
-                // set the lowercase entry if we need to.
-                if(!CharUtils.isUncased((String) name)) {
-
-                    //
-                    // This is only the lowercase version, so the lowercase
-                    // entry is the new entry.
-                    lce = e;
-                }
-            } else {
-
-                //
-                // This is not the lowercase version, so we may need to
-                // make a new entry for that and that will be the lowercase
-                // entry.
-                lce = (IndexEntry) get(lc);
-                if(lce == null) {
-                    lce = simpleNewEntry(lc);
-                    put(lc, lce);
-                }
-            }
-
-            if(lce != null) {
-                //
-                // Set the pointers in both of the entries.
-                ((CasedPostingsEntry) lce).setCaseInsensitiveEntry(lce);
-                ((CasedPostingsEntry) e).setCaseInsensitiveEntry(lce);
-            }
-        }
-        return e;
-    }
-
-    /**
-     * Puts an entry into the dictionary.  This will assign an ID to the
-     * entry if it is not already in the dictionary.
-     *
-     * @param name The name of the entry.
-     * @param e The entry to put in the dictionary.
-     * @return Any previous value stored in the dictionary under the name
-     * of the given entry.
-     */
-    public IndexEntry put(Object name, IndexEntry e) {
-        IndexEntry old = (IndexEntry) map.put(name, e);
-        e.setDictionary(this);
         return old;
-    }
-
-    /**
-     * Given a name, figure out how big it is in bytes.
-     */
-    protected static int getSize(Object name) {
-        if(name instanceof String) {
-            return ((String) name).length() * 2;
-        }
-        return 4;
     }
 
     /**
@@ -274,8 +185,8 @@ public class MemoryDictionary implements Dictionary {
      * @return The entry associated with the name, or <code>null</code> if
      * the name doesn't appear in the dictionary.
      */
-    public QueryEntry get(Object name) {
-        return (QueryEntry) map.get(name);
+    public IndexEntry get(N name) {
+        return map.get(name);
     }
 
     /**
@@ -285,14 +196,11 @@ public class MemoryDictionary implements Dictionary {
      * @return The entry associated with the name, or <code>null</code> if
      * the name doesn't appear in the dictionary.
      */
-    public Entry remove(Object name) {
+    public IndexEntry remove(N name) {
         return map.remove(name);
     }
 
-    /**
-     * Gets the partition to which this dictionary belongs.
-     * @return the partition
-     */
+    @Override
     public Partition getPartition() {
         return part;
     }
@@ -301,19 +209,13 @@ public class MemoryDictionary implements Dictionary {
         part = partition;
     }
 
-    /**
-     * Gets the number of entries in the dictionary.
-     */
+    @Override
     public int size() {
         return map.size();
     }
 
-    /**
-     * Gets an iterator for the entries in the dictionary.
-     *
-     * @return An iterator for the entries in the dictionary.
-     */
-    public DictionaryIterator iterator() {
+    @Override
+    public Iterator<Entry> iterator() {
         return new MemoryDictionaryIterator();
     }
 
@@ -338,8 +240,7 @@ public class MemoryDictionary implements Dictionary {
      * @return The entries, in sorted order.
      */
     protected IndexEntry[] sort(Renumber renumber, IDMap idMapType) {
-        IndexEntry[] entries =
-                Util.sort(map.values().toArray(new IndexEntry[0]));
+        IndexEntry[] entries = map.values().toArray(new IndexEntry[0]);
 
         //
         // Check if we need to keep an ID map.
@@ -431,7 +332,7 @@ public class MemoryDictionary implements Dictionary {
      * @throws java.io.IOException When there is an error writing either of
      * the channels.
      */
-    public IndexEntry[] dump(String path,
+    public IndexEntry[] dump(File path,
             NameEncoder encoder,
             RandomAccessFile dictFile,
             PostingsOutput[] postOut,
@@ -456,8 +357,8 @@ public class MemoryDictionary implements Dictionary {
      * contribute to while dumping the dictionary.  May be <code>null</code>.
      * @param dictFile The file where the dictionary will be dumped.
      * @param postOut The place where the postings will be dumped.
-     * @param renumber An integer indicating whether and how entries should
-     * be renumbered at dump time.
+     * @param renumber How entries should be renumbered at dump time.
+     * @param idMapType the type of ID mapping to use.
      * @param postIDMap A map from old IDs used in the postings to new IDs.
      * This map will be given to the postings from the dictionary before
      * they are dumped to disk, allowing the postings to be remapped before
@@ -469,7 +370,7 @@ public class MemoryDictionary implements Dictionary {
      * @throws java.io.IOException When there is an error writing either of
      * the channels.
      */
-    public IndexEntry[] dump(String path,
+    public IndexEntry[] dump(File path,
             NameEncoder encoder,
             PartitionStats partStats,
             RandomAccessFile dictFile,
@@ -506,17 +407,12 @@ public class MemoryDictionary implements Dictionary {
 
         //
         // Write the postings and entries.
-        for(int i = 0; i < sorted.length; i++) {
-
-            //
-            // Give subclasses a crack at the entry.
-            processEntry(sorted[i]);
-
+        for(IndexEntry entry : sorted) {
 
             //
             // Write it out.
-            if(sorted[i].writePostings(postOut, postIDMap) == true) {
-                dw.write(sorted[i]);
+            if(entry.writePostings(postOut, postIDMap) == true) {
+                dw.write(entry);
             }
         }
 
@@ -535,20 +431,11 @@ public class MemoryDictionary implements Dictionary {
     }
 
     /**
-     * Processes a single entry before dumping it.  Does nothing at this
-     * level.
-     *
-     * @param e the entry to process.
-     */
-    public void processEntry(IndexEntry e) {
-    }
-
-    /**
      * A class that implements a dictionary iterator for this dictionary.
      */
     public class MemoryDictionaryIterator implements DictionaryIterator {
 
-        protected Iterator iter;
+        protected Iterator<IndexEntry> iter;
 
         protected boolean actualOnly;
 
@@ -560,8 +447,8 @@ public class MemoryDictionary implements Dictionary {
             return iter.hasNext();
         }
 
-        public QueryEntry next() {
-            return (QueryEntry) iter.next();
+        public Entry next() {
+            return iter.next();
         }
 
         public void remove() {
@@ -576,20 +463,9 @@ public class MemoryDictionary implements Dictionary {
             return map.size();
         }
 
-        public void setActualOnly(boolean actualOnly) {
-            this.actualOnly = actualOnly;
-        }
-
         @Override
         public void setUnbufferedPostings(boolean unbufferedPostings) {
         }
 
-        public QueryEntry get(Object name) {
-            return (QueryEntry) map.get(name);
-        }
-
-        public QueryEntry get(int id) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
     }
 }

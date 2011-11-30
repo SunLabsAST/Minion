@@ -24,7 +24,7 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
-import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import com.sun.labs.minion.indexer.postings.Postings;
 
 /**
  * An interface to be implemented by things that write postings.
@@ -32,37 +32,13 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 public interface PostingsOutput {
 
     /**
-     * Writes out the given buffer of postings.
-     * @param b A buffer of postings to write.
-     * @throws java.io.IOException if there is any error writing the
+     * Writes out the given postings
+     * @param p the postings to write.
+     * @return the number of bytes written.
+     * @throws java.io.IOException if there are any errors writing the
      * postings.
-     * @return The number of bytes written to the output.
      */
-    public int write(WriteableBuffer b) throws java.io.IOException;
-    
-    /**
-     * Writes a set of postings encoded onto a number of buffers.
-     * @param b The buffers to write.
-     * @throws java.io.IOException if there is any error writing the
-     * postings.
-     * @return The number of bytes written to the output.
-     */
-    public long write(WriteableBuffer [] b) throws java.io.IOException;
-    
-    /**
-     * Writes a subsequence of a set of postings encoded onto a number of
-     * buffers to the output.
-     * @param b The buffers to write.
-     * @param offset The offset in <code>b</code> where we will begin
-     * writing bytes.
-     * @param length The length of the subsequence of <code>b</code> for
-     * which we will write postings.
-     * @throws java.io.IOException if there is any error writing the
-     * postings.
-     * @return The number of bytes written to the output.
-     */
-    public long write(WriteableBuffer[] b, int offset, int length)
-        throws java.io.IOException;
+    public long write(Postings p) throws java.io.IOException;
 
     /**
      * Gets the position of the current output.

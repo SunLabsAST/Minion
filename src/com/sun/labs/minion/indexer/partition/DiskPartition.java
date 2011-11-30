@@ -37,15 +37,14 @@ import java.util.List;
 import java.util.Set;
 import com.sun.labs.minion.indexer.Closeable;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
-import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
-import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.DuplicateKeyException;
 import com.sun.labs.minion.indexer.entry.Entry;
+import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.retrieval.cache.TermCache;
@@ -53,6 +52,7 @@ import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A partition of the index which is resident on the disk and suitable for
@@ -77,30 +77,22 @@ import java.util.logging.Level;
  */
 public class DiskPartition extends Partition implements Closeable {
 
-    /**
-     * A factory for the document dictionary.
-     */
-    protected DictionaryFactory documentDictFactory;
+    private static Logger logger = Logger.getLogger(DiskPartition.class.getName());
 
     /**
-     * The main dictionary.
+     * The dictionary file.
      */
-    protected DiskDictionary mainDict;
+    protected RandomAccessFile dictFile;
+
+    /**
+     * The postings file.
+     */
+    protected RandomAccessFile[] postFiles;
 
     /**
      * The document dictionary.
      */
-    protected DiskDictionary docDict;
-
-    /**
-     * The stream for the document dictionary.
-     */
-    protected RandomAccessFile docDictFile;
-
-    /**
-     * The postings stream for the document dictionary.
-     */
-    protected RandomAccessFile docPostFile;
+    protected DiskDictionary<String> docDict;
 
     /**
      * The deleted documents file.
@@ -113,29 +105,20 @@ public class DiskPartition extends Partition implements Closeable {
     protected FileLock delFileLock;
 
     /**
-     * A <code>File</code> indicating that this partition is no longer
-     * active.
-     */
-    protected File removedFile;
-
-    private boolean closed;
-
-    /**
      * The deletion map for this partition.
      */
     protected DelMap deletions;
 
     /**
-     * The lengths of the document vectors for this partition.
+     * A <code>File</code> indicating that this partition is no longer
+     * active.
      */
-    protected DocumentVectorLengths dvl;
-
-    private boolean cacheVectorLengths;
+    protected File removedFile;
 
     /**
-     * A cache of uncompressed postings data.
+     * Whether or not this partition has been closed.
      */
-    protected TermCache termCache;
+    private boolean closed;
 
     /**
      * Whether this partition was ignored during a merge, due to it being
@@ -172,30 +155,6 @@ public class DiskPartition extends Partition implements Closeable {
      * the main dictionary
      * @param documentDictFactory the dictionary factory that we will use to
      * create the document dictionary
-     * @throws java.io.IOException If there is an error opening or reading
-     * any of the files making up a partition.
-     *
-     * @see Partition
-     * @see com.sun.labs.minion.indexer.dictionary.Dictionary
-     *
-     */
-    public DiskPartition(int partNumber,
-                         PartitionManager manager,
-                         DictionaryFactory mainDictFactory,
-                         DictionaryFactory documentDictFactory)
-            throws java.io.IOException {
-        this(partNumber, manager, mainDictFactory, documentDictFactory, false, 0);
-    }
-
-    /**
-     * Opens a partition with a given number
-     *
-     * @param partNumber the number of this partition.
-     * @param manager the manager for this partition.
-     * @param mainDictFactory the dictionary factory that we will use to create
-     * the main dictionary
-     * @param documentDictFactory the dictionary factory that we will use to
-     * create the document dictionary
      * @param cacheVectorLengths if <code>true</code> document vector and field
      * vector lengths will be cached in memory for faster access during normalization.
      * @throws java.io.IOException If there is an error opening or reading
@@ -207,48 +166,27 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public DiskPartition(int partNumber,
                          PartitionManager manager,
-                         DictionaryFactory mainDictFactory,
-                         DictionaryFactory documentDictFactory,
-                         boolean cacheVectorLengths,
-                         int termCacheSize)
+                         Postings.Type documentPostingsType)
             throws java.io.IOException {
         this.partNumber = partNumber;
         this.manager = manager;
-        this.mainDictFactory = mainDictFactory;
-        this.documentDictFactory = documentDictFactory;
-        this.cacheVectorLengths = cacheVectorLengths;
 
         //
         // 
-        File[] files = getDocFiles();
-        docDictFile = new RandomAccessFile(files[0], "r");
-        docPostFile = new RandomAccessFile(files[1], "r");
-
-        //
-        // Get the overall partition statistics.
-        stats = new PartitionStats(docDictFile);
+        File[] files = getMainFiles();
+        dictFile = new RandomAccessFile(files[0], "r");
+        postFiles = new RandomAccessFile[files.length -1];
+        for(int i = 1; i < postFiles.length; i++) {
+            postFiles[i-1] = new RandomAccessFile(files[i], "r");
+        }
 
         //
         // Instantiate the dictionary.
-        docDict = documentDictFactory.getDiskDictionary(
+        docDict = new DiskDictionary<String>(
+                new EntryFactory(documentPostingsType),
                 new StringNameHandler(),
-                docDictFile, new RandomAccessFile[]{docPostFile},
-                this);
+                dictFile, postFiles);
         docDict.setName("doc");
-
-        //
-        // Open the main dictionary.
-        files = getMainFiles();
-
-        mainDictFile = new RandomAccessFile(files[0], "r");
-        mainPostFiles = new RandomAccessFile[files.length - 1];
-        for(int i = 1; i < files.length; i++) {
-            mainPostFiles[i - 1] = new RandomAccessFile(files[i], "r");
-        }
-        mainDict = mainDictFactory.getDiskDictionary(new StringNameHandler(),
-                                                     mainDictFile,
-                                                     mainPostFiles, this);
-        mainDict.setName("main");
 
         //
         // Get the deletion file and the removed file, as well as the lock
@@ -261,28 +199,14 @@ public class DiskPartition extends Partition implements Closeable {
         // Read the deletion bitmap.
         deletions = new DelMap(delFile, delFileLock);
         deletions.setPartition(this);
-
-        //
-        // Initialize the document vector lengths if we're not on a long run.
-        if(cacheVectorLengths) {
-            dvl = new CachedDocumentVectorLengths(this, false);
-        } else {
-            dvl = new DocumentVectorLengths(this, false);
-        }
-        
-        if(termCacheSize > 0) {
-            termCache = new TermCache(termCacheSize, this);
-        }
     }
 
     /**
-     * Gets the document vector lengths associated with this partition.
-     * @return the document vector lengths associated with this partition
+     * Gets the document dictionary this partition.  Note that an iterator for
+     * this dictionary will return entries for documents that might have been
+     * deleted.
+     * @return the document dictionary for this partition
      */
-    public DocumentVectorLengths getDVL() {
-        return dvl;
-    }
-
     public DiskDictionary getDocumentDictionary() {
         return docDict;
     }
@@ -312,111 +236,6 @@ public class DiskPartition extends Partition implements Closeable {
      */
     protected Iterator getDocumentIterator(int begin, int end) {
         return docDict.iterator(begin, end);
-    }
-
-    /**
-     * Gets an iterator for the entries in the main dictionary.
-     * @return an iterator for the entries in the main dictionary.
-     */
-    public DictionaryIterator getMainDictionaryIterator() {
-        return mainDict.iterator();
-    }
-
-    /**
-     * Gets an iterator for the entries in the main dictionary.
-     * @param start the name of the entry (inclusive) at which to start the
-     * iteration
-     * @param end the name of the entry (exclusive) at which to stop the iteration
-     * @return an iterator that will return entries from the main dictionary
-     * between the provided start and end names
-     */
-    public Iterator getMainDictionaryIterator(String start, String end) {
-        return mainDict.iterator(start, true, end, true);
-    }
-
-    /**
-     * Gets the entry from the document dictionary corresponding to a given
-     * document key
-     * @param key the document key
-     * @return the entry in the document dictionary for this key or <code>null</code>
-     * if this key does not occur in the document dictionary or if the document
-     * existed in this partition, but it was deleted.
-     */
-    public DocKeyEntry getDocumentTerm(String key) {
-        DocKeyEntry dke = (DocKeyEntry) docDict.get(key);
-        if(dke != null && isDeleted(dke.getID())) {
-            return null;
-        }
-        return dke;
-    }
-
-    /**
-     * Gets the entry from the document dictionary corresponding to a given
-     * document ID
-     * @param docID the document ID
-     * @return the entry in the document dictionary for this key or <code>null</code>
-     * if this id does not occur in the document dictionary.  Note that this may
-     * return the entry for a document that has been deleted!
-     */
-    public DocKeyEntry getDocumentTerm(int docID) {
-        return (DocKeyEntry) docDict.getByID(docID);
-    }
-
-    /**
-     * Gets the length of a document vector for a given document.  Note
-     * that this may cause all of the document vector lengths for this
-     * partition to be calculated!
-     *
-     * @param docID the ID of the document for whose vector we want the length
-     * @return the length of the document.  If there are any errors getting
-     * the length, a value of 1 is returned.
-     */
-    public float getDocumentVectorLength(int docID) {
-        return dvl.getVectorLength(docID);
-    }
-
-    /**
-     * Gets the length of a document vector for a given document.  Note
-     * that this may cause all of the document vector lengths for this
-     * partition to be calculated!
-     *
-     * @param docID the ID of the document for whose vector we want the length
-     * @param field the vectored field for which we we want the document vector
-     * length.  If this value is <code>null</code> the length for all vectored fields
-     * is returned.  If this value is the empty string, the length for the default
-     * body field is returned.  If this value does not name a vectored field, a
-     * default value of 1 will be returned.
-     * @return the length of the document.  If there are any errors getting
-     * the length, a value of 1 is returned.
-     */
-    public float getDocumentVectorLength(int docID, String field) {
-        return dvl.getVectorLength(docID, manager.getMetaFile().
-                getVectoredFieldID(field));
-    }
-
-    /**
-     * Gets the length of a document vector for a given document.  Note
-     * that this may cause all of the document vector lengths for this
-     * partition to be calculated!
-     *
-     * @param docID the ID of the document for whose vector we want the length
-     * @param fieldID the ID of the field for which we want the length if this
-     * value is less than 0, the length for all vectored fields
-     * is returned.  If this value is 0, the length for the default
-     * body field is returned.  Other wise, the length for the corresponding field
-     * is returned.
-     * @return the length of the document.  If there are any errors getting
-     * the length, a value of 1 is returned.
-     */
-    public float getDocumentVectorLength(int docID, int fieldID) {
-        if(fieldID == -1) {
-            return dvl.getVectorLength(docID);
-        }
-        return dvl.getVectorLength(docID, fieldID);
-    }
-
-    public void normalize(int[] docs, float[] scores, int p, float qw, int field) {
-        dvl.normalize(docs, scores, p, qw, field);
     }
 
     /**
@@ -450,38 +269,14 @@ public class DiskPartition extends Partition implements Closeable {
             return false;
         }
         closed = true;
-
         try {
 
-            if(termCache != null) {
-                termCache.close();
-                termCache = null;
-            }
-            
             syncDeletedMap();
-
-            //
-            // Close the main dictionary and postings.
-            if(mainDictFile != null) {
-                mainDict.close();
-                mainDictFile.close();
-                for(int i = 0; i < mainPostFiles.length;
-                        i++) {
-                    mainPostFiles[i].close();
+            if(dictFile != null) {
+                dictFile.close();
+                for(RandomAccessFile pf : postFiles) {
+                    pf.close();
                 }
-                mainDict = null;
-            }
-
-            if(docDict != null) {
-                docDict.close();
-                docDictFile.close();
-                docPostFile.close();
-                docDict = null;
-            }
-
-            if(dvl != null) {
-                dvl.close();
-                dvl = null;
             }
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Error closing partition", ioe);
@@ -503,10 +298,9 @@ public class DiskPartition extends Partition implements Closeable {
     public void delete() {
         close();
 
-        File[] files = getAllFiles();
+        File[] files = getMainFiles();
         boolean fail = false;
-        for(int i = 0; i < files.length;
-                i++) {
+        for(int i = 0; i < files.length; i++) {
             if(!files[i].delete()) {
                 fail = true;
             }
@@ -537,11 +331,10 @@ public class DiskPartition extends Partition implements Closeable {
 
         //
         // Remove the data files.
-        File[] files = getAllFiles(m, n);
-        for(int i = 0; i < files.length;
-                i++) {
-            if((!files[i].delete()) && (files[i].exists())) {
-                logger.warning("Failed to delete: " + files[i]);
+        File[] files = getMainFiles(m, n);
+        for(File f : files) {
+            if((!f.delete()) && (f.exists())) {
+                logger.warning("Failed to delete: " + f);
             }
         }
 
@@ -553,54 +346,6 @@ public class DiskPartition extends Partition implements Closeable {
         if(!m.makeRemovedPartitionFile(n).delete()) {
             logger.severe("Failed to reap partition " + n);
         }
-    }
-
-    /**
-     * Gets the entry in the main dictionary associated with a given name.  This is a
-     * case-insensitive lookup.
-     *
-     * @param name The name of the term, as a string.
-     * @return The term associated with that name.
-     * @see #getTerm(String,boolean)
-     */
-    public QueryEntry getTerm(String name) {
-        return getTerm(name, false);
-    }
-
-    /**
-     * Gets the entry from the main dictionary that has a given ID.
-     *
-     * @param id The ID of the term that we want to get.
-     * @return the entry associated with that ID, or <code>null</code> if the
-     * ID is not in the main dictionary.
-     */
-    public QueryEntry getTerm(int id) {
-        return mainDict.getByID(id);
-    }
-
-    /**
-     * Gets the term cache for this partition, if there is one.
-     * @return the term cache, or <code>null</code> if there is none.
-     */
-    public TermCache getTermCache() {
-        return termCache;
-    }
-
-    /**
-     * Gets the term associated with a given name.
-     *
-     * @param name The name of the term.
-     * @param caseSensitive If <code>true</code> then the term should be
-     * looked up in the case that it is given.
-     * @return the entry from the main dicitionary associated with the given
-     * name.
-     */
-    public QueryEntry getTerm(String name, boolean caseSensitive) {
-        if(caseSensitive) {
-            return mainDict.get(name);
-        }
-
-        return mainDict.get(CharUtils.toLowerCase(name));
     }
 
     /**
@@ -659,14 +404,14 @@ public class DiskPartition extends Partition implements Closeable {
 
     /**
      * Updates the partition by deleting any documents whose keys are in
-     * the given dictionary.  Available only to package mates.
+     * the given dictionary.
      *
      * @param keys a set of keys to delete.  The string representation of the
      * elements of the set will be the keys to delete.
      * @return <code>true</code> if any documents were deleted,
      * <code>false</code> otherwise.
      */
-    protected boolean updatePartition(Set<Object> keys) {
+    protected boolean updatePartition(Set<String> keys) {
 
         //
         // First, update our deleted document bitmap.
@@ -676,8 +421,8 @@ public class DiskPartition extends Partition implements Closeable {
         // Now, loop through the keys, deleting any that are from this
         // partition.
         boolean someDeleted = false;
-        for(Object key : keys) {
-            if(deleteDocument((String) key)) {
+        for(String key : keys) {
+            if(deleteDocument(key)) {
                 someDeleted = true;
             }
         }
@@ -705,54 +450,6 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public int getMaxDocumentID() {
         return docDict.getMaxID();
-    }
-
-    /**
-     * Gets the maximum term ID from the main dictionary.
-     * @return the maximum term ID in the dictionary
-     */
-    public int getMaxTermID() {
-        return mainDict.getMaxID();
-    }
-
-    /**
-     * Gets the length of a document (in words) qthat's in this partition.
-     * @param docID the ID of the document for which we want the length
-     * @return the length of the document
-     * @see #getDocumentVectorLength(int) for a way to get the length of the
-     * vector associated with this document
-     */
-    public int getDocumentLength(int docID) {
-        QueryEntry de = getDocumentTerm(docID);
-        if(de == null || !(de instanceof DocKeyEntry)) {
-            return 0;
-        }
-
-        return ((DocKeyEntry) de).getDocumentLength();
-    }
-
-    /**
-     * Get the average document length in this partition.
-     * @return the average length (in words) of the documents in this partition
-     */
-    public float getAverageDocumentLength() {
-        return stats.avgDocLen;
-    }
-
-    /**
-     * Gets the total number of tokens indexed in this partition.
-     * @return the total number of tokens
-     */
-    public long getNTokens() {
-        return stats.nTokens;
-    }
-
-    /**
-     * Gets the total number of distinct terms in this partition.
-     * @return the number of distinct terms in the partition
-     */
-    public int getNEntries() {
-        return stats.nd;
     }
 
     /**
@@ -802,41 +499,6 @@ public class DiskPartition extends Partition implements Closeable {
     }
 
     /**
-     * Gets an iterator for the entries in the main dictionary.
-     *
-     * @return an iterator for the entries in the main dictionary.
-     */
-    public Iterator getMainIterator() {
-        return getMainDictionaryIterator(null, null);
-    }
-
-    /**
-     * Gets an array of buffers to use for buffering postings during
-     * merges.
-     *
-     * @param size The size of the input buffers to use.
-     * @return An array of buffers large enough to handle any dictionary
-     * merge.
-     */
-    protected ByteBuffer[] getInputBuffers(int size) {
-        ByteBuffer[] ret = new ByteBuffer[mainPostFiles.length];
-        for(int i = 0; i < ret.length;
-                i++) {
-            ret[i] = ByteBuffer.allocateDirect(size);
-        }
-        return ret;
-    }
-
-    /**
-     * Returns the main dictionary, to be used by subclasses.
-     *
-     * @return the main dictionary
-     */
-    public DiskDictionary getMainDictionary() {
-        return mainDict;
-    }
-
-    /**
      * Merges a number of <code>DiskPartition</code>s into a single
      * partition.
      *
@@ -882,8 +544,7 @@ public class DiskPartition extends Partition implements Closeable {
 
         //
         // A copy of the partition list and a place to put delmaps.
-        List<DiskPartition> partCopy =
-                new ArrayList<DiskPartition>(partitions);
+        List<DiskPartition> partCopy = new ArrayList<DiskPartition>(partitions);
 
         //
         // We need to make sure that the list is sorted by partition number
@@ -904,7 +565,7 @@ public class DiskPartition extends Partition implements Closeable {
             // people dicking with it before we're ready to use it.
             DelMap d = dmi.next();
             p.ignored = false;
-            if(p.stats.nDocs == d.getNDeleted()) {
+            if(p.getNDocs() == 0) {
                 p.ignored = true;
                 i.remove();
                 dmi.remove();
@@ -1039,7 +700,7 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // Merge the main dictionaries.
             int[][] idMap =
-                    dicts[0].merge(mde, new StringNameHandler(), mStats, dicts,
+                    dicts[0].merge(new StringNameHandler(), mStats, dicts,
                                    null, docIDStart, docIDMaps, mDictFile,
                                    mPostOut, true);
 
@@ -1063,8 +724,7 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Pick up the document dictionaries for the merge.
-            for(int i = 0; i < dicts.length;
-                    i++) {
+            for(int i = 0; i < dicts.length; i++) {
                 dicts[i] = sortedParts[i].docDict;
                 mappers[i] = new DocEntryMapper(docIDStart[i], docIDMaps[i]);
             }
@@ -1091,8 +751,7 @@ public class DiskPartition extends Partition implements Closeable {
             // Merge the document dictionaries.  We'll need to remap the
             logger.fine("Merge document dictionary");
             int[][] mergedDocIDMap =
-                    dicts[0].merge(dde,
-                                   new StringNameHandler(),
+                    dicts[0].merge(new StringNameHandler(),
                                    dicts, mappers,
                                    fakeStart, idMap, mDocDictFile,
                                    new PostingsOutput[]{
@@ -1138,8 +797,7 @@ public class DiskPartition extends Partition implements Closeable {
 
                 //
                 // Get channels for the postings
-                for(int i = 1; i < files.length;
-                        i++) {
+                for(int i = 1; i < files.length; i++) {
                     OutputStream outStr =
                             new BufferedOutputStream(new FileOutputStream(files[i].getAbsolutePath() +
                             ".remap"),
@@ -1215,7 +873,7 @@ public class DiskPartition extends Partition implements Closeable {
                 throw (dke);
             }
             DiskPartition p = (DiskPartition) dke.getEntry().getPartition();
-            int origID = dke.getEntry().getOrigID();
+            int origID = dke.getEntry().getID();
 
             logger.warning(dke.getMessage() +
                     " when merging. Deleting old document " +

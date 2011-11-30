@@ -24,12 +24,10 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
-import com.sun.labs.minion.indexer.entry.CasedPostingsEntry;
-
 import com.sun.labs.minion.util.CharUtils;
 
 import com.sun.labs.minion.indexer.entry.Entry;
-import com.sun.labs.minion.indexer.entry.IDFreqEntry;
+import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 
 import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
@@ -42,68 +40,41 @@ public class MemoryBiGramDictionary extends MemoryDictionary {
      * Creates a bigram dictionary.  Such a dictionary will be populated a
      * term at a time.
      */
-    public MemoryBiGramDictionary() {
-        super(IDFreqEntry.class);
-    } // MemoryBiGramDictionary constructor
-    
-    /**
-     * Creates and populates a bigram dictionary from a set of dictionary
-     * entries.  Note that the names of these entries are assumed to be
-     * instances of <code>String</code>.
-     *
-     * @param e Entries whose names should be added to the dictionary.
-     */
-    public MemoryBiGramDictionary(Entry[] e) {
-        super(IDFreqEntry.class);
-        for(Entry x : e) {
-            
-            //
-            // If this is a cased postings entry for a term that did not occur
-            // in the data, then we won't bother adding bigrams, since that 
-            // will be covered by the variations of this term that did occur.
-            if((x instanceof CasedPostingsEntry) &&
-                    !((CasedPostingsEntry) x).nameOccurred()) {
-                continue;
-            }
-            add(x);
-        }
-    } // MemoryBiGramDictionary constructor
+    public MemoryBiGramDictionary(EntryFactory factory) {
+        super(factory);
+    } 
     
     /**
      * Adds an entry from another dictionary to the bigram dictionary.
      * This will break the name of the entry into bigrams and add those
-     * bigrams to the dictionary.
+     * bigrams to the dictionary.  Note that this method assumes that the
+     * names of the entries passed in are strings.
      *
-     * @param entry The entry whose name should be added to the bigram
-     * dictionary.
+     * @param name the name to extract bigrams from
+     * @param id the id of the term in the parent dictionary.
      */
-    public void add(Entry entry) {
+    public void add(String name, int id) {
         char[] bgc = new char[2];
         
         //
         // This is an occurrence that we'll use for all the bigrams in the
         // name of this entry.
-        OccurrenceImpl o = new OccurrenceImpl(entry.getID());
+        OccurrenceImpl o = new OccurrenceImpl(id);
         
         //
         // Iterate over the current term, making a series of overlapping
         // bigrams.
         bgc[0]   = (char) 0;
-        String n = CharUtils.toLowerCase(entry.getName().toString());
-        int    e = n.length();
+        int    e = name.length();
         for(int i = 0; i <= e; i++) {
             
-            bgc[1] = i == e ? (char) 0 : n.charAt(i);
+            bgc[1] = i == e ? (char) 0 : name.charAt(i);
             
             String bigram = new String(bgc);
             
             //
             // Add a bigram occurence for this ID.
-            IndexEntry bge = (IndexEntry) get(bigram);
-            if(bge == null) {
-                bge = newEntry(bigram);
-                put(bigram, bge);
-            }
+            IndexEntry bge = put(bigram);
             
             //
             // Add an occurrence to the postings for this entry.
@@ -111,5 +82,4 @@ public class MemoryBiGramDictionary extends MemoryDictionary {
             bgc[0] = bgc[1];
         }
     }
-    
 } // MemoryBiGramDictionary

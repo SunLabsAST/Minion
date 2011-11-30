@@ -43,6 +43,11 @@
     <component name="uncased_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
         <property name="entry_class_name" value="com.sun.labs.minion.indexer.entry.DFOEntry"/>
     </component>
+
+    <!-- A factory for main dictionaries that have field data but no case or position data. -->
+    <component name="uncased_dff_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
+        <property name="entry_class_name" value="com.sun.labs.minion.indexer.entry.DFFEntry"/>
+    </component>
     
     <!-- A factory for fielded document dictionaries. -->
     <component name="dockey_dict_factory" type="com.sun.labs.minion.indexer.dictionary.DictionaryFactory">
