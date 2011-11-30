@@ -1298,7 +1298,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                          DiskDictionary[] dicts,
                          EntryMapper[] mappers,
                          int[] starts,
-                         int[][] postIDMaps, RandomAccessFile mDictFile,
+                         int[][] postIDMaps, 
+                         RandomAccessFile mDictFile,
                          PostingsOutput[] postOut, boolean appendPostings)
             throws java.io.IOException {
 
@@ -1381,7 +1382,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             // before we knew this with -1, indicating that the given entry 
             // doesn't map to anything.
             Arrays.fill(mapped, 0);
-
+            
             //
             // Get all the equal entries, merging the postings as we go.
             while(top != null && top.curr.getName().equals(me.getName())) {
@@ -1445,14 +1446,15 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 try {
                     dw.write(me);
                 } catch(java.lang.ArithmeticException ame) {
-                    logger.severe("Arithmetic exception encoding postings for entry: " +
-                            me.getName());
+                    logger.severe(String.format(
+                            "Arithmetic exception encoding postings for entry: %s", me.
+                            getName()));
                     throw (ame);
                 }
             } else {
                 //
                 // Remember what we said about not writing the entry to the 
-                // merged dictionary?  Where this is where we notice that we 
+                // merged dictionary?  This is where we notice that we 
                 // don't have any postings for a dictionary entry and that we 
                 // therefore won't write it to the dictionary.  So, we need
                 // to remove whatever mappings we made.  Life is hard.
@@ -1464,7 +1466,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             }
 
             if(dw.dh.size % 10000 == 0) {
-                logger.fine(" Merged " + dw.dh.size + " entries");
+                logger.fine(String.format(" Merged %d entries", dw.dh.size));
             }
         }
 
@@ -1479,7 +1481,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // Finish of the writing of the entries to the merged dictionary.
         dw.finish(mDictFile);
 
-        logger.fine("Merged dictionary has: " + dw.dh.size + " entries.");
+        logger.fine(String.format("Merged dictionary has %d entries", dw.dh.size));
 
         //
         // Return the maps from old to new IDs.

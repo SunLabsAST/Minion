@@ -337,6 +337,7 @@ public class InvFileDiskPartition extends DiskPartition {
         return manager.metaFile.size();
     }
 
+    @Override
     protected void mergeCustom(int newPartNumber,
             PartitionHeader mHeader,
             DiskPartition[] sortedParts,
@@ -344,35 +345,45 @@ public class InvFileDiskPartition extends DiskPartition {
             int newMaxDocID, int[] docIDStart, int[] nUndel,
             int[][] docIDMaps,
             RandomAccessFile mDictFile,
+            File[] mPostFiles,
             PostingsOutput[] mPostOut)
             throws Exception {
 
         File vlf = manager.makeVectorLengthFile(partNumber);
         RandomAccessFile mVectorLengths = new RandomAccessFile(vlf, "rw");
-
-        for (Iterator<FieldInfo> i = manager.getMetaFile().fieldIterator(); i.
-                hasNext();) {
-            FieldInfo fi = i.next();
-            DiskField[] fields = new DiskField[sortedParts.length];
+        int newTSN = manager.getMetaFile().getTermStatsNumber();
+        File mtsf = manager.makeTermStatsFile(newTSN);
+        RandomAccessFile mTermStats = new RandomAccessFile(mtsf, "rw");
+        
+        for(FieldInfo fi : manager.getMetaFile()) {
+            DiskField[] mFields = new DiskField[sortedParts.length];
             DiskField merger = null;
             for (int j = 0; j < sortedParts.length; j++) {
-                fields[j] = ((InvFileDiskPartition) sortedParts[j]).getDF(fi);
-                if (fields[j] != null) {
-                    merger = fields[j];
+                mFields[j] = ((InvFileDiskPartition) sortedParts[j]).getDF(fi);
+                if (mFields[j] != null) {
+                    merger = mFields[j];
                 }
             }
-            merger.merge(manager.getIndexDir(),
-                    fields, docIDStart, docIDMaps, nUndel, mDictFile,
-                    mPostOut,
-                    mVectorLengths);
+            if(merger == null) {
+                logger.info(String.format("No merger for %s", fi.getName()));
+            } else {
+                merger.merge(manager.getIndexDir(),
+                             mFields, docIDStart, docIDMaps, nUndel, mDictFile,
+                             mPostFiles,
+                             mPostOut,
+                             mTermStats,
+                             mVectorLengths);
+            }
         }
 
         mVectorLengths.close();
+        mTermStats.close();
     }
 
     /**
      * Close the files associated with this partition.
      */
+    @Override
     public synchronized boolean close(long currTime) {
         if (!super.close(currTime)) {
             return false;

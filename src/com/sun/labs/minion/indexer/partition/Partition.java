@@ -24,7 +24,6 @@
 package com.sun.labs.minion.indexer.partition;
 
 import java.io.File;
-import java.util.Arrays;
 
 
 

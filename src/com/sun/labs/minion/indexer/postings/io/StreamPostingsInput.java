@@ -31,7 +31,6 @@ import java.io.RandomAccessFile;
 
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -61,9 +60,7 @@ public class StreamPostingsInput implements PostingsInput {
      */
     protected byte[] b;
 
-    static Logger logger = Logger.getLogger(StreamPostingsInput.class.getName());
-
-    protected static String logTag = "SPI";
+    private static final Logger logger = Logger.getLogger(StreamPostingsInput.class.getName());
 
     /**
      * Creates a stream postings input.

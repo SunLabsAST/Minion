@@ -254,7 +254,9 @@ public class DiskField extends Field {
                       int[][] docIDMaps,
                       int[] nUndel,
                       RandomAccessFile mDict,
+                      File[] mPostFiles,
                       PostingsOutput[] mPostOut,
+                      RandomAccessFile mTermStats,
                       RandomAccessFile mVectorLengths)
             throws java.io.IOException {
 
@@ -263,8 +265,9 @@ public class DiskField extends Field {
         for(int i = 0; i < fields.length; i++) {
             bundles[i] = fields[i].bundle;
         }
+        logger.info(String.format("Merge %s", info.getName()));
         bundle.merge(indexDir, bundles, starts, docIDMaps, nUndel, mDict,
-                     mPostOut, mVectorLengths);
+                     mPostFiles, mPostOut, mTermStats, mVectorLengths);
 
     }
 

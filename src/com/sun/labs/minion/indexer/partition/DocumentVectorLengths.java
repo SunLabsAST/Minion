@@ -23,9 +23,9 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field;
-import com.sun.labs.minion.indexer.MemoryField;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DictionaryWriter;
@@ -111,27 +111,24 @@ public class DocumentVectorLengths {
      * @param gts the dictionary of global term stats.
      * @throws java.io.IOException if there is any error writing the vector lengths
      */
-    public static void calculate(MemoryField f,
-                                 RandomAccessFile tsdFile,
-                                 RandomAccessFile vlFile,
-                                 TermStatsDiskDictionary gts)
-            throws java.io.IOException {
-
-        calculate(f, f.getTermDictionary(false).iterator(),
-                  tsdFile, vlFile, gts);
-    }
-
-    public static void calculate(DiskField f,
-                                 RandomAccessFile tsdFile,
-                                 RandomAccessFile vlFile,
-                                 TermStatsDiskDictionary gts)
-            throws java.io.IOException {
-
-        calculate(f, f.getTermDictionary(false).iterator(),
-                  tsdFile, vlFile, gts);
-    }
-
     public static void calculate(Field f,
+                                 RandomAccessFile tsdFile,
+                                 RandomAccessFile vlFile,
+                                 TermStatsDiskDictionary gts)
+            throws java.io.IOException {
+        Partition p = f.getPartition();
+        calculate(f.getInfo(), 
+                  p.getNDocs(), 
+                  p.maxDocumentID,
+                  p.getPartitionManager(),
+                  f.getTermDictionary(false).iterator(),
+                  tsdFile, vlFile, gts);
+    }
+
+    public static void calculate(FieldInfo fi,
+                                 int nDocs,
+                                 int maxDocID,
+                                 PartitionManager manager,
                                  Iterator<Entry> mdi,
                                  RandomAccessFile tsdFile,
                                  RandomAccessFile vlFile,
@@ -140,28 +137,26 @@ public class DocumentVectorLengths {
 
         //
         // Get iterators for our two dictionaries and a place to write the new term stats.
-        DictionaryIterator gti = gts.iterator(f.getInfo());
+        DictionaryIterator gti = gts.iterator(fi);
         DictionaryWriter gtw = null;
-
-        Partition p = f.getPartition();
 
         boolean adjustStats = tsdFile != null;
 
         if(adjustStats) {
             gtw = new DictionaryWriter(
-                    p.getPartitionManager().getIndexDir(),
+                    manager.getIndexDir(),
                     new StringNameHandler(), 0,
                     MemoryDictionary.Renumber.RENUMBER);
         }
         
         //
         // Get a set of postings features for running the postings.
-        WeightingFunction wf = p.getPartitionManager().getQueryConfig().
+        WeightingFunction wf = manager.getQueryConfig().
                 getWeightingFunction();
-        WeightingComponents wc = p.getPartitionManager().getQueryConfig().
+        WeightingComponents wc = manager.getQueryConfig().
                 getWeightingComponents();
         if(adjustStats) {
-            wc.N += p.getNDocs();
+            wc.N += nDocs;
         }
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
 
@@ -177,7 +172,7 @@ public class DocumentVectorLengths {
             gte = (TermStatsQueryEntry) gti.next();
         }
 
-        float[] vl = new float[f.getMaximumDocumentID() + 1];
+        float[] vl = new float[maxDocID + 1];
 
         //
         // Iterate until there are no more entries in either of the dictionaries.
@@ -191,7 +186,7 @@ public class DocumentVectorLengths {
             } else {
                 cmp = ((Comparable) mde.getName()).compareTo(gte.getName());
             }
-
+            
             //
             // The entry to use for the merged global term stats dictionary.
             TermStatsIndexEntry we;
@@ -201,11 +196,13 @@ public class DocumentVectorLengths {
                 // Both iterators have the term.  Combine stats!
                 we = new TermStatsIndexEntry(gte);
                 TermStatsImpl ts = gte.getTermStats();
+                
+                PostingsIterator pi = mde.iterator(feat);
                 if(adjustStats) {
                     ts.add(mde);
                 }
                 wf.initTerm(wc.setTerm(ts));
-                addPostings(mde.iterator(feat), vl);
+                addPostings(pi, vl);
                 gte = null;
                 mde = null;
             } else if(cmp < 0) {
@@ -214,9 +211,10 @@ public class DocumentVectorLengths {
                 // Only the new partition has the term.  Create the stats.
                 we = new TermStatsIndexEntry(mde.getName().toString(), 0);
                 TermStatsImpl ts = we.getTermStats();
+                PostingsIterator pi = mde.iterator(feat);
                 ts.add(mde);
                 wf.initTerm(wc.setTerm(ts));
-                addPostings(mde.iterator(feat), vl);
+                addPostings(pi, vl);
                 mde = null;
             } else {
                 //
@@ -244,7 +242,7 @@ public class DocumentVectorLengths {
 
         //
         // Write the document vectors.
-        vlFile.writeInt(f.getMaximumDocumentID());
+        vlFile.writeInt(maxDocID);
         FileWriteableBuffer b = new FileWriteableBuffer(vlFile, 8192);
         for(int i = 1; i < vl.length; i++) {
             b.encode((float) Math.sqrt(vl[i]));

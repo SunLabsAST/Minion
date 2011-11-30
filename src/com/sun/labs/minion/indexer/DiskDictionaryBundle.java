@@ -22,6 +22,8 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.indexer.postings.io.FileBackedPostingsInput;
+import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
@@ -56,6 +58,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * The dictionaries.
      */
     private DiskDictionary[] dicts;
+    
+    /**
+     * An entry factory for the token dictionaries.
+     */
+    private EntryFactory entryFactory;
 
     /**
      * The field we're associated with.
@@ -98,8 +105,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                 RandomAccessFile dictFile,
                                 RandomAccessFile vectorLengthsFile,
                                 RandomAccessFile[] postIn,
-                                EntryFactory factory) throws java.io.IOException {
+                                EntryFactory entryFactory) throws java.io.IOException {
         this.field = field;
+        this.entryFactory = entryFactory;
         info = field.getInfo();
         header = new FieldHeader(dictFile);
         dicts = new DiskDictionary[MemoryDictionaryBundle.Type.values().length];
@@ -119,7 +127,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     fact = new EntryFactory(Postings.Type.ID_FREQ);
                 default:
                     decoder = new StringNameHandler();
-                    fact = factory;
+                    fact = entryFactory;
 
             }
 
@@ -642,7 +650,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                       int[][] docIDMaps,
                       int[] nUndel,
                       RandomAccessFile mDict,
+                      File[] mPostFiles,
                       PostingsOutput[] mPostOut,
+                      RandomAccessFile mTermStats,
                       RandomAccessFile mVectorLengths)
             throws java.io.IOException {
 
@@ -654,7 +664,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // ID maps from the main dictionary, that we'll use to merge the
         // document vectors.
         int[][] tokenIDMap = null;
-        int[][] savedIDMap = null;
+        int[][] savedValueIDMap = null;
 
         //
         // Merge the types of dictionaries.  This loop is a bit gross, but 
@@ -696,6 +706,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     postIDMap = tokenIDMap;
                     break;
             }
+            
+//            logger.info(String.format("merge %s %s", type, foundDict));
 
             if(foundDict) {
                 mergeHeader.dictOffsets[ord] = mDict.getFilePointer();
@@ -705,19 +717,18 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                   starts,
                                                   postIDMap,
                                                   mDict, mPostOut, true);
+                switch(type) {
+                    case UNCASED_TOKENS:
+                    case CASED_TOKENS:
+                        tokenIDMap = entryIDMap;
+                        break;
+                    case RAW_SAVED:
+                    case UNCASED_SAVED:
+                        savedValueIDMap = entryIDMap;
+                        break;
+                }
             } else {
                 mergeHeader.dictOffsets[ord] = -1;
-            }
-
-            switch(type) {
-                case UNCASED_TOKENS:
-                case CASED_TOKENS:
-                    tokenIDMap = entryIDMap;
-                    break;
-                case RAW_SAVED:
-                case UNCASED_SAVED:
-                    savedIDMap = entryIDMap;
-                    break;
             }
         }
 
@@ -749,7 +760,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         if(bgMerger != null) {
             mergeHeader.savedBGOffset = mDict.getFilePointer();
-            bgMerger.merge(indexDir, bgDicts, starts, savedIDMap, mDict,
+            bgMerger.merge(indexDir, bgDicts, starts, savedValueIDMap, mDict,
                            mPostOut[0]);
         }
 
@@ -785,7 +796,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 // Copy the values from this field.
                 ReadableBuffer dtvDup = bundles[i].dtvData.duplicate();
                 int[] docIDMap = docIDMaps[i];
-                int[] valIDMap = savedIDMap[i];
+                int[] valIDMap = savedValueIDMap[i];
 
                 for(int j = 0; j < bundles[i].header.maxDocID; j++) {
                     int n = dtvDup.byteDecode();
@@ -826,18 +837,40 @@ public class DiskDictionaryBundle<N extends Comparable> {
             dtvOffsetFile.delete();
 
             //
-            // Calculate document vector lengths.
-            mergeHeader.vectorLengthOffset = mVectorLengths.getFilePointer();
-            DocumentVectorLengths.calculate(field, null, mVectorLengths,
-                                            field.partition.getPartitionManager().
-                    getTermStatsDict());
+            // Calculate document vector lengths.  We need an iterator for the 
+            // main merged dictionary for this.
+            long mdp = mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
+            if(mdp < 0) {
+                mdp = mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
+            }
+            
+            long mdsp = mDict.getFilePointer();
+            if(mdp >= 0) {
+                RandomAccessFile[] mPostRAF = new RandomAccessFile[mPostFiles.length];
+                for(int i = 0; i < mPostFiles.length; i++) {
+                    mPostRAF[i] = new RandomAccessFile(mPostFiles[i], "rw");
+                }
+                mergeHeader.vectorLengthOffset = mVectorLengths.getFilePointer();
+                mDict.seek(mdp);
+                DiskDictionary newMainDict = new DiskDictionary(entryFactory,
+                                                                new StringNameHandler(),
+                                                                mDict, mPostRAF);
+                DocumentVectorLengths.calculate(info, 0,  newMainDict.iterator(),
+                                                mTermStats, mVectorLengths, 
+                                                field.partition.getPartitionManager().getTermStatsDict());
+                for(RandomAccessFile mprf : mPostRAF) {
+                    mprf.close();
+                }
+                
+            } else {
+                mergeHeader.vectorLengthOffset = -1;
+            }
 
             //
             // Now zip back and write the header.
-            long end = mDict.getFilePointer();
             mDict.seek(headerPos);
             mergeHeader.write(mDict);
-            mDict.seek(end);
+            mDict.seek(mdsp);
 
         }
     }

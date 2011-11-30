@@ -2,6 +2,7 @@ package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Stemmer;
+import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.util.CDateParser;
 import java.util.logging.Logger;
@@ -51,6 +52,8 @@ public abstract class Field {
                     + "doesn't make sense!", info.getName(), info.getType()));
         }
     }
+    
+    public abstract Dictionary getTermDictionary(boolean caseSensitive);
 
     public FieldInfo getInfo() {
         return info;

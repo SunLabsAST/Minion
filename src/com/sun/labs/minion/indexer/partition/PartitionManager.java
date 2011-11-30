@@ -137,8 +137,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     private TermStatsDiskDictionary termStatsDict;
 
-    private File currTSF;
-
     private int currTSN;
 
     /**
@@ -2739,7 +2737,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             File newTSF = makeTermStatsFile(newTSN);
             TermStatsDiskDictionary oldTSD = termStatsDict;
             termStatsDict = new TermStatsDiskDictionary(newTSN, newTSF, this);
-            currTSF = newTSF;
             currTSN = newTSN;
 
             //

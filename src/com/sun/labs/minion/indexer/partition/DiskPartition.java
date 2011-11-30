@@ -48,7 +48,6 @@ import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -590,7 +589,7 @@ public class DiskPartition extends Partition implements Closeable {
 
         //
         // If we're left with no partitions, we're done.
-        if(partCopy.size() == 0) {
+        if(partCopy.isEmpty()) {
             return null;
         }
 
@@ -689,7 +688,9 @@ public class DiskPartition extends Partition implements Closeable {
             // Get channels for the postings.
             OutputStream[] mPostStreams = new OutputStream[files.length - 1];
             PostingsOutput[] mPostOut = new PostingsOutput[files.length - 1];
+            File[] mPostFiles = new File[files.length-1];
             for(int i = 1; i < files.length; i++) {
+                mPostFiles[i-1] = files[i];
                 mPostStreams[i - 1] =
                         new BufferedOutputStream(new FileOutputStream(files[i]),
                                                  8192);
@@ -707,22 +708,27 @@ public class DiskPartition extends Partition implements Closeable {
                 dicts[i] = sortedParts[i].docDict;
                 mappers[i] = new DocEntryMapper(docIDStart[i], docIDMaps[i]);
             }
+            
+            int[][] docDictIDMaps = new int[dicts.length][1];
+            docDictIDMaps[0][0] = newMaxDocID;
 
             //
             // Merge the document dictionaries.  We'll need to remap the
             logger.fine("Merge document dictionary");
             mHeader.setDocDictOffset(mDictFile.getFilePointer());
-            dicts[0].merge(manager.getIndexDir(),
+            DiskDictionary.merge(manager.getIndexDir(),
                     new StringNameHandler(),
                            dicts,
                            mappers,
-                           fakeStart, null, mDictFile, mPostOut, true);
+                           fakeStart, 
+                           docDictIDMaps,
+                           mDictFile, mPostOut, true);
 
 
             mergeCustom(newPartNumber, mHeader,
                         sortedParts, null, newMaxDocID,
                         docIDStart, nUndel, docIDMaps, mDictFile,
-                        mPostOut);
+                        mPostFiles, mPostOut);
 
             long phoffset = mDictFile.getFilePointer();
             mHeader.write(mDictFile);
@@ -818,6 +824,7 @@ public class DiskPartition extends Partition implements Closeable {
                                int newMaxDocID, int[] docIDStart, int[] nUndel,
                                int[][] docIDMaps,
                                RandomAccessFile mDictFile,
+                               File[] mPostFiles,
                                PostingsOutput[] mPostOut)
             throws Exception {
         //

@@ -49,7 +49,7 @@ import java.util.logging.Logger;
 /**
  * A class to read and write the indexer's metafile.
  */
-public class MetaFile {
+public class MetaFile implements Iterable<FieldInfo> {
 
     protected static final Logger logger = Logger.getLogger(MetaFile.class.
             getName());
@@ -518,9 +518,13 @@ public class MetaFile {
      * @return an iterator for the field values in the meta file
      */
     public synchronized Iterator<FieldInfo> fieldIterator() {
-        return idToInfo.values().iterator();
+        return (new ArrayList(idToInfo.values())).iterator();
     }
 
+    public Iterator<FieldInfo> iterator() {
+        return fieldIterator();
+    }
+    
     /**
      * Adds a field to the field map.
      *
