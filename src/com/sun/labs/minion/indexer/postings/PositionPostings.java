@@ -50,6 +50,9 @@ public class PositionPostings implements Postings {
      */
     protected int[] freqs;
 
+    /**
+     * The positions of occurrence for these postings.
+     */
     protected int[] posns;
     
     protected Buffer idBuff;
@@ -254,63 +257,77 @@ public class PositionPostings implements Postings {
     public void write(PostingsOutput[] out, long[] offset, int[] size) throws java.io.IOException {
         
         //
-        // If we were collecting IDs during indexing, rather than appending
-        // postings during a merge, then encode the postings now.
-        if(ids != null && pos >= 0) {
-            WriteableBuffer idf = new ArrayBuffer(pos);
-            WriteableBuffer pb = new ArrayBuffer(pos);
-
-            int prevID = 0;
-            lastPosnOffset = 0;
-            int pp = 0;
-            
-            for(int i = 0; i < nIDs; i++) {
-                if(i > 0 && i % skipSize == 0) {
-                    addSkip(ids[i], (int) idf.position(), (int) pb.position());
-                }
-                idf.byteEncode(ids[i] - prevID);
-                idf.byteEncode(freqs[i]);
-                idf.byteEncode(pb.position() - lastPosnOffset);
-                lastPosnOffset = (int) pb.position();
-                prevID = ids[i];
-                int prevPosn = 0;
-                for(int j = 0; j < freqs[i]; j++, pp++) {
-                    pb.byteEncode(posns[pp] - prevPosn);
-                }
-            }
-            idBuff = idf;
-            posnBuff = pb;
-        }
+        // Encode the postings data that's in our arrays, if there is any.
+        encodeIDs();
         
         //
         // Encode the header data for the postings.
-        WriteableBuffer hBuff = new ArrayBuffer((nSkips + 1) * 4 + 16);
-
-        //
-        // Encode the number of IDs and the last ID
-        hBuff.byteEncode(nIDs);
-        hBuff.byteEncode(lastID);
-        hBuff.byteEncode(lastPosnOffset);
-
-        //
-        // Encode the skip table.
-        hBuff.byteEncode(nSkips);
-        int prevSkipID = 0;
-        int prevPos = 0;
-        for(int i = 0; i < nSkips; i++) {
-            hBuff.byteEncode(skipID[i] - prevSkipID);
-            hBuff.byteEncode(skipIDOffsets[i] - prevPos);
-            prevSkipID = skipID[i];
-            prevPos = skipIDOffsets[i];
-        }
-        
+        WriteableBuffer headerBuff = out[0].getTempBuffer();
+        encodeHeaderData(headerBuff);
 
         //
         // Write the buffers.
         offset[0] = out[0].position();
-        size[0] = out[0].write(new WriteableBuffer[]{hBuff, (WriteableBuffer) idBuff});
+        size[0] = out[0].write(new WriteableBuffer[]{headerBuff, (WriteableBuffer) idBuff});
         offset[1] = out[1].position();
         size[1] = out[1].write((WriteableBuffer) posnBuff);
+    }
+
+    protected void encodeIDs() {
+
+        if(idBuff == null) {
+            idBuff = new ArrayBuffer(nIDs * 2);
+            posnBuff = new ArrayBuffer(nIDs * 2);
+        }
+        if(idBuff.position() > 0) {
+            
+            //
+            // If there's data in the buffer already then we've already been
+            // called or we were appending, so we're done.
+            return;
+        }
+        WriteableBuffer wIDBuff = (WriteableBuffer) idBuff;
+        WriteableBuffer wPosnBuff = (WriteableBuffer) posnBuff;
+
+        int prevID = 0;
+        lastPosnOffset = 0;
+        int pp = 0;
+
+        for(int i = 0; i < nIDs; i++) {
+            if(i > 0 && i % skipSize == 0) {
+                addSkip(ids[i], (int) wIDBuff.position(), (int) wPosnBuff.position());
+            }
+            wIDBuff.byteEncode(ids[i] - prevID);
+            wIDBuff.byteEncode(freqs[i]);
+            wIDBuff.byteEncode(wPosnBuff.position() - lastPosnOffset);
+            lastPosnOffset = (int) wPosnBuff.position();
+            prevID = ids[i];
+            int prevPosn = 0;
+            for(int j = 0; j < freqs[i]; j++, pp++) {
+                wPosnBuff.byteEncode(posns[pp] - prevPosn);
+            }
+        }
+    }
+    
+    protected void encodeHeaderData(WriteableBuffer headerBuff) {
+        //
+        // Encode the number of IDs and the last ID
+        headerBuff.byteEncode(nIDs);
+        headerBuff.byteEncode(lastID);
+        headerBuff.byteEncode(lastPosnOffset);
+
+        //
+        // Encode the skip table.
+        headerBuff.byteEncode(nSkips);
+        int prevSkipID = 0;
+        int prevPos = 0;
+        for(int i = 0; i < nSkips; i++) {
+            headerBuff.byteEncode(skipID[i] - prevSkipID);
+            headerBuff.byteEncode(skipIDOffsets[i] - prevPos);
+            prevSkipID = skipID[i];
+            prevPos = skipIDOffsets[i];
+        }
+
     }
 
     public Type getType() {
@@ -494,10 +511,15 @@ public class PositionPostings implements Postings {
     }
 
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
-        if(features != null && features.positions) {
-            readPositions();
+        if(pos >= 0) {
+            return new UncompressedIterator(features);
+        } else {
+            logger.info(String.format("got negative? %d %d", pos, nIDs));
+            if(features != null && features.positions && posnBuff == null || posnBuff.position() == 0) {
+                readPositions();
+            }
+            return new CompressedIterator(features);
         }
-        return new CompressedIterator(features);
     }
 
     public void clear() {
@@ -509,6 +531,124 @@ public class PositionPostings implements Postings {
         lastID = 0;
         nSkips = 0;
         pos = -1;
+    }
+    
+    /**
+     * A postings iterator than can be used for in-memory data.
+     */
+    public class UncompressedIterator implements PostingsIteratorWithPositions {
+
+        int currPos = -1;
+
+        PostingsIteratorFeatures features;
+
+        private int ourN;
+        
+        private int currPosnPos = 0;
+        
+        private int lastFreq = 0;
+        
+        private boolean gettingPositions;
+        
+        private int[] currPosns;
+
+        /**
+         * The weighting function.
+         */
+        protected WeightingFunction wf;
+
+        /**
+         * A set of weighting components.
+         */
+        protected WeightingComponents wc;
+
+        public UncompressedIterator(PostingsIteratorFeatures features) {
+            this.features = features;
+            if(features != null) {
+                wf = features.getWeightingFunction();
+                wc = features.getWeightingComponents();
+                gettingPositions = features.getPositions();
+                if(gettingPositions) {
+                    currPosns = new int[4];
+                }
+            }
+            ourN = nIDs;
+        }
+
+        public int getN() {
+            return ourN;
+        }
+
+        public boolean next() {
+            boolean ret = ourN != 0 && ++currPos < ourN;
+            if(ret && gettingPositions) {
+                if(currPos > 0) {
+                    currPosnPos += freqs[currPos-1];
+                }
+            }
+            return ret;
+        }
+
+        public boolean findID(int id) {
+            currPos = Arrays.binarySearch(ids, 0, ourN, id);
+            boolean ret = false;
+            
+            if(currPos > 0) {
+                ret = true;
+            } else {
+                currPos = -currPos;
+            }
+            //
+            // Bummer:  if we're supposed to be getting postions, 
+            // we need to figure out where the offsets are.
+            if(gettingPositions) {
+                currPosnPos = 0;
+                for(int i = 0; i < currPos; i++) {
+                    currPosnPos += freqs[i];
+                }
+            }
+            return ret;
+        }
+
+        public void reset() {
+            currPos = -1;
+            currPosnPos = 0;
+        }
+
+        public int getID() {
+            return ids[currPos];
+        }
+
+        public int getFreq() {
+            return freqs[currPos];
+        }
+
+        public float getWeight() {
+            if(wf == null) {
+                return getFreq();
+            }
+            wc.fdt = getFreq();
+            return wf.termWeight(wc);
+        }
+
+        public int[] getPositions() {
+            int f = freqs[currPos];
+            if(f >= currPosns.length) {
+                currPosns = new int[f];
+            }
+            for(int i = 0; i < f; i++, currPosnPos++) {
+                currPosns[i] = posns[currPosnPos];
+            }
+            return currPosns;
+        }
+
+        public int compareTo(PostingsIterator other) {
+            return getID() - other.getID();
+        }
+
+        public PostingsIteratorFeatures getFeatures() {
+            return features;
+        }
     }
     
     /**
@@ -633,20 +773,24 @@ public class PositionPostings implements Postings {
                 ridf.position(pos);
 
                 if(id > -1) {
-                    ridf.byteDecode();
+                    //
+                    // We'll use the offset and id that were passed in, likely
+                    // from a skip table, and ignore the decode values for those
+                    // elements.
                     currID = id;
+                    currOffset = offset;
+                    ridf.byteDecode();
                     currFreq = ridf.byteDecode();
                     ridf.byteDecode();
-                    currOffset = offset;
                 } else {
                     currID += ridf.byteDecode();
                     currFreq = ridf.byteDecode();
-                    currOffset = ridf.byteDecode();
+                    currOffset += ridf.byteDecode();
                 }
             } else {
                 currID += ridf.byteDecode();
                 currFreq = ridf.byteDecode();
-                currOffset = ridf.byteDecode();
+                currOffset += ridf.byteDecode();
             }
 
             done = currID == lastID;
