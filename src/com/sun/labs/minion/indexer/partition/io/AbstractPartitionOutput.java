@@ -16,7 +16,6 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -348,9 +347,9 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     }
 
     public void cleanUp() {
-        partDictOut.clear();
+        partDictOut.cleanUp();
         if(termStatsDictOut != null) {
-            termStatsDictOut.clear();
+            termStatsDictOut.cleanUp();
         }
         if(postOut != null) {
             for(PostingsOutput po : postOut) {

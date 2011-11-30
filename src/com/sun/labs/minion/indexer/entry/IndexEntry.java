@@ -32,6 +32,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -90,6 +91,7 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
             return true;
         }
 
+        try {
         //
         // Possibly remap the data and get a buffer to write.
         post.remap(idMap);
@@ -103,6 +105,10 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         size = new int[out.length];
         post.write(out, offset, size);
         return true;
+        } catch (ArithmeticException ex) {
+            logger.log(Level.SEVERE, String.format("Error writing entry %s: %s", getName(), ex.getMessage()));
+            throw(ex);
+        }
     }
 
     /**

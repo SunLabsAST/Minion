@@ -102,8 +102,6 @@ import com.sun.labs.minion.retrieval.parser.StrictParser;
 import com.sun.labs.minion.retrieval.parser.TokenMgrError;
 import com.sun.labs.minion.retrieval.parser.WebParser;
 import com.sun.labs.minion.util.CDateParser;
-import com.sun.labs.minion.util.HeapDumper;
-import java.lang.management.MemoryUsage;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -256,11 +254,6 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     protected PartitionManager invFilePartitionManager;
 
     /**
-     * A blocking queue upon which we can put indexable things.
-     */
-    protected BlockingQueue<Indexable> indexingQueue;
-
-    /**
      * The pipelines to use for indexing.
      */
     protected Indexer[] indexers;
@@ -283,6 +276,10 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     private MemoryMXBean memBean;
 
     long hwMark;
+    
+    private Indexable flushDoc = new IndexableMap("SearchEngineImpl-flush");
+    
+    private Indexable closeDoc = new IndexableMap("SearchEngineImpl-close");
 
     /**
      * Gets a search engine implementation.
@@ -424,28 +421,20 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      *
      * @see com.sun.labs.minion.IndexConfig#IndexConfig
      */
-    public void index(String key, Map document)
-            throws SearchEngineException {
+    public void index(String key, Map document) throws SearchEngineException {
         index(new IndexableMap(key, document));
     }
 
-    public void index(Indexable doc)
-            throws SearchEngineException {
-        try {
-            if(indexers.length > 1) {
-                indexingQueue.put(doc);
-            } else {
-                indexers[0].index(doc);
-            }
-
-            checkDump();
-        } catch(InterruptedException ex) {
-            logger.log(Level.SEVERE, "Interrupted during index", ex);
-        }
+    public void index(Indexable doc) throws SearchEngineException {
+        int hash = doc.getKey().hashCode();
+        //
+        // Docs with the same key hash always go to the same indexer, so that 
+        // we get updates in the right order to the underlying index.
+        indexers[hash % indexers.length].index(doc);
+        checkDump();
     }
 
-    public void index(Document document)
-            throws SearchEngineException {
+    public void index(Document document) throws SearchEngineException {
         SimpleIndexer si = getSimpleIndexer();
         ((DocumentImpl) document).index(si);
         si.finish();
@@ -482,18 +471,14 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @throws com.sun.labs.minion.SearchEngineException If there is any error
      * flushing the in-memory data.
      */
-    public synchronized void flush()
-            throws SearchEngineException {
+    public synchronized void flush() throws SearchEngineException {
 
         if(invFilePartitionManager == null) {
             return;
         }
 
-        //
-        // One indexer will drain the queue, so let's do that.
-        indexers[0].flush();
-        for(int i = 1; i < indexers.length; i++) {
-            indexers[i].marshall();
+        for(Indexer indexer : indexers) {
+            indexer.index(flushDoc);
         }
 
         if(metaDataStore != null) {
@@ -1257,17 +1242,20 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         // Tell the partition managers that it's not OK to do any more merges.
         invFilePartitionManager.noMoreMerges();
 
-        if(indexers.length > 1) {
-            for(int i = 0; i < indexers.length; i++) {
-                indexers[i].finish();
-                try {
-                    indexingThreads[i].join();
-                } catch(InterruptedException ex) {
-                    logger.warning("Interrupted during join for pipeline " + i);
-                }
+        //
+        // Tell the indexers to close when they get to the end of their queues.
+        for(Indexer indexer : indexers) {
+            indexer.index(closeDoc);
+        }
+        
+        //
+        // Wait for the threads to finish.
+        for(int i = 0; i < indexers.length; i++) {
+            try {
+                indexingThreads[i].join();
+            } catch(InterruptedException ex) {
+                logger.warning(String.format("Interrupted during join for indexer %d", i));
             }
-        } else {
-            indexers[0].finish();
         }
 
         //
@@ -1484,11 +1472,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 (PipelineFactory) ps.getComponent(PROP_PIPELINE_FACTORY);
 
         //
-        // Make a queue for indexing.
+        // The indexing queue length for the threads.
         indexingQueueLength =
                 ps.getInt(PROP_INDEXING_QUEUE_LENGTH);
-        indexingQueue =
-                new ArrayBlockingQueue<Indexable>(indexingQueueLength);
 
         //
         // Make our indexing pipelines.
@@ -1507,18 +1493,14 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
         
         indexers = new Indexer[numIndexingThreads];
-        if(indexers.length == 1) {
-            indexers[0] = new Indexer(docsPerPartition);
-        } else {
-            //
-            // Start threads for the indexers.
-            indexingThreads = new Thread[indexers.length];
-            for(int i = 0; i < indexers.length; i++) {
-                indexers[i] = new Indexer(docsPerPartition);
-                indexingThreads[i] = new Thread(indexers[i]);
-                indexingThreads[i].setName("Indexer-" + i);
-                indexingThreads[i].start();
-            }
+        //
+        // Start threads for the indexers.
+        indexingThreads = new Thread[indexers.length];
+        for(int i = 0; i < indexers.length; i++) {
+            indexers[i] = new Indexer(docsPerPartition, indexingQueueLength);
+            indexingThreads[i] = new Thread(indexers[i]);
+            indexingThreads[i].setName("Indexer-" + i);
+            indexingThreads[i].start();
         }
         
         //
@@ -1580,22 +1562,26 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     private class Indexer implements Runnable, SimpleIndexer {
 
         private InvFileMemoryPartition part;
+        
+        private BlockingQueue<Indexable> indexingQueue;
 
         private boolean finished;
 
-        private boolean runningInThread;
-
+        private boolean flushRequested;
+        
         private String key;
         
-        private int nIndexed = 0;
+        private int nIndexed;
         
-        private int docsPerPart = -1;
+        private int docsPerPart;
         
         public Indexer() {
+            this(-1, 2);
         }
         
-        public Indexer(int docsPerPart) {
+        public Indexer(int docsPerPart, int queueSize) {
             this.docsPerPart = docsPerPart;
+            indexingQueue = new ArrayBlockingQueue<Indexable>(queueSize);
             try {
                 part = mpPool.take();
                 part.start();
@@ -1603,7 +1589,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 throw new IllegalStateException("Error getting memory partition");
             }
         }
-
+        
         public int getDocsPerPart() {
             return docsPerPart;
         }
@@ -1613,38 +1599,61 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
 
         public void run() {
-            runningInThread = true;
             while(!finished) {
                 try {
-                    index(indexingQueue.poll(100,
-                                             TimeUnit.MILLISECONDS));
+                    Indexable doc = indexingQueue.poll(100, TimeUnit.MILLISECONDS);
+                    
+                    //
+                    // Process a flush request.
+                    if(doc == flushDoc) {
+                        marshall();
+                        continue;
+                    }
+                    
+                    //
+                    // We're done.  Flush and return.
+                    if(doc == closeDoc) {
+                        marshall();
+                        break;
+                    }
+                    
+                    //
+                    // Regular kind of document.
+                    if(doc != null) {
+                        indexInternal(doc);
+                        if(docsPerPart > 0 && nIndexed == docsPerPart) {
+                            marshall();
+                        }
+                    }
                 } catch(InterruptedException ex) {
                     return;
                 }
             }
-            flush();
         }
-
+        
         public void index(Indexable doc) {
-            if(doc != null) {
-                if(part == null) {
-                    throw new IllegalStateException("Can't index without a partition");
-                }
-                part.index(doc);
-                nIndexed++;
-                if(docsPerPart > 0 && nIndexed == docsPerPart) {
-                    marshall();
-                    nIndexed = 0;
-                }
+            try {
+                indexingQueue.put(doc);
+//                if(!indexingQueue.offer(doc, 5, TimeUnit.SECONDS)) {
+//                    logger.log(Level.SEVERE, String.format("Unable to put %s on indexing queue for %s", 
+//                            doc.getKey(),
+//                            Thread.currentThread().getName()));
+//                }
+            } catch(InterruptedException ex) {
+                Logger.getLogger(SearchEngineImpl.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
 
-        public void flush() {
-            List<Indexable> l = new ArrayList<Indexable>();
-            indexingQueue.drainTo(l);
-            for(Indexable doc : l) {
-                index(doc);
+        public void indexInternal(Indexable doc) {
+            if(part == null) {
+                throw new IllegalStateException("Can't index without a partition");
             }
+            part.index(doc);
+            nIndexed++;
+        }
+        
+        public void flush() {
+            flushRequested = true;
         }
 
         public void purge() {
@@ -1659,17 +1668,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             } catch(InterruptedException ex) {
                 logger.log(Level.SEVERE, String.format("Error getting memory partition"), ex);
             }
+            nIndexed = 0;
         }
 
         public void finish() {
             finished = true;
-
-            //
-            // If we're being used as a simple indexer, then we need to dump
-            // our data.
-            if(!runningInThread) {
-                marshaller.marshall(part);
-            }
         }
 
         public void indexDocument(Indexable doc) throws SearchEngineException {

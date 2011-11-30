@@ -44,7 +44,6 @@ import java.util.logging.Logger;
 /**
  * An implementation of the Document interface for a search engine.
  *
- * @author Stephen Green <stephen.green@sun.com>
  * @see com.sun.labs.minion.Document
  */
 public class DocumentImpl implements Document {
@@ -256,11 +255,11 @@ public class DocumentImpl implements Document {
 
         //
         // Process the saved fields.
-//        for(Map.Entry<String, List> ent : savedFields.entrySet()) {
-//            for(Object o : ent.getValue()) {
-//                ((SyncPipelineImpl) si).addFieldInternal(ent.getKey(), o);
-//            }
-//        }
+        for(Map.Entry<String, List> ent : savedFields.entrySet()) {
+            for(Object o : ent.getValue()) {
+                si.addField(ent.getKey(), new Object[] {o});
+            }
+        }
 
         //
         // Process the indexed and vectored fields.

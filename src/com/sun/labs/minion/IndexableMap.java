@@ -94,5 +94,9 @@ public class IndexableMap implements Indexable {
     public Map<String, Object> getMap() {
         return map;
     }
-    
+
+    @Override
+    public String toString() {
+        return "IndexableMap{" + "key=" + key + '}';
+    }
 }

@@ -304,7 +304,14 @@ public class PositionPostings implements Postings {
             int prevPosn = 0;
             for(int j = 0; j < freqs[i]; j++, pp++) {
                 int currPosn = posns[pp];
+                try {
                 wPosnBuff.byteEncode(currPosn - prevPosn);
+                } catch (ArithmeticException ex) {
+                    logger.log(Level.SEVERE, String.format("Error encoding position %d (prev %d) at %d (numposns: %d) for doc %d", 
+                            currPosn, prevPosn, 
+                            pp, posPos, prevID));
+                    throw ex;
+                }
                 prevPosn = currPosn;
             }
         }

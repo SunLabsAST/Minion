@@ -30,6 +30,7 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.util.StopWatch;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -88,10 +89,12 @@ public abstract class MemoryPartition extends Partition {
         partOut.setKeys(docDict.getKeys());
         
         long dur = System.currentTimeMillis() - startIndexTime;
-        logger.info(String.format("Indexing %s %d, %d docs took %d ms", 
-                getPartitionName(),
-                partOut.getPartitionNumber(),
-                docDict.size(), dur));
+        if(logger.isLoggable(Level.FINE)) {
+            logger.fine(String.format("Indexing %s %d, %d docs took %d ms",
+                    getPartitionName(),
+                    partOut.getPartitionNumber(),
+                    docDict.size(), dur));
+        }
         
         PartitionHeader partHeader = partOut.getPartitionHeader();
         partHeader.setPostingsChannelNames(getPostingsChannelNames());
@@ -139,10 +142,12 @@ public abstract class MemoryPartition extends Partition {
         partDictOut.position(pos);
         
         sw.stop();
-        logger.info(String.format("Marshalled %s %d, %d docs took %dms",
-                getPartitionName(),
-                partOut.getPartitionNumber(),
-                docDict.size(), sw.getTime()));
+        if(logger.isLoggable(Level.FINE)) {
+            logger.fine(String.format("Marshalled %s %d, %d docs took %dms",
+                    getPartitionName(),
+                    partOut.getPartitionNumber(),
+                    docDict.size(), sw.getTime()));
+        }
         return partOut;
 
     }
