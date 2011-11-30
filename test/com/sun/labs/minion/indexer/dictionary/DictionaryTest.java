@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.entry.Entry;
@@ -267,43 +263,21 @@ public class DictionaryTest {
 
     @Test
     public void testDiskDictionaryGetFailure() throws Exception {
-        DiskDictionary dd = makeAndGet(shuffleList);
+        int nbad = Math.max((int) (shuffleList.size() * 0.1), 
+                1000);
+        DiskDictionary dd = makeAndGet(shuffleList.subList(nbad, shuffleList.size()));
         NanoWatch nw = new NanoWatch();
         nw.start();
-        int nl = 0;
-        for(int i = 0; i < wordList.size(); i++) {
-            String w = wordList.get(i);
-            String mid;
-            if(i < wordList.size() - 1) {
-                String wn = wordList.get(i+1);
-                mid = middle(w, wn);
-            } else {
-                mid = w + "z";
-            }
-            if(mid != null) {
-            Entry e = dd.get(mid);
-            assertNull(String.format("Had %s, next: %s requested %s,  got %s", w, mid, e), e);
-            nl++;
-            }
+        for(String b : shuffleList.subList(0, nbad)) {
+            Entry e = dd.get(b);
+            assertNull(String.format("Requested %s, got %s", b, e), e);
         }
         nw.stop();
-        logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", nl,
-                                  nw.getTimeMillis(), nw.getTimeMillis() / nl));
+        logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", nbad,
+                                  nw.getTimeMillis(), nw.getTimeMillis() / nbad));
         dd.dictFile.close();
     }
 
-    private String middle(String s1, String s2) {
-        StringBuilder ret = new StringBuilder();
-        for(int i = 0; i < s1.length() && i < s2.length(); i++) {
-            ret.append(i % 2 == 0 ? s1.charAt(i) : s2.charAt(i));
-       }
-        String mid = ret.toString();
-        if(mid.equals(s1) || mid.equals(s2)) {
-            return null;
-        }
-        return ret.toString();
-    }
-    
     private ReadableBuffer encodeDict(List<String> l) {
         ArrayBuffer b = new ArrayBuffer(l.size() *4);
         for(String w : l) {
