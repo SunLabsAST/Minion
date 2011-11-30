@@ -325,8 +325,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         header.fieldID = info.getID();
         header.maxDocID = maxID;
         
-        boolean trace = info.getName().equals("published");
-
         //
         // The sorted entries from each of the dictionaries.
         IndexEntry[][] sortedEntries = new IndexEntry[Type.values().length][];
@@ -405,9 +403,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     encoder = new StringNameHandler();
             }
 
-            if(trace) {
-                logger.info(String.format("dump: %s", type));
-            }
             header.dictOffsets[ord] = fieldDictFile.getFilePointer();
             sortedEntries[ord] = dicts[ord].dump(path, encoder,
                                             fieldDictFile, postOut,

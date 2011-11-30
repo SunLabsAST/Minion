@@ -674,8 +674,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
             boolean foundDict = false;
 
             for(int i = 0; i < bundles.length; i++) {
-                mDicts[i] = bundles[i].dicts[ord];
-                if(mDicts[i] != null) {
+                
+                //
+                // Handle bundles from empty fields.
+                if (bundles[i] == null) {
+                    mDicts[i] = null;
+                } else {
+                    mDicts[i] = bundles[i].dicts[ord];
+                }
+                if (mDicts[i] != null) {
                     foundDict = true;
                 }
             }
@@ -742,12 +749,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
         }
 
-        DiskBiGramDictionary[] bgDicts =
-                new DiskBiGramDictionary[bundles.length];
+        DiskBiGramDictionary[] bgDicts = new DiskBiGramDictionary[bundles.length];
         DiskBiGramDictionary bgMerger = null;
         for(int i = 0; i < bundles.length; i++) {
-            bgDicts[i] = bundles[i].tokenBigrams;
-            if(bgDicts[i] != null) {
+            if (bundles[i] == null) {
+                bgDicts[i] = null;
+            } else {
+                bgDicts[i] = bundles[i].tokenBigrams;
+            }
+            if (bgDicts[i] != null) {
                 bgMerger = bgDicts[i];
             }
         }
@@ -767,14 +777,20 @@ public class DiskDictionaryBundle<N extends Comparable> {
         bgMerger = null;
 
         for(int i = 0; i < bundles.length; i++) {
-            bgDicts[i] = bundles[i].savedBigrams;
+            if (bundles[i] == null) {
+                bgDicts[i] = null;
+            } else {
+                bgDicts[i] = bundles[i].savedBigrams;
+            }
             if(bgDicts[i] != null) {
                 bgMerger = bgDicts[i];
             }
         }
 
-        int[][] savedValueIDMap = entryIDMaps[Type.RAW_SAVED.ordinal()]
-                != null ? entryIDMaps[Type.RAW_SAVED.ordinal()] : entryIDMaps[Type.UNCASED_SAVED.
+        int[][] savedValueIDMap = 
+                entryIDMaps[Type.RAW_SAVED.ordinal()] != null ? 
+                entryIDMaps[Type.RAW_SAVED.ordinal()] : 
+                entryIDMaps[Type.UNCASED_SAVED.
                 ordinal()];
         if(bgMerger != null) {
             mergeHeader.savedBGOffset = mergeState.dictRAF.getFilePointer();

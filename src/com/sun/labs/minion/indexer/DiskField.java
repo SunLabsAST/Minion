@@ -248,14 +248,19 @@ public class DiskField extends Field {
 
     public static void merge(MergeState mergeState, DiskField[] fields)
             throws java.io.IOException {
-
-
+        
         DiskDictionaryBundle[] bundles = new DiskDictionaryBundle[fields.length];
         for (int i = 0; i < fields.length; i++) {
-            bundles[i] = fields[i].bundle;
+            //
+            // We can encounter a partition that has no instances of a field, 
+            // but we need to account for that!
+            if (fields[i] == null) {
+                bundles[i] = null;
+            } else {
+                bundles[i] = fields[i].bundle;
+            }
         }
         DiskDictionaryBundle.merge(mergeState, bundles);
-
     }
 
     /**

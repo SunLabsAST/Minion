@@ -637,7 +637,7 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // The number of documents in each of the partitions, excluding
             // documents that have been deleted.
-            int[] nUndel = new int[mergeState.partitions.length];
+            mergeState.nUndel = new int[mergeState.partitions.length];
 
             //
             // Some partition stats for our merged partition.  We'll be
@@ -664,20 +664,20 @@ public class DiskPartition extends Partition implements Closeable {
                 // interface or something similar.
                 mergeState.docIDMaps[i] =
                         d.getDocIDMap((ReadableBuffer) delMaps.get(i).delMap);
-                nUndel[i] =
+                mergeState.nUndel[i] =
                         mergeState.docIDMaps[i] == null ? d.header.getnDocs()
                         : mergeState.docIDMaps[i][0];
                 fakeStart[i] = 1;
 
-                mergeState.header.setnDocs(mergeState.header.getnDocs() + nUndel[i]);
+                mergeState.header.setnDocs(mergeState.header.getnDocs() + mergeState.nUndel[i]);
 
                 //
                 // We need to figure out the new starting sequence numbers for
                 // each partition.
                 if(i > 0) {
-                    mergeState.docIDStart[i] = mergeState.docIDStart[i - 1] + nUndel[i - 1];
+                    mergeState.docIDStart[i] = mergeState.docIDStart[i - 1] + mergeState.nUndel[i - 1];
                 }
-                mergeState.maxDocID += nUndel[i];
+                mergeState.maxDocID += mergeState.nUndel[i];
             }
 
             //

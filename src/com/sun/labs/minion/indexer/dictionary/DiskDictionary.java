@@ -1324,6 +1324,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         for(int i = 0; i < dicts.length; i++) {
             DiskDictionary dd = dicts[i];
             if(dd == null) {
+                idMaps[i] = new int[1];
                 continue;
             }
 
@@ -1350,10 +1351,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         if(mappers != null) {
             idMaps[0] = new int[postIDMaps[0][0] + 1];
         }
-        if (logger.isLoggable(Level.FINE)) {
-            Logger.getLogger(DictionaryWriter.class.getName()).setLevel(Level.FINE);
-        }
-
 
         //
         // We'll need a writer for the merged dictionary.
@@ -1496,11 +1493,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // Finish of the writing of the entries to the merged dictionary.
         dw.finish(mDictFile);
 
-        logger.fine(String.format("Merged dictionary has %d entries", dw.dh.size));
-
-        if (logger.isLoggable(Level.FINE)) {
-            Logger.getLogger(DictionaryWriter.class.getName()).setLevel(Level.INFO);
-        }
         //
         // Return the maps from old to new IDs.
         return idMaps;
