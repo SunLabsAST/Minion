@@ -112,7 +112,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
     /**
      * An array of the sets of entries saved per document at indexing time.
      */
-    private List[] dv;
+    private List[] dv = new List[128];
 
     private EntryFactory vectorEntryFactory = new EntryFactory(Postings.Type.ID_FREQ);
 

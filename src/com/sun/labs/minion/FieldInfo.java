@@ -218,7 +218,7 @@ public class FieldInfo implements Cloneable, Configurable {
      * can be stored in the dictionary.
      */
     public enum Type {
-        STRING, INTEGER, FLOAT, DATE;
+        NONE, STRING, INTEGER, FLOAT, DATE;
     }
     
     /**
@@ -239,7 +239,7 @@ public class FieldInfo implements Cloneable, Configurable {
     @ConfigComponent(type=com.sun.labs.minion.pipeline.PipelineFactory.class, mandatory=false)
     public static final String PROP_PIPELINE_FACTORY = "pipelineFactory";
 
-    private PipelineFactory pipelneFactory;
+    private PipelineFactory pipelineFactory;
 
     /**
      * The name of this field.
@@ -262,7 +262,7 @@ public class FieldInfo implements Cloneable, Configurable {
     private Type type;
 
     public FieldInfo() {
-        this(0, null, getDefaultAttributes(), Type.STRING);
+        this(0, null, getDefaultAttributes(), Type.NONE);
     }
 
     /**
@@ -272,7 +272,7 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param name The name of the field.
      */
     public FieldInfo(String name) {
-        this(0, name, getDefaultAttributes(), Type.STRING);
+        this(0, name, getDefaultAttributes(), Type.NONE);
     }
 
     /**
@@ -283,7 +283,7 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param name The name of the field.
      */
     public FieldInfo(int id, String name) {
-        this(id, name, getDefaultAttributes(), Type.STRING);
+        this(id, name, getDefaultAttributes(), Type.NONE);
     }
 
     /**
@@ -295,9 +295,8 @@ public class FieldInfo implements Cloneable, Configurable {
      * of this set, so it is safe to modify or reuse the attributes.
      *
      */
-    public FieldInfo(String name,
-            EnumSet<Attribute> attributes) {
-        this(0, name, attributes, Type.STRING);
+    public FieldInfo(String name, EnumSet<Attribute> attributes) {
+        this(0, name, attributes, Type.NONE);
     }
 
     /**
@@ -310,9 +309,7 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param type A type that will be used if the attributes indicate that the
      * field is saved.
      */
-    public FieldInfo(String name,
-            EnumSet<Attribute> attributes,
-            Type type) {
+    public FieldInfo(String name, EnumSet<Attribute> attributes, Type type) {
         this(0, name, attributes, type);
     }
 
@@ -343,6 +340,7 @@ public class FieldInfo implements Cloneable, Configurable {
         this.type = type;
     }
 
+    @Override
     public FieldInfo clone() {
         FieldInfo result = null;
         try {
@@ -355,7 +353,7 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     /**
-     * Gets the field's name.
+     * Gets the name of the field.
      * @return the name of the field. Note that field names are case insensitive.
      */
     public String getName() {
@@ -449,12 +447,19 @@ public class FieldInfo implements Cloneable, Configurable {
 
     }
 
+    public void setPipelineFactory(PipelineFactory pipelineFactory) {
+        this.pipelineFactory = pipelineFactory;
+    }
+
     public Pipeline getPipeline() {
-        return pipelneFactory.getPipeline();
+        if(pipelineFactory == null) {
+            return null;
+        }
+        return pipelineFactory.getPipeline();
     }
 
     public HLPipeline getHLPipeline() {
-        return pipelneFactory.getHLPipeline();
+        return pipelineFactory.getHLPipeline();
     }
 
     /**
@@ -490,7 +495,7 @@ public class FieldInfo implements Cloneable, Configurable {
         name = ps.getInstanceName();
         attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(PROP_ATTRIBUTES);
         type = (Type) ps.getEnum(PROP_TYPE);
-        pipelneFactory = (PipelineFactory) ps.getComponent(PROP_PIPELINE_FACTORY);
+        pipelineFactory = (PipelineFactory) ps.getComponent(PROP_PIPELINE_FACTORY);
     }
 
     /**
@@ -503,9 +508,9 @@ public class FieldInfo implements Cloneable, Configurable {
         try {
             type = Enum.valueOf(Type.class, typeString.toUpperCase());
         } catch(IllegalArgumentException iae) {
-            logger.severe(String.format("Unknown type for field %s: %s, defaulting to STRING",
+            logger.severe(String.format("Unknown type for field %s: %s, defaulting to NONE",
                     this.name, typeString));
-            type = Type.STRING;
+            type = Type.NONE;
         }
     }
 

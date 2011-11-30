@@ -34,6 +34,7 @@ import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.pipeline.Token;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,7 +91,9 @@ public class InvFileMemoryPartition extends MemoryPartition {
         dockey = docDict.put(key);
 
         for(MemoryField field : fields) {
-            field.startDocument(key);
+            if(field != null) {
+                field.startDocument(key);
+            }
         }
     }
 
@@ -108,9 +111,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         }
 
         if(fid >= fields.length) {
-            MemoryField[] temp = new MemoryField[fid * 2];
-            System.arraycopy(fields, 0, temp, 0, fields.length);
-            fields = temp;
+            fields = Arrays.copyOf(fields, fid * 2);
         }
         if(fields[fid] == null) {
             fields[fid] = new MemoryField(fi, null);

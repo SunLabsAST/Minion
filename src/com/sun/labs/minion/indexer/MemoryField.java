@@ -35,9 +35,12 @@ public class MemoryField extends Field {
 
     public MemoryField(FieldInfo info, EntryFactory factory) {
         super(info);
+        logger.info(String.format("Making field for %s", info));
         dicts = new MemoryDictionaryBundle<Comparable>(this, factory);
         pipeline = info.getPipeline();
-        pipeline.addStage(new FieldStage());
+        if(pipeline != null) {
+            pipeline.addStage(new FieldStage());
+        }
     }
 
     public void startDocument(String key) {
@@ -52,7 +55,7 @@ public class MemoryField extends Field {
      */
     public void addData(int docID, Object data) {
         if(saved) {
-            dicts.save(docID, data);
+            save(docID, data);
         }
         
         if(pipeline != null) {

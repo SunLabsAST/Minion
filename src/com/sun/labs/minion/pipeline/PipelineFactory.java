@@ -49,12 +49,12 @@ public class PipelineFactory implements Configurable {
     @ConfigComponentList(type = com.sun.labs.minion.pipeline.Stage.class)
     public static final String PROP_STAGES = "stages";
 
-    private List stages;
+    private List<Stage> stages;
 
     @ConfigComponentList(type = com.sun.labs.minion.pipeline.Stage.class)
     public static final String PROP_HL_STAGES = "hl_stages";
 
-    private List hlStages;
+    private List<Stage> hlStages;
 
     /**
      * The manager that configured this factory.
@@ -82,6 +82,20 @@ public class PipelineFactory implements Configurable {
      */
     public HLPipeline getHLPipeline() {
         return new HLPipelineImpl(getPipeline(hlStages));
+    }
+
+    /**
+     * Adds a stage to the pipelines that this factory will generate.  Note that
+     * new instances of this stage will be generated when the factory method is
+     * called.
+     *
+     * @param s the stage to add to the factory.
+     */
+    public void addStage(Stage s) {
+        if(stages == null) {
+            stages = new ArrayList<Stage>();
+        }
+        stages.add(s);
     }
 
     /**
@@ -119,8 +133,8 @@ public class PipelineFactory implements Configurable {
 
     public void newProperties(PropertySheet ps) throws PropertyException {
         cm = ps.getConfigurationManager();
-        stages = ps.getComponentList(PROP_STAGES);
-        hlStages = ps.getComponentList(PROP_HL_STAGES);
+        stages = (List<Stage>) ps.getComponentList(PROP_STAGES);
+        hlStages = (List<Stage>) ps.getComponentList(PROP_HL_STAGES);
     }
 
 }
