@@ -1608,7 +1608,6 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 if(part == null) {
                     throw new IllegalStateException("Can't index without a partition");
                 }
-                logger.info(String.format("%s index %s", Thread.currentThread().getName(), doc.getKey()));
                 part.index(doc);
                 nIndexed++;
                 if(docsPerPart > 0 && nIndexed == docsPerPart) {
