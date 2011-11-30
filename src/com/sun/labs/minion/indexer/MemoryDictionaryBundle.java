@@ -71,7 +71,17 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         /**
          * A document vector with the lowercased, stemmed tokens from the document.
          */
-        STEMMED_VECTOR,}
+        STEMMED_VECTOR,
+        /**
+         * A dictionary for the token bigrams.
+        */
+        TOKEN_BIGRAMS,
+        /**
+         * A dictionary for saved value bigrams.
+        */
+        SAVED_VALUE_BIGRAMS
+    }
+    
     /**
      * The dictionaries making up this bundle, indexed by the ordinal of one of the
      * {@link Types}.
@@ -327,7 +337,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         // are pretty much the same.
         for(Type type : Type.values()) {
             int ord = type.ordinal();
-            if(dicts[ord] == null) {
+            if(dicts[ord] == null && type != Type.TOKEN_BIGRAMS && type != Type.SAVED_VALUE_BIGRAMS) {
                 header.dictOffsets[ord] = -1;
                 continue;
             }
@@ -388,6 +398,49 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
                     partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                     partOut.setPostingsIDMap(entryIDMaps[Type.STEMMED_TOKENS.ordinal()]);
+                case TOKEN_BIGRAMS:
+                    IndexEntry[] sortedTokens =
+                            sortedEntries[Type.CASED_TOKENS.ordinal()] != null
+                            ? sortedEntries[Type.CASED_TOKENS.ordinal()]
+                            : sortedEntries[Type.UNCASED_TOKENS.ordinal()];
+
+                    //
+                    // We'll create this one on the fly.
+                    if(sortedTokens != null) {
+                        MemoryBiGramDictionary tbg = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
+                        dicts[ord] = tbg;
+                        for(IndexEntry e : sortedTokens) {
+                            tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
+                        }
+                        partOut.setDictionaryEncoder(new StringNameHandler());
+                        partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
+                        partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+                        partOut.setPostingsIDMap(null);
+                    } else {
+                        logger.info(String.format("null tokens for %s", field.info.getName()));
+                        header.dictOffsets[ord] = -1;
+                        continue;
+                    }
+                    break;
+                case SAVED_VALUE_BIGRAMS:
+                    if(field.info.getType() == FieldInfo.Type.STRING) {
+                        MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
+                                new EntryFactory(Postings.Type.ID_FREQ));
+                        dicts[ord] = sbg;
+                        for(IndexEntry e : sortedEntries[Type.RAW_SAVED.ordinal()]) {
+                            sbg.add(CharUtils.toLowerCase(e.getName().toString()),
+                                    e.getID());
+                        }
+                        partOut.setDictionaryEncoder(new StringNameHandler());
+                        partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
+                        partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+                        partOut.setPostingsIDMap(null);
+                    } else {
+                        logger.info(String.format("null saved for %s", field.info.getName()));
+                        header.dictOffsets[ord] = -1;
+                        continue;
+                    }
+                    break;
                 default:
                     partOut.setDictionaryEncoder(new StringNameHandler());
             }
@@ -395,48 +448,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             header.dictOffsets[ord] = partDictOut.position();
             sortedEntries[ord] = dicts[ord].dump(partOut);
         }
-
-        //
-        // If we have tokens or saved values, then output any bigrams that we
-        // need for accelerating wildcards.
-        IndexEntry[] sortedTokens =
-                sortedEntries[Type.CASED_TOKENS.ordinal()] != null
-                ? sortedEntries[Type.CASED_TOKENS.ordinal()]
-                : sortedEntries[Type.UNCASED_TOKENS.ordinal()];
-
-        if(sortedTokens != null) {
-            MemoryBiGramDictionary tbg = new MemoryBiGramDictionary(
-                    new EntryFactory(Postings.Type.ID_FREQ));
-            for(IndexEntry e : sortedTokens) {
-                tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
-            }
-            header.tokenBGOffset = partDictOut.position();
-            partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
-            partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
-            partOut.setPostingsIDMap(null);
-            partOut.setDictionaryEncoder(new StringNameHandler());
-            tbg.dump(partOut);
-        } else {
-            header.tokenBGOffset = -1;
-        }
-
-        if(field.info.getType() == FieldInfo.Type.STRING) {
-            MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
-                    new EntryFactory(Postings.Type.ID_FREQ));
-            for(IndexEntry e : sortedEntries[Type.RAW_SAVED.ordinal()]) {
-                sbg.add(CharUtils.toLowerCase(e.getName().toString()),
-                        e.getID());
-            }
-            header.savedBGOffset = partDictOut.position();
-            partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
-            partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
-            partOut.setPostingsIDMap(null);
-            partOut.setDictionaryEncoder(new StringNameHandler());
-            sbg.dump(partOut);
-        } else {
-            header.savedBGOffset = -1;
-        }
-
 
         if(field.saved) {
 

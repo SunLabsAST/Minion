@@ -52,18 +52,6 @@ class FieldHeader {
     protected long[] dictOffsets = new long[MemoryDictionaryBundle.Type.values().length];
 
     /**
-     * The offset of the start of the bigram dictionary for the tokens in the
-     * field, if any.
-     */
-    protected long tokenBGOffset = -1;
-
-    /**
-     * The offset of the start of the bigram dictionary for the saved values in the
-     * field, if any.
-     */
-    protected long savedBGOffset = -1;
-
-    /**
      * Where we'll find the buffer that maps from document ID to a position
      * in the doc-to-value data.
      */
@@ -104,8 +92,6 @@ class FieldHeader {
         for(int i = 0; i < n; i++) {
             dictOffsets[i] = f.readLong();
         }
-        tokenBGOffset = f.readLong();
-        savedBGOffset = f.readLong();
         dtvPosOffset = f.readLong();
         dtvOffset = f.readLong();
         vectorLengthOffset = f.readLong();
@@ -122,8 +108,6 @@ class FieldHeader {
         for(int i = 0; i < dictOffsets.length; i++) {
             f.writeLong(dictOffsets[i]);
         }
-        f.writeLong(tokenBGOffset);
-        f.writeLong(savedBGOffset);
         f.writeLong(dtvPosOffset);
         f.writeLong(dtvOffset);
         f.writeLong(vectorLengthOffset);
@@ -136,8 +120,6 @@ class FieldHeader {
         for(int i = 0; i < dictOffsets.length; i++) {
             b.byteEncode(dictOffsets[i], 8);
         }
-        b.byteEncode(tokenBGOffset, 8);
-        b.byteEncode(savedBGOffset, 8);
         b.byteEncode(dtvPosOffset, 8);
         b.byteEncode(dtvOffset, 8);
         b.byteEncode(vectorLengthOffset, 8);
@@ -148,8 +130,7 @@ class FieldHeader {
     public String toString() {
         return "FieldHeader{\n " + "fieldID=" + fieldID + "\n maxDocID="
                 + maxDocID + "\n dictOffsets=" + Arrays.toString(dictOffsets)
-                + "\n tokenBGOffset=" + tokenBGOffset + "\n savedBGOffset="
-                + savedBGOffset + "\n dtvPosOffset=" + dtvPosOffset
+                + "\n dtvPosOffset=" + dtvPosOffset
                 + "\n dtvOffset=" + dtvOffset + "\n vectorLengthOffset="
                 + vectorLengthOffset + "\n}";
     }
