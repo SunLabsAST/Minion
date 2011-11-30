@@ -75,6 +75,7 @@ import com.sun.labs.minion.indexer.DiskField;
 import java.io.File;
 import java.net.URL;
 import com.sun.labs.minion.indexer.MetaFile;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.command.CommandInterface;
@@ -654,6 +655,32 @@ public class QueryTest extends SEMain {
                 return "[term] [term...] - Get morphological variants for one or more terms";
             }
         });
+        
+        shell.add("keys", "Info", new CommandInterface() {
+
+            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+                List<DiskPartition> parts = manager.getActivePartitions();
+                if(strings.length == 1) {
+                    for(DiskPartition p : parts) {
+                        listKeys(p);
+                    }
+                } else {
+                    for(int i = 1; i < strings.length; i++) {
+                        int pn = Integer.parseInt(strings[i]);
+                        for(DiskPartition p : parts) {
+                            if(p.getPartitionNumber() == pn) {
+                                listKeys(p);
+                            }
+                        }
+                    }
+                }
+                return "";
+            }
+
+            public String getHelp() {
+                return "[pn] [pn]... - List the keys in specified partitions";
+            }
+        });
 
         shell.add("rts", "Maintenance", new CommandInterface() {
 
@@ -894,6 +921,13 @@ public class QueryTest extends SEMain {
                 return "field dockey - Show the document vector for a given field in a given document";
             }
         });
+    }
+    
+    private void listKeys(DiskPartition p) {
+        DiskDictionary<String> dd = p.getDocumentDictionary();
+        for(Entry e : dd) {
+            shell.out.println(e.getName());
+        }
     }
 
     private void dumpDocVectorByWeight(DocumentVector dv) {
