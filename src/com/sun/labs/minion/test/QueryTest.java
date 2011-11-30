@@ -62,6 +62,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.FieldValue;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
+import com.sun.labs.minion.ParseException;
 import com.sun.labs.minion.Passage;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.PassageHighlighter;
@@ -92,6 +93,7 @@ import com.sun.labs.minion.lexmorph.disambiguation.Unsupervised;
 import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
 import com.sun.labs.util.LabsLogFormatter;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -168,9 +170,9 @@ public class QueryTest extends SEMain {
 
     protected long totalTime, nQueries;
 
-    protected int grammar = Searcher.GRAMMAR_STRICT;
+    protected Searcher.Grammar grammar = Searcher.Grammar.STRICT;
 
-    protected int queryOp = Searcher.OP_AND;
+    protected Searcher.Operator queryOp = Searcher.Operator.AND;
 
     protected boolean ttyInput = true;
 
@@ -426,6 +428,8 @@ public class QueryTest extends SEMain {
                 ResultSet r = searcher.search(q, sortSpec,
                                               queryOp, grammar);
                 displayResults(r);
+            } catch (ParseException pe) {
+                logger.log(Level.WARNING, "", pe);
             } catch(SearchEngineException se) {
                 logger.log(Level.SEVERE, "Error running search", se);
             }
@@ -462,13 +466,12 @@ public class QueryTest extends SEMain {
                 logger.log(Level.SEVERE, "Error finding all terms", see);
             }
         } else if(q.startsWith(":qop")) {
-            String op = q.substring(q.indexOf(' ') + 1).trim();
-            if(op.equalsIgnoreCase("and")) {
-                queryOp = Searcher.OP_AND;
-            } else if(op.equalsIgnoreCase("or")) {
-                queryOp = Searcher.OP_OR;
-            } else if(op.equalsIgnoreCase("pand")) {
-                queryOp = Searcher.OP_PAND;
+            String op = q.substring(q.indexOf(' ') + 1).trim().toUpperCase();
+            try {
+                queryOp = Searcher.Operator.valueOf(op);
+            } catch (IllegalArgumentException ex) {
+                output.format("Didn't recognize operator, valid options are: %s\n",
+                        Arrays.toString(Searcher.Operator.values()));
             }
         } else if(q.startsWith(":deff")) {
             QueryConfig qc = engine.getQueryConfig();
@@ -562,20 +565,16 @@ public class QueryTest extends SEMain {
             displaySpec.setFormatString(q.substring(q.indexOf(' ') + 1).trim());
         } else if(q.startsWith(":gram")) {
             if(q.indexOf(' ') < 0) {
-                output.println("Currently using " + Searcher.GRAMMARS[grammar]
-                               + " grammar");
+                output.println("Currently using " +
+                        grammar + " grammar");
             } else {
-                String g = q.substring(q.indexOf(' ') + 1).trim();
-
-                if(g.toLowerCase().equals("web")) {
-                    grammar = Searcher.GRAMMAR_WEB;
-                } else if(g.toLowerCase().equals("strict")) {
-                    grammar = Searcher.GRAMMAR_STRICT;
-                } else if(g.toLowerCase().equals("lucene")) {
-                    grammar = Searcher.GRAMMAR_LUCENE;
-                } else {
-                    output.println(
-                            "Unrecognized grammar, valid values are \"full\", \"web\" or \"lucene\"");
+                String g = q.substring(q.indexOf(' ') + 1).trim().toUpperCase();
+                try {
+                    grammar = Searcher.Grammar.valueOf(g);
+                } catch (IllegalArgumentException ex) {
+                    output.format(
+                            "Unrecognized grammar, valid values are: %s\n",
+                            Arrays.toString(Searcher.Grammar.values()));
                 }
             }
         } else if(q.startsWith(":q")) {
@@ -919,7 +918,7 @@ public class QueryTest extends SEMain {
                 //
                 // Run the query
                 ResultSet rs = searcher.search(q, sortSpec,
-                                               Searcher.OP_PAND, grammar);
+                        Searcher.Operator.AND, grammar);
                 displayResults(rs);
                 BufferedReader br =
                         new BufferedReader(new InputStreamReader(System.in));

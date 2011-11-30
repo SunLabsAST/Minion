@@ -545,7 +545,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public ResultSet search(String query)
             throws SearchEngineException {
         return search(query, "-score",
-                      Searcher.OP_AND, Searcher.GRAMMAR_STRICT);
+                Searcher.Operator.AND, Searcher.Grammar.STRICT);
     }
 
     /**
@@ -561,25 +561,22 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public ResultSet search(String query, String sortOrder)
             throws SearchEngineException {
         return search(query, sortOrder,
-                      Searcher.OP_AND, Searcher.GRAMMAR_STRICT);
+                Searcher.Operator.AND, Searcher.Grammar.STRICT);
     }
 
-    /**
-     * Runs a query against the index, returning a set of results.
-     * @param query The query to run, in our query syntax.
-     * @param sortOrder How the results should be sorted.  This is a set of
-     * comma-separated field names, each preceeded by a <code>+</code> (for
-     * increasing order) or by a <code>-</code> (for decreasing order).
-     * @param defaultOperator specifies the default operator to use when no
-     * other operator is provided between terms in the query.  Valid values are
-     * defined in the {@link com.sun.labs.minion.Searcher} interface
-     * @param grammar specifies the grammar to use to parse the query.  Valid values
-     * ar edefined in the {@link com.sun.labs.minion.Searcher} interface
-     * @throws com.sun.labs.minion.SearchEngineException If there is any error during the search.
-     * @return An instance of <code>ResultSet</code> containing the results of the query.
-     */
+    @Override
+    public ResultSet search(String query, String sortOrder, int defaultOperator,
+                            int grammar) throws SearchEngineException {
+        return search(query, sortOrder,
+                Searcher.Operator.values()[defaultOperator],
+                Searcher.Grammar.values()[grammar]);
+    }
+
+
+
+    @Override
     public ResultSet search(String query, String sortOrder,
-                            int defaultOperator, int grammar)
+            Searcher.Operator defaultOperator, Searcher.Grammar grammar)
             throws SearchEngineException {
 
         QueryElement qe = null;
@@ -588,30 +585,37 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         Parser p = null;
         Transformer xer = null;
         switch(grammar) {
-            case Searcher.GRAMMAR_WEB:
+            case WEB:
                 p = new WebParser(new StringReader(query));
                 xer = new WebTransformer();
                 break;
-            case Searcher.GRAMMAR_STRICT:
+            case STRICT:
                 p = new StrictParser(new StringReader(query));
                 xer = new StrictTransformer();
                 break;
-            case Searcher.GRAMMAR_LUCENE:
+            case LUCENE:
                 p = new LuceneParser(new StringReader(query));
                 xer = new LuceneTransformer();
                 break;
             default:
-                throw new SearchEngineException("Unknown grammar specified: "
-                        + grammar);
+                throw new SearchEngineException("Unknown grammar specified: " +
+                        grammar);
         }
 
         try {
             parseTree = (SimpleNode) p.doParse();
-        } catch(ParseException ex) {
-            logger.log(Level.SEVERE, "Error parsing query", ex);
-            String msg = ex.getMessage().substring(0, ex.getMessage().indexOf(
-                    '\n'));
-            throw new SearchEngineException("Error parsing query: " + msg);
+        } catch(com.sun.labs.minion.retrieval.parser.ParseException ex) {
+            logger.log(Level.FINE, "Error parsing query", ex);
+
+            com.sun.labs.minion.retrieval.parser.Token badToken =
+                    ex.currentToken;
+            while (badToken.next != null) {
+                badToken = badToken.next;
+            }
+            
+            throw new com.sun.labs.minion.ParseException(
+                    badToken.image,
+                    badToken.beginColumn);
         } catch(TokenMgrError tme) {
             logger.log(Level.SEVERE, "Error parsing query", tme);
             throw new SearchEngineException("Error parsing query: " + tme);

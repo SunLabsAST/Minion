@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.retrieval.parser;
 
+import com.sun.labs.minion.Searcher;
 import java.text.ParseException;
 
 import com.sun.labs.minion.retrieval.QueryElement;
@@ -59,7 +60,8 @@ public abstract class Transformer
      * defined in the {@link com.sun.labs.minion.Searcher} interface
      * @return the root node of a tree describing a query
      */
-    public abstract QueryElement transformTree(SimpleNode root, int defaultOperator)
+    public abstract QueryElement transformTree(SimpleNode root,
+            Searcher.Operator defaultOperator)
         throws ParseException;
 
     /** 

@@ -55,7 +55,7 @@ public class LuceneElementFactory
      * @return the query element for this node.
      */
     public static QueryElement make(SimpleNode node, ArrayList children,
-                                    int defaultOperator)
+                                    Searcher.Operator defaultOperator)
         throws ParseException
     {
         switch (node.id) {
@@ -234,20 +234,20 @@ public class LuceneElementFactory
     }
     
     private static QueryElement makeUndefined(SimpleNode node, ArrayList children,
-                                              int defaultOperator)
+                                              Searcher.Operator defaultOperator)
         throws ParseException
     {
         QueryElement res = null;
         switch (defaultOperator) {
-            case Searcher.OP_AND:
+            case AND:
                 node.operator = LuceneParserConstants.AND;
                 res = makeAnd(node, children);
                 break;
-            case Searcher.OP_PAND:
+            case PAND:
                 node.operator = LuceneParserConstants.PAND;
                 res = makeAnd(node, children);
                 break;
-            case Searcher.OP_OR:
+            case OR:
                 node.operator = LuceneParserConstants.OR;
                 res = makeOr(node, children);
                 break;
