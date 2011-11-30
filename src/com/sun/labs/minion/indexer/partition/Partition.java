@@ -67,6 +67,13 @@ public abstract class Partition implements Comparable<Partition> {
      * @return the number of undeleted documents in the partition.
      */
     public abstract int getNDocs();
+    
+    /**
+     * Gets the maximum document ID in the partition.
+     */
+    public int getMaxDocumentID() {
+        return maxDocumentID;
+    }
 
     /**
      * Gets the number for this partition.

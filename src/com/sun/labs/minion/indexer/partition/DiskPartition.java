@@ -190,6 +190,7 @@ public class DiskPartition extends Partition implements Closeable {
                 dictRAF, postRAFs);
         docDict.setName("doc");
         docDict.setPartition(this);
+        maxDocumentID = docDict.getMaxID();
 
         //
         // Get the deletion file and the removed file, as well as the lock
@@ -456,16 +457,6 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public int getNDocs() {
         return header.getnDocs() - deletions.getNDeleted();
-    }
-
-    /**
-     * Get the maximum document ID.  Note that
-     * this value can be larger than the number of documents in the partition, due
-     * to the presence of deleted documents.
-     * @return the maximum ID assigned to a document in this partition.
-     */
-    public int getMaxDocumentID() {
-        return docDict.getMaxID();
     }
 
     /**

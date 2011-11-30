@@ -30,7 +30,6 @@ import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
-import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.pipeline.Token;
@@ -189,13 +188,13 @@ public class InvFileMemoryPartition extends MemoryPartition {
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
         DictionaryOutput termStatsDictOut = null;
         if(!partOut.isLongIndexingRun()) {
-            try {
-                termStatsDictOut = partOut.getTermStatsDictionaryOutput();
-                termStatsDictOut.byteEncode(0, 8);
-            } catch(Exception ex) {
-                logger.log(Level.SEVERE, String.format(
-                        "Error making term stats dictionary file for %s", this), ex);
-            }
+//            try {
+//                termStatsDictOut = partOut.getTermStatsDictionaryOutput();
+//                termStatsDictOut.byteEncode(0, 8);
+//            } catch(Exception ex) {
+//                logger.log(Level.SEVERE, String.format(
+//                        "Error making term stats dictionary file for %s", this), ex);
+//            }
         }
         
         //

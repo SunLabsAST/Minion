@@ -8,6 +8,7 @@ import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
+import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.DocOccurrence;
 import com.sun.labs.minion.indexer.postings.Occurrence;
@@ -18,6 +19,7 @@ import com.sun.labs.minion.util.CDateParser;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import com.sun.labs.util.NanoWatch;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -581,9 +583,18 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             header.vectorLengthOffset = vlb.position();
             
             try {
-            DocumentVectorLengths.calculate(field, partOut,
-                    field.getPartition().getPartitionManager().
-                    getTermStatsDict());
+                Partition p = field.getPartition();
+                DocumentVectorLengths.calculate(field.getInfo(),
+                        p.getNDocs(),
+                        p.getMaxDocumentID(),
+                        p.getPartitionManager(),
+                        getTermDictionary(false).iterator(),
+                        null,
+                        partOut.getVectorLengthsBuffer(),
+                        null);
+//            DocumentVectorLengths.calculate(field, partOut,
+//                    field.getPartition().getPartitionManager().
+//                    getTermStatsDict());
             ret = MemoryField.MarshallResult.EVERYTHING_DUMPED;
             } catch (RuntimeException ex) {
                 logger.log(Level.SEVERE, String.format("Exception calculating document vector lengths for %s", info.getName()));
