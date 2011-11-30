@@ -333,6 +333,7 @@ public class IDPostings implements Postings, MergeablePostings {
         int prev = 0;
         for(int i = 0; i < nIDs; i++) {
             b.byteEncode(ids[i] - prev);
+            prev = ids[i];
             encodeOtherData(b, i);
         }
         return b;

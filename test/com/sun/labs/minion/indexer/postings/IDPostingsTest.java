@@ -58,62 +58,6 @@ public class IDPostingsTest {
     public void tearDown() {
     }
 
-    /**
-     * Tests simple addition of occurrences.
-     */
-    @Test
-    public void testSimpleAdd() throws Exception {
-        TestData simple = new TestData(new int[]{1, 4, 7, 10});
-        encodeData(simple);
-    }
-
-    /**
-     * Tests adding IDs multiple times.
-     */
-    @Test
-    public void testSimpleMultipleAdd() throws Exception {
-        TestData simple = new TestData(new int[]{1, 1, 1,
-                                                 1, 4, 4, 4, 7, 7, 8,
-                                                 10, 11, 11, 17});
-        encodeData(simple);
-    }
-
-    /**
-     * Tests the encoding of the IDs by decoding them ourselves.
-     */
-    @Test
-    public void testSimpleEncoding() {
-        IDPostings idp = new IDPostings();
-        OccurrenceImpl o = new OccurrenceImpl();
-        int[] ids = new int[]{1, 4, 7, 10};
-        for(int i : ids) {
-            o.setID(i);
-            idp.add(o);
-        }
-
-        WriteableBuffer[] buffs = idp.getBuffers();
-        assertTrue(String.format("Wrong number of buffers: %d", buffs.length),
-                   buffs.length == 2);
-        ReadableBuffer rb = buffs[0].getReadableBuffer();
-
-        int n = rb.byteDecode();
-        assertTrue(String.format("Wrong number of IDs: %d", n), n == ids.length);
-        n = rb.byteDecode();
-        assertTrue(String.format("Wrong last ID: %d", n), n == ids[ids.length
-                                                                   - 1]);
-        rb = buffs[1].getReadableBuffer();
-
-        int prev = 0;
-        for(int i = 0; i < ids.length; i++) {
-            int gap = rb.byteDecode();
-            int curr = prev + gap;
-            assertTrue(String.format(
-                    "Incorrect ID at %d: %d should be %d, decoded: %d", i, curr,
-                    ids[i], gap),
-                       curr == ids[i]);
-        }
-    }
-
     private IDPostings encodeData(TestData data) {
         IDPostings idp = new IDPostings();
         OccurrenceImpl o = new OccurrenceImpl();
@@ -161,12 +105,74 @@ public class IDPostingsTest {
                 r = new TestData(rand.nextInt(n) + 1);
                 IDPostings idp = encodeData(r);
                 testIteration(idp, r);
+                testPostingsEncoding(idp, r);
             } catch(AssertionError ex) {
-                PrintWriter out = getTempWriter();
+                File f = File.createTempFile("random", ".data");
+                PrintWriter out = new PrintWriter(new FileWriter(f));
                 r.dump(out);
                 out.close();
+                logger.severe(String.format("Random data in %s", f));
                 throw (ex);
             }
+        }
+    }
+
+    /**
+     * Tests simple addition of occurrences.
+     */
+    @Test
+    public void testSimpleAdd() throws Exception {
+        TestData simple = new TestData(new int[]{1, 4, 7, 10});
+        encodeData(simple);
+    }
+
+    /**
+     * Tests adding IDs multiple times.
+     */
+    @Test
+    public void testSimpleMultipleAdd() throws Exception {
+        TestData simple = new TestData(new int[]{1, 1, 1,
+                                                 1, 4, 4, 4, 7, 7, 8,
+                                                 10, 11, 11, 17});
+        encodeData(simple);
+    }
+
+    /**
+     * Tests the encoding of the IDs by decoding them ourselves.
+     * @param idp the postings we want to test
+     * @param data the data that we're testing
+     */
+    private void testPostingsEncoding(IDPostings idp, TestData data) {
+        WriteableBuffer[] buffs = idp.getBuffers();
+        assertTrue(String.format("Wrong number of buffers: %d", buffs.length),
+                   buffs.length == 2);
+
+        long bsize = buffs[0].position() + buffs[1].position();
+        long nb = 4 * data.unique.size();
+
+        logger.info(String.format("%d bytes in buffers (%d + %d) for %d bytes of ids."
+                                  + " Compression: %.2f%%", bsize,
+                                  buffs[0].position(), buffs[1].position(),
+                                  nb, 100 - ((double) bsize / nb) * 100));
+
+        ReadableBuffer rb = buffs[0].getReadableBuffer();
+
+        int n = rb.byteDecode();
+        assertTrue(String.format("Wrong number of IDs: %d", n), n == data.unique.
+                size());
+        n = rb.byteDecode();
+        assertTrue(String.format("Wrong last ID: %d", n),
+                   n == data.rawData[data.rawData.length - 1]);
+        rb = buffs[1].getReadableBuffer();
+
+        int prev = 0;
+        for(Integer x : data.unique) {
+            int gap = rb.byteDecode();
+            int curr = prev + gap;
+            assertTrue(String.format(
+                    "Incorrect ID: %d should be %d, decoded: %d", curr,
+                    x, gap),
+                       curr == x);
         }
     }
 
@@ -187,7 +193,7 @@ public class IDPostingsTest {
 
     @Test
     public void extraLargeRandomAddTest() throws Exception {
-        randomAddTest(1024*1024);
+        randomAddTest(1024 * 1024);
     }
 
     /**
@@ -223,11 +229,6 @@ public class IDPostingsTest {
      */
     @Test
     public void testIterator() {
-    }
-
-    private PrintWriter getTempWriter() throws java.io.IOException {
-        File f = File.createTempFile("random", ".data");
-        return new PrintWriter(new FileWriter(f));
     }
 
     private static class TestData {
