@@ -12,6 +12,7 @@ import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.pipeline.StageAdapter;
 import com.sun.labs.minion.pipeline.Token;
+import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -53,6 +54,7 @@ public class MemoryField extends Field {
             pipeline = pf.getPipeline();
             fieldStage = new FieldStage();
             pipeline.addStage(fieldStage);
+            pipeline.setField(this);
         }
     }
 
@@ -67,6 +69,16 @@ public class MemoryField extends Field {
      * @param data the data to add
      */
     public void addData(int docID, Object data) {
+        
+        //
+        // Handle a collection passed as a field value.
+        if(data instanceof Collection) {
+            for(Object o : (Collection) data) {
+                addData(docID, o);
+            }
+            return;
+        }
+        
         if(saved) {
             save(docID, data);
         }
