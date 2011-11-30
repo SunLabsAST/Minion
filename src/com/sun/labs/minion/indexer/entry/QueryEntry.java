@@ -21,9 +21,7 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.entry;
-
 
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.postings.Postings;
@@ -41,8 +39,9 @@ import java.util.logging.Logger;
  * An entry that is returned from dictionaries during querying operations.
  * @param <N> the type of the name that this entry has.
  */
-public class QueryEntry<N extends Comparable> extends Entry<N> implements Cloneable {
-    
+public class QueryEntry<N extends Comparable> extends Entry<N> implements
+        Cloneable {
+
     private static Logger logger = Logger.getLogger(QueryEntry.class.getName());
 
     /**
@@ -72,7 +71,9 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements Clonea
      * @throws java.io.IOException if there is an error reading the postings.
      */
     public void readPostings() throws java.io.IOException {
-        post = postIn[0].read(type, offset, size);
+        if (type != Postings.Type.NONE) {
+            post = postIn[0].read(type, offset, size);
+        }
     }
 
     public boolean hasPositionInformation() {
@@ -88,19 +89,19 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements Clonea
      * postings.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
-        if(post == null) {
+        if (post == null) {
             QueryStats qs = features == null ? null : features.getQueryStats();
             try {
-                if(qs != null) {
+                if (qs != null) {
                     qs.postReadW.start();
                     qs.postingsSize += size;
                 }
                 readPostings();
-            } catch(java.io.IOException ioe) {
+            } catch (java.io.IOException ioe) {
                 logger.severe("Error reading postings for " + name);
                 return null;
             } finally {
-                if(qs != null) {
+                if (qs != null) {
                     qs.postReadW.stop();
                 }
             }
@@ -108,7 +109,7 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements Clonea
 
         //
         // p could still be null here if there were no postings
-        if(post == null) {
+        if (post == null) {
             return null;
         }
         return post.iterator(features);
@@ -129,10 +130,10 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements Clonea
             QueryEntry qe = (QueryEntry) super.clone();
             qe.postIn = null;
             return qe;
-        } catch(CloneNotSupportedException ex) {
-            logger.log(Level.SEVERE, String.format("Error cloning query entry"), ex);
+        } catch (CloneNotSupportedException ex) {
+            logger.log(Level.SEVERE, String.format("Error cloning query entry"),
+                    ex);
             return null;
         }
     }
-
 }

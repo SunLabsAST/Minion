@@ -85,18 +85,18 @@ public class InvFileDiskPartition extends DiskPartition {
         List<PartitionHeader.FieldOffset> offsets = header.getFieldOffsets();
         fields = new DiskField[offsets.get(offsets.size() - 1).getId() + 1];
 
-        for(PartitionHeader.FieldOffset offset : header.getFieldOffsets()) {
+        for (PartitionHeader.FieldOffset offset : header.getFieldOffsets()) {
             dictFile.seek(offset.getOffset());
             FieldInfo info = manager.getMetaFile().getFieldInfo(offset.getId());
             fields[offset.getId()] =
                     new DiskField(info, dictFile, vectorLengths,
-                                  postFiles, new EntryFactory());
+                    postFiles, new EntryFactory());
         }
     }
 
     public QueryEntry get(String field, String term, boolean caseSensitive) {
         DiskField df = getDF(field);
-        if(df == null) {
+        if (df == null) {
             return null;
         }
         return df.getTerm(term, caseSensitive);
@@ -104,18 +104,18 @@ public class InvFileDiskPartition extends DiskPartition {
 
     public QueryEntry get(String field, int termID, boolean caseSensitive) {
         DiskField df = getDF(field);
-        if(df == null) {
+        if (df == null) {
             return null;
         }
         return df.getTerm(termID, caseSensitive);
     }
 
-    public Map<String,List> getSavedValues(int docID) {
-        Map<String,List> ret = new HashMap<String, List>();
-        for(DiskField df : fields) {
-            if(df != null) {
+    public Map<String, List> getSavedValues(int docID) {
+        Map<String, List> ret = new HashMap<String, List>();
+        for (DiskField df : fields) {
+            if (df != null) {
                 List l = df.getFetcher().fetch(docID);
-                if(l != null && l.size() > 0) {
+                if (l != null && l.size() > 0) {
                     ret.put(df.getInfo().getName(), l);
                 }
             }
@@ -139,7 +139,7 @@ public class InvFileDiskPartition extends DiskPartition {
      * such field in this partition.
      */
     public DiskField getDF(FieldInfo fi) {
-        if(fi == null) {
+        if (fi == null) {
             return null;
         }
         return getDF(fi.getID());
@@ -147,7 +147,7 @@ public class InvFileDiskPartition extends DiskPartition {
 
     public DiskField getDF(int fieldID) {
 
-        if(fieldID < 0 || fieldID >= fields.length) {
+        if (fieldID < 0 || fieldID >= fields.length) {
             return null;
         }
         return fields[fieldID];
@@ -171,7 +171,7 @@ public class InvFileDiskPartition extends DiskPartition {
      */
     public Object getSavedFieldData(String name, String key, boolean all) {
         QueryEntry e = docDict.get(key);
-        if(e == null) {
+        if (e == null) {
             return null;
         }
 
@@ -201,16 +201,16 @@ public class InvFileDiskPartition extends DiskPartition {
     public Object getSavedFieldData(String name, int docID, boolean all) {
         DiskField df = getDF(name);
 
-        if(df == null) {
+        if (df == null) {
             return null;
         }
 
         Fetcher f = df.getFetcher();
-        if(f == null) {
+        if (f == null) {
             return null;
         }
 
-        if(all) {
+        if (all) {
             return f.fetch(docID);
         } else {
             return f.fetchOne(docID);
@@ -251,13 +251,13 @@ public class InvFileDiskPartition extends DiskPartition {
      * field is not a saved field.
      */
     public DictionaryIterator getFieldIterator(String name,
-                                               boolean caseSensitive,
-                                               Comparable lowerBound,
-                                               boolean includeLower,
-                                               Comparable upperBound,
-                                               boolean includeUpper) {
+            boolean caseSensitive,
+            Comparable lowerBound,
+            boolean includeLower,
+            Comparable upperBound,
+            boolean includeUpper) {
         DiskField df = getDF(name);
-        if(df == null) {
+        if (df == null) {
             return null;
         }
         return df.getSavedValuesIterator(
@@ -276,9 +276,9 @@ public class InvFileDiskPartition extends DiskPartition {
      * into account during the match.
      */
     public DictionaryIterator getMatchingIterator(String name, String val,
-                                                  boolean caseSensitive) {
+            boolean caseSensitive) {
         DiskField df = getDF(name);
-        if(df == null) {
+        if (df == null) {
             return null;
         }
         return df.getMatchingIterator(val, caseSensitive, -1, -1);
@@ -295,14 +295,14 @@ public class InvFileDiskPartition extends DiskPartition {
      * into account during the match.
      */
     public DictionaryIterator getSubstringIterator(String name, String val,
-                                                   boolean caseSensitive,
-                                                   boolean starts, boolean ends) {
+            boolean caseSensitive,
+            boolean starts, boolean ends) {
         DiskField df = getDF(name);
-        if(df == null) {
+        if (df == null) {
             return null;
         }
         return df.getSubstringIterator(val, caseSensitive, starts, ends,
-                                       -1, -1);
+                -1, -1);
     }
 
     /**
@@ -313,32 +313,33 @@ public class InvFileDiskPartition extends DiskPartition {
     }
 
     protected void mergeCustom(int newPartNumber,
-                               PartitionHeader mHeader,
-                               DiskPartition[] sortedParts,
-                               int[][] idMaps,
-                               int newMaxDocID, int[] docIDStart, int[] nUndel,
-                               int[][] docIDMaps,
-                               RandomAccessFile mDictFile,
-                               PostingsOutput[] mPostOut)
+            PartitionHeader mHeader,
+            DiskPartition[] sortedParts,
+            int[][] idMaps,
+            int newMaxDocID, int[] docIDStart, int[] nUndel,
+            int[][] docIDMaps,
+            RandomAccessFile mDictFile,
+            PostingsOutput[] mPostOut)
             throws Exception {
 
         File vlf = manager.makeVectorLengthFile(partNumber);
         RandomAccessFile mVectorLengths = new RandomAccessFile(vlf, "rw");
 
-        for(Iterator<FieldInfo> i = manager.getMetaFile().fieldIterator(); i.
+        for (Iterator<FieldInfo> i = manager.getMetaFile().fieldIterator(); i.
                 hasNext();) {
             FieldInfo fi = i.next();
             DiskField[] fields = new DiskField[sortedParts.length];
             DiskField merger = null;
-            for(int j = 0; j < sortedParts.length; j++) {
+            for (int j = 0; j < sortedParts.length; j++) {
                 fields[j] = ((InvFileDiskPartition) sortedParts[j]).getDF(fi);
-                if(fields[j] != null) {
+                if (fields[j] != null) {
                     merger = fields[j];
                 }
             }
-            merger.merge(fields, docIDStart, docIDMaps, nUndel, mDictFile,
-                         mPostOut,
-                         mVectorLengths);
+            merger.merge(manager.getIndexDir(),
+                    fields, docIDStart, docIDMaps, nUndel, mDictFile,
+                    mPostOut,
+                    mVectorLengths);
         }
 
         mVectorLengths.close();
@@ -348,12 +349,12 @@ public class InvFileDiskPartition extends DiskPartition {
      * Close the files associated with this partition.
      */
     public synchronized boolean close(long currTime) {
-        if(!super.close(currTime)) {
+        if (!super.close(currTime)) {
             return false;
         } else {
             try {
                 vectorLengths.close();
-            } catch(java.io.IOException ioe) {
+            } catch (java.io.IOException ioe) {
                 logger.log(Level.SEVERE, "Error closing partition", ioe);
             }
         }
@@ -361,7 +362,6 @@ public class InvFileDiskPartition extends DiskPartition {
         return true;
 
     }
-
 
     /**
      * Reaps the given partition.  If the postings file cannot be removed,
@@ -372,25 +372,25 @@ public class InvFileDiskPartition extends DiskPartition {
      */
     protected static void reap(PartitionManager m, int n) {
         File[] files = getMainFiles(m, n);
-        for(File f : files) {
-            if((!f.delete()) && (f.exists())) {
+        for (File f : files) {
+            if ((!f.delete()) && (f.exists())) {
                 logger.warning("Failed to delete: " + f);
             }
         }
 
         File vlf = m.makeVectorLengthFile(n);
-        if(!vlf.delete()) {
-            logger.severe(String.format("Failed to delete vector lengths file %s", vlf));
+        if (!vlf.delete()) {
+            logger.severe(String.format(
+                    "Failed to delete vector lengths file %s", vlf));
         }
 
         //
         // Remove the deletion bitmap and the removed partition files.
-        if(!m.makeDeletedDocsFile(n).delete()) {
+        if (!m.makeDeletedDocsFile(n).delete()) {
             logger.severe("Failed to reap partition " + n);
         }
-        if(!m.makeRemovedPartitionFile(n).delete()) {
+        if (!m.makeRemovedPartitionFile(n).delete()) {
             logger.severe("Failed to reap partition " + n);
         }
     }
-
 }

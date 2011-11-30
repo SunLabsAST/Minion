@@ -49,6 +49,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
 import com.sun.labs.minion.util.CharUtils;
+import java.io.File;
 
 public class DiskBiGramDictionary extends DiskDictionary {
 
@@ -414,12 +415,13 @@ public class DiskBiGramDictionary extends DiskDictionary {
         return new ArrayGroup(ids, size);
     }
 
-    public void merge(DiskBiGramDictionary[] dicts,
+    public void merge(File indexDir,
+            DiskBiGramDictionary[] dicts,
                        int[] starts,
                        int[][] postIDMaps,
                        RandomAccessFile mDictFile,
                        PostingsOutput postOut) throws java.io.IOException {
-        ((DiskDictionary) dicts[0]).merge(new StringNameHandler(),
+        ((DiskDictionary) dicts[0]).merge(indexDir, new StringNameHandler(),
                                           (DiskDictionary[]) dicts,
                                           null,
                                           starts,

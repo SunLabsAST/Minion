@@ -53,6 +53,7 @@ import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.io.File;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1263,6 +1264,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * with the entries and dumping the new dictionary and postings to the
      * given channels.
      *
+     * @param indexDir the directory where the merged dictionaries will be written.
+     * This is used for temporary file storage during the merge.
      * @param encoder An encoder for the names in this dictionary.
      * @param dicts The dictionaries to merge.
      * @param mappers A set of entry mappers that will be applied to the
@@ -1283,8 +1286,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * max entry id in the new dict.
      * @throws java.io.IOException when there is an error during the merge.
      */
-    public int[][] merge(NameEncoder encoder,
-                         DiskDictionary[] dicts, EntryMapper[] mappers,
+    public static int[][] merge(File indexDir,
+            NameEncoder encoder,
+                         DiskDictionary[] dicts,
+                         EntryMapper[] mappers,
                          int[] starts,
                          int[][] postIDMaps, RandomAccessFile mDictFile,
                          PostingsOutput[] postOut, boolean appendPostings)
@@ -1296,10 +1301,15 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         boolean keepIDToPosn = false;
         int[][] idMaps = new int[dicts.length][];
         PriorityQueue<HE> h = new PriorityQueue<HE>();
+        DiskDictionary merger = null;
         for(int i = 0; i < dicts.length; i++) {
             DiskDictionary dd = dicts[i];
             if(dd == null) {
                 continue;
+            }
+
+            if(merger == null) {
+                merger = dd;
             }
 
             if(dd.idToPosn != null) {
@@ -1318,15 +1328,14 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Make more room if we're merging the doc dict since the idMap
         // will be used for another purpose
-        if((mappers != null) &&
-                ((DiskPartition) part).docsAreMerged()) {
+        if(mappers != null) {
             idMaps[0] = new int[postIDMaps[0][0] + 1];
         }
 
         //
         // We'll need a writer for the merged dictionary.
         DictionaryWriter dw =
-                new DictionaryWriter(part.getPartitionManager().getIndexDir(), encoder,
+                new DictionaryWriter(indexDir, encoder,
                                      postOut.length,
                                      keepIDToPosn
                 ? MemoryDictionary.Renumber.NONE
@@ -1355,7 +1364,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
             //
             // Make a new entry for the merged data.
-            IndexEntry me = factory.getIndexEntry(name, newid);
+            IndexEntry me = merger.factory.getIndexEntry(top.curr.getName(), newid);
 
             //
             // We need to keep track of any mappings that we've made for the 
@@ -1395,8 +1404,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 // merged docs.  Note that this should only happen where
                 // duplicate doc keys are allowed - namely the cluster
                 // partition, and specifically not the real inverted file.
-                if((mappers != null) &&
-                        ((DiskPartition) part).docsAreMerged()) {
+                if(mappers != null) {
                     idMaps[0][top.curr.getID()] = me.getID();
                 } else {
                     //
@@ -1609,7 +1617,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * we're about to merge.
      *
      */
-    protected void customSetup(IndexEntry me, QueryEntry e, int start,
+    protected static void customSetup(IndexEntry me, QueryEntry e, int start,
                                int[] postIDMap) {
     }
 
@@ -1622,7 +1630,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * A class that will act as a heap entry for merging.
      */
-    protected class HE implements Comparable<HE> {
+    protected static class HE implements Comparable<HE> {
 
         /**
          * The iterator.

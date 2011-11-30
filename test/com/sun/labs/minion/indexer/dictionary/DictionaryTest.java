@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import org.junit.After;
@@ -263,7 +264,7 @@ public class DictionaryTest {
 
     @Test
     public void testDiskDictionaryGetFailure() throws Exception {
-        int nbad = Math.max((int) (shuffleList.size() * 0.1), 
+        int nbad = Math.max((int) (shuffleList.size() * 0.25),
                 1000);
         DiskDictionary dd = makeAndGet(shuffleList.subList(nbad, shuffleList.size()));
         NanoWatch nw = new NanoWatch();
@@ -276,6 +277,35 @@ public class DictionaryTest {
         logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", nbad,
                                   nw.getTimeMillis(), nw.getTimeMillis() / nbad));
         dd.dictFile.close();
+    }
+
+    @Test
+    public void testMerge() throws Exception {
+
+        List<String> d1w = new ArrayList<String>();
+        List<String> d2w = new ArrayList<String>();
+        int nw = Math.max((int) (shuffleList.size() * 0.5),
+                1000);
+        Random r = new Random();
+        for(int i = 0; i < nw; i++) {
+            d1w.add(wordList.get(r.nextInt(wordList.size())));
+            d2w.add(wordList.get(r.nextInt(wordList.size())));
+        }
+        DiskDictionary dd1 = makeAndGet(d1w);
+        DiskDictionary dd2 = makeAndGet(d2w);
+
+        File f = File.createTempFile("merge", ".dict");
+
+        RandomAccessFile mf = new RandomAccessFile(f, "rw");
+
+        dd1.merge(tmpDir,
+                new StringNameHandler(), new DiskDictionary[] {dd1, dd2},
+                null, new int[2], new int[2][], mf,
+                new PostingsOutput[0],true);
+
+        mf.close();
+        dd1.dictFile.close();
+        dd2.dictFile.close();
     }
 
     private ReadableBuffer encodeDict(List<String> l) {

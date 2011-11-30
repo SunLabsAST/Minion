@@ -710,7 +710,8 @@ public class DiskPartition extends Partition implements Closeable {
             // Merge the document dictionaries.  We'll need to remap the
             logger.fine("Merge document dictionary");
             mHeader.setDocDictOffset(mDictFile.getFilePointer());
-            dicts[0].merge(new StringNameHandler(),
+            dicts[0].merge(manager.getIndexDir(),
+                    new StringNameHandler(),
                            dicts,
                            mappers,
                            fakeStart, null, mDictFile, mPostOut, true);

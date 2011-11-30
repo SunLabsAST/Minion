@@ -103,72 +103,72 @@ public class DiskField extends Field {
     private DocumentVectorLengths dvl;
 
     public DiskField(FieldInfo info,
-                     RandomAccessFile dictFile,
-                     RandomAccessFile vectorLengthsFile,
-                     RandomAccessFile[] postIn,
-                     EntryFactory factory) throws java.io.IOException {
+            RandomAccessFile dictFile,
+            RandomAccessFile vectorLengthsFile,
+            RandomAccessFile[] postIn,
+            EntryFactory factory) throws java.io.IOException {
         super(info);
 
         header = new FieldHeader(dictFile);
         this.info = info;
 
-        if(header.dictOffsets[CASED_TOKENS] > 0) {
+        if (header.dictOffsets[CASED_TOKENS] > 0) {
             dictFile.seek(header.dictOffsets[CASED_TOKENS]);
             casedTokens = new DiskDictionary<String>(factory,
-                                                     new StringNameHandler(),
-                                                     dictFile, postIn);
+                    new StringNameHandler(),
+                    dictFile, postIn);
         }
-        if(header.dictOffsets[UNCASED_TOKENS] > 0) {
+        if (header.dictOffsets[UNCASED_TOKENS] > 0) {
             dictFile.seek(header.dictOffsets[CASED_TOKENS]);
             uncasedTokens = new DiskDictionary<String>(factory,
-                                                       new StringNameHandler(),
-                                                       dictFile, postIn);
+                    new StringNameHandler(),
+                    dictFile, postIn);
         }
-        if(header.dictOffsets[STEMMED_TOKENS] > 0) {
+        if (header.dictOffsets[STEMMED_TOKENS] > 0) {
             dictFile.seek(header.dictOffsets[CASED_TOKENS]);
             stemmedTokens = new DiskDictionary<String>(factory,
-                                                       new StringNameHandler(),
-                                                       dictFile, postIn);
+                    new StringNameHandler(),
+                    dictFile, postIn);
         }
-        if(header.dictOffsets[RAW_SAVED] > 0) {
+        if (header.dictOffsets[RAW_SAVED] > 0) {
             dictFile.seek(header.dictOffsets[CASED_TOKENS]);
             rawSaved = new DiskDictionary(factory, getDecoder(),
-                                          dictFile, postIn);
+                    dictFile, postIn);
         }
-        if(header.dictOffsets[UNCASED_SAVED] > 0) {
+        if (header.dictOffsets[UNCASED_SAVED] > 0) {
             dictFile.seek(header.dictOffsets[CASED_TOKENS]);
             uncasedSaved = new DiskDictionary<String>(factory,
-                                                      new StringNameHandler(),
-                                                      dictFile, postIn);
+                    new StringNameHandler(),
+                    dictFile, postIn);
         }
 
-        if(header.dictOffsets[VECTORS] > 0) {
+        if (header.dictOffsets[VECTORS] > 0) {
             dictFile.seek(header.dictOffsets[CASED_TOKENS]);
             vectors = new DiskDictionary<String>(factory,
-                                                 new StringNameHandler(),
-                                                 dictFile, postIn);
+                    new StringNameHandler(),
+                    dictFile, postIn);
         }
 
-        if(header.tokenBGOffset > 0) {
+        if (header.tokenBGOffset > 0) {
             dictFile.seek(header.tokenBGOffset);
             tokenBigrams = new DiskBiGramDictionary(dictFile, postIn[0],
-                                                    DiskDictionary.PostingsInputType.FILE_PART_POST,
-                                                    DiskDictionary.BufferType.FILEBUFFER,
-                                                    RAW_SAVED, VECTORS,
-                                                    CASED_TOKENS,
-                                                    VECTORS, VECTORS, null,
-                                                    rawSaved);
+                    DiskDictionary.PostingsInputType.FILE_PART_POST,
+                    DiskDictionary.BufferType.FILEBUFFER,
+                    RAW_SAVED, VECTORS,
+                    CASED_TOKENS,
+                    VECTORS, VECTORS, null,
+                    rawSaved);
         }
 
-        if(header.savedBGOffset > 0) {
+        if (header.savedBGOffset > 0) {
             dictFile.seek(header.savedBGOffset);
             tokenBigrams = new DiskBiGramDictionary(dictFile, postIn[0],
-                                                    DiskDictionary.PostingsInputType.FILE_PART_POST,
-                                                    DiskDictionary.BufferType.FILEBUFFER,
-                                                    RAW_SAVED, VECTORS,
-                                                    CASED_TOKENS,
-                                                    VECTORS, VECTORS, null,
-                                                    rawSaved);
+                    DiskDictionary.PostingsInputType.FILE_PART_POST,
+                    DiskDictionary.BufferType.FILEBUFFER,
+                    RAW_SAVED, VECTORS,
+                    CASED_TOKENS,
+                    VECTORS, VECTORS, null,
+                    rawSaved);
         }
 
         //
@@ -178,12 +178,12 @@ public class DiskField extends Field {
         //
         // Load the docs to vals offset data, using a file backed buffer.
         dtvOffsets = new NIOFileReadableBuffer(postIn[0],
-                                               header.dtvPosOffset, 8192);
+                header.dtvPosOffset, 8192);
 
         vectorLengthsFile.seek(header.vectorLengthOffset);
         dvl = new DocumentVectorLengths(vectorLengthsFile, 8192);
 
-        if(info.hasAttribute(FieldInfo.Attribute.STEMMED)) {
+        if (info.hasAttribute(FieldInfo.Attribute.STEMMED)) {
             stemmer = info.getStemmer();
         }
     }
@@ -194,7 +194,7 @@ public class DiskField extends Field {
     }
 
     private NameDecoder getDecoder() {
-        switch(info.getType()) {
+        switch (info.getType()) {
             case STRING:
                 return new StringNameHandler();
             case DATE:
@@ -209,11 +209,11 @@ public class DiskField extends Field {
     }
 
     public DiskDictionary getTermDictionary(boolean cased) {
-        if(cased && casedTokens != null) {
+        if (cased && casedTokens != null) {
             return casedTokens;
         }
 
-        if(!cased && uncasedTokens != null) {
+        if (!cased && uncasedTokens != null) {
             return uncasedTokens;
         }
 
@@ -230,8 +230,8 @@ public class DiskField extends Field {
      * @return
      */
     public QueryEntry getTerm(String name, boolean caseSensitive) {
-        if(caseSensitive) {
-            if(cased) {
+        if (caseSensitive) {
+            if (cased) {
                 return casedTokens.get(name);
             } else {
                 logger.warning(
@@ -254,8 +254,8 @@ public class DiskField extends Field {
      * @return
      */
     public QueryEntry getTerm(int id, boolean caseSensitive) {
-        if(caseSensitive) {
-            if(cased) {
+        if (caseSensitive) {
+            if (cased) {
                 return casedTokens.getByID(id);
             } else {
                 logger.warning(
@@ -277,8 +277,10 @@ public class DiskField extends Field {
     }
 
     public QueryEntry getVector(String key) {
-        if(!vectored) {
-            logger.warning(String.format("Requested vector for non-vectored field %s", info.getName()));
+        if (!vectored) {
+            logger.warning(
+                    String.format("Requested vector for non-vectored field %s", info.
+                    getName()));
             return null;
         }
         return vectors.get(key);
@@ -291,8 +293,8 @@ public class DiskField extends Field {
      * @return
      */
     public QueryEntry getSaved(Comparable val, boolean caseSensitive) {
-        if(caseSensitive) {
-            if(cased) {
+        if (caseSensitive) {
+            if (cased) {
                 return rawSaved.get(val);
             } else {
                 logger.warning(
@@ -322,32 +324,32 @@ public class DiskField extends Field {
      * field is not saved
      */
     public DictionaryIterator getSavedValuesIterator(boolean caseSensitive,
-                                                     Comparable lowerBound,
-                                                     boolean includeLower,
-                                                     Comparable upperBound,
-                                                     boolean includeUpper) {
+            Comparable lowerBound,
+            boolean includeLower,
+            Comparable upperBound,
+            boolean includeUpper) {
 
-        if(!saved) {
+        if (!saved) {
             return null;
         }
 
-        if(info.getType() == FieldInfo.Type.STRING) {
-            if(caseSensitive) {
+        if (info.getType() == FieldInfo.Type.STRING) {
+            if (caseSensitive) {
                 return rawSaved.iterator(lowerBound, includeLower, upperBound,
-                                         includeUpper);
+                        includeUpper);
             } else {
-                if(uncasedSaved == null) {
+                if (uncasedSaved == null) {
                     logger.warning(String.format("No case insensitive"
                             + " saved values for %s", info.getName()));
                     return null;
                 }
                 return uncasedSaved.iterator(lowerBound.toString(),
-                                             includeLower, upperBound.toString(),
-                                             includeUpper);
+                        includeLower, upperBound.toString(),
+                        includeUpper);
             }
         } else {
             return rawSaved.iterator(lowerBound, includeLower, upperBound,
-                                     includeUpper);
+                    includeUpper);
         }
     }
 
@@ -367,30 +369,30 @@ public class DiskField extends Field {
      * imposed.
      */
     public DictionaryIterator getMatchingIterator(String val,
-                                                  boolean caseSensitive,
-                                                  int maxEntries,
-                                                  long timeLimit) {
+            boolean caseSensitive,
+            int maxEntries,
+            long timeLimit) {
 
-        if(info.getType() != FieldInfo.Type.STRING) {
+        if (info.getType() != FieldInfo.Type.STRING) {
             logger.warning(String.format(
                     "Can't get matching values for non-string field %s", info.
                     getName()));
             return null;
         }
         QueryEntry[] qes;
-        if(caseSensitive) {
+        if (caseSensitive) {
             qes = rawSaved.getMatching(savedBigrams, val, true,
-                                       maxEntries, timeLimit);
+                    maxEntries, timeLimit);
         } else {
-            if(uncasedSaved == null) {
+            if (uncasedSaved == null) {
                 logger.warning(String.format(
                         "Can't get uncased matches for string field %s",
                         info.getName()));
                 return null;
             }
             qes = uncasedSaved.getMatching(savedBigrams, val.toLowerCase(),
-                                           false,
-                                           maxEntries, timeLimit);
+                    false,
+                    maxEntries, timeLimit);
         }
         return new ArrayDictionaryIterator(qes);
     }
@@ -400,7 +402,7 @@ public class DiskField extends Field {
 
         List<QueryEntry> ret = new ArrayList<QueryEntry>();
 
-        if(info.getType() != FieldInfo.Type.STRING) {
+        if (info.getType() != FieldInfo.Type.STRING) {
             logger.warning(String.format(
                     "Can't get matching values for non-string field %s", info.
                     getName()));
@@ -411,21 +413,21 @@ public class DiskField extends Field {
         // Check for all asterisks, indicating that we should return everything.
         // We could be fancier here and catch question marks and only return things
         // of the appropriate length.
-        if(pattern.matches("\\*+")) {
-            for(Entry e : rawSaved) {
+        if (pattern.matches("\\*+")) {
+            for (Entry e : rawSaved) {
                 ret.add((QueryEntry) e);
             }
         } else {
 
             DictionaryIterator di = getMatchingIterator(pattern, caseSensitive,
                     maxEntries, timeLimit);
-            while(di.hasNext()) {
+            while (di.hasNext()) {
                 ret.add((QueryEntry) di.next());
             }
         }
         return ret;
     }
-    
+
     /**
      * Gets an iterator for the character saved field values that contain a
      * given substring.
@@ -446,32 +448,32 @@ public class DiskField extends Field {
      * as a substring, or <code>null</code> if there are no such values.
      */
     public DictionaryIterator getSubstringIterator(String val,
-                                                   boolean caseSensitive,
-                                                   boolean starts,
-                                                   boolean ends,
-                                                   int maxEntries,
-                                                   long timeLimit) {
-        if(info.getType() != FieldInfo.Type.STRING) {
+            boolean caseSensitive,
+            boolean starts,
+            boolean ends,
+            int maxEntries,
+            long timeLimit) {
+        if (info.getType() != FieldInfo.Type.STRING) {
             logger.warning(String.format(
                     "Can't get matching values for non-string field %s", info.
                     getName()));
             return null;
         }
         QueryEntry[] qes;
-        if(caseSensitive) {
+        if (caseSensitive) {
             qes = rawSaved.getSubstring(savedBigrams, val, caseSensitive,
-                                        starts, ends, maxEntries, timeLimit);
+                    starts, ends, maxEntries, timeLimit);
         } else {
-            if(uncasedSaved == null) {
+            if (uncasedSaved == null) {
                 logger.warning(String.format(
                         "Can't get uncased matches for string field %s",
                         info.getName()));
                 return null;
             }
             qes = uncasedSaved.getSubstring(savedBigrams,
-                                            val.toLowerCase(),
-                                            false, starts, ends,
-                                            maxEntries, timeLimit);
+                    val.toLowerCase(),
+                    false, starts, ends,
+                    maxEntries, timeLimit);
         }
         return new ArrayDictionaryIterator(qes);
     }
@@ -485,17 +487,20 @@ public class DiskField extends Field {
      * @return
      */
     public ArrayGroup getSimilar(String value, boolean caseSensitive) {
-        if(info.getType() != FieldInfo.Type.STRING) {
-            logger.warning(String.format("Can't get similar values for non-string field %s", info.getName()));
+        if (info.getType() != FieldInfo.Type.STRING) {
+            logger.warning(String.format(
+                    "Can't get similar values for non-string field %s", info.
+                    getName()));
             return new ScoredGroup(0);
         }
         int[] var = savedBigrams.getAllVariants(value, true);
         int maxd = Integer.MIN_VALUE;
         PriorityQueue<IntEntry> h = new PriorityQueue<IntEntry>();
-        for(int i = 0; i < var.length; i++) {
-            QueryEntry qe = (caseSensitive ? rawSaved : uncasedSaved).getByID(var[i]);
+        for (int i = 0; i < var.length; i++) {
+            QueryEntry qe = (caseSensitive ? rawSaved : uncasedSaved).getByID(
+                    var[i]);
             String name = qe.getName().toString();
-            if(!caseSensitive) {
+            if (!caseSensitive) {
                 name = CharUtils.toLowerCase(name);
             }
             int d = Util.levenshteinDistance(value, name);
@@ -503,12 +508,13 @@ public class DiskField extends Field {
             h.offer(new IntEntry(d, qe));
         }
 
-        ScoredQuickOr qor = new ScoredQuickOr((DiskPartition) partition, h.size());
+        ScoredQuickOr qor = new ScoredQuickOr((DiskPartition) partition,
+                h.size());
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
-        while(h.size() > 0) {
+        while (h.size() > 0) {
             IntEntry e = h.poll();
             PostingsIterator pi = e.e.iterator(feat);
-            if(pi == null) {
+            if (pi == null) {
                 continue;
             }
             qor.add(pi, (maxd - e.i) / (float) maxd, 1);
@@ -538,19 +544,19 @@ public class DiskField extends Field {
         ReadableBuffer ldtvo = dtvOffsets.duplicate();
         ReadableBuffer ldtv = dtvData.duplicate();
 
-        if(ag == null) {
+        if (ag == null) {
 
             //
             // If there's no restriction set, then do all documents.
             ldtvo.position(0);
-            for(int i = 0; i < header.maxDocID; i++) {
+            for (int i = 0; i < header.maxDocID; i++) {
 
                 //
                 // Jump to each offset and decode the number of saved values.  If
                 // that's 0, then we have a document that has no defined values, so
                 // we put it in the return set.
                 ldtv.position(ldtvo.byteDecode(4));
-                if(ldtv.byteDecode() == 0) {
+                if (ldtv.byteDecode() == 0) {
                     ret.addDoc(i + 1);
                 }
             }
@@ -558,10 +564,10 @@ public class DiskField extends Field {
 
             //
             // Just check for the documents in the set.
-            for(DocIterator i = ag.iterator(); i.next();) {
+            for (DocIterator i = ag.iterator(); i.next();) {
                 ldtvo.position((i.getDoc() - 1) * 4);
                 ldtv.position(ldtvo.byteDecode(4));
-                if(ldtv.byteDecode() == 0) {
+                if (ldtv.byteDecode() == 0) {
                     ret.addDoc(i.getDoc());
                 }
             }
@@ -595,13 +601,14 @@ public class DiskField extends Field {
         dvl.normalize(docs, scores, n, qw);
     }
 
-    public void merge(DiskField[] fields,
-                      int[] starts,
-                      int[][] docIDMaps,
-                      int[] nUndel,
-                      RandomAccessFile mDict,
-                      PostingsOutput[] mPostOut,
-                      RandomAccessFile mVectorLengths)
+    public void merge(File indexDir,
+            DiskField[] fields,
+            int[] starts,
+            int[][] docIDMaps,
+            int[] nUndel,
+            RandomAccessFile mDict,
+            PostingsOutput[] mPostOut,
+            RandomAccessFile mVectorLengths)
             throws java.io.IOException {
 
         logger.info(String.format("Merge %s", info.getName()));
@@ -619,18 +626,19 @@ public class DiskField extends Field {
         int[][] tokenIDMap = null;
         int[][] savedIDMap = null;
 
-        for(int i = 0; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             dicts[i] = fields[i].casedTokens;
-            if(dicts[i] != null) {
+            if (dicts[i] != null) {
                 merger = dicts[i];
             }
         }
 
-        if(merger != null) {
+        if (merger != null) {
             mergeHeader.dictOffsets[CASED_TOKENS] = mDict.getFilePointer();
-            tokenIDMap = merger.merge(new StringNameHandler(), dicts, null,
-                                      starts,
-                                      docIDMaps, mDict, mPostOut, true);
+            tokenIDMap = merger.merge(indexDir, new StringNameHandler(), dicts,
+                    null,
+                    starts,
+                    docIDMaps, mDict, mPostOut, true);
         } else {
             mergeHeader.dictOffsets[CASED_TOKENS] = -1;
         }
@@ -638,18 +646,19 @@ public class DiskField extends Field {
         Arrays.fill(dicts, null);
         merger = null;
 
-        for(int i = 0; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             dicts[i] = fields[i].uncasedTokens;
-            if(dicts[i] != null) {
+            if (dicts[i] != null) {
                 merger = dicts[i];
             }
         }
 
-        if(merger != null) {
+        if (merger != null) {
             mergeHeader.dictOffsets[UNCASED_TOKENS] = mDict.getFilePointer();
-            tokenIDMap = merger.merge(new StringNameHandler(), dicts, null,
-                                      starts,
-                                      docIDMaps, mDict, mPostOut, true);
+            tokenIDMap = merger.merge(indexDir, new StringNameHandler(), dicts,
+                    null,
+                    starts,
+                    docIDMaps, mDict, mPostOut, true);
         } else {
             mergeHeader.dictOffsets[UNCASED_TOKENS] = -1;
         }
@@ -657,17 +666,17 @@ public class DiskField extends Field {
         Arrays.fill(dicts, null);
         merger = null;
 
-        for(int i = 0; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             dicts[i] = fields[i].stemmedTokens;
-            if(dicts[i] != null) {
+            if (dicts[i] != null) {
                 merger = dicts[i];
             }
         }
 
-        if(merger != null) {
+        if (merger != null) {
             mergeHeader.dictOffsets[STEMMED_TOKENS] = mDict.getFilePointer();
-            merger.merge(new StringNameHandler(), dicts, null, starts,
-                         docIDMaps, mDict, mPostOut, true);
+            merger.merge(indexDir, new StringNameHandler(), dicts, null, starts,
+                    docIDMaps, mDict, mPostOut, true);
         } else {
             mergeHeader.dictOffsets[STEMMED_TOKENS] = -1;
         }
@@ -675,18 +684,19 @@ public class DiskField extends Field {
         Arrays.fill(dicts, null);
         merger = null;
 
-        for(int i = 0; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             dicts[i] = fields[i].rawSaved;
-            if(dicts[i] != null) {
+            if (dicts[i] != null) {
                 merger = dicts[i];
             }
         }
 
-        if(merger != null) {
+        if (merger != null) {
             mergeHeader.dictOffsets[RAW_SAVED] = mDict.getFilePointer();
-            savedIDMap = merger.merge(MemoryField.getEncoder(info), dicts, null,
-                                      starts,
-                                      docIDMaps, mDict, mPostOut, true);
+            savedIDMap = merger.merge(indexDir, MemoryField.getEncoder(info),
+                    dicts, null,
+                    starts,
+                    docIDMaps, mDict, mPostOut, true);
         } else {
             mergeHeader.dictOffsets[RAW_SAVED] = -1;
         }
@@ -694,18 +704,19 @@ public class DiskField extends Field {
         Arrays.fill(dicts, null);
         merger = null;
 
-        for(int i = 0; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             dicts[i] = fields[i].uncasedSaved;
-            if(dicts[i] != null) {
+            if (dicts[i] != null) {
                 merger = dicts[i];
             }
         }
 
-        if(merger != null) {
+        if (merger != null) {
             mergeHeader.dictOffsets[UNCASED_SAVED] = mDict.getFilePointer();
-            savedIDMap = merger.merge(MemoryField.getEncoder(info), dicts, null,
-                                      starts,
-                                      docIDMaps, mDict, mPostOut, true);
+            savedIDMap = merger.merge(indexDir, MemoryField.getEncoder(info),
+                    dicts, null,
+                    starts,
+                    docIDMaps, mDict, mPostOut, true);
         } else {
             mergeHeader.dictOffsets[UNCASED_SAVED] = -1;
         }
@@ -713,53 +724,53 @@ public class DiskField extends Field {
         Arrays.fill(dicts, null);
         merger = null;
 
-        for(int i = 0; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             dicts[i] = fields[i].vectors;
-            if(dicts[i] != null) {
+            if (dicts[i] != null) {
                 merger = dicts[i];
             }
         }
 
-        if(merger != null) {
+        if (merger != null) {
             mergeHeader.dictOffsets[VECTORS] = mDict.getFilePointer();
-            merger.merge(new StringNameHandler(), dicts, null, null,
-                         tokenIDMap, mDict, mPostOut, true);
+            merger.merge(indexDir, new StringNameHandler(), dicts, null, null,
+                    tokenIDMap, mDict, mPostOut, true);
         } else {
             mergeHeader.dictOffsets[VECTORS] = -1;
         }
 
         DiskBiGramDictionary[] bgDicts = new DiskBiGramDictionary[fields.length];
         DiskBiGramDictionary bgMerger = null;
-        for(int i = 0; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             bgDicts[i] = fields[i].tokenBigrams;
-            if(bgDicts[i] != null) {
+            if (bgDicts[i] != null) {
                 bgMerger = bgDicts[i];
             }
         }
 
-        if(bgMerger != null) {
+        if (bgMerger != null) {
             mergeHeader.tokenBGOffset = mDict.getFilePointer();
-            bgMerger.merge(bgDicts, starts, tokenIDMap, mDict, mPostOut[0]);
+            bgMerger.merge(indexDir, bgDicts, starts, tokenIDMap, mDict, mPostOut[0]);
         }
 
         Arrays.fill(bgDicts, null);
         bgMerger = null;
 
-        for(int i = 0; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             bgDicts[i] = fields[i].savedBigrams;
-            if(bgDicts[i] != null) {
+            if (bgDicts[i] != null) {
                 bgMerger = bgDicts[i];
             }
         }
 
-        if(bgMerger != null) {
+        if (bgMerger != null) {
             mergeHeader.savedBGOffset = mDict.getFilePointer();
-            bgMerger.merge(bgDicts, starts, savedIDMap, mDict, mPostOut[0]);
+            bgMerger.merge(indexDir, bgDicts, starts, savedIDMap, mDict, mPostOut[0]);
         }
 
         //
         // Merge the docs to values data.
-        if(saved) {
+        if (saved) {
             File id = partition.getPartitionManager().getIndexDir();
 
             //
@@ -767,18 +778,18 @@ public class DiskField extends Field {
             File dtvFile = File.createTempFile("dtv", "buff", id);
             RandomAccessFile dtvRAF = new RandomAccessFile(dtvFile, "rw");
             FileWriteableBuffer mdtvBuff = new FileWriteableBuffer(dtvRAF,
-                                                                   16384);
+                    16384);
             File dtvOffsetFile = File.createTempFile("dtvOff", "buff", id);
             RandomAccessFile dtvOffsetRAF = new RandomAccessFile(dtvOffsetFile,
-                                                                 "rw");
+                    "rw");
             FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(
                     dtvOffsetRAF, 16384);
-            for(int i = 0; i < fields.length; i++) {
+            for (int i = 0; i < fields.length; i++) {
                 //
                 // This partition didn't have this field, but we still want to
                 // fill in values.
-                if(fields[i] == null) {
-                    for(int j = 0; j < nUndel[i]; j++) {
+                if (fields[i] == null) {
+                    for (int j = 0; j < nUndel[i]; j++) {
                         mdtvOffsetBuff.byteEncode(mdtvBuff.position(), 4);
                         mdtvBuff.byteEncode(0);
                     }
@@ -791,13 +802,13 @@ public class DiskField extends Field {
                 int[] docIDMap = docIDMaps[i];
                 int[] valIDMap = savedIDMap[i];
 
-                for(int j = 0; j < fields[i].header.maxDocID; j++) {
+                for (int j = 0; j < fields[i].header.maxDocID; j++) {
                     int n = dtvDup.byteDecode();
 
-                    if(docIDMap != null && docIDMap[j + 1] < 0) {
+                    if (docIDMap != null && docIDMap[j + 1] < 0) {
                         //
                         // Skip this document's data.
-                        for(int k = 0; k < n; k++) {
+                        for (int k = 0; k < n; k++) {
                             dtvDup.byteDecode();
                         }
                     } else {
@@ -809,7 +820,7 @@ public class DiskField extends Field {
                         // Re-encode the data, keeping in mind that the IDs for
                         // the values were remapped by the values merge above.
                         mdtvBuff.byteEncode(n);
-                        for(int k = 0; k < n; k++) {
+                        for (int k = 0; k < n; k++) {
                             int mappedID = valIDMap[dtvDup.byteDecode()];
                             mdtvBuff.byteEncode(mappedID);
                         }
@@ -833,7 +844,7 @@ public class DiskField extends Field {
             // Calculate document vector lengths.
             mergeHeader.vectorLengthOffset = mVectorLengths.getFilePointer();
             DocumentVectorLengths.calculate(this, null, mVectorLengths,
-                                            partition.getPartitionManager().
+                    partition.getPartitionManager().
                     getTermStatsDict());
 
             //
@@ -853,7 +864,7 @@ public class DiskField extends Field {
      */
     public Fetcher getFetcher() {
 
-        if(!saved) {
+        if (!saved) {
             return null;
         }
         return new Fetcher();
@@ -890,7 +901,7 @@ public class DiskField extends Field {
         public Object fetchOne(int docID) {
             ldtv.position(ldtvo.byteDecode(4 * (docID - 1), 4));
             int n = ldtv.byteDecode();
-            if(n == 0) {
+            if (n == 0) {
                 return null;
             }
             return rawSaved.getByID(ldtv.byteDecode()).getName();
@@ -909,7 +920,7 @@ public class DiskField extends Field {
         public List<Object> fetch(int docID, List l) {
             ldtv.position(ldtvo.byteDecode(4 * (docID - 1), 4));
             int n = ldtv.byteDecode();
-            for(int i = 0; i < n; i++) {
+            for (int i = 0; i < n; i++) {
                 l.add(rawSaved.getByID(ldtv.byteDecode()).getName());
             }
             return l;
