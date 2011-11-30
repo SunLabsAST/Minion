@@ -44,6 +44,7 @@ import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -309,6 +310,37 @@ public class DocumentVectorLengths {
         for(int i = 0; i < p; i++) {
             lvl.position((docs[i] - 1) * 4);
             scores[i] /= (lvl.decodeFloat() * qw);
+        }
+    }
+    
+    /**
+     * Normalizes a set of scores generated across multiple fields.
+     * 
+     * @param dvls the document vector lengths for the fields in question.
+     * @param docs the document IDs
+     * @param scores the scores to normalize
+     * @param p the number of elements in the docs array that contain document
+     * IDs
+     * @param qw the query weight.
+     */
+    public static void normalize(List<DocumentVectorLengths> dvls, int[] docs, float[] scores, int p, float qw) {
+        if(dvls.size() == 1) {
+            dvls.get(0).normalize(docs, scores, p, qw);
+            return;
+        }
+        ReadableBuffer[] lvls = new ReadableBuffer[dvls.size()];
+        for(int i = 0; i < dvls.size(); i++) {
+             lvls[i] = dvls.get(i).vecLens.duplicate();
+        }
+        
+        for(int i = 0; i < p; i++) {
+            float norm = 0;
+            int vlpos = (docs[i] - 1) * 4;
+            for(ReadableBuffer lvl : lvls) {
+                lvl.position(vlpos);
+                norm += lvl.decodeFloat();
+            }
+            scores[i] /= (norm * qw);
         }
     }
 } // DocumentVectorLengths

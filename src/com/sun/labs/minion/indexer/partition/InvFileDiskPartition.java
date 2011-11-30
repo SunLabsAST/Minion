@@ -37,8 +37,10 @@ import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -159,6 +161,21 @@ public class InvFileDiskPartition extends DiskPartition {
             }
         }
         return ret;
+    }
+    
+    public void normalize(Set<FieldInfo> fields, int[] docs, float[] scores,
+                          int size, float sqw) {
+        if(fields == null || fields.isEmpty()) {
+            fields = new HashSet<FieldInfo>(manager.engine.getQueryConfig().getDefaultFields());
+        }
+        List<DocumentVectorLengths> dvls = new ArrayList<DocumentVectorLengths>();
+        for(FieldInfo field : fields) {
+            DiskField df = getDF(field);
+            if(df != null) {
+                dvls.add(df.getDocumentVectorLengths());
+            }
+        }
+        DocumentVectorLengths.normalize(dvls, docs, scores, size, sqw);
     }
 
     /**
@@ -397,4 +414,5 @@ public class InvFileDiskPartition extends DiskPartition {
             logger.severe("Failed to reap partition " + n);
         }
     }
+
 }

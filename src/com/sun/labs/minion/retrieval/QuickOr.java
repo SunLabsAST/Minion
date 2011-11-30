@@ -23,11 +23,14 @@
  */
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
 import com.sun.labs.minion.util.Util;
+import java.util.HashSet;
+import java.util.Set;
 
 public class QuickOr {
 
@@ -52,6 +55,11 @@ public class QuickOr {
      * The number of sets of postings that have been added.
      */
     protected int added;
+    
+    /**
+     * The fields that contributed documents to this or.
+     */
+    private Set<FieldInfo> fields;
 
     /**
      * A flag indicating that the weights array is as long as the number of
@@ -67,6 +75,7 @@ public class QuickOr {
     public QuickOr(DiskPartition part, int estSize, boolean shouldStoreAll) {
         this.part = part;
         qs = new QueryStats();
+        fields = new HashSet<FieldInfo>();
         if(shouldStoreAll) {
             storeAll = true;
         } else {
@@ -126,6 +135,10 @@ public class QuickOr {
 
     public void add(PostingsIterator pi, float fw) {
         add(pi);
+    }
+    
+    public void addField(FieldInfo field) {
+        fields.add(field);
     }
 
     /**

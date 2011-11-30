@@ -34,6 +34,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.HashSet;
 
 /**
  * A scored array group is one for which the documents have scores
@@ -274,7 +275,15 @@ public class ScoredGroup extends ArrayGroup {
     
     @Override
     public ArrayGroup normalize() {
-        return normalize(-1);
+        if(!normalized) {
+            sqw = (float) Math.sqrt(sqw);
+            if(sqw == 0) {
+                sqw = 1;
+            }
+            ((InvFileDiskPartition) part).normalize(fields, docs, scores, size, sqw);
+            normalized = true;
+        }
+            return this;
     }
     
     /**

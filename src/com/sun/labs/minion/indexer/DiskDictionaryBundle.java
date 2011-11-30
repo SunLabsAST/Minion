@@ -855,6 +855,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
         return new Fetcher(dicts[Type.RAW_SAVED.ordinal()], dtvOffsets, dtvData);
     }
 
+    DocumentVectorLengths getDocumentVectorLengths() {
+        return dvl;
+    }
+
     /**
      * A class that can be used when you want to get a lot of field values for
      * a particular field, for example, when sorting or clustering results

@@ -6,6 +6,7 @@ import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
@@ -229,6 +230,10 @@ public class DiskField extends Field {
      */
     public float getDocumentVectorLength(int docID) {
         return bundle.getDocumentVectorLength(docID);
+    }
+    
+    public DocumentVectorLengths getDocumentVectorLengths() {
+        return bundle.getDocumentVectorLengths();
     }
 
     /**
