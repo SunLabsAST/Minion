@@ -1463,7 +1463,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 top = h.peek();
             }
 
-
+            me.setUsed(true);
+            
             //
             // Write the postings for the newly merged entry.
             try {
