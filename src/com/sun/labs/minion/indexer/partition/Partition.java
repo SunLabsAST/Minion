@@ -23,12 +23,8 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import com.sun.labs.util.props.Configurable;
-import com.sun.labs.util.props.PropertyException;
 import java.io.File;
 
-import com.sun.labs.util.props.ConfigComponent;
-import com.sun.labs.util.props.PropertySheet;
 
 
 import java.util.logging.Logger;
@@ -50,9 +46,9 @@ public abstract class Partition implements Comparable<Partition> {
     protected PartitionManager manager;
 
     /**
-     * The statistics for this partition.
+     * The header for this partition.
      */
-    protected PartitionStats stats;
+    protected PartitionHeader header;
 
     /**
      * The number of this partition.
@@ -66,30 +62,30 @@ public abstract class Partition implements Comparable<Partition> {
 
     private String name;
 
+
     /**
-     * Gets the number for this file.
+     * Gets the number for this partition.
+     * @return the partition number.
      */
     public int getPartitionNumber() {
         return partNumber;
     }
 
-    /**
-     * Gets the statistics for this partition.
-     */
-    public PartitionStats getStats() {
-        return stats;
+    public PartitionHeader getPartitionHeader() {
+        return header;
     }
 
     /**
-     * Gets the number of documents in this partition.
-     */
-    public abstract int getNDocs();
-
-    /**
-     * Get the manager for this partition.
+     * Gets the manager for this partition.
+     * 
+     * @return the manager for this partition
      */
     public PartitionManager getPartitionManager() {
         return manager;
+    }
+
+    protected void setPartitionManager(PartitionManager manager) {
+        this.manager = manager;
     }
 
     /**
@@ -136,11 +132,6 @@ public abstract class Partition implements Comparable<Partition> {
     
     public String getName() {
         return name;
-    }
-
-    public void newProperties(PropertySheet ps) throws PropertyException {
-        name = ps.getInstanceName();
-        manager = (PartitionManager) ps.getComponent(PROP_PARTITION_MANAGER);
     }
 
 } // Partition

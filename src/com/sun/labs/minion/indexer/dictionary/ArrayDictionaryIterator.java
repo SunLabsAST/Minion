@@ -31,8 +31,6 @@ import com.sun.labs.minion.indexer.postings.io.PostingsInput;
  */
 public class ArrayDictionaryIterator implements DictionaryIterator {
 
-    private DiskDictionary dd;
-
     private QueryEntry[] entries;
 
     private int curr;
@@ -43,18 +41,17 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
 
     private int end;
 
-    public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries) {
-        this(dd, entries, 0, entries != null ? entries.length : 0);
+    public ArrayDictionaryIterator(QueryEntry[] entries) {
+        this(entries, 0, entries != null ? entries.length : 0);
     }
 
-    public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries,
+    public ArrayDictionaryIterator(QueryEntry[] entries,
                                    PostingsInput[] buffInputs) {
-        this(dd, entries, 0, entries != null ? entries.length : 0);
+        this(entries, 0, entries != null ? entries.length : 0);
     }
 
-    public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries,
+    public ArrayDictionaryIterator(QueryEntry[] entries,
                                    int begin, int end) {
-        this.dd = dd;
         if(entries == null) {
             this.entries = new QueryEntry[0];
             curr = 0;

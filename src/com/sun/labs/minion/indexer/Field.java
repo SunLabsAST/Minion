@@ -57,6 +57,10 @@ public abstract class Field {
         }
     }
 
+    public FieldInfo getInfo() {
+        return info;
+    }
+
     public Partition getPartition() {
         return partition;
     }

@@ -420,7 +420,6 @@ public class DiskBiGramDictionary extends DiskDictionary {
                        RandomAccessFile mDictFile,
                        PostingsOutput postOut) throws java.io.IOException {
         ((DiskDictionary) dicts[0]).merge(new StringNameHandler(),
-                                          null,
                                           (DiskDictionary[]) dicts,
                                           null,
                                           starts,

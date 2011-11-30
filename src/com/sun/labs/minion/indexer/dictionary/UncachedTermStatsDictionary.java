@@ -99,59 +99,6 @@ public class UncachedTermStatsDictionary
         }
     }
 
-    /**
-     * Creates a term stats dictionary from a number of partitions.  This can
-     * be used to re-create a term statistics dictionary when things have gone
-     * wonky.
-     * @param df the file where the term stats dictionary will be written
-     * @param parts the partitions whose dictionaries will be included
-     * @throws java.io.IOException if there is an error writing the new term
-     * statistics.
-     *
-     */
-    public void recalculateTermStats(File df, Collection<DiskPartition> parts)
-            throws java.io.IOException {
-        PriorityQueue<HE> h = new PriorityQueue<HE>();
-        for(DiskPartition p : parts) {
-            HE el = new HE(p.getMainDictionaryIterator());
-            if(el.next()) {
-                h.offer(el);
-            }
-        }
-
-        //
-        // A writer for our output dictionary.
-        DictionaryWriter tsw =
-                new DictionaryWriter(df.getParent(),
-                                     new StringNameHandler(), null, 0,
-                                     MemoryDictionary.Renumber.RENUMBER);
-        int nMerged = 0;
-        while(h.size() > 0) {
-            HE top = h.peek();
-            TermStatsIndexEntry tse = new TermStatsIndexEntry(top.curr);
-            TermStatsImpl ts = tse.getTermStats();
-            while(top != null && top.curr.getName().equals(tse.getName())) {
-                top = h.poll();
-                ts.add(top.curr);
-                if(top.next()) {
-                    h.offer(top);
-                }
-                top = h.peek();
-            }
-            tsw.write(tse);
-            nMerged++;
-            if(nMerged % 100000 == 0) {
-                logger.info("Generated " + nMerged);
-            }
-        }
-        if(nMerged % 100000 != 0) {
-            logger.info("Generated " + nMerged);
-        }
-        RandomAccessFile raf = new RandomAccessFile(df, "rw");
-        tsw.finish(raf);
-        raf.close();
-    }
-
     @Override
     public boolean close(long currTime) {
         try {
@@ -183,7 +130,7 @@ public class UncachedTermStatsDictionary
      * should be created
      * @param df the file that should be created for the dictionary
      */
-    public static void create(String indexDir, File df) {
+    public static void create(File indexDir, File df) {
         try {
             logger.fine("Making term stats dictionary: " + df);
             RandomAccessFile raf = new RandomAccessFile(df, "rw");

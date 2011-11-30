@@ -36,7 +36,6 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.partition.Partition;
-import com.sun.labs.minion.indexer.partition.PartitionStats;
 import java.io.File;
 
 /**
@@ -317,42 +316,6 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * @param path The path to the directory where the dictionary should be
      * dumped.
      * @param encoder An encoder for the names of the entries.
-     * @param dictFile The file where the dictionary will be dumped.
-     * @param postOut The place where the postings will be dumped.
-     * @param renumber How entries should be renumbered at dump time.
-     * @param idMap what kind of map from old to new IDs should be kept
-     * @param postIDMap A map from old IDs used in the postings to new IDs.
-     * This map will be given to the postings from the dictionary before
-     * they are dumped to disk, allowing the postings to be remapped before
-     * the dump.  This is useful when the postings in one dictionary
-     * contain IDs that have been remapped during a dump operation, such as
-     * those in a document dictionary.  If this value is <code>null</code>,
-     * no remapping will take place.
-     * @return An array of entries in the order that they were dumped.
-     * @throws java.io.IOException When there is an error writing either of
-     * the channels.
-     */
-    public IndexEntry[] dump(File path,
-            NameEncoder encoder,
-            RandomAccessFile dictFile,
-            PostingsOutput[] postOut,
-            Renumber renumber,
-            IDMap idMap,
-            int[] postIDMap)
-            throws java.io.IOException {
-        return dump(path, encoder, null, dictFile, postOut, renumber, idMap,
-                postIDMap);
-    }
-
-    /**
-     * Dumps the dictionary and the associated postings to files.  Once the
-     * dumping is complete, the pointer in the file must be pointing to a
-     * position *after* the data just written.  This is so that we may dump
-     * multiple dictionaries and postings types to the same channel.
-     *
-     * @param path The path to the directory where the dictionary should be
-     * dumped.
-     * @param encoder An encoder for the names of the entries.
      * @param partStats a set of partition statistics that we will
      * contribute to while dumping the dictionary.  May be <code>null</code>.
      * @param dictFile The file where the dictionary will be dumped.
@@ -372,7 +335,6 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      */
     public IndexEntry[] dump(File path,
             NameEncoder encoder,
-            PartitionStats partStats,
             RandomAccessFile dictFile,
             PostingsOutput[] postOut,
             Renumber renumber,
@@ -386,7 +348,6 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         // will need to keep an ID to position map.
         DictionaryWriter dw = new DictionaryWriter(path,
                 encoder,
-                partStats,
                 postOut.length,
                 renumber);
 

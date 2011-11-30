@@ -30,8 +30,6 @@ import java.nio.channels.FileChannel;
 
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 
-import com.sun.labs.minion.indexer.partition.PartitionStats;
-
 import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
@@ -54,12 +52,6 @@ public class DictionaryWriter<N extends Comparable> {
      * An encoder for the names in our dictionary.
      */
     protected NameEncoder encoder;
-
-    /**
-     * A set of partition statistics for the partition who's dictionaries
-     * we're dumping/merging.  This may be <code>null</code>.
-     */
-    protected PartitionStats partStats;
 
     /**
      * The name of the previous entry added to the merged dictionary.
@@ -159,13 +151,11 @@ public class DictionaryWriter<N extends Comparable> {
      */
     public DictionaryWriter(File path,
             NameEncoder<N> encoder,
-            PartitionStats partStats,
             int nChans,
             MemoryDictionary.Renumber renumber)
             throws java.io.IOException {
 
         this.encoder = encoder;
-        this.partStats = partStats;
         dh = new DictionaryHeader(nChans);
 
         //
@@ -232,13 +222,6 @@ public class DictionaryWriter<N extends Comparable> {
                         idToPosn.length * 2));
             }
             idToPosn[e.getID()] = dh.size;
-        }
-
-        //
-        // If we're keeping track of partition stats for someone, then give
-        // them this entry to mull over.
-        if(partStats != null) {
-            partStats.processEntry(e);
         }
 
         prevName = e.getName();

@@ -2051,14 +2051,6 @@ public class QueryTest extends SEMain {
                     output.println("Bad");
                 }
             }
-        } else if(q.startsWith(":rts")) {
-            try {
-                manager.recalculateTermStats();
-            } catch(IOException ex) {
-                output.println("Error generating term stats: " + ex);
-            } catch(FileLockException ex) {
-                output.println("Error generating term stats: " + ex);
-            }
         } else if(q.startsWith(":findsim")) {
             String[] vals = parseMessage(q.substring(q.indexOf(' ')).trim());
             String key = vals[0];

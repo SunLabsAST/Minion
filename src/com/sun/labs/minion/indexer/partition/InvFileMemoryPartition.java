@@ -108,7 +108,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
     }
 
     @Override
-    protected void dumpCustom(String indexDir,
+    protected void dumpCustom(File indexDir,
                               int partNumber,
                               PartitionHeader ph,
                               RandomAccessFile dictFile,
@@ -132,7 +132,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         // Dump the fields.
         for(MemoryField mf : fields) {
             if(mf != null) {
-                ph.addOffset(dictFile.getFilePointer());
+                ph.addOffset(mf.getInfo().getID(), dictFile.getFilePointer());
             }
             mf.dump(indexDir, dictFile, postOut, tsRAF, vlRAF, maxDocumentID);
         }

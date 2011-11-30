@@ -1,7 +1,9 @@
 package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.indexer.dictionary.ArrayDictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DateNameHandler;
+import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskBiGramDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DoubleNameHandler;
@@ -11,6 +13,8 @@ import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
+import com.sun.labs.minion.indexer.postings.PostingsIterator;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
@@ -58,7 +62,7 @@ public class DiskField extends Field {
     /**
      * A dictionary for raw saved values.
      */
-    private DiskDictionary rawSaved;
+    private DiskDictionary<Comparable> rawSaved;
 
     /**
      * A dictionary for uncased saved values.
@@ -227,6 +231,178 @@ public class DiskField extends Field {
     }
 
     /**
+     * Gets an iterator for the saved values in a field.
+     * @param caseSensitive for a string saved field, if this is <code>true</code>,
+     * then case sensitive values will be returned.  Otherwise, case insensitive
+     * values will be returned
+     * @param lowerBound the lower bound for the values to return
+     * @param includeLower whether to include the lower bound in the results of
+     * the iterator
+     * @param upperBound the upper bound of the values to return. If this is <code>null</code>
+     * then no upper bound will be imposed.
+     * @param includeUpper whether to include the upper bound in the results of
+     * the iterator
+     * @return an iterator for the given range, or <code>null</code> if this
+     * field is not saved
+     */
+    public DictionaryIterator getSavedValuesIterator(boolean caseSensitive,
+                                                     Comparable lowerBound,
+                                                     boolean includeLower,
+                                                     Comparable upperBound,
+                                                     boolean includeUpper) {
+
+        if(!saved) {
+            return null;
+        }
+
+        if(info.getType() == FieldInfo.Type.STRING) {
+            if(caseSensitive) {
+                return rawSaved.iterator(lowerBound, includeLower, upperBound,
+                                         includeUpper);
+            } else {
+                if(uncasedSaved == null) {
+                    logger.warning(String.format("No case insensitive"
+                            + " saved values for %s", info.getName()));
+                    return null;
+                }
+                return uncasedSaved.iterator(lowerBound.toString(),
+                                             includeLower, upperBound.toString(),
+                                             includeUpper);
+            }
+        } else {
+            return rawSaved.iterator(lowerBound, includeLower, upperBound,
+                                     includeUpper);
+        }
+    }
+
+    /**
+     * Gets an iterator for the character saved field values that match a
+     * given wildcard pattern.
+     *
+     * @param name The name of the field whose values we wish to match
+     * against.
+     * @param val The wildcard value against which we will match.
+     * @param caseSensitive If <code>true</code>, then case will be taken
+     * into account during the match.
+     * @param maxEntries The maximum number of entries to return.  If zero or
+     * negative, return all possible entries.
+     * @param timeLimit The maximum amount of time (in milliseconds) to
+     * spend trying to find matches.  If zero or negative, no time limit is
+     * imposed.
+     */
+    public DictionaryIterator getMatchingIterator(String val,
+                                                  boolean caseSensitive,
+                                                  int maxEntries,
+                                                  long timeLimit) {
+
+        if(info.getType() != FieldInfo.Type.STRING) {
+            logger.warning(String.format(
+                    "Can't get matching values for non-string field %s", info.
+                    getName()));
+            return null;
+        }
+        QueryEntry[] qes;
+        if(caseSensitive) {
+            qes = rawSaved.getMatching(savedBigrams, val, true,
+                                       maxEntries, timeLimit);
+        } else {
+            if(uncasedSaved == null) {
+                logger.warning(String.format(
+                        "Can't get uncased matches for string field %s",
+                        info.getName()));
+                return null;
+            }
+            qes = uncasedSaved.getMatching(savedBigrams, val.toLowerCase(),
+                                           false,
+                                           maxEntries, timeLimit);
+        }
+        return new ArrayDictionaryIterator(qes);
+    }
+
+    /**
+     * Gets an iterator for the character saved field values that contain a
+     * given substring.
+     *
+     * @param val The substring that we are looking for.
+     * @param caseSensitive If <code>true</code>, then case will be taken
+     * into account during the match.
+     * @param starts If <code>true</code>, returned values must start with the
+     * given substring.
+     * @param ends If <code>true</code>, returned values must end with the given
+     * substring.
+     * @param maxEntries The maximum number of entries to return.  If zero or
+     * negative, return all possible entries.
+     * @param timeLimit The maximum amount of time (in milliseconds) to
+     * spend trying to find matches.  If zero or negative, no time limit is
+     * imposed.
+     * @return an iterator for the saved values that have the provided value
+     * as a substring, or <code>null</code> if there are no such values.
+     */
+    public DictionaryIterator getSubstringIterator(String val,
+                                                   boolean caseSensitive,
+                                                   boolean starts,
+                                                   boolean ends,
+                                                   int maxEntries,
+                                                   long timeLimit) {
+        if(info.getType() != FieldInfo.Type.STRING) {
+            logger.warning(String.format(
+                    "Can't get matching values for non-string field %s", info.
+                    getName()));
+            return null;
+        }
+        QueryEntry[] qes;
+        if(caseSensitive) {
+            qes = rawSaved.getSubstring(savedBigrams, val, caseSensitive,
+                                        starts, ends, maxEntries, timeLimit);
+        } else {
+            if(uncasedSaved == null) {
+                logger.warning(String.format(
+                        "Can't get uncased matches for string field %s",
+                        info.getName()));
+                return null;
+            }
+            qes = uncasedSaved.getSubstring(savedBigrams,
+                                            val.toLowerCase(),
+                                            false, starts, ends,
+                                            maxEntries, timeLimit);
+        }
+        return new ArrayDictionaryIterator(qes);
+    }
+
+    /**
+     * Gets the postings associated with a particular field value.
+     *
+     * @param value The value from the field for which we want postings.
+     * @param caseSensitive If true, case should be taken into account when
+     * iterating through the values.  This value will only be observed for
+     * character fields!
+     * @return An iterator for the postings associated with that value, or
+     * <code>null</code> if there is no such value in the field.
+     */
+    public PostingsIterator getFieldPostings(Object value,
+                                             boolean caseSensitive) {
+
+        if(!saved) {
+            logger.warning(String.format("Can't get field postings for " +
+                    " non-saved field %s", info.getName()));
+            return null;
+        }
+
+        QueryEntry e;
+        if(caseSensitive) {
+            e = rawSaved.get((Comparable) value);
+        } else {
+            e = uncasedSaved.get(value.toString());
+        }
+
+        if(e == null) {
+            return null;
+        }
+
+        return e.iterator(new PostingsIteratorFeatures());
+    }
+
+    /**
      * Gets the length of a document vector for a given document.  Note
      * that this may cause all of the document vector lengths for this
      * partition to be calculated!
@@ -239,8 +415,16 @@ public class DiskField extends Field {
         return dvl.getVectorLength(docID);
     }
 
-    public void normalize(int[] docs, float[] scores, int p, float qw) {
-        dvl.normalize(docs, scores, p, qw);
+    /**
+     * Normalizes the scores for a number of documents all at once, which will
+     * be more efficient than doing them one-by-one
+     * @param docs the IDs of the documents
+     * @param scores the scores to normalize
+     * @param n the number of actual docs and scores
+     * @param qw any query weight to apply when normalizing
+     */
+    public void normalize(int[] docs, float[] scores, int n, float qw) {
+        dvl.normalize(docs, scores, n, qw);
     }
 
     public void merge(DiskField[] fields,
@@ -500,6 +684,10 @@ public class DiskField extends Field {
      * @return a saved field value fetcher.
      */
     public Fetcher getFetcher() {
+
+        if(!saved) {
+            return null;
+        }
         return new Fetcher();
     }
 

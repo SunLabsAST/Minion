@@ -122,7 +122,7 @@ public class CachedTermStatsDictionary extends CachedDiskDictionary implements T
      * should be created
      * @param df the file that should be created for the dictionary
      */
-    public static void create(String indexDir, File df) {
+    public static void create(File indexDir, File df) {
         try {
             logger.info("Making term stats dictionary: " + df);
             RandomAccessFile raf = new RandomAccessFile(df, "rw");

@@ -145,6 +145,7 @@ public class StreamPostingsOutput implements PostingsOutput {
      * @throws java.io.IOException if there is an error closing the stream
      */
     public void close() throws java.io.IOException {
+        flush();
         stream.close();
     }
 } // StreamPostingsOutput

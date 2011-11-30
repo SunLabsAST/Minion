@@ -109,13 +109,18 @@ public abstract class MemoryPartition extends Partition {
             postOut[i - 1] = new StreamPostingsOutput(postStream[i - 1]);
         }
 
-        String indexDir = manager.getIndexDir();
+        File indexDir = manager.getIndexDir();
 
-        PartitionHeader ph = new PartitionHeader();
+        header = new PartitionHeader();
+
+        //
+        // A spot for the partition header offset to be written.
+        long phoffsetpos = dictFile.getFilePointer();
+        dictFile.writeLong(0);
 
         //
         // Dump the document dictionary.
-        ph.setDocDictOffset(dictFile.getFilePointer());
+        header.setDocDictOffset(dictFile.getFilePointer());
         docDict.dump(indexDir, new StringNameHandler(),
                      dictFile, postOut,
                      MemoryDictionary.Renumber.NONE, MemoryDictionary.IDMap.NONE,
@@ -123,12 +128,12 @@ public abstract class MemoryPartition extends Partition {
 
         //
         // Set the number of documents.
-        stats.nDocs = docDict.size();
+        header.setnDocs(docDict.size());
+        header.setMaxDocID(maxDocumentID);
 
         //
-        // Write the partition statistics to the document dictionary
-        // channel.
-        stats.write(dictFile);
+        // Write the partition header to the dictionary file.
+        header.write(dictFile);
 
         //
         // If we deleted some documents along the way, then dump that data
@@ -140,8 +145,23 @@ public abstract class MemoryPartition extends Partition {
 
         //
         // Dump any custom data -- to be filled in by subclasses.
-        dumpCustom(indexDir, partNumber, ph, dictFile, postOut);
+        dumpCustom(indexDir, partNumber, header, dictFile, postOut);
 
+        //
+        // Write the partition header, then return to the top of the file to
+        // say where it is.
+        long phoffset = dictFile.getFilePointer();
+        header.write(dictFile);
+        long pos = dictFile.getFilePointer();
+        dictFile.seek(phoffsetpos);
+        dictFile.writeLong(phoffset);
+        dictFile.seek(pos);
+
+        dictFile.close();
+        for(int i = 0; i < postStream.length; i++) {
+            postOut[i].flush();
+            postStream[i].close();
+        }
         return partNumber;
     }
 
@@ -159,7 +179,7 @@ public abstract class MemoryPartition extends Partition {
      * to disk
      */
     protected abstract void dumpCustom(
-            String indexDir,
+            File indexDir,
             int partNumber,
             PartitionHeader ph,
             RandomAccessFile dictFile, PostingsOutput[] postOut) throws java.io.IOException;

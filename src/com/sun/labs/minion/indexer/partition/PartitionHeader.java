@@ -1,5 +1,6 @@
 package com.sun.labs.minion.indexer.partition;
 
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +12,16 @@ import java.util.List;
 public class PartitionHeader {
 
     /**
+     * The number of documents in the partition.
+     */
+    private int nDocs;
+
+    /**
+     * The maximum document ID assigned in the partition.
+     */
+    private int maxDocID;
+
+    /**
      * The number of fields in the partition.
      */
     private int nFields;
@@ -18,34 +29,32 @@ public class PartitionHeader {
     /**
      * The offsets to where the fields can be found in the files.
      */
-    private List<Long> fieldOffsets;
+    private List<FieldOffset> fieldOffsets;
 
     /**
      * The offset of the document dictionary for the partition.
      */
     private long docDictOffset;
 
-    private int n;
-
     public PartitionHeader() {
-        fieldOffsets = new ArrayList<Long>();
+        fieldOffsets = new ArrayList<FieldOffset>();
     }
 
     public PartitionHeader(RandomAccessFile raf) throws java.io.IOException {
         docDictOffset = raf.readLong();
         nFields = raf.readInt();
-        fieldOffsets = new ArrayList<Long>();
+        fieldOffsets = new ArrayList<FieldOffset>();
         for(int i = 0; i < nFields; i++) {
-            fieldOffsets.add(raf.readLong());
+            fieldOffsets.add(new FieldOffset(raf));
         }
     }
 
-    public void addOffset(long offset) {
-        fieldOffsets.add(offset);
+    public void addOffset(int id, long offset) {
+        fieldOffsets.add(new FieldOffset(id, offset));
     }
 
-    public List<Long> getFieldOffsets() {
-        return new ArrayList<Long>(fieldOffsets);
+    public List<FieldOffset> getFieldOffsets() {
+        return new ArrayList<FieldOffset>(fieldOffsets);
     }
 
     public long getDocDictOffset() {
@@ -56,13 +65,66 @@ public class PartitionHeader {
         this.docDictOffset = docDictOffset;
     }
 
+    public int getnDocs() {
+        return nDocs;
+    }
+
+    public void setnDocs(int nDocs) {
+        this.nDocs = nDocs;
+    }
+
+    public int getMaxDocID() {
+        return maxDocID;
+    }
+
+    public void setMaxDocID(int maxDocID) {
+        this.maxDocID = maxDocID;
+    }
 
     public void write(RandomAccessFile raf) throws java.io.IOException {
         raf.writeLong(docDictOffset);
         raf.writeInt(nFields);
-        for(long l : fieldOffsets) {
-            raf.writeLong(l);
+        for(FieldOffset fo : fieldOffsets) {
+            fo.write(raf);
         }
    }
+
+    protected static class FieldOffset {
+
+        private long offset;
+
+        private int id;
+
+        public FieldOffset(int id, long offset) {
+            this.id = id;
+            this.offset = offset;
+        }
+
+        public FieldOffset(RandomAccessFile raf) throws IOException {
+            id = raf.readInt();
+            offset = raf.readLong();
+        }
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        public long getOffset() {
+            return offset;
+        }
+
+        protected void setOffset(long offset) {
+            this.offset = offset;
+        }
+
+        public void write(RandomAccessFile raf) throws java.io.IOException {
+            raf.writeInt(id);
+            raf.writeLong(offset);
+        }
+    }
 
 }

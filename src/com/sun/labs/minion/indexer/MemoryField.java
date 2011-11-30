@@ -277,6 +277,7 @@ public class MemoryField extends Field {
 
         logger.info(String.format("Dump field %s", info.getName()));
 
+        header.fieldID = info.getID();
         header.maxDocID = maxID;
 
         //

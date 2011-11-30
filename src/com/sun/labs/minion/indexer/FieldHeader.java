@@ -32,6 +32,11 @@ import java.io.RandomAccessFile;
 class FieldHeader {
 
     /**
+     * The ID of the field.
+     */
+    protected int fieldID;
+
+    /**
      * The maximum document ID for the partition in which this field resides.
      */
     protected int maxDocID;
@@ -87,6 +92,7 @@ class FieldHeader {
      * Reads a field header from the given channel.
      */
     public void read(RandomAccessFile f) throws java.io.IOException {
+        fieldID = f.readInt();
         maxDocID = f.readInt();
         int n = f.readInt();
         for(int i = 0; i < n; i++) {
@@ -104,6 +110,7 @@ class FieldHeader {
      */
     public void write(RandomAccessFile f)
             throws java.io.IOException {
+        f.writeInt(fieldID);
         f.writeInt(maxDocID);
         f.writeInt(dictOffsets.length);
         for(int i = 0; i < dictOffsets.length; i++) {

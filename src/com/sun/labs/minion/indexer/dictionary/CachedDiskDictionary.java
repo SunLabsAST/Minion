@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -146,10 +147,8 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
         //
         // Read everything into the cache now.
         int p = 0;
-        DictionaryIterator di = super.iterator();
-
         for(DictionaryIterator i = super.iterator(); i.hasNext();) {
-            QueryEntry<N> e = i.next();
+            QueryEntry<N> e = (QueryEntry) i.next();
             entries[e.getID() - 1] = e;
             entriesByName.put(e.getName(), e);
             if(dictOrderEntries != null) {
@@ -192,9 +191,9 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
     @Override
     public DictionaryIterator iterator() {
         if(dictOrderEntries != null) {
-            return new ArrayDictionaryIterator(this, dictOrderEntries, 0, dictOrderEntries.length);
+            return new ArrayDictionaryIterator(dictOrderEntries);
         }
-        return new ArrayDictionaryIterator(this, entries, 0, entries.length);
+        return new ArrayDictionaryIterator(entries, 0, entries.length);
     }
 
     /**
@@ -212,9 +211,9 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
     @Override
     public DictionaryIterator iterator(int begin, int end) {
         if(dictOrderEntries != null) {
-            return new ArrayDictionaryIterator(this, dictOrderEntries, begin,
+            return new ArrayDictionaryIterator(dictOrderEntries, begin,
                                                end);
         }
-        return new ArrayDictionaryIterator(this, entries, begin, end);
+        return new ArrayDictionaryIterator(entries, begin, end);
     }
 }

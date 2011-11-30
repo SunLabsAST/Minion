@@ -40,7 +40,6 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.Partition;
-import com.sun.labs.minion.indexer.partition.PartitionStats;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -1264,49 +1263,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * with the entries and dumping the new dictionary and postings to the
      * given channels.
      *
-     * @return A set of maps from the old entry IDs to the entry IDs in the
-     * merged dictionary.  The element [0][0] of this matrix contains the
-     * number of entries in the merged dictionary.
-     * @param entryFactory An index entry that we can use to generate
-     * entries for the merged dictionary.
      * @param encoder An encoder for the names in this dictionary.
-     * @param dicts The dictionaries to merge.
-     * @param mappers A set of entry mappers that will be applied to the
-     * dictionaries as entries are considered for the merge.  If this
-     * parameter is <code>null</code>, then the entries in the merged
-     * dictionary will be renumbered in order of increasing name.
-     * @param starts The starting IDs for the new partition.
-     * @param postIDMaps Maps from old to new IDs for the IDs in our
-     * postings.
-     * @param mDictFile The file where the merged dictionary will be
-     * written.
-     * @param postOut The output where the postings for the merged
-     * dictionary will be written
-     * @param appendPostings true if postings should be appended rather than
-     *        merged
-     * @throws java.io.IOException when there is an error during the merge.
-     */
-    public int[][] merge(NameEncoder encoder,
-                         DiskDictionary[] dicts, EntryMapper[] mappers,
-                         int[] starts,
-                         int[][] postIDMaps, RandomAccessFile mDictFile,
-                         PostingsOutput[] postOut, boolean appendPostings)
-            throws java.io.IOException {
-        return merge(encoder, null, dicts, mappers, starts,
-                     postIDMaps, mDictFile, postOut, appendPostings);
-    }
-
-    /**
-     * Merges a number of dictionaries into a single dictionary.  This
-     * method will be responsible for merging the postings lists associated
-     * with the entries and dumping the new dictionary and postings to the
-     * given channels.
-     *
-     * @param entryFactory An index entry that we can use to generate
-     * entries for the merged dictionary.
-     * @param encoder An encoder for the names in this dictionary.
-     * @param partStats a set of partition statistics to which we'll add
-     * during the merge.
      * @param dicts The dictionaries to merge.
      * @param mappers A set of entry mappers that will be applied to the
      * dictionaries as entries are considered for the merge.  If this
@@ -1327,7 +1284,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @throws java.io.IOException when there is an error during the merge.
      */
     public int[][] merge(NameEncoder encoder,
-                         PartitionStats partStats,
                          DiskDictionary[] dicts, EntryMapper[] mappers,
                          int[] starts,
                          int[][] postIDMaps, RandomAccessFile mDictFile,
@@ -1371,7 +1327,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // We'll need a writer for the merged dictionary.
         DictionaryWriter dw =
                 new DictionaryWriter(part.getPartitionManager().getIndexDir(), encoder,
-                                     partStats, postOut.length,
+                                     postOut.length,
                                      keepIDToPosn
                 ? MemoryDictionary.Renumber.NONE
                 : MemoryDictionary.Renumber.RENUMBER);
@@ -1529,14 +1485,14 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      */
     public void remapPostings(IndexEntry entryFactory,
                               NameEncoder encoder,
-                              PartitionStats partStats, int[] postMap,
+                              int[] postMap,
                               RandomAccessFile dictFile,
                               PostingsOutput[] postOut) throws
             java.io.IOException {
 
         DictionaryWriter dw =
                 new DictionaryWriter(part.getPartitionManager().getIndexDir(), encoder,
-                                     partStats, postOut.length,
+                                     postOut.length,
                                      MemoryDictionary.Renumber.NONE);
 
         //
