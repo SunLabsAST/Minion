@@ -196,8 +196,7 @@ public class DictionaryWriter<N extends Comparable> {
         // See if this a entry that should be uncompressed.  If so, we need
         // to record the position.
         if(dh.size % 4 == 0) {
-            nameOffsets.byteEncode(names.position(),
-                    dh.nameOffsetsBytes);
+            nameOffsets.byteEncode(names.position(), dh.nameOffsetsBytes);
             nOffsets++;
             prevName = null;
         }
@@ -209,8 +208,7 @@ public class DictionaryWriter<N extends Comparable> {
         //
         // Encode the entry information, first taking note of where
         // this information is being encoded.
-        infoOffsets.byteEncode(info.position(),
-                dh.entryInfoOffsetsBytes);
+        infoOffsets.byteEncode(info.position(), dh.entryInfoOffsetsBytes);
         e.encodeEntryInfo(info);
 
         //

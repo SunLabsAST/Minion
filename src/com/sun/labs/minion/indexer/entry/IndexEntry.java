@@ -37,6 +37,7 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 /**
  * An entry that is used in dictionaries that are built while indexing
  * documents.
+ * @param <N> the type of the name in this entry
  */
 public class IndexEntry<N extends Comparable> extends Entry<N> {
 

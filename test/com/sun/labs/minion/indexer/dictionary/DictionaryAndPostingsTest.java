@@ -37,7 +37,6 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author stgreen
  */
 public class DictionaryAndPostingsTest {
 
@@ -109,7 +108,7 @@ public class DictionaryAndPostingsTest {
     public void testIDDumpAndIterate() throws Exception {
         TestDictionary td = new TestDictionary(all);
         DiskDictionary<String> dd = td.generateDiskDictionary(Postings.Type.ID,
-                                                              50);
+                                                              3);
         Map<String, List<DocPosting>> temp = new HashMap<String, List<DocPosting>>(
                 td.m);
         for(Entry<String> e : dd) {
@@ -120,10 +119,12 @@ public class DictionaryAndPostingsTest {
             for(DocPosting p : l) {
                 if(pi.next()) {
                     assertTrue(String.format("Bad ID for %s expected %d got %d",
-                                             e.getName(), p.id, pi.getID()),
+                                             e.getName(),
+                                             p.id, pi.getID()),
                                p.id == pi.getID());
                 } else {
-                    fail(String.format("Ran out of IDs at %d", p.id));
+                    fail(String.format("Ran out of IDs at %d for %s", p.id, e.
+                            getName()));
                 }
             }
         }
@@ -134,7 +135,7 @@ public class DictionaryAndPostingsTest {
     public void testIDFreqDumpAndIterate() throws Exception {
         TestDictionary td = new TestDictionary(all);
         DiskDictionary<String> dd = td.generateDiskDictionary(Postings.Type.ID,
-                                                              50);
+                                                              2);
         Map<String, List<DocPosting>> temp = new HashMap<String, List<DocPosting>>(
                 td.m);
         for(Entry<String> e : dd) {
@@ -148,7 +149,8 @@ public class DictionaryAndPostingsTest {
                                              e.getName(), p.id, pi.getID()),
                                p.id == pi.getID());
                 } else {
-                    fail(String.format("Ran out of IDs at %d", p.id));
+                    fail(String.format("Ran out of IDs at %d for %s", p.id, e.
+                            getName()));
                 }
             }
         }
@@ -201,8 +203,8 @@ public class DictionaryAndPostingsTest {
                                                            int nDocs) {
             md = new MemoryDictionary<String>(new EntryFactory(type));
             OccurrenceImpl o = new OccurrenceImpl();
-            Map<String, DocPosting> doc = new HashMap<String, DocPosting>();
             for(int i = 0; i < nDocs; i++) {
+                Map<String, DocPosting> doc = new HashMap<String, DocPosting>();
                 int size = td.rand.nextInt(1024) + 1;
                 o.setID(i + 1);
                 for(int j = 0; j < size; j++) {
