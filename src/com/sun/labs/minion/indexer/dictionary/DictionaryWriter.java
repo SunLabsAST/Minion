@@ -199,10 +199,6 @@ public class DictionaryWriter<N extends Comparable> {
         // See if this a entry that should be uncompressed.  If so, we need
         // to record the position.
         if(dh.size % 4 == 0) {
-            if(logger.isLoggable(Level.FINE) && nOffsets == 882) {
-            logger.fine(String.format("Offset %d offsets pos: %d name pos: %d", nOffsets, 
-                    nameOffsets.position(), names.position()));
-            }
             nameOffsets.byteEncode(names.position(), dh.nameOffsetsBytes);
             nOffsets++;
             prevName = null;

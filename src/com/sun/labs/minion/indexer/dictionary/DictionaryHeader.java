@@ -244,14 +244,14 @@ public class DictionaryHeader {
     public String toString() {
         return "size: " + size + 
                 " maxEntryID: " + maxEntryID + 
-                " nameOffsetsPos: " + nameOffsetsPos +
-                " nameOffsetsSize: " + nameOffsetsSize + 
                 " namesPos: " + namesPos +
                 " namesSize: " + namesSize + 
-                " entryInfoOffsetsPos: " + entryInfoOffsetsPos +
-                " entryInfoOffsetsSize: " + entryInfoOffsetsSize + 
+                " nameOffsetsPos: " + nameOffsetsPos +
+                " nameOffsetsSize: " + nameOffsetsSize + 
                 " entryInfoPos: " + entryInfoPos +
                 " entryInfoSize: " + entryInfoSize + 
+                " entryInfoOffsetsPos: " + entryInfoOffsetsPos +
+                " entryInfoOffsetsSize: " + entryInfoOffsetsSize + 
                 " id2p: " + idToPosnSize;
     }
 

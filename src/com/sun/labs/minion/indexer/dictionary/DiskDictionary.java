@@ -693,21 +693,9 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Get the offset of the uncompressed entry.
         
-        if(logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("nameOffsets:\n %s", 
-                    nameOffsets.toString(3524, 3556, Buffer.DecodeMode.INTEGER)));
-        }
         int offset =
                 lus.localNameOffsets.byteDecode(
                 dh.nameOffsetsBytes * pos, dh.nameOffsetsBytes);
-        
-        
-        
-        logger.fine(String.format("pos: %d no: %d buff: %s offset: %d", 
-                                  pos, 
-                                  pos * dh.nameOffsetsBytes,
-                                  lus.localNameOffsets.toString(),
-                                  offset));
 
         //
         // Get the name of the entry at that position.

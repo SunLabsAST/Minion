@@ -596,7 +596,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         }
         
         ArrayBuffer ab = new ArrayBuffer(tb);
-        return String.format("off: %d position: %d %s", ab.toString(start, end, decode));
+        return String.format("off: %d\n%s", off, ab.toString(start, end, decode));
     }
     
 } // FileWriteableBuffer

@@ -239,7 +239,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
     public String toString(int start, int end, DecodeMode decode) {
 
         StringBuilder b = new StringBuilder((end - start + 1) * 8);
-        b.append(String.format("position: %d limit: %d", position(), limit()));
+        b.append(String.format("position: %d limit: %d\n", position(), limit()));
 
         if (start < 0 || end < 0) {
             return b.toString();
@@ -252,9 +252,10 @@ public abstract class StdReadableImpl implements ReadableBuffer {
         int shift = 0;
         for (int i = start, j = 0; i < end; i++, j += 8) {
             byte curr = get(i);
-            b.append(String.format("%s %4d %4d %s",
+            b.append(String.format("%s%7d%7d %s",
                     i > start ? "\n" : "",
-                    i, j, StdBufferImpl.byteToBinaryString(curr)));
+                    j, i, 
+                    StdBufferImpl.byteToBinaryString(curr)));
 
             //
             // See if we need to dump an encoded integer that we've been collecting.
@@ -297,6 +298,4 @@ public abstract class StdReadableImpl implements ReadableBuffer {
         }
         return b.toString();
     }
-
-    
 } // StdReadableImpl

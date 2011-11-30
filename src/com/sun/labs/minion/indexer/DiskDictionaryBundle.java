@@ -728,10 +728,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
             if(foundDict) {
                 mergeHeader.dictOffsets[ord] = mergeState.dictRAF.getFilePointer();
-                logger.info(String.format("%s: %d", type, mergeHeader.dictOffsets[ord]));
-                if(type == type.UNCASED_TOKENS) {
-                  Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINE);
-                }
+                logger.info(String.format("%s: %d", type, mergeState.dictRAF.getFilePointer()));
+//                if(type == type.UNCASED_TOKENS) {
+//                  Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINE);
+//                }
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                                                   encoder, 
                                                   mDicts,
@@ -741,9 +741,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                   mergeState.dictRAF, 
                                                   mergeState.postOut, 
                                                   true);
-                if (type == type.UNCASED_TOKENS) {
-                    Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.INFO);
-                }
+//                if (type == type.UNCASED_TOKENS) {
+//                    Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.INFO);
+//                }
             } else {
                 mergeHeader.dictOffsets[ord] = -1;
             }
@@ -764,6 +764,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     entryIDMaps[Type.UNCASED_TOKENS.ordinal()] :
                     entryIDMaps[Type.CASED_TOKENS.ordinal()];
             mergeHeader.tokenBGOffset = mergeState.dictRAF.getFilePointer();
+            logger.info(String.format("token bg: %d", mergeState.dictRAF.getFilePointer()));
             bgMerger.merge(mergeState.manager.getIndexDir(), 
                            bgDicts, mergeState.docIDStart, tokenIDMap, 
                            mergeState.dictRAF,
@@ -785,6 +786,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 ordinal()];
         if(bgMerger != null) {
             mergeHeader.savedBGOffset = mergeState.dictRAF.getFilePointer();
+            logger.info(String.format("saved bg: %d", mergeState.dictRAF.
+                    getFilePointer()));
             bgMerger.merge(mergeState.manager.getIndexDir(), 
                            bgDicts, mergeState.docIDStart, 
                            savedValueIDMap, mergeState.dictRAF,
@@ -862,11 +865,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
             //
             // Transfer the temp buffers.
             mergeHeader.dtvOffset = mergeState.dictRAF.getFilePointer();
+            logger.info(String.format("dtvOffset: %d", mergeState.dictRAF.
+                    getFilePointer()));
             mdtvBuff.write(dtvRAF.getChannel());
             dtvRAF.close();
             dtvFile.delete();
 
             mergeHeader.dtvPosOffset = mergeState.dictRAF.getFilePointer();
+            logger.info(String.format("dtvPostOffset: %d", mergeState.dictRAF.
+                    getFilePointer()));
             mdtvOffsetBuff.write(dtvOffsetRAF.getChannel());
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
@@ -888,8 +895,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 mergeHeader.vectorLengthOffset = mergeState.vectorLengthRAF.getFilePointer();
                 logger.info(String.format("Opening main dict at %d", mdp));
                 mergeState.dictRAF.seek(mdp);
-                Logger dl = Logger.getLogger(DiskDictionary.class.getName());
-                dl.setLevel(Level.FINE);
+//                Logger dl = Logger.getLogger(DiskDictionary.class.getName());
+//                dl.setLevel(Level.FINE);
                 DiskDictionary newMainDict = new DiskDictionary(exemplar.entryFactory,
                                                                 new StringNameHandler(),
                                                                 mergeState.dictRAF, 
