@@ -184,7 +184,7 @@ public class PositionPostings implements Postings {
             }
 
             //
-            // Now, the values for the bit positions of the entries are
+            // Now, the values for the positions of the entries are
             // from the *end* of the skip table, and we want them to be
             // from the beginning of the buffer so that we can use
             // jump directly to them.  So we need to figure out
@@ -202,7 +202,6 @@ public class PositionPostings implements Postings {
     public String[] getChannelNames() {
         return new String[]{"post", "prox"};
     }
-
     
     @Override
     public void add(Occurrence o) {
@@ -322,12 +321,15 @@ public class PositionPostings implements Postings {
         // Encode the skip table.
         headerBuff.byteEncode(nSkips);
         int prevSkipID = 0;
-        int prevPos = 0;
+        int prevIDOffset = 0;
+        int prevPosnOffset = 0;
         for(int i = 0; i < nSkips; i++) {
             headerBuff.byteEncode(skipID[i] - prevSkipID);
-            headerBuff.byteEncode(skipIDOffsets[i] - prevPos);
+            headerBuff.byteEncode(skipIDOffsets[i] - prevIDOffset);
+            headerBuff.byteEncode(skipPosnOffsets[i] - prevPosnOffset);
             prevSkipID = skipID[i];
-            prevPos = skipIDOffsets[i];
+            prevIDOffset = skipIDOffsets[i];
+            prevPosnOffset = skipPosnOffsets[i];
         }
 
     }
@@ -806,8 +808,10 @@ public class PositionPostings implements Postings {
                 if(currPosns == null || currFreq >= currPosns.length) {
                     currPosns = new int[currFreq];
                 }
+                int prevPosn = 0;
                 for(int i = 0; i < currFreq; i++) {
-                    currPosns[i] = rPosn.byteDecode();
+                    prevPosn += rPosn.byteDecode();
+                    currPosns[i] = prevPosn;
                 }
             }
             return currPosns;
