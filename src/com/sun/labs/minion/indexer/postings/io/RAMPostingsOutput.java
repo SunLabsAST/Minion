@@ -17,14 +17,17 @@ public class RAMPostingsOutput extends AbstractPostingsOutput {
     
     private ArrayBuffer buff;
     
-    private final static int DEFAULT_BUFFER_SIZE = 1 << 20;
+    private final static int DEFAULT_BUFFER_SIZE = 5 * 1024 * 1024;
     
     public RAMPostingsOutput() {
         this(DEFAULT_BUFFER_SIZE);
     }
     
     public RAMPostingsOutput(int initialSize) {
-        buff = new ArrayBuffer(initialSize);
+        //
+        // These guys will increase by chunks of 256K, rather than increasing
+        // by a factor of two because otherwise they get too large too fast.
+        buff = new ArrayBuffer(initialSize, 256 * 1024);
     }
 
     public int write(WriteableBuffer b) throws IOException {

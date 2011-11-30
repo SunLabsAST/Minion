@@ -129,7 +129,7 @@ public class Marshaller implements Configurable {
      * The size of the pool of partition outputs.
      */
     @ConfigInteger(defaultValue = 4)
-    public static final String PROP_POOL_SIZE = "pool_size";
+    public static final String PARTITION_OUTPUT_PROP_POOL_SIZE = "partition_output_pool_size";
 
     @ConfigInteger(defaultValue = 2)
     public static final String PROP_MARSHALL_THREADS = "marshall_threads";
@@ -194,12 +194,12 @@ public class Marshaller implements Configurable {
         boolean longIndexingRun = ((SearchEngineImpl) partitionManager.getEngine()).isLongIndexingRun();
 
         int queueLength = ps.getInt(PROP_MARSHALL_QUEUE_LENGTH);
-        int poolSize = ps.getInt(PROP_POOL_SIZE);
+        int poPoolSize = ps.getInt(PARTITION_OUTPUT_PROP_POOL_SIZE);
         int ndt = ps.getInt(PROP_MARSHALL_THREADS);
 
         toMarshall = new ArrayBlockingQueue<MPHolder>(queueLength);
-        poPool = new ArrayBlockingQueue<PartitionOutput>(poolSize);
-        partitionOutputs = new RAMPartitionOutput[poolSize];
+        poPool = new ArrayBlockingQueue<PartitionOutput>(poPoolSize);
+        partitionOutputs = new RAMPartitionOutput[poPoolSize];
         for(int i = 0; i < partitionOutputs.length; i++) {
             try {
                 partitionOutputs[i] = new RAMPartitionOutput(partitionManager);
@@ -207,7 +207,7 @@ public class Marshaller implements Configurable {
                 ((RAMPartitionOutput) partitionOutputs[i]).setLongIndexingRun(longIndexingRun);
                 poPool.put(partitionOutputs[i]);
             } catch(Exception ex) {
-                throw new PropertyException(ex, ps.getInstanceName(), PROP_POOL_SIZE, "Error creating output pool");
+                throw new PropertyException(ex, ps.getInstanceName(), PARTITION_OUTPUT_PROP_POOL_SIZE, "Error creating output pool");
             }
         }
 
@@ -219,7 +219,7 @@ public class Marshaller implements Configurable {
             marshallThreads[i].start();
         }
 
-        toFlush = new ArrayBlockingQueue<PartitionOutput>(poolSize);
+        toFlush = new ArrayBlockingQueue<PartitionOutput>(poPoolSize);
         flushThread = new Thread(new FlushThread());
         flushThread.setName("Flusher");
         flushThread.start();

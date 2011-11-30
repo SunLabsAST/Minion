@@ -245,7 +245,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         for(Iterator<Map.Entry<N, IndexEntry>> i = map.entrySet().iterator(); i.hasNext();) {
             Map.Entry<N, IndexEntry> e = i.next();
             IndexEntry entry = e.getValue();
-            if(entry.getN() > 3) {
+            if(entry.getN() > 1) {
                 entry.clear();
             } else {
                 i.remove();

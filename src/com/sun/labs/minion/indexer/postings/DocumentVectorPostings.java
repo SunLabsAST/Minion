@@ -188,12 +188,20 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
         lastID = prevID;
     }
 
+    @Override
+    public void clear() {
+        super.clear();
+        entries.clear();
+    }
+    
+    
+
     /**
      * Gets the entries in this set of postings as an array of weighted features. 
      * We will attempt to do this as efficiently as possible.  In particular, if
      * the number of terms in the document is a substantial proportion of the 
      * number of terms in the dictionary for this partition, we will attempt to 
-     * iterate through the dictinoary in such a way as to minimize the number of
+     * iterate through the dictionary in such a way as to minimize the number of
      * dictionary lookups required.
      * 
      * @param docID the id of this document, if it is in an already dumped partition.
@@ -201,12 +209,12 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
      * @param dict a dictionary that we can use to fetch term names when all we
      * have is IDs.
      * @param wf a weighting function to use to weight the entries in the document vector.
-     * @param wc a set of weighting components to use in the weighting fucntion.
+     * @param wc a set of weighting components to use in the weighting function.
      * @return an array of weighted features corresponding to the terms in this
      * document.  Note that the <code>getEntry</code> method for these features
      * will return the dictionary entry for the term from the partition holding
      * the document.  This is a convenience to avoid multiple dictionary lookups
-     * in this paritition.
+     * in this partition.
      *
      */
     public WeightedFeature[] getWeightedFeatures(

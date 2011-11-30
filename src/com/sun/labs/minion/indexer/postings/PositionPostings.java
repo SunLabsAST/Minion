@@ -120,7 +120,7 @@ public class PositionPostings implements Postings {
     
     public PositionPostings() {
         currentID = -1;
-        ids = new int[4];
+        ids = new int[8];
         freqs = new int[ids.length];
         posns = new int[ids.length];
     }
@@ -213,8 +213,9 @@ public class PositionPostings implements Postings {
             nIDs++;
             pos++;
             if(nIDs >= ids.length) {
-                ids = Arrays.copyOf(ids, (nIDs + 1) * 2);
-                freqs = Arrays.copyOf(freqs, ids.length);
+                int nl = nIDs + 128;
+                ids = Arrays.copyOf(ids, nl);
+                freqs = Arrays.copyOf(freqs, nl);
             }
             ids[pos] = oid;
             freqs[pos] = o.getCount();
@@ -224,7 +225,7 @@ public class PositionPostings implements Postings {
             freqs[pos] += o.getCount();
         }
         if(posPos >= posns.length) {
-            posns = Arrays.copyOf(posns, posns.length * 2);
+            posns = Arrays.copyOf(posns, posns.length + 128);
         }
         posns[posPos++] = ((FieldOccurrence) o).getPos();
     }

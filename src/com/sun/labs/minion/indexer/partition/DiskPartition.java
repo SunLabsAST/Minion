@@ -616,7 +616,6 @@ public class DiskPartition extends Partition implements Closeable {
         // A place to store state and pass it around while we're merging.
         MergeState mergeState = new MergeState(partOut);
         PartitionManager pm = partOut.getPartitionManager();
-        logger.info(String.format("Merge with %s", Arrays.toString(getPostingsChannelNames())));
         mergeState.partOut.startPartition(getPostingsChannelNames());
 
         //

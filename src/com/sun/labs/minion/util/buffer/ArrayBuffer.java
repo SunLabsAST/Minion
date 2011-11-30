@@ -48,6 +48,11 @@ import java.util.logging.Logger;
 public class ArrayBuffer extends StdBufferImpl implements Cloneable {
 
     /**
+     * The log for this buffer.
+     */
+    private static final Logger logger = Logger.getLogger(ArrayBuffer.class.getName());
+
+    /**
      * The array backing our data.
      */
     protected byte[] units;
@@ -58,6 +63,12 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * double the increase factor.
      */
     protected int increaseFactor = 2;
+    
+    /**
+     * An amount by which the size of the buffer should be increased each time
+     * that it needs to be increased.
+     */
+    protected int increaseAmount = -1;
 
     /**
      * The position in the array where the next byte will be written or
@@ -83,11 +94,6 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
     protected int lim;
 
     /**
-     * The log for this buffer.
-     */
-    protected static final Logger logger = Logger.getLogger(ArrayBuffer.class.getName());
-
-    /**
      * Creates an array backed buffer that we can use when duplicating or
      * slicing.
      */
@@ -100,9 +106,14 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param n The initial capacity of the buffer.
      */
     public ArrayBuffer(int n) {
+        this(n, -1);
+    } // ArrayBuffer constructor
+    
+    public ArrayBuffer(int n, int increaseAmount) {
         units = new byte[n];
         lim = units.length;
-    } // ArrayBuffer constructor
+        this.increaseAmount = increaseAmount;
+    }
 
     /**
      * Creates an buffer backed by the given array.  This should be used
@@ -143,8 +154,11 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         }
         int ip = (int) p;
         if(ip >= units.length) {
-            units = Arrays.copyOf(units, ip * increaseFactor);
-            increaseFactor *= 2;
+            if(increaseAmount > 0) {
+                units = Arrays.copyOf(units, ip + increaseAmount);
+            } else {
+                units = Arrays.copyOf(units, ip * increaseFactor);
+            }
             lim = units.length;
         }
     }
@@ -297,9 +311,11 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         // We can handle ArrayBuffers much faster.
         if(b instanceof ArrayBuffer) {
             ArrayBuffer o = (ArrayBuffer) b;
-            if(pos + n >= units.length) {
-                units = Arrays.copyOf(units, Math.max(units.length * 2, (int) (pos + n) * 2));
-            }
+            checkBounds(pos + n);
+//            if(pos + n >= units.length) {
+//                units = Arrays.copyOf(units, Math.max(units.length * 2, (int) (pos + n) * 2));
+//                lim = units.length;
+//            }
             System.arraycopy(o.units, o.pos, units, pos, (int) n);
             o.pos += n;
             pos += n;

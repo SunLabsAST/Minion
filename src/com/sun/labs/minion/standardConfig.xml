@@ -46,15 +46,15 @@
     <property name="num_indexing_threads" value="1"/>
     <property name="docs_per_partition" value="-1"/>
     <property name="partition_manager_name" value="partition_manager"/>
-    <property name="marshall_queue_length" value="3"/>
-    <property name="partition_output_pool_size" value="4"/>
+    <property name="marshall_queue_length" value="2"/>
+    <property name="partition_output_pool_size" value="2"/>
     <property name="marshall_threads" value="2"/>
     
     <!-- A marshaller for partitions -->
     <component name="marshaller" type="com.sun.labs.minion.indexer.partition.Marshaller">
         <property name="partition_manager" value="${partition_manager_name}"/>
         <property name="marshall_queue_length" value="${marshall_queue_length}"/>
-        <property name="pool_size" value="${partition_output_pool_size}"/>
+        <property name="partition_output_pool_size" value="${partition_output_pool_size}"/>
         <property name="marshall_threads" value="${marshall_threads}"/>
     </component>
 

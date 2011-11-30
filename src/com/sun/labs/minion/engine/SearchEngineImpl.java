@@ -102,6 +102,7 @@ import com.sun.labs.minion.retrieval.parser.StrictParser;
 import com.sun.labs.minion.retrieval.parser.TokenMgrError;
 import com.sun.labs.minion.retrieval.parser.WebParser;
 import com.sun.labs.minion.util.CDateParser;
+import com.sun.labs.minion.util.HeapDumper;
 import java.lang.management.MemoryUsage;
 import java.util.HashSet;
 import java.util.Set;
@@ -1418,6 +1419,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return metaDataStore;
     }
 
+    
+    private long bigGigLimit = (long) (4.5 * 1000L * 1000L * 1000L);
+    private long afterGC = 0;
+    private int state = 0;
+    
     /**
      * Determines if available memory is low.  Currently, this is defined
      * by minMemoryPercent.
@@ -1425,19 +1431,34 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return true if memory is low
      */
     public boolean checkLowMemory() {
-        MemoryUsage mu = memBean.getHeapMemoryUsage();
-
+//        MemoryUsage mu = memBean.getHeapMemoryUsage();
+//
+//        if(state == 1 && mu.getUsed() > afterGC) {
+//            logger.info(String.format("Big heap at %,d", mu.getUsed()));
+//            HeapDumper.dumpHeap("bigheap", false);
+//        } else if(mu.getUsed() > bigGigLimit) {
+//            if(state == 0) {
+//                System.gc();
+//                mu = memBean.getHeapMemoryUsage();
+//                afterGC = mu.getUsed();
+//                logger.info(String.format("Baseline at %,d", afterGC));
+//                afterGC += (long) (0.7 * 1000L * 1000L * 1000L);
+//                HeapDumper.dumpHeap("baseline", false);
+//                state++;
+//            }
+//        }
+        
         //
         // If we have less than 15% of all our memory free, then
         // memory is low.
-        double freePercent = (mu.getMax() - mu.getUsed()) / (double) mu.getMax();
-        if(freePercent < 0.01) {
-            logger.info(String.format(
-                    "Memory is low %.1fMB used %.1fMB max %.1f%% free",
-                    toMB(mu.getUsed()), toMB(mu.getMax()),
-                    freePercent * 100));
-            return true;
-        }
+//        double freePercent = (mu.getMax() - mu.getUsed()) / (double) mu.getMax();
+//        if(freePercent < 0.01) {
+//            logger.info(String.format(
+//                    "Memory is low %.1fMB used %.1fMB max %.1f%% free",
+//                    toMB(mu.getUsed()), toMB(mu.getMax()),
+//                    freePercent * 100));
+//            return true;
+//        }
         return false;
     }
 
