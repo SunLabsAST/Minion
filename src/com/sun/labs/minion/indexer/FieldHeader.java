@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.indexer;
 
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
@@ -32,40 +33,40 @@ import java.util.logging.Logger;
 /**
  * A header for saved field information.
  */
-class FieldHeader {
+public class FieldHeader {
     
     private static final Logger logger = Logger.getLogger(FieldHeader.class.getName());
 
     /**
      * The ID of the field.
      */
-    protected int fieldID = -1;
+    public int fieldID = -1;
 
     /**
      * The maximum document ID for the partition in which this field resides.
      */
-    protected int maxDocID = -1;
+    public int maxDocID = -1;
 
     /**
      * The offsets of the starts of the dictionaries that make up the fields.
      */
-    protected long[] dictOffsets = new long[MemoryDictionaryBundle.Type.values().length];
+    public long[] dictOffsets = new long[MemoryDictionaryBundle.Type.values().length];
 
     /**
      * Where we'll find the buffer that maps from document ID to a position
      * in the doc-to-value data.
      */
-    protected long dtvPosOffset = -1;
+    public long dtvPosOffset = -1;
 
     /**
      * Where we'll find the doc to value data.
      */
-    protected long dtvOffset = -1;
+    public long dtvOffset = -1;
 
     /**
      * Where we'll find the document lengths for this field.
      */
-    protected long vectorLengthOffset = -1;
+    public long vectorLengthOffset = -1;
 
     /**
      * Creates a header.
@@ -81,6 +82,8 @@ class FieldHeader {
             throws java.io.IOException {
         read(f);
     }
+    
+    
 
     /**
      * Reads a field header from the given channel.

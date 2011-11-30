@@ -96,6 +96,8 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      * A buffer where deletions can be written.
      */
     protected WriteableBuffer deletionsBuffer;
+    
+    private String name;
 
     private boolean started = false;
 
@@ -105,6 +107,14 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     
     public AbstractPartitionOutput(File outputDir) throws IOException {
         manager = new PartitionManager(outputDir);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int startPartition() throws IOException {
@@ -276,4 +286,11 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return "APO: " + name;
+    }
+    
+    
 }

@@ -1,5 +1,6 @@
 package com.sun.labs.minion.indexer;
 
+import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
@@ -35,7 +36,7 @@ public class DiskField extends Field {
 
     @Override
     public int getMaximumDocumentID() {
-        return bundle.header.maxDocID;
+        return bundle.getHeader().maxDocID;
     }
 
     public DiskDictionary getTermDictionary(boolean cased) {

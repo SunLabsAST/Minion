@@ -1,6 +1,8 @@
-package com.sun.labs.minion.indexer;
+package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.indexer.FieldHeader;
+import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.DateNameHandler;
 import com.sun.labs.minion.indexer.dictionary.DoubleNameHandler;
 import com.sun.labs.minion.indexer.dictionary.LongNameHandler;
@@ -131,32 +133,32 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         info = field.getInfo();
         dicts = new MemoryDictionary[Type.values().length];
 
-        if(field.cased) {
+        if(field.isCased()) {
             dicts[Type.CASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
         }
 
-        if(field.uncased) {
+        if(field.isUncased()) {
             dicts[Type.UNCASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
         }
 
-        if(field.stemmed) {
+        if(field.isStemmed()) {
             dicts[Type.STEMMED_TOKENS.ordinal()] = new MemoryDictionary<String>(
                     factory);
         }
 
-        if(field.vectored) {
+        if(field.isVectored()) {
             dicts[Type.RAW_VECTOR.ordinal()] = new MemoryDictionary<String>(
                     vectorEntryFactory);
-            if(field.stemmed) {
+            if(field.isStemmed()) {
                 dicts[Type.STEMMED_VECTOR.ordinal()] = new MemoryDictionary<String>(
                         vectorEntryFactory);
             }
         }
 
-        if(field.saved) {
+        if(field.isSaved()) {
             dv = new List[128];
             dicts[Type.RAW_SAVED.ordinal()] = new MemoryDictionary<N>(savedEntryFactory);
-            if(field.uncased) {
+            if(field.isUncased()) {
                 dicts[Type.UNCASED_SAVED.ordinal()] = new MemoryDictionary<N>(
                         savedEntryFactory);
                 ucdv = new List[128];
@@ -171,12 +173,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
     public void startDocument(Entry docKey) {
         String key = docKey.getName().toString();
         maxDocID = Math.max(maxDocID, docKey.getID());
-        if(field.vectored) {
-            if(field.cased) {
+        if(field.isVectored()) {
+            if(field.isCased()) {
                 dicts[Type.RAW_VECTOR.ordinal()].remove(key);
                 rawVector = dicts[Type.RAW_VECTOR.ordinal()].put(key);
             }
-            if(field.uncased) {
+            if(field.isUncased()) {
                 dicts[Type.STEMMED_VECTOR.ordinal()].remove(key);
                 stemmedVector = dicts[Type.STEMMED_VECTOR.ordinal()].put(key);
             }
@@ -192,7 +194,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
     public void token(Token t) {
 
-        if(!field.tokenized) {
+        if(!field.isTokenized()) {
             throw new UnsupportedOperationException(String.format(
                     "Field: %s is not tokenized", info.getName()));
         }
@@ -201,7 +203,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         IndexEntry uce = null;
         IndexEntry se = null;
 
-        if(field.cased) {
+        if(field.isCased()) {
             ce = dicts[Type.CASED_TOKENS.ordinal()].put(t.getToken());
             ce.add(t);
         }
@@ -209,28 +211,28 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         //
         // If we're storing uncased terms or stemming, then we need to downcase
         // the term, since stemming will likely break on a mixed case term.
-        if(field.uncased || field.stemmed) {
+        if(field.isUncased() || field.isStemmed()) {
             String uct = CharUtils.toLowerCase(t.getToken());
 
-            if(field.uncased) {
+            if(field.isUncased()) {
                 uce = dicts[Type.UNCASED_TOKENS.ordinal()].put(uct);
                 uce.add(t);
             }
 
-            if(field.stemmed) {
-                String stok = field.stemmer.stem(uct);
+            if(field.isStemmed()) {
+                String stok = field.getStemmer().stem(uct);
                 se = dicts[Type.STEMMED_TOKENS.ordinal()].put(stok);
                 se.add(t);
             }
         }
 
-        if(field.vectored) {
-            if(field.uncased) {
+        if(field.isVectored()) {
+            if(field.isUncased()) {
                 ddo.setEntry(uce);
                 rawVector.add(ddo);
             }
 
-            if(field.cased) {
+            if(field.isCased()) {
                 if(se != null) {
                     ddo.setEntry(se);
                 } else {
@@ -251,12 +253,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      */
     public void save(int docID, Object data) {
 
-        if(!field.saved) {
+        if(!field.isSaved()) {
             throw new UnsupportedOperationException(String.format(
                     "Field: %s is not saved", info.getName()));
         }
 
-        Comparable name = getEntryName(data, field.info, dateParser);
+        Comparable name = getEntryName(data, field.getInfo(), dateParser);
 
         //
         // If we had a failure, then just return.
@@ -438,7 +440,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     }
                     break;
                 case SAVED_VALUE_BIGRAMS:
-                    if(field.info.getType() == FieldInfo.Type.STRING) {
+                    if(field.getInfo().getType() == FieldInfo.Type.STRING) {
                         MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
                                 new EntryFactory(Postings.Type.ID_FREQ));
                         dicts[ord] = sbg;
@@ -465,7 +467,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             sortedEntries[ord] = dicts[ord].dump(partOut);
         }
 
-        if(field.saved) {
+        if(field.isSaved()) {
 
             //
             // Dump the map from document IDs to the values saved for that document
@@ -510,7 +512,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             WriteableBuffer vlb = partOut.getVectorLengthsBuffer();
             header.vectorLengthOffset = vlb.position();
             DocumentVectorLengths.calculate(field, partOut,
-                    field.partition.getPartitionManager().
+                    field.getPartition().getPartitionManager().
                     getTermStatsDict());
             ret = MemoryField.DumpResult.EVERYTHING_DUMPED;
         } else {

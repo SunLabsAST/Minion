@@ -66,7 +66,6 @@ public abstract class MemoryPartition extends Partition {
      * A deletion map.
      */
     protected DelMap deletions;
-    private String partitionName;
     private int uses;
     public static AtomicInteger count = new AtomicInteger();
     
@@ -174,14 +173,6 @@ public abstract class MemoryPartition extends Partition {
      * to disk
      */
     protected abstract void dumpCustom(PartitionOutput dumpState) throws java.io.IOException;
-
-    public String getPartitionName() {
-        return partitionName;
-    }
-
-    public void setPartitionName(String partitionName) {
-        this.partitionName = partitionName;
-    }
 
     public int getUses() {
         return uses;

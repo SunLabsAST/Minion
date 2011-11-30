@@ -37,7 +37,7 @@ import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.SearchEngine;
 
 import com.sun.labs.minion.SearchEngineException;
-import com.sun.labs.minion.indexer.DiskDictionaryBundle.Fetcher;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.PriorityQueue;

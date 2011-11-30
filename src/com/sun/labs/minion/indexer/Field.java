@@ -75,5 +75,29 @@ public abstract class Field {
         return entryFactory;
     }
 
+    public boolean isCased() {
+        return cased;
+    }
+
+    public boolean isSaved() {
+        return saved;
+    }
+
+    public boolean isStemmed() {
+        return stemmed;
+    }
+
+    public boolean isTokenized() {
+        return tokenized;
+    }
+
+    public boolean isUncased() {
+        return uncased;
+    }
+
+    public boolean isVectored() {
+        return vectored;
+    }
+
     public abstract int getMaximumDocumentID();
 }

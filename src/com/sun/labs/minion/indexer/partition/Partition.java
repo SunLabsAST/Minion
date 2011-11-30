@@ -60,7 +60,7 @@ public abstract class Partition implements Comparable<Partition> {
      */
     protected int maxDocumentID;
 
-    private String name;
+    private String partitionName;
 
     /**
      * Gets the number of undeleted documents in the partition.
@@ -135,8 +135,11 @@ public abstract class Partition implements Comparable<Partition> {
         return partNumber - p.partNumber;
     }
     
-    public String getName() {
-        return name;
+    public String getPartitionName() {
+        return partitionName;
     }
 
+    public void setPartitionName(String partitionName) {
+        this.partitionName = partitionName;
+    }
 } // Partition

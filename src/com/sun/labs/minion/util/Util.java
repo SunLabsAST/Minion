@@ -978,53 +978,221 @@ public class Util {
     }
 
     /**
-     * Sorts an array of <CODE>Object</CODE> using heap sort.
-     * @param x The array to sort.
+     * Sorts the specified sub-array of integers into ascending order.
      */
-    public static <T> T[] sort(T x[]) {
-        return sort(x, 0, x.length);
+    public static <T extends Comparable> void sort(T x[]) {
+        sort(x, 0, x.length);
+    }
+    
+    /**
+     * Sorts the specified sub-array of integers into ascending order.
+     */
+    public static <T extends Comparable> void sort(T x[], int off, int len) {
+        // Insertion sort on smallest arrays
+        if(len < 7) {
+            for(int i = off; i < len + off; i++) {
+                for(int j = i; j > off && x[j - 1].compareTo(x[j]) > 0; j--) {
+                    swap(x, j, j - 1);
+                }
+            }
+            return;
+        }
+
+        // Choose a partition element, v
+        int m = off + (len >> 1);       // Small arrays, middle element
+        if(len > 7) {
+            int l = off;
+            int n = off + len - 1;
+            if(len > 40) {        // Big arrays, pseudomedian of 9
+                int s = len / 8;
+                l = med3(x, l, l + s, l + 2 * s);
+                m = med3(x, m - s, m, m + s);
+                n = med3(x, n - 2 * s, n - s, n);
+            }
+            m = med3(x, l, m, n); // Mid-size, med of 3
+        }
+        T v = x[m];
+
+        // Establish Invariant: v* (<v)* (>v)* v*
+        int a = off, b = a, c = off + len - 1, d = c;
+        while(true) {
+            while(b <= c && x[b].compareTo(v) <= 0) {
+                if(x[b] == v) {
+                    swap(x, a++, b);
+                }
+                b++;
+            }
+            while(c >= b && x[c].compareTo(v) >= 0) {
+                if(x[c] == v) {
+                    swap(x, c, d--);
+                }
+                c--;
+            }
+            if(b > c) {
+                break;
+            }
+            swap(x, b++, c--);
+        }
+
+        // Swap partition elements back to middle
+        int s, n = off + len;
+        s = Math.min(a - off, b - a);
+        vecswap(x, off, b - s, s);
+        s = Math.min(d - c, n - d - 1);
+        vecswap(x, b, n - s, s);
+
+        // Recursively sort non-partition-elements
+        if((s = b - a) > 1) {
+            sort(x, off, s);
+        }
+        if((s = d - c) > 1) {
+            sort(x, n - s, s);
+        }
     }
 
     /**
-     * Sorts the specified sub-array of <code>Object</code>s into ascending
-     * order.  We're using a heap sort to avoing stack overflow for very large
-     * arrays.
-     * @param x The array containing the subarray that we wish to sort.
-     * @param off The offset of the subarray that we wish to sort.
-     * @param len The length of the subarray that we wish to sort.
+     * Swaps x[a] with x[b].
      */
-    public static <T> T[] sort(T x[], int off, int len) {
-        PriorityQueue<T> pq = new PriorityQueue<T>(len - off + 1);
-        for(int i = off; i < len; i++) {
-            pq.offer(x[i]);
-        }
-        for(int i = off; i < len; i++) {
-            x[i] = pq.poll();
-        }
-        return x;
-    }
-
-    public static <T> T[] sort(T x[], Comparator<T> comp) {
-        return sort(x, 0, x.length, comp);
+    private static <T> void swap(T x[], int a, int b) {
+        T t = x[a];
+        x[a] = x[b];
+        x[b] = t;
     }
 
     /**
-     * Sorts the specified sub-array of <code>Object</code>s into ascending
-     * order.  This is the tuned quicksort from
-     * <code>java.util.Arrays</code>.  We're using it in favour of the
-     * <code>Arrays.sort</code> method because that wants to clone the
-     * array being sorted and our arrays are very big.
+     * Swaps x[a .. (a+n-1)] with x[b .. (b+n-1)].
      */
-    public static <T> T[] sort(T x[], int off, int len,
-            Comparator<T> cm) {
-        PriorityQueue<T> pq = new PriorityQueue<T>(len - off + 1, cm);
-        for(int i = off; i < len; i++) {
-            pq.offer(x[i]);
+    private static <T> void vecswap(T x[], int a, int b, int n) {
+        for(int i = 0; i < n; i++, a++, b++) {
+            swap(x, a, b);
         }
-        for(int i = off; i < len; i++) {
-            x[i] = pq.poll();
+    }
+
+    /**
+     * Returns the index of the median of the three indexed elements.
+     */
+    private static <T extends Comparable> int med3(T x[], int a, int b, int c) {
+        if(x[a].compareTo(x[b]) < 0) {
+            if(x[b].compareTo(x[c]) <= 0) {
+                return b;
+            } else {
+                if(x[a].compareTo(x[c]) <= 0) {
+                    return c;
+                } else {
+                    return a;
+                }
+            }
+        } else {
+            if(x[b].compareTo(x[c]) >= 0) {
+                return b;
+            } else {
+                if(x[a].compareTo(x[c]) >= 0) {
+                    return c;
+                } else {
+                    return a;
+                }
+            }
         }
-        return x;
+    }
+
+    /**
+     * Sorts the specified sub-array of integers into ascending order.
+     */
+    public static <T> void sort(T x[], Comparator<T> comp) {
+        sort(x, 0, x.length, comp);
+    }
+    
+    /**
+     * Sorts the specified sub-array of integers into ascending order.
+     */
+    public static <T> void sort(T x[], int off, int len, Comparator<T> comp) {
+        // Insertion sort on smallest arrays
+        if(len < 7) {
+            for(int i = off; i < len + off; i++) {
+                for(int j = i; j > off && comp.compare(x[j - 1], x[j]) > 0; j--) {
+                    swap(x, j, j - 1);
+                }
+            }
+            return;
+        }
+
+        // Choose a partition element, v
+        int m = off + (len >> 1);       // Small arrays, middle element
+        if(len > 7) {
+            int l = off;
+            int n = off + len - 1;
+            if(len > 40) {        // Big arrays, pseudomedian of 9
+                int s = len / 8;
+                l = med3(x, l, l + s, l + 2 * s, comp);
+                m = med3(x, m - s, m, m + s, comp);
+                n = med3(x, n - 2 * s, n - s, n, comp);
+            }
+            m = med3(x, l, m, n, comp); // Mid-size, med of 3
+        }
+        T v = x[m];
+
+        // Establish Invariant: v* (<v)* (>v)* v*
+        int a = off, b = a, c = off + len - 1, d = c;
+        while(true) {
+            while(b <= c && comp.compare(x[b], v) <= 0) {
+                if(x[b] == v) {
+                    swap(x, a++, b);
+                }
+                b++;
+            }
+            while(c >= b && comp.compare(x[c], v) >= 0) {
+                if(x[c] == v) {
+                    swap(x, c, d--);
+                }
+                c--;
+            }
+            if(b > c) {
+                break;
+            }
+            swap(x, b++, c--);
+        }
+
+        // Swap partition elements back to middle
+        int s, n = off + len;
+        s = Math.min(a - off, b - a);
+        vecswap(x, off, b - s, s);
+        s = Math.min(d - c, n - d - 1);
+        vecswap(x, b, n - s, s);
+
+        // Recursively sort non-partition-elements
+        if((s = b - a) > 1) {
+            sort(x, off, s, comp);
+        }
+        if((s = d - c) > 1) {
+            sort(x, n - s, s, comp);
+        }
+    }
+
+    /**
+     * Returns the index of the median of the three indexed elements.
+     */
+    private static <T> int med3(T x[], int a, int b, int c, Comparator<T> comp) {
+        if(comp.compare(x[a], x[b]) < 0) {
+            if(comp.compare(x[b], x[c]) <= 0) {
+                return b;
+            } else {
+                if(comp.compare(x[a], x[c]) <= 0) {
+                    return c;
+                } else {
+                    return a;
+                }
+            }
+        } else {
+            if(comp.compare(x[b], x[c]) >= 0) {
+                return b;
+            } else {
+                if(comp.compare(x[a], x[c]) >= 0) {
+                    return c;
+                } else {
+                    return a;
+                }
+            }
+        }
     }
 
     /**

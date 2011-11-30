@@ -26,7 +26,7 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultAccessor;
 import com.sun.labs.minion.ScoreModifier;
-import com.sun.labs.minion.indexer.DiskDictionaryBundle.Fetcher;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;

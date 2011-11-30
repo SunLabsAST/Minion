@@ -79,7 +79,13 @@ public class Dumper implements Configurable {
      */
     protected BlockingQueue<PartitionOutput> poPool;
     
-    private BlockingQueue<InvFileMemoryPartition>  mpq;
+    private BlockingQueue<InvFileMemoryPartition>  mpPool;
+
+    /**
+     * The poll interval for the queue, in milliseconds.
+     */
+    @ConfigInteger(defaultValue = 100)
+    public static String PROP_POLL_INTERVAL = "poll_interval";
 
     /**
      * The interval for polling the partition queue.
@@ -125,12 +131,6 @@ public class Dumper implements Configurable {
     @ConfigInteger(defaultValue = 4)
     public static final String PROP_POOL_SIZE = "pool_size";
 
-    /**
-     * The poll interval for the queue, in seconds.
-     */
-    @ConfigInteger(defaultValue = 3)
-    public static String PROP_POLL_INTERVAL = "poll_interval";
-
     @ConfigInteger(defaultValue = 2)
     public static final String PROP_DUMP_THREADS = "dump_threads";
 
@@ -141,7 +141,7 @@ public class Dumper implements Configurable {
     }
 
     public void setMemoryPartitionQueue(BlockingQueue<InvFileMemoryPartition> mpq) {
-        this.mpq = mpq;
+        this.mpPool = mpq;
     }
 
     public void dump(InvFileMemoryPartition part) {
@@ -196,6 +196,7 @@ public class Dumper implements Configurable {
         for(int i = 0; i < partOuts.length; i++) {
             try {
                 partOuts[i] = new RAMPartitionOutput(partitionManager);
+                ((RAMPartitionOutput) partOuts[i]).setName("PO-" + i);
                 poPool.add(partOuts[i]);
             } catch(Exception ex) {
                 throw new PropertyException(ex, ps.getInstanceName(), PROP_POOL_SIZE, "Error creating output pool");
@@ -241,14 +242,12 @@ public class Dumper implements Configurable {
                     //
                     // We'll poll for a defined interval so that we can catch when
                     // we're finished.
-                    MPHolder mph = toDump.poll(pollInterval, TimeUnit.SECONDS);
+                    MPHolder mph = toDump.poll(pollInterval, TimeUnit.MILLISECONDS);
                     if(mph != null && mph.time.after(partitionManager.getLastPurgeTime())) {
                         try {
 
-                            PartitionOutput partOut = poPool.poll(pollInterval, TimeUnit.SECONDS);
-                            if(partOut != null) {
-                                dump(mph, partOut);
-                            }
+                            PartitionOutput partOut = poPool.take();
+                            dump(mph, partOut);
 
                             //
                             // Merges will happen synchronously in the thread
@@ -279,11 +278,8 @@ public class Dumper implements Configurable {
             }
             
             try {
-                PartitionOutput partOut = poPool.poll(pollInterval, TimeUnit.SECONDS);
-                if(partOut == null) {
-                    logger.log(Level.SEVERE, String.format("No partition output in pool for final dump"));
-                    partOut = new RAMPartitionOutput(partitionManager);
-                }
+                PartitionOutput partOut = poPool.take();
+                logger.info(String.format("%s polled %s from poPool at finish", Thread.currentThread().getName(), partOut));
                 for(MPHolder sh : l) {
                     if(sh.time.after(partitionManager.getLastPurgeTime())) {
                         try {
@@ -296,8 +292,6 @@ public class Dumper implements Configurable {
                 }
             } catch(InterruptedException ex) {
                 logger.log(Level.SEVERE, String.format("Error flushing partitions at finish"), ex);
-            } catch(IOException ex) {
-                logger.log(Level.SEVERE, String.format("Error making partition output"), ex);
             }
         }
         
@@ -308,9 +302,7 @@ public class Dumper implements Configurable {
                     toFlush.put(partOut);
                 }
                 mph.part.clear();
-                if(!mpq.offer(mph.part, 3, TimeUnit.SECONDS)) {
-                    logger.log(Level.SEVERE, String.format("Error replacing memory partition on queue"));
-                }
+                mpPool.put(mph.part);
             }
         }
     }
@@ -320,15 +312,11 @@ public class Dumper implements Configurable {
         public void run() {
             while(!flushDone) {
                 try {
-                    PartitionOutput partOut = toFlush.poll(pollInterval, TimeUnit.SECONDS);
+                    PartitionOutput partOut = toFlush.poll(pollInterval, TimeUnit.MILLISECONDS);
                     if(partOut != null) {
                         try {
                             partOut.flush();
-                            if(!poPool.offer(partOut, 3, TimeUnit.SECONDS)) {
-                                if(!flushDone) {
-                                    logger.log(Level.SEVERE, String.format("Couldn't return partition output to pool"));
-                                } 
-                            }
+                            poPool.put(partOut);
                         } catch(IOException ex) {
                             logger.log(Level.SEVERE, String.format("Error writing %d to disk", partOut.getPartitionNumber()), ex);
                         }

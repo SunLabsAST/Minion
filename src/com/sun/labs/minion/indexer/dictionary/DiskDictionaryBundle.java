@@ -1,6 +1,8 @@
-package com.sun.labs.minion.indexer;
+package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.dictionary.DiskBiGramDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
@@ -8,7 +10,7 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import com.sun.labs.minion.indexer.MemoryDictionaryBundle.Type;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.dictionary.ArrayDictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DateNameHandler;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
@@ -104,7 +106,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         header = new FieldHeader(dictFile);
         dicts = new DiskDictionary[MemoryDictionaryBundle.Type.values().length];
-        
+
         for(Type type : Type.values()) {
             int ord = type.ordinal();
             NameDecoder decoder;
@@ -137,7 +139,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             256, 2048, 2048, 2048, 2048,
                             null,
                             tokenDict);
-                    dicts[ord].setPartition(field.partition);
+                    dicts[ord].setPartition(field.getPartition());
                     continue;
                 case SAVED_VALUE_BIGRAMS:
                     dicts[ord] =
@@ -147,7 +149,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             256, 2048, 2048, 2048, 2048,
                             null,
                             dicts[Type.RAW_SAVED.ordinal()]);
-                    dicts[ord].setPartition(field.partition);
+                    dicts[ord].setPartition(field.getPartition());
                     continue;
                 default:
                     decoder = new StringNameHandler();
@@ -155,7 +157,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
 
             dicts[ord] = new DiskDictionary(fact, decoder, dictFile, postIn);
-            dicts[ord].setPartition(field.partition);
+            dicts[ord].setPartition(field.getPartition());
         }
 
 
@@ -177,6 +179,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
             dvl = new DocumentVectorLengths(vectorLengthsFile, 8192);
         }
 
+    }
+
+    public FieldHeader getHeader() {
+        return header;
     }
 
     public int getMaximumDocumentID() {
@@ -218,7 +224,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
     public QueryEntry getTerm(String name, boolean caseSensitive) {
         QueryEntry ret = null;
         if(caseSensitive) {
-            if(field.cased) {
+            if(field.isCased()) {
                 ret = dicts[Type.CASED_TOKENS.ordinal()].get(name);
             } else {
                 logger.warning(
@@ -250,7 +256,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
     public QueryEntry getTerm(int id, boolean caseSensitive) {
         QueryEntry ret = null;
         if(caseSensitive) {
-            if(field.cased) {
+            if(field.isCased()) {
                 ret = dicts[Type.CASED_TOKENS.ordinal()].getByID(id);
             } else {
                 logger.warning(
@@ -310,7 +316,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
     public QueryEntry getVector(String key, boolean caseSensitive) {
         QueryEntry ret = null;
-        if(!field.vectored) {
+        if(!field.isVectored()) {
             logger.warning(
                     String.format("Requested vector for non-vectored field %s",
                     info.getName()));
@@ -336,7 +342,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @return
      */
     public QueryEntry getSaved(String stringVal, boolean caseSensitive) {
-        if(!field.saved) {
+        if(!field.isSaved()) {
             logger.warning(String.format(
                     "Can't fetch saved value for non-SAVED field %s", info.getName()));
             return null;
@@ -345,19 +351,19 @@ public class DiskDictionaryBundle<N extends Comparable> {
         Comparable val = MemoryDictionaryBundle.getEntryName(stringVal, info,
                 dateParser);
 
-        if(field.info.getType() != FieldInfo.Type.STRING) {
+        if(field.getInfo().getType() != FieldInfo.Type.STRING) {
             return dicts[Type.RAW_SAVED.ordinal()].get(val);
         } else {
 
             if(caseSensitive) {
-                if(field.cased) {
+                if(field.isCased()) {
                     return dicts[Type.RAW_SAVED.ordinal()].get(val);
                 } else {
                     logger.warning(
                             String.format(
                             "Case sensitive request for field value %s in field %s, "
                             + "but this field only has case insensitive values.",
-                            val, field.info.getName()));
+                            val, field.getInfo().getName()));
                     return dicts[Type.RAW_SAVED.ordinal()].get(val);
                 }
             }
@@ -387,7 +393,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             Comparable upperBound,
             boolean includeUpper) {
 
-        if(!field.saved) {
+        if(!field.isSaved()) {
             return null;
         }
 
@@ -570,8 +576,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
             h.offer(new IntEntry(d, qe));
         }
 
-        ScoredQuickOr qor = new ScoredQuickOr((DiskPartition) field.partition,
-                h.size());
+        ScoredQuickOr qor =
+                new ScoredQuickOr((DiskPartition) field.getPartition(), h.size());
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
         while(h.size() > 0) {
             IntEntry e = h.poll();
@@ -679,7 +685,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // even though we'll only use a few.  Later merges will need maps from
         // earlier merges.
         int[][][] entryIDMaps = new int[Type.values().length][][];
-        
+
         //
         // Merge the types of dictionaries.  This loop is a bit gross, but 
         // most of the merge is the same across the dictionaries.
@@ -690,7 +696,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             int ord = type.ordinal();
             DiskDictionary[] mDicts = new DiskDictionary[bundles.length];
             DiskBiGramDictionary[] bgDicts = new DiskBiGramDictionary[bundles.length];
-                    
+
             boolean foundDict = false;
 
             for(int i = 0; i < bundles.length; i++) {
@@ -706,12 +712,12 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     foundDict = true;
                 }
             }
-            
+
             if(!foundDict) {
                 mergeHeader.dictOffsets[ord] = -1;
                 continue;
             }
-            
+
             NameEncoder encoder = null;
             mergeHeader.dictOffsets[ord] = fieldDictOut.position();
 
@@ -754,7 +760,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     encoder = new StringNameHandler();
                     mergeState.postIDMaps = entryIDMaps[Type.STEMMED_TOKENS.ordinal()];
                     break;
-                    
+
                 case TOKEN_BIGRAMS:
                     if(entryIDMaps[Type.CASED_TOKENS.ordinal()] != null) {
                         mergeState.entryIDMaps = entryIDMaps[Type.CASED_TOKENS.ordinal()];
@@ -766,7 +772,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     }
                     DiskBiGramDictionary.merge(mergeState, bgDicts);
                     continue;
-                    
+
                 case SAVED_VALUE_BIGRAMS:
                     mergeState.entryIDMaps =
                             entryIDMaps[Type.RAW_SAVED.ordinal()] != null
@@ -935,13 +941,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
      */
     public Fetcher getFetcher() {
 
-        if(!field.saved) {
+        if(!field.isSaved()) {
             return null;
         }
         return new Fetcher(dicts[Type.RAW_SAVED.ordinal()], dtvOffsets, dtvData);
     }
 
-    DocumentVectorLengths getDocumentVectorLengths() {
+    public DocumentVectorLengths getDocumentVectorLengths() {
         return dvl;
     }
 
