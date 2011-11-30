@@ -101,10 +101,15 @@ public class DiskDictionaryOutput extends AbstractDictionaryOutput {
             throw new IllegalStateException("Can't close dictionary output while it's being used!");
         }
         namesRAF.close();
+        namesFile.delete();
         nameOffsetsRAF.close();
+        nameOffsetsFile.delete();
         infoRAF.close();
+        infoFile.delete();
         infoOffsetsRAF.close();
+        infoOffsetsFile.delete();
         ((FileWriteableBuffer) completed).flush();
         completedRAF.close();
+        completedFile.delete();
     }
 }
