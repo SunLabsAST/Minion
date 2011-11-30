@@ -82,10 +82,10 @@ public class SyncDumper implements Dumper {
     /**
      * Dumps the given stage synchronously.
      */
-    public void dump(MemoryPartition s) {
+    public void dump(MemoryPartition part) {
 
         try {
-            s.dump();
+            part.dump();
 
             //
             // Check whether we need to do GC after this dump.

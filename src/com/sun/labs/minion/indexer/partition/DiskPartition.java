@@ -48,6 +48,7 @@ import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -170,7 +171,7 @@ public class DiskPartition extends Partition implements Closeable {
         File[] files = getMainFiles();
         dictFile = new RandomAccessFile(files[0], "r");
         postFiles = new RandomAccessFile[files.length - 1];
-        for(int i = 1; i < postFiles.length; i++) {
+        for(int i = 1; i < files.length; i++) {
             postFiles[i - 1] = new RandomAccessFile(files[i], "r");
         }
 
@@ -178,7 +179,8 @@ public class DiskPartition extends Partition implements Closeable {
         // Jump to where the partition header is and read it.  We don't need
         // to jump back because the header contains all of the offsets for the
         // stuff that we want.
-        dictFile.seek(dictFile.readLong());
+        long headerOffset = dictFile.readLong();
+        dictFile.seek(headerOffset);
         header = new PartitionHeader(dictFile);
 
         dictFile.seek(header.getDocDictOffset());

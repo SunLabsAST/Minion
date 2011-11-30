@@ -43,10 +43,12 @@ public class PartitionHeader {
     public PartitionHeader(RandomAccessFile raf) throws java.io.IOException {
         docDictOffset = raf.readLong();
         nFields = raf.readInt();
-        fieldOffsets = new ArrayList<FieldOffset>();
+        fieldOffsets = new ArrayList<FieldOffset>(nFields);
         for(int i = 0; i < nFields; i++) {
             fieldOffsets.add(new FieldOffset(raf));
         }
+        nDocs = raf.readInt();
+        maxDocID = raf.readInt();
     }
 
     public void addOffset(int id, long offset) {
@@ -83,11 +85,20 @@ public class PartitionHeader {
 
     public void write(RandomAccessFile raf) throws java.io.IOException {
         raf.writeLong(docDictOffset);
-        raf.writeInt(nFields);
+        raf.writeInt(fieldOffsets.size());
         for(FieldOffset fo : fieldOffsets) {
             fo.write(raf);
         }
+        raf.writeInt(nDocs);
+        raf.writeInt(maxDocID);
    }
+
+    @Override
+    public String toString() {
+        return "PartitionHeader{" + "nDocs=" + nDocs + " maxDocID=" + maxDocID +
+                " nFields=" + nFields + " fieldOffsets=" + fieldOffsets +
+                " docDictOffset=" + docDictOffset + '}';
+    }
 
     protected static class FieldOffset {
 
@@ -124,6 +135,11 @@ public class PartitionHeader {
         public void write(RandomAccessFile raf) throws java.io.IOException {
             raf.writeInt(id);
             raf.writeLong(offset);
+        }
+
+        @Override
+        public String toString() {
+            return "FieldOffset{" + "id=" + id + " offset=" + offset + '}';
         }
     }
 

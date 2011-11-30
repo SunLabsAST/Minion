@@ -431,36 +431,42 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             }
         }
 
-        //
-        // Dump the map from document IDs to the values saved for that document
-        // ID, and collect the positions in the buffer where the data for each
-        // document is recorded.
-        WriteableBuffer dtv = new ArrayBuffer(maxID * 4);
-        WriteableBuffer dtvPos = new ArrayBuffer(maxID * 4);
-        for(int i = 1; i <= maxID; i++) {
-            dtvPos.byteEncode(dtv.position(), 4);
+        if(field.saved) {
 
             //
-            // If there's no set here, or we're past the end of the array,
-            // encode 0 for the count of items for this document ID.
-            if(i >= dv.length || dv[i] == null) {
-                dtv.byteEncode(0);
-                continue;
-            }
-            List<IndexEntry> dvs = (List<IndexEntry>) dv[i];
-            dtv.byteEncode(dvs.size());
-            for(IndexEntry e : dvs) {
-                dtv.byteEncode(e.getID());
-            }
-        }
+            // Dump the map from document IDs to the values saved for that document
+            // ID, and collect the positions in the buffer where the data for each
+            // document is recorded.
+            WriteableBuffer dtv = new ArrayBuffer(maxID * 4);
+            WriteableBuffer dtvPos = new ArrayBuffer(maxID * 4);
+            for(int i = 1; i <= maxID; i++) {
+                dtvPos.byteEncode(dtv.position(), 4);
 
-        //
-        // Write the maps, recording the offset and size data in our
-        // header.
-        header.dtvOffset = fieldDictFile.getFilePointer();
-        dtv.write(fieldDictFile);
-        header.dtvPosOffset = fieldDictFile.getFilePointer();
-        dtvPos.write(fieldDictFile);
+                //
+                // If there's no set here, or we're past the end of the array,
+                // encode 0 for the count of items for this document ID.
+                if(i >= dv.length || dv[i] == null) {
+                    dtv.byteEncode(0);
+                    continue;
+                }
+                List<IndexEntry> dvs = (List<IndexEntry>) dv[i];
+                dtv.byteEncode(dvs.size());
+                for(IndexEntry e : dvs) {
+                    dtv.byteEncode(e.getID());
+                }
+            }
+
+            //
+            // Write the maps, recording the offset and size data in our
+            // header.
+            header.dtvOffset = fieldDictFile.getFilePointer();
+            dtv.write(fieldDictFile);
+            header.dtvPosOffset = fieldDictFile.getFilePointer();
+            dtvPos.write(fieldDictFile);
+        } else {
+            header.dtvOffset = -1;
+            header.dtvPosOffset = -1;
+        }
 
         if(getTermDictionary(false) != null) {
 

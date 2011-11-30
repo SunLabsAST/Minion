@@ -102,6 +102,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         this.field = field;
         info = field.getInfo();
         header = new FieldHeader(dictFile);
+        dicts = new DiskDictionary[MemoryDictionaryBundle.Type.values().length];
 
         for(Type type : Type.values()) {
             int ord = type.ordinal();
@@ -152,17 +153,23 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     ordinal()]);
         }
 
-        //
-        // Load the docs to vals data, using a file backed buffer.
-        dtvData = new NIOFileReadableBuffer(postIn[0], header.dtvOffset, 8192);
+        if(header.dtvOffset >= 0) {
 
-        //
-        // Load the docs to vals offset data, using a file backed buffer.
-        dtvOffsets = new NIOFileReadableBuffer(postIn[0],
-                                               header.dtvPosOffset, 8192);
+            //
+            // Load the docs to vals data, using a file backed buffer.
+            dtvData = new NIOFileReadableBuffer(postIn[0], header.dtvOffset,
+                                                8192);
 
-        vectorLengthsFile.seek(header.vectorLengthOffset);
-        dvl = new DocumentVectorLengths(vectorLengthsFile, 8192);
+            //
+            // Load the docs to vals offset data, using a file backed buffer.
+            dtvOffsets = new NIOFileReadableBuffer(postIn[0],
+                                                   header.dtvPosOffset, 8192);
+        }
+
+        if(header.vectorLengthOffset >= 0) {
+            vectorLengthsFile.seek(header.vectorLengthOffset);
+            dvl = new DocumentVectorLengths(vectorLengthsFile, 8192);
+        }
 
     }
 

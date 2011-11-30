@@ -140,10 +140,6 @@ public abstract class MemoryPartition extends Partition {
         header.setMaxDocID(maxDocumentID);
 
         //
-        // Write the partition header to the dictionary file.
-        header.write(dictFile);
-
-        //
         // If we deleted some documents along the way, then dump that data
         // now.
         if(deletions != null && deletions.getNDeleted() > 0) {
@@ -173,6 +169,8 @@ public abstract class MemoryPartition extends Partition {
         sw.stop();
         logger.info(String.format("%d docs took %dms", docDict.size(), sw.
                 getTime()));
+
+        manager.addNewPartition(partNumber, docDict.getKeys());
         return partNumber;
     }
 

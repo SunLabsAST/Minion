@@ -34,7 +34,6 @@ import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -51,7 +50,7 @@ import java.util.logging.Logger;
  */
 public class InvFileDiskPartition extends DiskPartition {
 
-    private static Logger logger = Logger.getLogger(InvFileDiskPartition.class.
+    private static final Logger logger = Logger.getLogger(InvFileDiskPartition.class.
             getName());
 
     private DiskField[] fields;
@@ -74,7 +73,7 @@ public class InvFileDiskPartition extends DiskPartition {
             throws java.io.IOException {
         super(partNumber, manager, Postings.Type.NONE);
 
-        logger.fine(String.format("Loading partition %d", partNumber));
+        logger.info(String.format("Loading partition %d", partNumber));
 
         File vlf = manager.makeVectorLengthFile(partNumber);
         vectorLengths = new RandomAccessFile(vlf, "rw");

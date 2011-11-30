@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  */
 public class DiskField extends Field {
 
-    static Logger logger = Logger.getLogger(DiskField.class.getName());
+    static final Logger logger = Logger.getLogger(DiskField.class.getName());
 
     private DiskDictionaryBundle bundle;
 
