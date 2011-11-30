@@ -57,5 +57,12 @@ public interface Occurrence {
      * @param count the number of occurrences.
      */
     public void setCount(int count);
+    
+    /**
+     * Gets the word position of this occurrence.
+     * 
+     * @return the word position
+     */
+    public int getPosition();
 
 } // Occurrence

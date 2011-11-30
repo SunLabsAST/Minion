@@ -426,7 +426,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     }
 
     public void index(Indexable doc) throws SearchEngineException {
-        int hash = doc.getKey().hashCode();
+        int hash = Math.abs(doc.getKey().hashCode());
+        
         //
         // Docs with the same key hash always go to the same indexer, so that 
         // we get updates in the right order to the underlying index.

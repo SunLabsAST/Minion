@@ -28,6 +28,7 @@ import com.sun.labs.minion.indexer.partition.PartitionManager.Merger;
 import com.sun.labs.minion.indexer.partition.io.AbstractPartitionOutput;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.partition.io.RAMPartitionOutput;
+import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
@@ -262,10 +263,6 @@ public class Marshaller implements Configurable {
                             partOut = poPool.take();
                             marshall(mph, partOut);
 
-                            //
-                            // Merges will happen synchronously in the thread
-                            // running the dumper, which will help regulate
-                            // partition dumping when merging is going on.
                             Merger m = partitionManager.getMerger();
                             if(m != null) {
                                 m.run();
@@ -311,11 +308,19 @@ public class Marshaller implements Configurable {
         private void marshall(MPHolder mph, PartitionOutput partOut) throws IOException, InterruptedException {
             if(partOut != null) {
                 PartitionOutput ret = mph.part.marshall(partOut);
-                if(ret != null) {
-                    toFlush.put(partOut);
-                }
                 mph.part.clear();
                 mpPool.put(mph.part);
+                if(ret != null) {
+                    if(logger.isLoggable(Level.FINEST)) {
+                        logger.finest(String.format("Queuing %s for flush", partOut));
+                    }
+                    toFlush.put(partOut);
+                } else {
+                    //
+                    // Nothing got dumped, but we still need to put the partition
+                    // output back in the pool!
+                    poPool.put(partOut);
+                }
             }
         }
     }
@@ -325,6 +330,8 @@ public class Marshaller implements Configurable {
      * disk.
      */
     class FlushThread implements Runnable {
+        
+        private NanoWatch nw = new NanoWatch();
 
         public void run() {
             while(!flushDone) {
@@ -333,10 +340,16 @@ public class Marshaller implements Configurable {
                     if(partOut != null) {
                         try {
                             try {
+                                nw.start();
                                 partOut.flush();
+                                nw.stop();
                             } catch(IllegalStateException ex) {
                                 logger.log(Level.SEVERE, String.format("Illegal state for %s", partOut), ex);
                                 throw(ex);
+                            }
+                            if(logger.isLoggable(Level.FINEST)) {
+                                logger.finest(String.format("Flushed %s in %.2fms",
+                                        partOut, nw.getLastTimeMillis()));
                             }
                             poPool.put(partOut);
                         } catch(IOException ex) {

@@ -24,7 +24,7 @@
 
 package com.sun.labs.minion.pipeline;
 
-import com.sun.labs.minion.indexer.postings.FieldOccurrence;
+import com.sun.labs.minion.indexer.postings.Occurrence;
 
 
 /**
@@ -32,7 +32,7 @@ import com.sun.labs.minion.indexer.postings.FieldOccurrence;
  * Instances of this class are passed down an indexing pipeline as they are
  * parsed from the file.
  */
-public class Token implements FieldOccurrence {
+public class Token implements Occurrence {
     
     /**
      * The string for a token.
@@ -270,7 +270,7 @@ public class Token implements FieldOccurrence {
      *
      * @return the position where the occurrence was found.
      */
-    public int getPos() {
+    public int getPosition() {
         return wordNum;
     }
     

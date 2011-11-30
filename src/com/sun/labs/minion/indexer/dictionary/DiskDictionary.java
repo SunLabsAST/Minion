@@ -1604,6 +1604,12 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                         @Override
                         public void setCount(int count) {
                         }
+
+                        public int getPosition() {
+                            return 1;
+                        }
+                        
+                        
                     };
                     o.setID(postings[j]);
                     ent.add(o);

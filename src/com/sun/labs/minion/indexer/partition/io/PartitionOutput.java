@@ -41,6 +41,10 @@ public interface PartitionOutput {
     public void setMaxDocID(int maxDocID);
     
     public int getMaxDocID();
+    
+    public void setName(String name);
+    
+    public String getName();
 
     public DictionaryOutput getPartitionDictionaryOutput();
     

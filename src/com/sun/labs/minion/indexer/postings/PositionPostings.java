@@ -205,9 +205,6 @@ public class PositionPostings implements Postings {
     
     @Override
     public void add(Occurrence o) {
-        if(!(o instanceof FieldOccurrence)) {
-            throw new IllegalArgumentException("Position Postings require positions!");
-        }
         int oid = o.getID();
         if(oid != currentID) {
             nIDs++;
@@ -227,7 +224,7 @@ public class PositionPostings implements Postings {
         if(posPos >= posns.length) {
             posns = Arrays.copyOf(posns, posns.length + 128);
         }
-        posns[posPos++] = ((FieldOccurrence) o).getPos();
+        posns[posPos++] = o.getPosition();
     }
     
     /**

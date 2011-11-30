@@ -351,17 +351,19 @@ public class DiskPartition extends Partition implements Closeable {
         
         File[] files = m.makePostingsFiles(n, allPostingsChannelNames.toArray(new String[0]));
         for(File f : files) {
-            if((!f.delete()) && (f.exists())) {
+            if(f.exists() && !f.delete()) {
                 logger.warning(String.format("Failed to delete %s", f));
             }
         }
 
         //
         // Remove the deletion bitmap and the removed partition files.
-        if(!m.makeDeletedDocsFile(n).delete()) {
+        File delFile = m.makeDeletedDocsFile(n);
+        if(delFile.exists() && !delFile.delete()) {
             logger.warning(String.format("Failed to delete deleted docs for %d", n));
         }
-        if(!m.makeRemovedPartitionFile(n).delete()) {
+        File remFile = m.makeRemovedPartitionFile(n);
+        if(remFile.exists() && !remFile.delete()) {
             logger.warning(String.format("Failed to delete removed file for %d", n));
         }
     }

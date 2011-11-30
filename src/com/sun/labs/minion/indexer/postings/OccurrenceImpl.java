@@ -38,6 +38,8 @@ public class OccurrenceImpl implements Occurrence {
      * The frequency of this occurrence.
      */
     protected int count;
+    
+    protected int position;
 
     public OccurrenceImpl() {
     }
@@ -76,6 +78,14 @@ public class OccurrenceImpl implements Occurrence {
      */
     public void setCount(int count) {
         this.count = count;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
     }
 
 } // OccurrenceImpl

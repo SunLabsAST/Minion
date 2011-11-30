@@ -228,6 +228,10 @@ public class WeightedFeature implements Feature, Serializable {
         return freq;
     }
 
+    public int getPosition() {
+        return 1;
+    }
+
     /**
      * Gets the count of occurrences that this feature represents.
      *

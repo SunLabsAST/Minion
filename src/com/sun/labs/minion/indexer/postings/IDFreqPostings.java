@@ -122,8 +122,9 @@ public class IDFreqPostings extends IDPostings {
             nIDs++;
             pos++;
             if(ids == null || nIDs >= ids.length) {
-                ids = Arrays.copyOf(ids, (nIDs + 1) * 2);
-                freqs = Arrays.copyOf(freqs, ids.length);
+                int nl = nIDs + 128;
+                ids = Arrays.copyOf(ids, nl);
+                freqs = Arrays.copyOf(freqs, nl);
             }
             ids[pos] = oid;
             freqs[pos] = o.getCount();

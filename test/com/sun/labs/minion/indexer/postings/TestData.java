@@ -224,7 +224,7 @@ public class TestData {
     }
 
     public Postings addData(Postings p) {
-        FieldOccurrenceImpl o = new FieldOccurrenceImpl();
+        OccurrenceImpl o = new OccurrenceImpl();
         o.setCount(1);
         int pp = 0;
         if(freqs == null) {
@@ -245,7 +245,7 @@ public class TestData {
                     if(freqs != null) {
                         for(int j = 0; j < freqs[i]; j++, pp++) {
                             if(posns != null) {
-                                o.setPos(posns[pp]);
+                                o.setPosition(posns[pp]);
                             }
                             p.add(o);
                         }

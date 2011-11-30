@@ -143,9 +143,10 @@ public abstract class MemoryPartition extends Partition {
         
         sw.stop();
         if(logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("Marshalled %s %d, %d docs took %dms",
+            logger.fine(String.format("Marshalled %s %d into %s, %d docs took %dms",
                     getPartitionName(),
                     partOut.getPartitionNumber(),
+                    partOut.getName(),
                     docDict.size(), sw.getTime()));
         }
         return partOut;
