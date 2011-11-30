@@ -30,6 +30,7 @@ import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -118,8 +119,8 @@ public class IDFreqPostings extends IDPostings {
             nIDs++;
             pos++;
             if(ids == null || nIDs >= ids.length) {
-                ids = Util.expandInt(ids, (nIDs + 1) * 2);
-                freqs = Util.expandInt(freqs, ids.length);
+                ids = Arrays.copyOf(ids, (nIDs + 1) * 2);
+                freqs = Arrays.copyOf(freqs, ids.length);
             }
             ids[pos] = oid;
             freqs[pos] = o.getCount();
@@ -159,7 +160,7 @@ public class IDFreqPostings extends IDPostings {
         int n = ((Postings) mp).getN();
         int[] tid = new int[Math.max(n, nIDs)];
         int[] tf = new int[Math.max(n, nIDs)];
-
+        
         PostingsIterator pi = ((Postings) mp).iterator(null);
         pi.next();
         int p1 = 0;
@@ -184,7 +185,7 @@ public class IDFreqPostings extends IDPostings {
                 tid = Util.addExpand(tid, np, ids[p2]);
                 tf = Util.addExpand(tf, np++, freqs[p2++]);
             } else {
-                tid = Util.addExpand(tid, np, ids[p2]);
+                tid = Util.addExpand(tid, np, pid);
                 tf = Util.addExpand(tf, np++, freqs[p2++] + pi.getFreq());
                 p1++;
                 pi.next();
@@ -204,8 +205,8 @@ public class IDFreqPostings extends IDPostings {
         if(p2 < nIDs) {
             int toadd = (nIDs - p2);
             if(np + toadd >= tid.length) {
-                tid = Util.expandInt(tid, Math.max(np + toadd, tid.length * 2));
-                tf = Util.expandInt(tf, Math.max(np + toadd, tf.length * 2));
+                tid = Arrays.copyOf(tid, Math.max(np + toadd, tid.length * 2));
+                tf = Arrays.copyOf(tf, Math.max(np + toadd, tf.length * 2));
             }
             System.arraycopy(ids, p2, tid, np, toadd);
             System.arraycopy(freqs, p2, tf, np, toadd);

@@ -558,7 +558,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                     }
 
                     if(posns[j][0] + 1 + n >= posns[j].length) {
-                        posns[j] = Util.expandInt(posns[j],
+                        posns[j] = Arrays.copyOf(posns[j],
                                                   (posns[j].length + n + 1) * 2);
                     }
                     System.arraycopy(fpos, 1,

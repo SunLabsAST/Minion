@@ -92,7 +92,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * <code>renumber</code> parameter of {@link #dump}
      */
     protected int[] idMap;
-    
+
     /**
      * The sorted entries from the dictionary, computed at dump time and 
      * saved.
@@ -102,7 +102,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * The log.
      */
-    static final Logger logger = Logger.getLogger(MemoryDictionary.class.getName());
+    private static final Logger logger = Logger.getLogger(MemoryDictionary.class.getName());
 
     /**
      * The tag for this module.
@@ -146,8 +146,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         /**
          * A map from the new IDs to the old IDs should be kept.
          */
-        NEWTOOLD,
-    }
+        NEWTOOLD,}
 
     protected MemoryDictionary() {
     }
@@ -228,8 +227,8 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * Clears the dictionary, emptying it of all data.
      */
     public void clear() {
-        for(Iterator<Map.Entry<N,IndexEntry>> i = map.entrySet().iterator(); i.hasNext(); ) {
-            Map.Entry<N,IndexEntry> e = i.next();
+        for(Iterator<Map.Entry<N, IndexEntry>> i = map.entrySet().iterator(); i.hasNext();) {
+            Map.Entry<N, IndexEntry> e = i.next();
             IndexEntry entry = e.getValue();
             if(entry.getN() > 3) {
                 entry.clear();
@@ -241,7 +240,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         idMap = null;
         sortedEntries = null;
     }
-    
+
     public IndexEntry[] getSortedEntries() {
         return sortedEntries;
     }
@@ -358,16 +357,16 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
 
         DictionaryOutput dout = partOut.getPartitionDictionaryOutput();
         PostingsOutput[] postOut = partOut.getPostingsOutput();
-        
+
         //
         // Start the dump.
         dout.start(partOut.getDictionaryEncoder(),
-                partOut.getDictionaryRenumber(), 
+                partOut.getDictionaryRenumber(),
                 postOut.length);
 
         DictionaryHeader dh = dout.getHeader();
         dh.maxEntryID = id;
-        
+
         //
         // Record the starting positions for each of our postings outputs.
         for(int i = 0; i < postOut.length; i++) {
@@ -377,15 +376,21 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Sort the entries in preparation for writing them out.  This will
         // generate an old-to-new ID mapping if we're renumbering.
-        IndexEntry[] sorted = sort(partOut.getDictionaryRenumber(), 
+        IndexEntry[] sorted = sort(partOut.getDictionaryRenumber(),
                 partOut.getDictionaryIDMap());
 
         int[] postingsIDMap = partOut.getPostingsIDMap();
-        
+
         //
         // Write the postings and entries.
         for(IndexEntry entry : sorted) {
-            
+
+            //
+            // Skip entries that were kept around but not used.
+            if(!entry.isUsed()) {
+                continue;
+            }
+
             //
             // Write it out.
             if(entry.writePostings(postOut, postingsIDMap) == true) {
@@ -399,11 +404,11 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             postOut[i].flush();
             dh.postEnd[i] = postOut[i].position();
         }
-        
+
         //
         // We're done dumping this dictionary.
         dout.finish();
-        
+
         return sorted;
     }
 
@@ -413,9 +418,9 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     public class MemoryDictionaryIterator implements DictionaryIterator {
 
         protected boolean actualOnly;
-        
+
         int pos = 0;
-        
+
         int last;
 
         public MemoryDictionaryIterator() {
@@ -452,6 +457,5 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         @Override
         public void setUnbufferedPostings(boolean unbufferedPostings) {
         }
-
     }
 }

@@ -187,7 +187,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      */
     public WriteableBuffer capacity(int n) {
         if(n >= units.length) {
-            units = Util.expandByte(units, n);
+            units = Arrays.copyOf(units, n);
             lim = units.length;
         }
         return this;

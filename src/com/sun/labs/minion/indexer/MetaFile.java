@@ -485,7 +485,7 @@ public class MetaFile implements Iterable<FieldInfo> {
     /**
      * Gets the ID corresponding to a vectored field with the given name.  This
      * method is a helper that can be used by a number of document similarity 
-     * comptuations that are computing similarity based on a certain component
+     * computations that are computing similarity based on a certain component
      * of a document vector.
      * 
      * @param name the name of the vectored field whose ID we want.

@@ -603,11 +603,12 @@ public class QueryTest extends SEMain {
                         output.format("%s field: %s null\n", p,
                                       df.getInfo().getName());
                     } else {
-                        output.format("%s field: %s %s (%s) %d\n", 
+                        output.format("%s field: %s %s (%s) id: %d n: %d\n", 
                                       p,
                                       df.getInfo().getName(),
                                       e.getName(), 
                                       Util.toHexDigits(e.getName().toString()), 
+                                      e.getID(),
                                       e.getN());
                     }
                 }
@@ -1929,7 +1930,7 @@ public class QueryTest extends SEMain {
         }
 
         public String toString() {
-            return "fields: " + Util.arrayToString(fields) + " format: \""
+            return "fields: " + Util.toString(fields) + " format: \""
                    + formatString + "\"";
         }
     }

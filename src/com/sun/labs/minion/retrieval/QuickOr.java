@@ -28,7 +28,7 @@ import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
-import com.sun.labs.minion.util.Util;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -124,7 +124,7 @@ public class QuickOr {
         } else {
             int s = pi.getN() + p;
             if(s >= docs.length) {
-                docs = Util.expandInt(docs, s * 2);
+                docs = Arrays.copyOf(docs, s * 2);
             }
 
             while(pi.next()) {
@@ -160,7 +160,7 @@ public class QuickOr {
 
             int s = p + d.length;
             if(s >= docs.length) {
-                docs = Util.expandInt(docs, s * 2);
+                docs = Arrays.copyOf(docs, s * 2);
             }
             System.arraycopy(d, 0, docs, p, d.length);
         }

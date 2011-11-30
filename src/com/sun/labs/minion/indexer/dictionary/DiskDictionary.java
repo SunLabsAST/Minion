@@ -1403,7 +1403,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             //
             // Make a new entry for the merged data.
             IndexEntry me = merger.factory.getIndexEntry(top.curr.getName(), newid);
-
+            
             //
             // We need to keep track of any mappings that we've made for the 
             // dictionary IDs while processing this entry, because in the end
@@ -1469,18 +1469,12 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
             //
             // Write the postings for the newly merged entry.
+            try {
             if(me.writePostings(postOut, null) == true) {
 
                 //
                 // Add the new entry to the dictionary that we're building.
-                try {
                     dictOut.write(me);
-                } catch(java.lang.ArithmeticException ame) {
-                    logger.severe(String.format(
-                            "Arithmetic exception encoding postings for entry: %s", me.
-                            getName()));
-                    throw (ame);
-                }
             } else {
                 //
                 // Remember what we said about not writing the entry to the 
@@ -1493,6 +1487,11 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                         idMaps[i][mapped[i]] = -1;
                     }
                 }
+            }
+            } catch(java.lang.ArithmeticException ex) {
+                logger.severe(String.format(
+                        "Arithmetic exception encoding postings for entry: %s", me.getName()));
+                throw (ex);
             }
 
             if(logger.isLoggable(Level.FINE)) {

@@ -29,8 +29,11 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 
 import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
+import java.util.logging.Logger;
 
 public class MemoryBiGramDictionary extends MemoryDictionary {
+    
+    private static final Logger logger = Logger.getLogger(MemoryBiGramDictionary.class.getName());
     
     /**
      * Creates a bigram dictionary.  Such a dictionary will be populated a

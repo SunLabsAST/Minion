@@ -23,13 +23,11 @@
  */
 package com.sun.labs.minion.document.tokenizer;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.pipeline.Token;
 
 import com.sun.labs.minion.util.Util;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -265,8 +263,8 @@ public class UniversalTokenizer extends Tokenizer {
         if(!makeTokens) {
             int newLen = tokLen + e - b;
             if(newLen >= token.length) {
-                token = Util.expandChar(token, newLen + 32);
-                lengths = Util.expandInt(lengths, newLen + 32);
+                token = Arrays.copyOf(token, newLen + 32);
+                lengths = Arrays.copyOf(lengths, newLen + 32);
             }
             // Add new characters into the token buffer.
             System.arraycopy(text, b, token, tokLen, e - b);
@@ -317,8 +315,8 @@ public class UniversalTokenizer extends Tokenizer {
 
         if(!makeTokens) {
             if(tokLen + 1 > token.length) {
-                token = Util.expandChar(token, tokLen + 32);
-                lengths = Util.expandInt(lengths, tokLen + 32);
+                token = Arrays.copyOf(token, tokLen + 32);
+                lengths = Arrays.copyOf(lengths, tokLen + 32);
             }
             token[tokLen] = c;
             lengths[tokLen++] = cl;
@@ -891,8 +889,8 @@ public class UniversalTokenizer extends Tokenizer {
         // First see if token buffer needs to be expanded.
         // Note: tokLen points to the next unused slot in token.
         if(token.length <= tokLen) {
-            token = Util.expandChar(token, tokLen + 32);
-            lengths = Util.expandInt(lengths, tokLen + 32);
+            token = Arrays.copyOf(token, tokLen + 32);
+            lengths = Arrays.copyOf(lengths, tokLen + 32);
         }
 
         lengths[tokLen] = cl;

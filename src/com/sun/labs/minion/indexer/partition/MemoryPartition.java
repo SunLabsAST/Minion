@@ -87,7 +87,7 @@ public abstract class MemoryPartition extends Partition {
      * @throws java.io.IOException if there is any error writing the partition
      * data to disk
      */
-    protected PartitionOutput dump(PartitionOutput partOut) throws java.io.IOException {
+    public PartitionOutput dump(PartitionOutput partOut) throws java.io.IOException {
 
         //
         // Do nothing if we have no data.

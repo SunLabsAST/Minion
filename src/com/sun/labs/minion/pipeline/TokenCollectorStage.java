@@ -25,6 +25,7 @@ package com.sun.labs.minion.pipeline;
 
 import java.util.Iterator;
 import com.sun.labs.minion.util.Util;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -251,7 +252,7 @@ public class TokenCollectorStage extends StageAdapter {
                     (!wholeField && w >= sw && w <= ew)) {
                 if(nTokens + 1 > tokens.length) {
                     int newCap = tokens.length + 10;
-                    tokens = (Token[]) Util.expand(tokens, newCap);
+                    tokens = Arrays.copyOf(tokens, newCap);
                 }
                 tokens[nTokens++] = token;
             }
@@ -288,27 +289,22 @@ public class TokenCollectorStage extends StageAdapter {
          * that the tokenizer created.
          */
         public Token[] getTokens() {
-            return (Token[]) Util.getExact(tokens, nTokens);
+            return Arrays.copyOf(tokens, nTokens);
         }
 
+        @Override
         public boolean equals(Object o) {
             if(o instanceof Range) {
                 Range or = (Range) o;
 
                 boolean bad = false;
                 for(int i = 0; i < nTokens; i++) {
-                    logger.info(tokens[i].getToken() + " " + tokens[i].getType() +
-                            " / " +
-                            or.tokens[i].getToken() +
-                            " " + or.tokens[i].getType());
 
                     if(!tokens[i].getToken().equals(or.tokens[i].getToken())) {
                         return false;
                     }
 
                     if(tokens[i].getType() != or.tokens[i].getType()) {
-                        logger.warning(tokens[i].getToken() + ": " + tokens[i].
-                                getType() + " " + or.tokens[i].getType());
                         bad = true;
                     }
                 }
@@ -322,6 +318,7 @@ public class TokenCollectorStage extends StageAdapter {
             return false;
         }
 
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             for(int i = 0; i < nTokens; i++) {

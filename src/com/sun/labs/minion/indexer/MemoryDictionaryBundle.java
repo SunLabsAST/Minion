@@ -74,14 +74,14 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         STEMMED_VECTOR,
         /**
          * A dictionary for the token bigrams.
-        */
+         */
         TOKEN_BIGRAMS,
         /**
          * A dictionary for saved value bigrams.
-        */
+         */
         SAVED_VALUE_BIGRAMS
+
     }
-    
     /**
      * The dictionaries making up this bundle, indexed by the ordinal of one of the
      * {@link Types}.
@@ -329,7 +329,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         //
         // The ID maps from each of the dictionaries.
         int[][] entryIDMaps = new int[Type.values().length][];
-
+        
         //
         // Dump the dictionaries in this bundle.  This loop is a little gross, what
         // with the pre-dump and post-dump switches based on the type of dictionary
@@ -341,13 +341,21 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 header.dictOffsets[ord] = -1;
                 continue;
             }
-
+            
             //
             // Figure out the encoder for the type of dictionary.
             partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
             partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
             partOut.setPostingsIDMap(null);
             switch(type) {
+
+                case CASED_TOKENS:
+                    partOut.setDictionaryEncoder(new StringNameHandler());
+                    break;
+
+                case UNCASED_TOKENS:
+                    partOut.setDictionaryEncoder(new StringNameHandler());
+                    break;
 
                 case RAW_SAVED:
                     partOut.setDictionaryEncoder(getEncoder(info));
@@ -393,11 +401,15 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
                     partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                     partOut.setPostingsIDMap(entryIDMaps[Type.CASED_TOKENS.ordinal()]);
+                    break;
+
                 case STEMMED_VECTOR:
                     partOut.setDictionaryEncoder(new StringNameHandler());
                     partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
                     partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                     partOut.setPostingsIDMap(entryIDMaps[Type.STEMMED_TOKENS.ordinal()]);
+                    break;
+
                 case TOKEN_BIGRAMS:
                     IndexEntry[] sortedTokens =
                             sortedEntries[Type.CASED_TOKENS.ordinal()] != null
@@ -407,10 +419,14 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     //
                     // We'll create this one on the fly.
                     if(sortedTokens != null) {
-                        MemoryBiGramDictionary tbg = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
-                        dicts[ord] = tbg;
+                        if(dicts[ord] == null) {
+                            dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
+                        }
+                        MemoryBiGramDictionary tbg = (MemoryBiGramDictionary) dicts[ord];
                         for(IndexEntry e : sortedTokens) {
-                            tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
+                            if(e.isUsed()) {
+                                tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
+                            }
                         }
                         partOut.setDictionaryEncoder(new StringNameHandler());
                         partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
@@ -427,8 +443,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                                 new EntryFactory(Postings.Type.ID_FREQ));
                         dicts[ord] = sbg;
                         for(IndexEntry e : sortedEntries[Type.RAW_SAVED.ordinal()]) {
-                            sbg.add(CharUtils.toLowerCase(e.getName().toString()),
-                                    e.getID());
+                            if(e.isUsed()) {
+                                sbg.add(CharUtils.toLowerCase(e.getName().toString()),
+                                        e.getID());
+                            }
                         }
                         partOut.setDictionaryEncoder(new StringNameHandler());
                         partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);

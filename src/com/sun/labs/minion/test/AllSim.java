@@ -85,7 +85,7 @@ public class AllSim {
                     sa[j] = new ScoredArtist(dvs[j].getKey(), dvs[i].getSimilarity(dvs[j]));
                 }
                 Util.sort(sa);
-                logger.info(String.format(" Most similar: %s", Util.arrayToString(sa, 0, 10)));
+                logger.info(String.format(" Most similar: %s", Util.toString(sa, 0, 10)));
                 for(ScoredArtist a : sa) {
                     oos.writeUTF(a.name);
                     oos.writeFloat(a.score);

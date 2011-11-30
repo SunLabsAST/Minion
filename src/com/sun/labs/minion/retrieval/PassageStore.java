@@ -25,6 +25,7 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.util.Util;
+import java.util.Arrays;
 
 /**
  * A class to store the passages for a single field while doing proximity
@@ -102,7 +103,7 @@ public class PassageStore {
      */
     public void add(int pos, int[] p, float penalty) {
         if(passPosn + width >= pass.length) {
-            pass = Util.expandInt(pass, (passPosn+width)*2);
+            pass = Arrays.copyOf(pass, (passPosn+width)*2);
         }
         //
         // Store the start position, if necessary.
@@ -120,7 +121,7 @@ public class PassageStore {
         //
         // Store the penalty.
         if(nPass + 1 >= penalties.length) {
-            penalties = Util.expandFloat(penalties,
+            penalties = Arrays.copyOf(penalties,
                                          penalties.length*2);
         }
         penalties[nPass++] = penalty;

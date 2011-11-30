@@ -311,7 +311,7 @@ public abstract class Proximity extends Operator {
                     //
                     // The current column and its length.
                     if(nPosns + lens[j] >= columns[j].length) {
-                        columns[j] = Util.expandInt(columns[j],
+                        columns[j] = Arrays.copyOf(columns[j],
                                 (nPosns + lens[j]) * 2);
 
                         //

@@ -27,6 +27,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
 import com.sun.labs.minion.util.Util;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -89,8 +90,8 @@ public class ScoredQuickOr extends QuickOr {
         } else {
             int s = pi.getN() + p;
             if(s >= docs.length) {
-                docs = Util.expandInt(docs, s * 2);
-                weights = Util.expandFloat(weights, s * 2);
+                docs = Arrays.copyOf(docs, s * 2);
+                weights = Arrays.copyOf(weights, s * 2);
             }
 
             while(pi.next()) {
@@ -119,8 +120,8 @@ public class ScoredQuickOr extends QuickOr {
         } else {
             int s = pi.getN() + p;
             if(s >= docs.length) {
-                docs = Util.expandInt(docs, s * 2);
-                weights = Util.expandFloat(weights, s * 2);
+                docs = Arrays.copyOf(docs, s * 2);
+                weights = Arrays.copyOf(weights, s * 2);
             }
 
             while(pi.next()) {
@@ -144,8 +145,8 @@ public class ScoredQuickOr extends QuickOr {
 
             int s = p + d.length;
             if(s >= docs.length) {
-                docs = Util.expandInt(docs, s * 2);
-                weights = Util.expandFloat(weights, s * 2);
+                docs = Arrays.copyOf(docs, s * 2);
+                weights = Arrays.copyOf(weights, s * 2);
             }
 
             System.arraycopy(d, 0, docs, p, d.length);

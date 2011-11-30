@@ -24,7 +24,6 @@
 
 package com.sun.labs.minion.retrieval;
 import java.util.Arrays;
-import com.sun.labs.minion.FieldInfo;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
@@ -34,7 +33,6 @@ import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import java.util.HashSet;
 
 /**
  * A scored array group is one for which the documents have scores
@@ -222,8 +220,8 @@ public class ScoredGroup extends ArrayGroup {
      */
     public void addDoc(int docID, float score) {
         if(size+1 >= docs.length) {
-            docs = Util.expandInt(docs, docs.length*2);
-            scores = Util.expandFloat(scores, scores.length*2);
+            docs = Arrays.copyOf(docs, docs.length*2);
+            scores = Arrays.copyOf(scores, scores.length*2);
         }
         docs[size] = docID;
         scores[size++] = score;

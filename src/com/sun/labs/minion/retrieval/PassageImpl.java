@@ -615,7 +615,7 @@ public class PassageImpl implements Passage, Comparable {
     }
 
     public String toString() {
-        return Util.arrayToString(tokenStarts) + " " + Util.arrayToString(
+        return Util.toString(tokenStarts) + " " + Util.toString(
                 tokenEnds);
     }
 } // PassageImpl

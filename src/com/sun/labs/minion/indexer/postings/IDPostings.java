@@ -218,8 +218,8 @@ public class IDPostings implements Postings, MergeablePostings {
             skipID = new int[4];
             skipPos = new int[4];
         } else if(nSkips + 1 >= skipID.length) {
-            skipID = Util.expandInt(skipID, skipID.length * 2);
-            skipPos = Util.expandInt(skipPos, skipID.length);
+            skipID = Arrays.copyOf(skipID, skipID.length * 2);
+            skipPos = Arrays.copyOf(skipPos, skipID.length);
         }
         skipID[nSkips] = id;
         skipPos[nSkips++] = pos;
@@ -434,9 +434,9 @@ public class IDPostings implements Postings, MergeablePostings {
             // First we need to make the skip table big enough to hold all
             // this data.
             if(skipID != null) {
-                skipID = Util.expandInt(skipID,
+                skipID = Arrays.copyOf(skipID,
                                         skipID.length + other.nSkips + 1);
-                skipPos = Util.expandInt(skipPos,
+                skipPos = Arrays.copyOf(skipPos,
                                          skipPos.length + other.nSkips + 1);
             } else {
                 skipID = new int[other.nSkips + 1];
@@ -563,7 +563,7 @@ public class IDPostings implements Postings, MergeablePostings {
         if(p2 < nIDs) {
             int toadd = (nIDs - p2);
             if(np + toadd >= temp.length) {
-                temp = Util.expandInt(temp,
+                temp = Arrays.copyOf(temp,
                                       Math.max(np + toadd, temp.length * 2));
             }
             System.arraycopy(ids, p2, temp, np, toadd);

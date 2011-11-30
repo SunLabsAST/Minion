@@ -187,7 +187,7 @@ public class ArrayGroup implements Cloneable {
      */
     protected void resize(int n) {
         if(n > docs.length) {
-            docs = Util.expandInt(docs, n);
+            docs = Arrays.copyOf(docs, n);
         }
     }
 
@@ -281,7 +281,7 @@ public class ArrayGroup implements Cloneable {
      */
     public void addDoc(int docID) {
         if(size + 1 >= docs.length) {
-            docs = Util.expandInt(docs, docs.length * 2);
+            docs = Arrays.copyOf(docs, docs.length * 2);
         }
         docs[size++] = docID;
     }

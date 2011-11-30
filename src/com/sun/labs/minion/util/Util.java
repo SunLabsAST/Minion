@@ -33,6 +33,7 @@ import java.util.PriorityQueue;
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.minion.pipeline.Token;
 import java.io.File;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -43,28 +44,7 @@ public class Util {
     /**
      * A log.
      */
-    static Logger logger = Logger.getLogger(Util.class.getName());
-
-    /**
-     * A tag for our log entries.
-     */
-    protected static String logTag = "UTIL";
-
-    /**
-     * Expands an array of bytes, copying the existing values.
-     *
-     * @param a The array to expand.
-     * @param ns The new size.
-     * @return The expanded array.
-     */
-    public static final byte[] expandByte(byte[] a, int ns) {
-        byte[] ret = new byte[ns];
-        if(a == null) {
-            return ret;
-        }
-        System.arraycopy(a, 0, ret, 0, a.length);
-        return ret;
-    }
+    private static Logger logger = Logger.getLogger(Util.class.getName());
 
     public static File getTempFile(String path, String prefix,
             String suffix) throws java.io.IOException {
@@ -76,174 +56,12 @@ public class Util {
         return File.createTempFile(prefix, suffix, path);
     }
 
-    /**
-     * Expands an array of integers, copying the existing values.
-     *
-     * @param a The array to expand.
-     * @param ns The new size.
-     * @return The expanded array.
-     */
-    public static final int[] expandInt(int[] a, int ns) {
-        int[] ret = new int[ns];
-        if(a == null) {
-            return ret;
-        }
-        System.arraycopy(a, 0, ret, 0, a.length);
-        return ret;
-    }
-
-    public static final int[] addExpand(int[] a, int n, int x) {
+    public static int[] addExpand(int[] a, int n, int x) {
         if(n >= a.length) {
-            a = expandInt(a, a.length * 2);
+            a = Arrays.copyOf(a, a.length * 2);
         }
         a[n] = x;
         return a;
-    }
-
-    public static double[] expandDouble(double[] a, int ns) {
-        double[] ret = new double[ns];
-        if(a != null) {
-            System.arraycopy(a, 0, ret, 0, a.length);
-        }
-        return ret;
-    }
-
-    /**
-     * Expands an array of floats, copying the existing values.
-     *
-     * @param a The array to expand.
-     * @param ns The new size.
-     * @return The expanded array.
-     */
-    public static final float[] expandFloat(float[] a, int ns) {
-        float[] ret = new float[ns];
-        if(a == null) {
-            return ret;
-        }
-        System.arraycopy(a, 0, ret, 0, a.length);
-        return ret;
-    }
-
-    /**
-     * Expands an array of char, copying the existing values.
-     *
-     * @param a The array to expand.
-     * @param ns The new size.
-     * @return The expanded array.
-     */
-    public static final char[] expandChar(char[] a, int ns) {
-        char[] ret = new char[ns];
-        if(a == null) {
-            return ret;
-        }
-        System.arraycopy(a, 0, ret, 0, a.length);
-        return ret;
-    }
-
-    /**
-     * Expands any array, copying over the contents.  Slower (by about 30%)
-     * than the type specific versions, but very easy to extend.
-     *
-     * @param a The array to expand.
-     * @param ns The new capacity.
-     * @return An expanded array of the same type, or null if the object is
-     * not an array or we don't know how to do this type.
-     * @see #expandInt
-     * @see #expandFloat
-     */
-    public static final Object expand(Object a, int ns) {
-
-        if(a instanceof int[]) {
-            return expandInt((int[]) a, ns);
-        } else if(a instanceof float[]) {
-            return expandFloat((float[]) a, ns);
-        } else if(a instanceof String[]) {
-            String[] ret = new String[ns];
-            System.arraycopy((String[]) a, 0, ret, 0, ((String[]) a).length);
-            return ret;
-        } else if(a instanceof Token[]) {
-            Token[] ret = new Token[ns];
-            System.arraycopy((Token[]) a, 0, ret, 0, ((Token[]) a).length);
-            return ret;
-        } else if(a instanceof int[][]) {
-            int[][] ret = new int[ns][];
-            System.arraycopy((int[][]) a, 0, ret, 0, ((int[][]) a).length);
-            return ret;
-        } else if(a instanceof float[][]) {
-            float[][] ret = new float[ns][];
-            System.arraycopy((float[][]) a, 0, ret, 0, ((float[][]) a).length);
-            return ret;
-        } else if(a instanceof String[][]) {
-            String[][] ret = new String[ns][];
-            System.arraycopy((String[][]) a, 0, ret, 0, ((String[][]) a).length);
-            return ret;
-        } else if(a instanceof int[][][]) {
-            int[][][] ret = new int[ns][][];
-            System.arraycopy((int[][][]) a, 0, ret, 0, ((int[][][]) a).length);
-            return ret;
-        } else if(a instanceof float[][][]) {
-            float[][][] ret = new float[ns][][];
-            System.arraycopy((float[][][]) a, 0, ret, 0,
-                    ((float[][][]) a).length);
-            return ret;
-        } else if(a instanceof String[][][]) {
-            String[][][] ret = new String[ns][][];
-            System.arraycopy((String[][][]) a, 0, ret, 0,
-                    ((String[][][]) a).length);
-            return ret;
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Gets exactly the provided number of elements from an array and
-     * returns an array of that size.
-     *
-     * @param a The array to extract elements from.
-     * @param ne The number of elements.
-     * @return An array of the same type with exactly ne elements, or
-     * <code>null</code>
-     * if the object is not an array or we don't know how to do this type.
-     * @see #expandInt
-     * @see #expandFloat
-     */
-    public static final Object getExact(Object a, int ne) {
-        if(a instanceof int[]) {
-            int[] ret = new int[ne];
-            System.arraycopy((int[]) a, 0, ret, 0, ne);
-            return ret;
-        } else if(a instanceof char[]) {
-            char[] ret = new char[ne];
-            System.arraycopy((char[]) a, 0, ret, 0, ne);
-            return ret;
-        } else if(a instanceof float[]) {
-            float[] ret = new float[ne];
-            System.arraycopy((float[]) a, 0, ret, 0, ne);
-            return ret;
-        } else if(a instanceof String[]) {
-            String[] ret = new String[ne];
-            System.arraycopy((String[]) a, 0, ret, 0, ne);
-            return ret;
-        } else if(a instanceof Token[]) {
-            Token[] ret = new Token[ne];
-            System.arraycopy((Token[]) a, 0, ret, 0, ne);
-            return ret;
-        } else if(a instanceof int[][]) {
-            int[][] ret = new int[ne][];
-            System.arraycopy((int[][]) a, 0, ret, 0, ne);
-            return ret;
-        } else if(a instanceof float[][]) {
-            float[][] ret = new float[ne][];
-            System.arraycopy((float[][]) a, 0, ret, 0, ne);
-            return ret;
-        } else if(a instanceof String[][]) {
-            String[][] ret = new String[ne][];
-            System.arraycopy((String[][]) a, 0, ret, 0, ne);
-            return ret;
-        } else {
-            return null;
-        }
     }
 
     /**
@@ -251,7 +69,7 @@ public class Util {
      * @param c The character to convert.
      * @return The unicode escaped string containing this character.
      */
-    public static final String escape(char c) {
+    public static String escape(char c) {
         return String.format("\\u%04d", (int) c);
     }
 
@@ -260,7 +78,7 @@ public class Util {
      * @param s The string to escape.
      * @return The string with unicode escapes
      */
-    public static final String escape(String s) {
+    public static String escape(String s) {
         return escape(s, false);
     }
 
@@ -270,7 +88,7 @@ public class Util {
      * @param leaveAscii if <code>true</code>, leave ASCII characters as-is.
      * @return The string with unicode escapes
      */
-    public static final String escape(String s, boolean leaveAscii) {
+    public static String escape(String s, boolean leaveAscii) {
         StringBuilder b = new StringBuilder();
         for(int i = 0; i < s.length(); ++i) {
             char c = s.charAt(i);
@@ -287,23 +105,10 @@ public class Util {
      * Converts a string to a sequence of four hex digit unicode
      * descriptions.
      */
-    public static final String toHexDigits(String s) {
+    public static String toHexDigits(String s) {
         StringBuilder b = new StringBuilder();
         for(int i = 0; i < s.length(); i++) {
-            String u = Integer.toHexString((int) s.charAt(i));
-            switch(u.length()) {
-                case 1:
-                    u = "000" + u;
-                    break;
-                case 2:
-                    u = "00" + u;
-                    break;
-                case 3:
-                    u = "0" + u;
-                    break;
-            }
-            b.append("\\u");
-            b.append(u);
+            b.append(escape(s.charAt(i)));
         }
         return b.toString();
     }
@@ -317,7 +122,7 @@ public class Util {
      * @return A version of <code>y</code> where the characters that
      * correspond with characters in <code>x</code> are in the same case.
      */
-    public static final String matchCase(String x, String y) {
+    public static String matchCase(String x, String y) {
         int l = Math.min(x.length(), y.length());
         char[] ret = new char[y.length()];
         for(int i = 0; i < l; i++) {
@@ -344,17 +149,17 @@ public class Util {
     /**
      * Generates a string containing the elements of the array.
      */
-    public static final String arrayToString(int[] a) {
+    public static String toString(int[] a) {
         if(a == null) {
             return "null";
         }
-        return arrayToString(a, 0, a.length);
+        return toString(a, 0, a.length);
     }
 
     /**
      * Generates a string containing the elements of the array.
      */
-    public static final String arrayToString(int[] a, int s, int e) {
+    public static String toString(int[] a, int s, int e) {
         if(a == null) {
             return "null";
         }
@@ -370,17 +175,17 @@ public class Util {
         return b.toString();
     }
 
-    public static final String arrayToString(boolean[] a) {
+    public static String toString(boolean[] a) {
         if(a == null) {
             return "null";
         }
-        return arrayToString(a, 0, a.length);
+        return toString(a, 0, a.length);
     }
 
     /**
      * Generates a string containing the elements of the array.
      */
-    public static final String arrayToString(boolean[] a, int s, int e) {
+    public static String toString(boolean[] a, int s, int e) {
         if(a == null) {
             return "null";
         }
@@ -399,17 +204,17 @@ public class Util {
     /**
      * Generates a string containing the elements of the array.
      */
-    public static final String arrayToString(float[] a) {
+    public static String toString(float[] a) {
         if(a == null) {
             return "null";
         }
-        return arrayToString(a, 0, a.length);
+        return toString(a, 0, a.length);
     }
 
     /**
      * Generates a string containing the elements of the array.
      */
-    public static final String arrayToString(float[] a, int s, int e) {
+    public static String toString(float[] a, int s, int e) {
         if(a == null) {
             return "null";
         }
@@ -425,14 +230,14 @@ public class Util {
         return b.toString();
     }
 
-    public static String arrayToString(String[] a) {
+    public static String toString(String[] a) {
         if(a == null) {
             return null;
         }
-        return arrayToString(a, 0, a.length);
+        return toString(a, 0, a.length);
     }
 
-    public static String arrayToString(String[] a, int s, int e) {
+    public static String toString(String[] a, int s, int e) {
         if(a == null) {
             return null;
         }
@@ -449,14 +254,14 @@ public class Util {
         return b.toString();
     }
 
-    public static String arrayToString(Object[] a) {
+    public static String toString(Object[] a) {
         if(a == null) {
             return null;
         }
-        return arrayToString(a, 0, a.length);
+        return toString(a, 0, a.length);
     }
 
-    public static String arrayToString(Object[] a, int s, int e) {
+    public static String toString(Object[] a, int s, int e) {
         if(a == null) {
             return null;
         }
@@ -473,14 +278,14 @@ public class Util {
         return b.toString();
     }
 
-    public static String arrayToString(double[] a) {
-        return arrayToString(a, 0, a.length);
+    public static String toString(double[] a) {
+        return toString(a, 0, a.length);
     }
 
     /**
      * Generates a string containing the elements of the array.
      */
-    public static final String arrayToString(double[] a, int s, int e) {
+    public static String toString(double[] a, int s, int e) {
         if(a == null) {
             return "null";
         }
@@ -499,7 +304,7 @@ public class Util {
     /**
      * Generates a string containing the elements of the array.
      */
-    public static final String arrayToString(long[] a, int s, int e) {
+    public static String toString(long[] a, int s, int e) {
         StringBuilder b = new StringBuilder();
         b.append('[');
         for(int i = s; i < e; i++) {
@@ -690,7 +495,7 @@ public class Util {
      *
      * @param c The array we wish to transform
      */
-    public static final char[] toLowerCase(char[] c) {
+    public static char[] toLowerCase(char[] c) {
         return toLowerCase(c, 0, c.length);
     }
 
@@ -702,7 +507,7 @@ public class Util {
      * @param b The beginning offset
      * @param e The ending offset
      */
-    public static final char[] toLowerCase(char[] c, int b, int e) {
+    public static char[] toLowerCase(char[] c, int b, int e) {
         for(int i = b; i < e; i++) {
             c[i] = CharUtils.toLowerCase[c[i]];
         }
@@ -714,7 +519,7 @@ public class Util {
      *
      * @param c The array we wish to transform
      */
-    public static final char[] toUpperCase(char[] c) {
+    public static char[] toUpperCase(char[] c) {
         return toUpperCase(c, 0, c.length);
     }
 
@@ -726,7 +531,7 @@ public class Util {
      * @param b The beginning offset
      * @param e The ending offset
      */
-    public static final char[] toUpperCase(char[] c, int b, int e) {
+    public static char[] toUpperCase(char[] c, int b, int e) {
         for(int i = b; i < e; i++) {
             c[i] = CharUtils.toUpperCase[c[i]];
         }
@@ -740,7 +545,7 @@ public class Util {
      * @param s2 The second string
      * @return The trailing portion of s2 that does not match s1
      */
-    public static final String compressInitial(String s1, String s2) {
+    public static String compressInitial(String s1, String s2) {
         int i;
         int l1 = s1.length();
         int l2 = s2.length();
@@ -760,7 +565,7 @@ public class Util {
      * @param c2 The second array
      * @return The number of initial characters that the two arrays share.
      */
-    public static final int findInitial(char[] c1, char[] c2) {
+    public static int findInitial(char[] c1, char[] c2) {
         int end = Math.min(c1.length, c2.length);
         for(int i = 0; i < end; i++) {
             if(c1[i] != c2[i]) {
@@ -783,7 +588,7 @@ public class Util {
      * @param b2 The starting index of the second section.
      * @param e2 The exclusive index of the end of the second section.
      */
-    public static final int findInitial(char[] c1, int b1, int e1,
+    public static int findInitial(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2) {
         int end = Math.min(e1 - b1, e2 - b2);
         for(int i = 0, i1 = b1, i2 = b2; i < end; i++, i1++, i2++) {
@@ -801,7 +606,7 @@ public class Util {
      * @param c1 The first array of characters.
      * @param c2 The second array of characters.
      */
-    public static final int compareArray(char[] c1, char[] c2) {
+    public static int compareArray(char[] c1, char[] c2) {
         return compareArray(c1, 0, c1.length, c2, 0, c2.length);
     }
 
@@ -819,7 +624,7 @@ public class Util {
      * lexicographically smaller than c2, or greater than 0 if c1 is
      * lexicographically greater than c2.
      */
-    public static final int compareArray(char[] c1, int b1, int e1,
+    public static int compareArray(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2) {
 
         int n = Math.min(e1 - b1, e2 - b2);
@@ -846,7 +651,7 @@ public class Util {
      * lexicographically smaller than c2, or greater than 0 if c1 is
      * lexicographically greater than c2.
      */
-    public static final int compareArrayCI(char[] c1, int b1, int e1,
+    public static int compareArrayCI(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2) {
         int n = Math.min(e1 - b1, e2 - b2);
         for(int i = 0, i1 = b1, i2 = b2; i < n; i++, i1++, i2++) {
@@ -873,7 +678,7 @@ public class Util {
      * @return true if <code>c1</code> starts with the characters in
      * <code>c2</code>.
      */
-    public static final boolean startsWith(char[] c1, int b1, int e1,
+    public static boolean startsWith(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             boolean ci) {
 
@@ -914,7 +719,7 @@ public class Util {
      * @return true if <code>c1</code> ends with the characters in
      * <code>c2</code>.
      */
-    public static final boolean endsWith(char[] c1, int b1, int e1,
+    public static boolean endsWith(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             boolean ci) {
 
@@ -955,7 +760,7 @@ public class Util {
      * @return The offset from b1 where <code>c2</code> is found in
      * <code>c1</code>, or -1 if it is not found.
      */
-    public static final int indexOf(char[] c1, int b1, int e1,
+    public static int indexOf(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             boolean ci) {
 
@@ -1002,7 +807,7 @@ public class Util {
      * @param ci Whether the comparison should be case insensitive.
      * @return true if <code>c1</code> is equal to <code>c2</code>.
      */
-    public static final boolean equalToN(char[] c1, int b1, int e1,
+    public static boolean equalToN(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             int n, boolean ci) {
 
@@ -1041,7 +846,7 @@ public class Util {
      * @param ci Whether the comparison should be case insensitive.
      * @return true if <code>c1</code> is equal to <code>c2</code>.
      */
-    public static final boolean equalTo(char[] c1, int b1, int e1,
+    public static boolean equalTo(char[] c1, int b1, int e1,
             char[] c2, int b2, int e2,
             boolean ci) {
 
@@ -1083,7 +888,7 @@ public class Util {
      * @return 0 if the arrays are equal, less than 0 if c1 is less than
      * c2, or greater than 0 if c1 is greater than c2.
      */
-    public static final int caseCompareArray(char[] a1, int b1, int e1,
+    public static int caseCompareArray(char[] a1, int b1, int e1,
             char[] a2, int b2, int e2) {
         return caseCompareArray(a1, b1, e1, a2, b2, e2, false);
     }
@@ -1106,7 +911,7 @@ public class Util {
      * @return 0 if the arrays are equal, less than 0 if c1 is less than
      * c2, or greater than 0 if c1 is greater than c2.
      */
-    public static final int caseCompareArray(char[] a1, int b1, int e1,
+    public static int caseCompareArray(char[] a1, int b1, int e1,
             char[] a2, int b2, int e2,
             boolean ignoreLength) {
 
@@ -1176,7 +981,7 @@ public class Util {
      * Sorts an array of <CODE>Object</CODE> using heap sort.
      * @param x The array to sort.
      */
-    public static final <T> T[] sort(T x[]) {
+    public static <T> T[] sort(T x[]) {
         return sort(x, 0, x.length);
     }
 
@@ -1188,7 +993,7 @@ public class Util {
      * @param off The offset of the subarray that we wish to sort.
      * @param len The length of the subarray that we wish to sort.
      */
-    public static final <T> T[] sort(T x[], int off, int len) {
+    public static <T> T[] sort(T x[], int off, int len) {
         PriorityQueue<T> pq = new PriorityQueue<T>(len - off + 1);
         for(int i = off; i < len; i++) {
             pq.offer(x[i]);
@@ -1199,7 +1004,7 @@ public class Util {
         return x;
     }
 
-    public static final <T> T[] sort(T x[], Comparator<T> comp) {
+    public static <T> T[] sort(T x[], Comparator<T> comp) {
         return sort(x, 0, x.length, comp);
     }
 
@@ -1210,7 +1015,7 @@ public class Util {
      * <code>Arrays.sort</code> method because that wants to clone the
      * array being sorted and our arrays are very big.
      */
-    public static final <T> T[] sort(T x[], int off, int len,
+    public static <T> T[] sort(T x[], int off, int len,
             Comparator<T> cm) {
         PriorityQueue<T> pq = new PriorityQueue<T>(len - off + 1, cm);
         for(int i = off; i < len; i++) {
@@ -1236,7 +1041,7 @@ public class Util {
      * @param term The term to match against.
      * @return true if the term matches the pattern, false otherwise.
      */
-    public static final boolean match(String pattern, String term) {
+    public static boolean match(String pattern, String term) {
         return match(pattern.toCharArray(), term.toCharArray(),
                 term.length());
     }
@@ -1250,7 +1055,7 @@ public class Util {
      *        supplied will be case-sensitive matching).
      * @return true if the term matches the pattern, false otherwise.
      */
-    public static final boolean match(String pattern, String term,
+    public static boolean match(String pattern, String term,
             boolean caseSensitive) {
         if(caseSensitive) {
             return match(pattern.toCharArray(), term.toCharArray(),
@@ -1275,7 +1080,7 @@ public class Util {
      *        supplied will be case-sensitive matching).
      * @return true if the term matches the pattern, false otherwise.
      */
-    public static final boolean match(char[] pattern, String term,
+    public static boolean match(char[] pattern, String term,
             boolean caseSensitive) {
         if(caseSensitive) {
             return match(pattern,
@@ -1301,7 +1106,7 @@ public class Util {
      * @param term The term to match against.
      * @return true if the term matches the pattern, false otherwise.
      */
-    public static final boolean match(char[] pattern, char[] term) {
+    public static boolean match(char[] pattern, char[] term) {
         return match(pattern, term, term.length);
     }
 
@@ -1314,7 +1119,7 @@ public class Util {
      *        supplied will be case-sensitive matching).
      * @return true if the term matches the pattern, false otherwise.
      */
-    public static final boolean match(char[] pattern,
+    public static boolean match(char[] pattern,
             char[] term,
             boolean caseSensitive) {
         if(caseSensitive) {
@@ -1339,7 +1144,7 @@ public class Util {
      * @param length The length of the term.
      * @return true if the term matches the pattern, false otherwise.
      */
-    public static final boolean match(char[] pattern,
+    public static boolean match(char[] pattern,
             char[] term,
             boolean caseSensitive,
             int length) {
@@ -1366,7 +1171,7 @@ public class Util {
      * @param end The offset beyond the end of the region of term to match.
      * @return true if the term matches the pattern, false otherwise.
      */
-    public static final boolean match(char[] pattern,
+    public static boolean match(char[] pattern,
             char[] term,
             boolean caseSensitive,
             int begin,
@@ -1391,7 +1196,7 @@ public class Util {
      * @param length The length of the term.
      * @return true if the term matches the pattern, false otherwise.
      */
-    public static final boolean match(char[] pattern,
+    public static boolean match(char[] pattern,
             char[] term,
             int length) {
         int[] state = null;
@@ -1532,7 +1337,7 @@ public class Util {
      * score is the proportion of the length of the initial substring that
      * the word and the target share to the maximum length.
      */
-    public static final double matchStem(String wordString, String target) {
+    public static double matchStem(String wordString, String target) {
         return matchStem(wordString.toCharArray(),
                 0, wordString.length(),
                 target.toCharArray(),
@@ -1550,7 +1355,7 @@ public class Util {
      * score is the proportion of the length of the initial substring that
      * the word and the target share to the maximum length.
      */
-    public static final double matchStem(char[] wordString, int b1, int e1,
+    public static double matchStem(char[] wordString, int b1, int e1,
             char[] target, int b2, int e2) {
 
         int initial = findInitial(wordString, b1, e1, target, b2, e2);
@@ -1598,7 +1403,7 @@ public class Util {
     /**
      * Makes a string containing the list.
      */
-    public static final String listToString(List l) {
+    public static String listToString(List l) {
         StringBuilder b = new StringBuilder();
         b.append("[");
         synchronized(l) {

@@ -1587,7 +1587,7 @@ public class BitBuffer implements Cloneable, IntEncoder {
     public char[] decodeChars(int utflen) {
 	CACont temp = new CACont();
 	decodeChars(utflen, temp);
-	return (char[]) Util.getExact(temp.a, temp.len);
+	return (char[]) Arrays.copyOf(temp.a, temp.len);
     }
 
     public void decodeChars(int utflen, CACont str) {

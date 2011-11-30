@@ -40,6 +40,8 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
  * @param <N> the type of the name in this entry
  */
 public class IndexEntry<N extends Comparable> extends Entry<N> {
+    
+    private boolean used = false;
 
     /**
      * Creates an entry with a given name and a given set of postings.
@@ -60,6 +62,7 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
 
     public void add(Occurrence o) {
         post.add(o);
+        used = true;
     }
 
     /**
@@ -130,20 +133,31 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
 
         post.append(qe.post, start, idMap);
         n = post.getN();
+        used = true;
     }
 
     public void merge(QueryEntry qe, int[] idMap) {
         ((MergeablePostings) post).merge((MergeablePostings) qe.post,
                                       idMap);
+        used = true;
     }
-    
+
+    public boolean isUsed() {
+        return used;
+    }
+
+    public void setUsed(boolean used) {
+        this.used = used;
+    }
+
     public void clear() {
         if(post != null) {
             post.clear();
-            id = 0;
-            n = 0;
-            size = 0;
-            offset = 0;
         }
+        used = false;
+        id = 0;
+        n = 0;
+        size = 0;
+        offset = 0;
     }
 }

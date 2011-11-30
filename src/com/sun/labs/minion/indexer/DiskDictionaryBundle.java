@@ -679,7 +679,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // even though we'll only use a few.  Later merges will need maps from
         // earlier merges.
         int[][][] entryIDMaps = new int[Type.values().length][][];
-
+        
         //
         // Merge the types of dictionaries.  This loop is a bit gross, but 
         // most of the merge is the same across the dictionaries.
@@ -711,7 +711,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 mergeHeader.dictOffsets[ord] = -1;
                 continue;
             }
-
+            
             NameEncoder encoder = null;
             mergeHeader.dictOffsets[ord] = fieldDictOut.position();
 
@@ -756,10 +756,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     break;
                     
                 case TOKEN_BIGRAMS:
-                    mergeState.entryIDMaps =
-                            entryIDMaps[Type.CASED_TOKENS.ordinal()] != null
-                            ? entryIDMaps[Type.CASED_TOKENS.ordinal()]
-                            : entryIDMaps[Type.UNCASED_TOKENS.ordinal()];
+                    if(entryIDMaps[Type.CASED_TOKENS.ordinal()] != null) {
+                        mergeState.entryIDMaps = entryIDMaps[Type.CASED_TOKENS.ordinal()];
+                    } else {
+                        mergeState.entryIDMaps = entryIDMaps[Type.UNCASED_TOKENS.ordinal()];
+                    }
                     for(int i = 0; i < mDicts.length; i++) {
                         bgDicts[i] = (DiskBiGramDictionary) mDicts[i];
                     }

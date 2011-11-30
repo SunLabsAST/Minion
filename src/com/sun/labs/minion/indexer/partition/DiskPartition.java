@@ -186,6 +186,7 @@ public class DiskPartition extends Partition implements Closeable {
                 new StringNameHandler(),
                 dictFile, postFiles);
         docDict.setName("doc");
+        docDict.setPartition(this);
 
         //
         // Get the deletion file and the removed file, as well as the lock
