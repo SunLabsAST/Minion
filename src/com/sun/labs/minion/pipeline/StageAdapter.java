@@ -94,6 +94,12 @@ public class StageAdapter implements Stage {
         }
         downstream.process(text);
     }
+    
+    public void reset() {
+        if(downstream != null) {
+            downstream.reset();
+        }
+    }
 
     public Pipeline getPipeline() {
         return pipeline;

@@ -912,6 +912,7 @@ public class UniversalTokenizer extends Tokenizer {
     /**
      * Reset state of tokenizer to clean slate.
      */
+    @Override
     public void reset() {
         super.reset();
         tokLen = 0;

@@ -64,5 +64,10 @@ public interface Pipeline {
      * @param text the text to process.
      */
     public void process(String text);
+    
+    /**
+     * Resets the pipeline for the next batch of text.
+     */
+    public void reset();
 
 }

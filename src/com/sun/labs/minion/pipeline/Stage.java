@@ -72,6 +72,11 @@ public interface Stage extends Configurable, PipelineStage {
     public void process(String text);
     
     /**
+     * Resets the pipeline so that it can accept new data.
+     */
+    public void reset();
+    
+    /**
      * Processes a token from further up the pipeline.
      *
      * @param t The token to process.

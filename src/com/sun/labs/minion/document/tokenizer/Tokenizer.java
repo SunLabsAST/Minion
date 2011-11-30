@@ -155,6 +155,7 @@ public abstract class Tokenizer extends StageAdapter implements
     /**
      * Reset state of tokenizer to clean slate.
      */
+    @Override
     public void reset() {
         this.reset(false);
     }

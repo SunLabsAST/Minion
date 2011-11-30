@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public class PipelineImpl implements Pipeline {
 
-    static final Logger logger = Logger.getLogger(PipelineImpl.class.getName());
+    private static final Logger logger = Logger.getLogger(PipelineImpl.class.getName());
 
     /**
      * The list of stages making up the pipeline.
@@ -84,6 +84,13 @@ public class PipelineImpl implements Pipeline {
         }
     }
 
+    public void reset() {
+        if(head != null) {
+            head.reset();
+        }
+    }
+
+    
     public Field getField() {
         return field;
     }
