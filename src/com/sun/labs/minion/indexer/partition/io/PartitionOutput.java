@@ -6,6 +6,7 @@ import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.partition.PartitionHeader;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.File;
 import java.io.IOException;
 import java.util.Set;
 
@@ -43,6 +44,8 @@ public interface PartitionOutput {
     public void setPostingsIDMap(int[] postMap);
     
     public int[] getPostingsIDMap();
+    
+    public File[] getPostingsFiles();
     
     public PostingsOutput[] getPostingsOutput();
     

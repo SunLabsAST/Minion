@@ -35,6 +35,7 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -340,10 +341,6 @@ public class InvFileDiskPartition extends DiskPartition {
     protected void mergeCustom(MergeState mergeState)
             throws Exception {
 
-        File vlf = manager.makeVectorLengthFile(mergeState.partNumber);
-        RandomAccessFile vlfRAF = new RandomAccessFile(vlf, "rw");
-        mergeState.vectorLengthsBuffer = new FileWriteableBuffer(vlfRAF, 8192);
-        
         for(FieldInfo fi : manager.getMetaFile()) {
             DiskField[] mFields = new DiskField[mergeState.partitions.length];
             DiskField merger = null;
@@ -354,7 +351,7 @@ public class InvFileDiskPartition extends DiskPartition {
                 }
             }
             
-            int fieldOffset = mergeState.partOut.position();
+            int fieldOffset = mergeState.partOut.getPartitionDictionaryOutput().position();
             
             if(merger == null) {
                 logger.fine(String.format("No merger for %s", fi.getName()));
@@ -364,11 +361,8 @@ public class InvFileDiskPartition extends DiskPartition {
                 mergeState.entryFactory = merger.getEntryFactory();
                 DiskField.merge(mergeState, mFields);
             }
-            mergeState.header.addOffset(fi.getID(), fieldOffset);
+            mergeState.partOut.getPartitionHeader().addOffset(fi.getID(), fieldOffset);
         }
-
-        ((FileWriteableBuffer) mergeState.vectorLengthsBuffer).flush();
-        vlfRAF.close();
     }
 
     /**

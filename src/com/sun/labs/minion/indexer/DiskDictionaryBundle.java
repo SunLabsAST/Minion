@@ -24,6 +24,7 @@ import com.sun.labs.minion.indexer.partition.MergeState;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
 import com.sun.labs.minion.retrieval.ScoredGroup;
@@ -345,22 +346,32 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @param caseSensitive whether to do a case sensitive lookup
      * @return
      */
-    public QueryEntry getSaved(Comparable val, boolean caseSensitive) {
+    public QueryEntry getSaved(String stringVal, boolean caseSensitive) {
         if(!field.saved) {
             logger.warning(String.format(
                     "Can't fetch saved value for non-SAVED field %s", info.
                     getName()));
             return null;
         }
-        if(caseSensitive) {
-            if(field.cased) {
-                return dicts[Type.RAW_SAVED.ordinal()].get(val);
-            } else {
-                logger.warning(
-                        String.format(
-                        "Case sensitive request for field value %s in field %s, "
-                        + "but this field only has case insensitive values."));
-                return dicts[Type.RAW_SAVED.ordinal()].get(val);
+        
+        Comparable val = MemoryDictionaryBundle.getEntryName(stringVal, info,
+                                                             dateParser);
+        
+        if(field.info.getType() != FieldInfo.Type.STRING) {
+            return dicts[Type.RAW_SAVED.ordinal()].get(val);
+        } else {
+
+            if(caseSensitive) {
+                if(field.cased) {
+                    return dicts[Type.RAW_SAVED.ordinal()].get(val);
+                } else {
+                    logger.warning(
+                            String.format(
+                            "Case sensitive request for field value %s in field %s, "
+                            + "but this field only has case insensitive values.",
+                            val, field.info.getName()));
+                    return dicts[Type.RAW_SAVED.ordinal()].get(val);
+                }
             }
         }
 
@@ -914,9 +925,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 // we were in the file!
                 int mdsp = fieldDictOut.position();
 
-                RandomAccessFile[] mPostRAF = new RandomAccessFile[mergeState.postFiles.length];
-                for(int i = 0; i < mergeState.postFiles.length; i++) {
-                    mPostRAF[i] = new RandomAccessFile(mergeState.postFiles[i], "rw");
+                File[] postOutFiles = mergeState.partOut.getPostingsFiles();
+                RandomAccessFile[] mPostRAF = new RandomAccessFile[postOutFiles.length];
+                for(int i = 0; i < postOutFiles.length; i++) {
+                    mPostRAF[i] = new RandomAccessFile(postOutFiles[i], "rw");
                 }
                 WriteableBuffer vlb = mergeState.partOut.getVectorLengthsBuffer();
                 mergeHeader.vectorLengthOffset = vlb.position();

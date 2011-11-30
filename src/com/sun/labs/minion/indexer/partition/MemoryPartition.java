@@ -153,7 +153,7 @@ public abstract class MemoryPartition extends Partition {
         logger.info(String.format("Dumped %d, %d docs took %dms",
                 partOut.getPartitionNumber(),
                 docDict.size(), sw.getTime()));
-        
+
         return partOut;
 
     }

@@ -255,7 +255,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     "Field: %s is not saved", info.getName()));
         }
 
-        Comparable name = getEntryName(data);
+        Comparable name = getEntryName(data, field.info, dateParser);
 
         //
         // If we had a failure, then just return.
@@ -524,7 +524,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      * @param val The value that we were passed.
      * @return A name appropriate for the given value and field type.
      */
-    private Comparable getEntryName(Object val) {
+    public static Comparable getEntryName(Object val, FieldInfo info, CDateParser dateParser) {
         if(val == null) {
             return null;
         }

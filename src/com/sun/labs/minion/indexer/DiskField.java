@@ -94,11 +94,11 @@ public class DiskField extends Field {
 
     /**
      * Gets the entry in the dictionary associated with a given value.
-     * @param val the value to get
+     * @param val the value to get, as a string
      * @param caseSensitive whether to do a case sensitive lookup
      * @return
      */
-    public QueryEntry getSaved(Comparable val, boolean caseSensitive) {
+    public QueryEntry getSaved(String val, boolean caseSensitive) {
         return bundle.getSaved(val, caseSensitive);
     }
 

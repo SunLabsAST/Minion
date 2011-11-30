@@ -5,6 +5,7 @@ import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.IDMap;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.Renumber;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionHeader;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
@@ -13,6 +14,7 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -58,6 +60,11 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      * A postings ID map to use when dumping.
      */
     protected int[] postingsIDMap;
+    
+    /**
+     * The files where we're putting the postings.
+     */
+    protected File[] postOutFiles;
 
     /**
      * A place to put postings.
@@ -88,7 +95,9 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         this.manager = manager;
         partHeader = new PartitionHeader();
         partNumber = manager.getMetaFile().getNextPartitionNumber();
-    }
+        File[] files = MemoryPartition.getMainFiles(manager, partNumber);
+        postOutFiles = Arrays.copyOfRange(files, 1, files.length);
+   }
     
     public AbstractPartitionOutput(File indexDir) {
         this.manager = null;
@@ -118,6 +127,10 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
 
     public int getPartitionNumber() {
         return partNumber;
+    }
+
+    public File[] getPostingsFiles() {
+        return postOutFiles;
     }
 
     public PostingsOutput[] getPostingsOutput() {
@@ -176,7 +189,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         return postingsIDMap;
     }
 
-    public void flush(Set<String> docKeys) throws IOException {
+    public void flush(Set<String> keys) throws IOException {
         
         //
         // Flush the main dictionary output to our dictionary file.
@@ -204,21 +217,28 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         }
 
         //
-        // Dump the new term stats dictionary.
-        try {
-            int tsn = manager.getMetaFile().getNextTermStatsNumber();
+        // Dump the new term stats dictionary, if there is one.  There won't be if
+        // this partition output was used for merging.
+        if(termStatsDictOut != null) {
+            try {
+                int tsn = manager.getMetaFile().getNextTermStatsNumber();
 
-            RandomAccessFile termStatsFile = new RandomAccessFile(manager.makeTermStatsFile(tsn), "rw");
-            termStatsDictOut.flush(termStatsFile);
-            termStatsFile.close();
+                RandomAccessFile termStatsFile = new RandomAccessFile(manager.
+                        makeTermStatsFile(tsn), "rw");
+                termStatsDictOut.flush(termStatsFile);
+                termStatsFile.close();
 
-            manager.getMetaFile().setTermStatsNumber(tsn);
-            manager.updateTermStats();
-        } catch(FileLockException ex) {
-            throw new IOException(String.format("Error dumping flushing term stats %d", partNumber), ex);
+                manager.getMetaFile().setTermStatsNumber(tsn);
+                manager.updateTermStats();
+            } catch(FileLockException ex) {
+                throw new IOException(String.format(
+                        "Error dumping flushing term stats %d", partNumber), ex);
+            }
+
         }
-
-        manager.addNewPartition(partNumber, docKeys);
+        if(keys != null) {
+            manager.addNewPartition(partNumber, keys);
+        }
     }
 
     public void close() throws IOException {

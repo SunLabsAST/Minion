@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,14 +38,13 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
      */
     public DiskPartitionOutput(PartitionManager manager) throws IOException, FileLockException {
         super(manager);
-        File[] files = MemoryPartition.getMainFiles(manager, partNumber);
         partDictOut = new DiskDictionaryOutput(manager.getIndexDir());
-        postStream = new OutputStream[files.length - 1];
+        postStream = new OutputStream[postOutFiles.length];
         postOut = new PostingsOutput[postStream.length];
-        for(int i = 1; i < files.length; i++) {
-            postStream[i - 1] = new BufferedOutputStream(
-                    new FileOutputStream(files[i]), 32768);
-            postOut[i - 1] = new StreamPostingsOutput(postStream[i - 1]);
+        for(int i = 0; i < postOutFiles.length; i++) {
+            postStream[i] = new BufferedOutputStream(
+                    new FileOutputStream(postOutFiles[i]), 32768);
+            postOut[i] = new StreamPostingsOutput(postStream[i]);
         }
 
         vectorLengthsBuffer = new ArrayBuffer(1024);

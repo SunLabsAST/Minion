@@ -709,10 +709,7 @@ public class DiskPartition extends Partition implements Closeable {
             fieldDictOut.position(phoffsetpos);
             fieldDictOut.byteEncode((long) phoffset, 8);
             fieldDictOut.position(pos);
-            for(int i = 0; i < mergeState.postStreams.length; i++) {
-                mergeState.partOut.getPostingsOutput()[i].flush();
-            }
-
+            
             mergeState.partOut.flush(null);
 
             
