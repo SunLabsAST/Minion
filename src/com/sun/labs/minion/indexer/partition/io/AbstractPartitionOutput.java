@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -123,7 +124,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     }
 
     public void setKeys(Set<String> keys) {
-        this.keys = keys;
+        this.keys = new HashSet<String>(keys);
     }
 
     public WriteableBuffer getDeletionsBuffer() {

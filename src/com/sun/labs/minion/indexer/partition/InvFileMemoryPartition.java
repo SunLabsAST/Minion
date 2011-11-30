@@ -24,7 +24,6 @@
 package com.sun.labs.minion.indexer.partition;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
@@ -35,7 +34,6 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.pipeline.Token;
-import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
@@ -202,6 +200,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
             
             //
             // Dump the dictionary and deal with the result.
+            try {
             switch(mf.dump(partOut)) {
                 case NOTHING_DUMPED:
                     logger.finer(String.format("No dicts dumped"));
@@ -213,6 +212,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
                     break;
                 case EVERYTHING_DUMPED:
                     break;
+            }
+            } catch (ArithmeticException ex) {
+                logger.log(Level.SEVERE, String.format("AX dumping %s, used %d times", getPartitionName(), getUses()));
+                throw(ex);
             }
             partOut.getPartitionHeader().addOffset(mf.getInfo().getID(), fieldOffset);
             tsh.addOffset(mf.getInfo().getID(), termStatsOff);

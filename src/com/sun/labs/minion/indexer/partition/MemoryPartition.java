@@ -23,16 +23,14 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
-import com.sun.labs.minion.indexer.partition.io.RAMPartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.StopWatch;
-import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /**
@@ -68,6 +66,9 @@ public abstract class MemoryPartition extends Partition {
      * A deletion map.
      */
     protected DelMap deletions;
+    private String partitionName;
+    private int uses;
+    public static AtomicInteger count = new AtomicInteger();
     
     public MemoryPartition() {
         
@@ -76,6 +77,7 @@ public abstract class MemoryPartition extends Partition {
     public MemoryPartition(PartitionManager manager, Postings.Type type) {
         this.manager = manager;
         docDict = new MemoryDictionary<String>(new EntryFactory(type));
+        count.incrementAndGet();
     }
 
     /**
@@ -144,7 +146,8 @@ public abstract class MemoryPartition extends Partition {
         partDictOut.position(pos);
         
         sw.stop();
-        logger.info(String.format("Dumped %d, %d docs took %dms",
+        logger.info(String.format("Dumped %s %d, %d docs took %dms",
+                getPartitionName(),
                 partOut.getPartitionNumber(),
                 docDict.size(), sw.getTime()));
 
@@ -154,6 +157,7 @@ public abstract class MemoryPartition extends Partition {
     
     public void clear() {
         docDict.clear();
+        uses++;
     }
 
     public MemoryDictionary getDocumentDictionary() {
@@ -170,5 +174,19 @@ public abstract class MemoryPartition extends Partition {
      * to disk
      */
     protected abstract void dumpCustom(PartitionOutput dumpState) throws java.io.IOException;
+
+    public String getPartitionName() {
+        return partitionName;
+    }
+
+    public void setPartitionName(String partitionName) {
+        this.partitionName = partitionName;
+    }
+
+    public int getUses() {
+        return uses;
+    }
+    
+    
 } // MemoryPartition
 

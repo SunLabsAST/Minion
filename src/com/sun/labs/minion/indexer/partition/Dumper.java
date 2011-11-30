@@ -79,7 +79,7 @@ public class Dumper implements Configurable {
      */
     protected BlockingQueue<PartitionOutput> poPool;
     
-    private BlockingQueue<MemoryPartition>  mpq;
+    private BlockingQueue<InvFileMemoryPartition>  mpq;
 
     /**
      * The interval for polling the partition queue.
@@ -140,11 +140,11 @@ public class Dumper implements Configurable {
     public Dumper() {
     }
 
-    public void setMemoryPartitionQueue(BlockingQueue<MemoryPartition> mpq) {
+    public void setMemoryPartitionQueue(BlockingQueue<InvFileMemoryPartition> mpq) {
         this.mpq = mpq;
     }
 
-    public void dump(MemoryPartition part) {
+    public void dump(InvFileMemoryPartition part) {
         try {
             toDump.put(new MPHolder(part, new Date()));
         } catch(InterruptedException ex) {
@@ -223,11 +223,11 @@ public class Dumper implements Configurable {
 
     class MPHolder {
 
-        public MemoryPartition part;
+        public InvFileMemoryPartition part;
 
         public Date time;
 
-        public MPHolder(MemoryPartition part, Date t) {
+        public MPHolder(InvFileMemoryPartition part, Date t) {
             this.part = part;
             time = t;
         }
@@ -262,9 +262,6 @@ public class Dumper implements Configurable {
                             logger.log(Level.SEVERE,
                                     "Error dumping partition, continuing", ex);
                         }
-                    }
-                    if(!mpq.offer (mph.part, 3, TimeUnit.SECONDS)) {
-                        logger.log(Level.SEVERE, String.format("Error replacing memory partition on queue"));
                     }
                 } catch(InterruptedException ex) {
                     logger.log(Level.WARNING,
@@ -310,6 +307,10 @@ public class Dumper implements Configurable {
                 if(ret != null) {
                     toFlush.put(partOut);
                 }
+                mph.part.clear();
+                if(!mpq.offer(mph.part, 3, TimeUnit.SECONDS)) {
+                    logger.log(Level.SEVERE, String.format("Error replacing memory partition on queue"));
+                }
             }
         }
     }
@@ -323,7 +324,11 @@ public class Dumper implements Configurable {
                     if(partOut != null) {
                         try {
                             partOut.flush();
-                            poPool.put(partOut);
+                            if(!poPool.offer(partOut, 3, TimeUnit.SECONDS)) {
+                                if(!flushDone) {
+                                    logger.log(Level.SEVERE, String.format("Couldn't return partition output to pool"));
+                                }
+                            }
                         } catch(IOException ex) {
                             logger.log(Level.SEVERE, String.format("Error writing %d to disk", partOut.getPartitionNumber()), ex);
                         }

@@ -86,6 +86,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
 import com.sun.labs.minion.indexer.partition.Dumper;
 import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
+import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.query.And;
@@ -272,7 +273,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     /**
      * Memory partitions to use during indexing.
      */
-    protected BlockingQueue<MemoryPartition> memoryPartitions;
+    protected BlockingQueue<InvFileMemoryPartition> memoryPartitions;
 
     /**
      * The configuration name for this search engine.
@@ -1411,19 +1412,19 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return true if memory is low
      */
     public boolean checkLowMemory() {
-        MemoryUsage mu = memBean.getHeapMemoryUsage();
-
-        //
-        // If we have less than 15% of all our memory free, then
-        // memory is low.
-        double freePercent = (mu.getMax() - mu.getUsed()) / (double) mu.getMax();
-        if(freePercent < minMemoryPercent) {
-            logger.info(String.format(
-                    "Memory is low %.1fMB used %.1fMB max %.1f%% free",
-                    toMB(mu.getUsed()), toMB(mu.getMax()),
-                    freePercent * 100));
-            return true;
-        }
+//        MemoryUsage mu = memBean.getHeapMemoryUsage();
+//
+//        //
+//        // If we have less than 15% of all our memory free, then
+//        // memory is low.
+//        double freePercent = (mu.getMax() - mu.getUsed()) / (double) mu.getMax();
+//        if(freePercent < 0.001) {
+//            logger.info(String.format(
+//                    "Memory is low %.1fMB used %.1fMB max %.1f%% free",
+//                    toMB(mu.getUsed()), toMB(mu.getMax()),
+//                    freePercent * 100));
+//            return true;
+//        }
         return false;
     }
 
@@ -1466,7 +1467,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         // per indexing thread (one for indexing, one for dumping.)
         memoryPartitions = new ArrayBlockingQueue<InvFileMemoryPartition>(numIndexingThreads * 2);
         for(int i = 0; i < numIndexingThreads * 2; i++) {
-            memoryPartitions.add(new InvFileMemoryPartition(invFilePartitionManager));
+            InvFileMemoryPartition mp = new InvFileMemoryPartition(invFilePartitionManager);
+            mp.setPartitionName("IFMP-" + i);
+            memoryPartitions.add(mp);
         }
         
         indexers = new Indexer[numIndexingThreads];

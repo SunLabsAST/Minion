@@ -29,6 +29,7 @@ import com.sun.labs.minion.util.buffer.Buffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -326,7 +327,12 @@ public class IDPostings implements Postings, MergeablePostings {
         WriteableBuffer b = new ArrayBuffer(ids.length * 2);
         int prev = 0;
         for(int i = 0; i < nIDs; i++) {
+            try {
             b.byteEncode(ids[i] - prev);
+            } catch (ArithmeticException ex) {
+                logger.log(Level.SEVERE, String.format("Caught AX, nIDs = %d i = %d ids[i] = %d prev = %d", nIDs, i, ids[i], prev));
+                throw(ex);
+            }
             prev = ids[i];
             encodeOtherData(b, i);
         }
