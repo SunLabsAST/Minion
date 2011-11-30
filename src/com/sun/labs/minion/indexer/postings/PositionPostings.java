@@ -250,7 +250,6 @@ public class PositionPostings implements Postings {
         skipPosnOffsets[nSkips] = posnOffset;
         nSkips++;
     }
-
     
     @Override
     public void write(PostingsOutput[] out, long[] offset, int[] size) throws java.io.IOException {
@@ -375,7 +374,7 @@ public class PositionPostings implements Postings {
         //
         // We'll need to know where we started this entry.
         int idOffset = (int) idBuff.position();
-        int posnOffset = (int) posnBuff.position();
+        int mPosnOffset = (int) posnBuff.position();
 
         //
         // This is tricky, so pay attention: The skip positions for the
@@ -400,13 +399,14 @@ public class PositionPostings implements Postings {
         int newID = firstID + start - 1;
         int nb = ((WriteableBuffer) idBuff).byteEncode(newID - lastID);
         nb += ((WriteableBuffer) idBuff).byteEncode(firstFreq);
-        nb += ((WriteableBuffer) idBuff).byteEncode(posnBuff.position() - lastPosnOffset);
+        nb += ((WriteableBuffer) idBuff).byteEncode(mPosnOffset - lastPosnOffset);
         adj = nb - adj;
 
         //
         // Get a buffer for the remaining postings, and make sure that it
         // looks like a buffer that was written and not read by slicing and
         // manipulating the position.
+        
         //
         // We can just append the positions.
         ((WriteableBuffer) idBuff).append((ReadableBuffer) other.idBuff);
@@ -416,11 +416,12 @@ public class PositionPostings implements Postings {
         // The last ID on this entry is now the last ID from the entry we
         // appended, suitably remapped.
         lastID = other.lastID + start - 1;
-
+        lastPosnOffset = mPosnOffset + other.lastPosnOffset;
+        
         //
         // Increment the number of documents in this new entry.
         nIDs += other.nIDs;
-
+        
         if(other.nSkips > 0) {
 
             //
@@ -443,9 +444,9 @@ public class PositionPostings implements Postings {
             //
             // Now fix up the other skips.
             for(int i = 1; i <= other.nSkips; i++, nSkips++) {
-                skipID[nSkips] = other.skipID[i] + start - 1;
-                skipIDOffsets[nSkips] = other.skipIDOffsets[i] - other.dataStart + idOffset + adj;
-                skipPosnOffsets[nSkips] = other.skipPosnOffsets[i] + posnOffset;
+               addSkip(other.skipID[i] + start - 1, 
+                        other.skipIDOffsets[i] - other.dataStart + idOffset + adj, 
+                        other.skipPosnOffsets[i] + mPosnOffset);
             }
         }
     }
@@ -809,6 +810,9 @@ public class PositionPostings implements Postings {
                     currPosns = new int[currFreq];
                 }
                 int prevPosn = 0;
+                if(currID == 6155) {
+                    logger.info(String.format("rPosn:%d", rPosn.position()));
+                }
                 for(int i = 0; i < currFreq; i++) {
                     prevPosn += rPosn.byteDecode();
                     currPosns[i] = prevPosn;
