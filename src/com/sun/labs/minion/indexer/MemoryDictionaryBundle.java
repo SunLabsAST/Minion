@@ -308,13 +308,15 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      * @param maxID the maximum ID for this
      * @throws java.io.IOException
      */
-    public void dump(File path,
+    public MemoryField.DumpResult dump(File path,
                      RandomAccessFile fieldDictFile,
                      PostingsOutput[] postOut,
                      RandomAccessFile termStatsDictFile,
                      RandomAccessFile vectorLengthsFile,
                      int maxID) throws
             java.io.IOException {
+        
+        MemoryField.DumpResult ret = MemoryField.DumpResult.DICTS_DUMPED;
 
         long headerPos = fieldDictFile.getFilePointer();
         FieldHeader header = new FieldHeader();
@@ -482,6 +484,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                                             vectorLengthsFile,
                                             field.partition.getPartitionManager().
                     getTermStatsDict());
+            ret = MemoryField.DumpResult.EVERYTHING_DUMPED;
         } else {
             header.vectorLengthOffset = -1;
         }
@@ -492,7 +495,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         fieldDictFile.seek(headerPos);
         header.write(fieldDictFile);
         fieldDictFile.seek(end);
-
+        return ret;
     }
 
     public MemoryDictionary getTermDictionary(boolean cased) {

@@ -119,6 +119,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
         if(fields[fid] == null) {
             fields[fid] = new MemoryField(this, fi, new EntryFactory(
                     Postings.Type.ID_FREQ));
+            
+            //
+            // We might have just started this document!
+            fields[fid].startDocument(dockey);
         }
         return fields[fid];
     }
@@ -197,21 +201,29 @@ public class InvFileMemoryPartition extends MemoryPartition {
             if(mf == null) {
                 continue;
             }
-            logger.info(String.format("Dumping %s", mf.getInfo().getName()));
+            
+            //
+            // Remember where we are 
             long fieldOffset = dictFile.getFilePointer();
             long termStatsOff = tsRAF.getFilePointer();
-            mf.dump(indexDir, dictFile, postOut, tsRAF, vlRAF, maxDocumentID);
-            if(dictFile.getFilePointer() == fieldOffset) {
-                logger.info(String.format(" No dicts dumped"));
-                fieldOffset = -1;
+            
+            logger.fine(String.format("Dumping %s", mf.getInfo().getName()));
+            
+            //
+            // Dump the dictionary and deal with the result.
+            switch(mf.dump(indexDir, dictFile, postOut, tsRAF, vlRAF, maxDocumentID)) {
+                case NOTHING_DUMPED:
+                    logger.finer(String.format(" No dicts dumped"));
+                    fieldOffset = -1;
+                    termStatsOff = -1;
+                    break;
+                case DICTS_DUMPED:
+                    termStatsOff = -1;
+                    break;
+                case EVERYTHING_DUMPED:
+                    break;
             }
             ph.addOffset(mf.getInfo().getID(), fieldOffset);
-            if(tsRAF.getFilePointer() == termStatsOff) {
-                //
-                // No terms tstats for this field, since the file pointer didn't
-                // move.
-                termStatsOff = -1;
-            }
             tsh.addOffset(mf.getInfo().getID(), termStatsOff);
         }
 

@@ -94,7 +94,7 @@ public abstract class MemoryPartition extends Partition {
         if(docDict.size() == 0) {
             return -1;
         }
-
+        
         StopWatch sw = new StopWatch();
         sw.start();
 

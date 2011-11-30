@@ -154,8 +154,6 @@ public class DocumentVectorLengths {
                     MemoryDictionary.Renumber.RENUMBER);
         }
         
-        logger.info(String.format("f: %s maxDoc: %d", f.getInfo().getName(), f.getMaximumDocumentID()));
-        
         //
         // Get a set of postings features for running the postings.
         WeightingFunction wf = p.getPartitionManager().getQueryConfig().

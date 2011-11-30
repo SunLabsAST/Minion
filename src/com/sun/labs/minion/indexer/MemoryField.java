@@ -20,6 +20,12 @@ import java.util.logging.Logger;
  * A class that will hold all of the data for a field during indexing.
  */
 public class MemoryField extends Field {
+    
+    public enum DumpResult {
+        NOTHING_DUMPED,
+        DICTS_DUMPED,
+        EVERYTHING_DUMPED,
+    }
 
     static final Logger logger = Logger.getLogger(MemoryField.class.getName());
     
@@ -111,7 +117,7 @@ public class MemoryField extends Field {
      * @throws java.io.IOException if there is an error during the
      * writing.
      */
-    public void dump(File path,
+    public DumpResult dump(File path,
                      RandomAccessFile fieldDictFile,
                      PostingsOutput[] postOut,
                      RandomAccessFile termStatsDictFile,
@@ -121,9 +127,9 @@ public class MemoryField extends Field {
         //
         // If there's nothing in the field, then call it a day.
         if(dicts.getMaxDocID() == 0) {
-            return;
+            return DumpResult.NOTHING_DUMPED;
         }
-        dicts.dump(path, fieldDictFile, postOut, termStatsDictFile,
+        return dicts.dump(path, fieldDictFile, postOut, termStatsDictFile,
                    vectorLengthsFile, maxID);
     }
 
