@@ -241,19 +241,16 @@ public class UniversalTokenizer extends Tokenizer {
      */
     private static final boolean separateBreakFlag = false;
 
-    /**
-     * Handle text passed to us by the markup analyzer.  Specifically,
-     * handle the text that occurs from index b to index e in the text
-     * buffer, text.
-     * @param text The buffer containing text to break into tokens.
-     * @param b The beginning position in the text buffer.
-     * @param e The ending position in the text buffer.
-     * The position p is the character position in the file that
-     * corresponds to the character at index b in the text buffer.
-     * The index e is the index just beyond the last character
-     * of the buffer to be processed.
-     */
+    @Override
+    public void process(String text) {
+        super.process(text);
+        flush();
+    }
+
+    @Override
     public void text(char[] text, int b, int e) {
+        
+        logger.info(String.format("Text: %s", new String(text, b, Math.min(24, e - b))));
         //
         // We no longer care about character position - only word position.
         // For now, we'll just make "p" zero.  Next pass through this code
