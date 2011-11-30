@@ -23,11 +23,8 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -38,14 +35,13 @@ import java.util.Set;
 import com.sun.labs.minion.indexer.Closeable;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
-import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.DuplicateKeyException;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
+import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -597,12 +593,7 @@ public class DiskPartition extends Partition implements Closeable {
         
         //
         // A place to store state and pass it around while we're merging.
-        MergeState mergeState = new MergeState(manager);
-
-        //
-        // Set up to write the files for the merged entries.
-        mergeState.partNumber = manager.getNextPartitionNumber();
-        mergeState.fieldDictOut = new DiskDictionaryOutput(manager.getIndexDir());
+        MergeState mergeState = new MergeState(manager, new DiskPartitionOutput(manager));
 
         //
         // A honkin' big try, so that we can get rid of any failed merges.
@@ -610,7 +601,7 @@ public class DiskPartition extends Partition implements Closeable {
             NanoWatch mw = new NanoWatch();
             mw.start();
             logger.info(String.format("Merging %s into DP: %d", partCopy,
-                                      mergeState.partNumber));
+                                      mergeState.partOut.getPartitionNumber()));
 
             //
             // Get an array of partitions, and a similar sized array of
@@ -643,11 +634,6 @@ public class DiskPartition extends Partition implements Closeable {
             mergeState.nUndel = new int[mergeState.partitions.length];
 
             //
-            // Some partition stats for our merged partition.  We'll be
-            // filling in bits and pieces as we go.
-            mergeState.header = new PartitionHeader();
-
-            //
             // We'll quickly build some stats that we need for pretty much
             // everything.
             for(int i = 0; i < mergeState.partitions.length; i++) {
@@ -672,7 +658,7 @@ public class DiskPartition extends Partition implements Closeable {
                         : mergeState.docIDMaps[i][0];
                 fakeStart[i] = 1;
 
-                mergeState.header.setnDocs(mergeState.header.getnDocs() + mergeState.nUndel[i]);
+                mergeState.partOut.setNDocs(mergeState.partOut.getNDocs() + mergeState.nUndel[i]);
 
                 //
                 // We need to figure out the new starting sequence numbers for
@@ -684,27 +670,11 @@ public class DiskPartition extends Partition implements Closeable {
             }
 
             //
-            // OK, here we go.  Get the files for the main dictionaries and
-            // postings.
-            File[] files = getMainFiles(manager, mergeState.partNumber);
-
-            //
-            // Get a channel for the main dictionary.
-            mergeState.postFiles = Arrays.copyOfRange(files, 1, files.length);
-            mergeState.postStreams = new OutputStream[mergeState.postFiles.length];
-            mergeState.postOut = new PostingsOutput[mergeState.postFiles.length];
-            
-            for(int i = 0; i < mergeState.postFiles.length; i++) {
-                mergeState.postStreams[i] =
-                        new BufferedOutputStream(new FileOutputStream(mergeState.postFiles[i]),
-                                                 8192);
-                mergeState.postOut[i] = new StreamPostingsOutput(mergeState.postStreams[i]);
-            }
-
-            //
             // Write a placeholder for the offset of the partition header.
-            int phoffsetpos = mergeState.fieldDictOut.position();
-            mergeState.fieldDictOut.byteEncode(0L, 8);
+            
+            DictionaryOutput fieldDictOut = mergeState.partOut.getPartitionDictionaryOutput();
+            int phoffsetpos = fieldDictOut.position();
+            fieldDictOut.byteEncode(0L, 8);
 
             //
             // Pick up the document dictionaries for the merge.
@@ -719,41 +689,34 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // Merge the document dictionaries.  We'll need to remap the
             logger.fine("Merge document dictionary");
-            mergeState.header.setDocDictOffset(mergeState.fieldDictOut.position());
+            mergeState.partOut.getPartitionHeader().setDocDictOffset(fieldDictOut.position());
             DiskDictionary.merge(manager.getIndexDir(),
                     new StringNameHandler(),
                            dicts,
                            mappers,
                            fakeStart, 
                            docDictIDMaps,
-                           mergeState.fieldDictOut, 
-                           mergeState.postOut, true);
+                           fieldDictOut, 
+                           mergeState.partOut.getPostingsOutput(), true);
 
 
             mergeCustom(mergeState);
 
-            int phoffset = mergeState.fieldDictOut.position();
+            int phoffset = fieldDictOut.position();
             
-            mergeState.header.write(mergeState.fieldDictOut);
-            int pos = mergeState.fieldDictOut.position();
-            mergeState.fieldDictOut.position(phoffsetpos);
-            mergeState.fieldDictOut.byteEncode((long) phoffset, 8);
-            mergeState.fieldDictOut.position(pos);
+            mergeState.partOut.getPartitionHeader().write(fieldDictOut);
+            int pos = fieldDictOut.position();
+            fieldDictOut.position(phoffsetpos);
+            fieldDictOut.byteEncode((long) phoffset, 8);
+            fieldDictOut.position(pos);
             for(int i = 0; i < mergeState.postStreams.length; i++) {
-                mergeState.postOut[i].flush();
-                mergeState.postStreams[i].close();
+                mergeState.partOut.getPostingsOutput()[i].flush();
             }
-            
-            //
-            // Put the data in its final resting place.
-            mergeState.postFiles = Arrays.copyOfRange(files, 1, files.length);
-            RandomAccessFile dictRAF = new RandomAccessFile(files[0], "rw");
-            mergeState.fieldDictOut.flush(dictRAF);
-            dictRAF.close();
-            mergeState.fieldDictOut.close();
+
+            mergeState.partOut.flush(null);
 
             
-            DiskPartition ndp = manager.newDiskPartition(mergeState.partNumber, manager);
+            DiskPartition ndp = manager.newDiskPartition(mergeState.partOut.getPartitionNumber(), manager);
             mw.stop();
             logger.info(String.format("Merge took %.3fms", mw.getTimeMillis()));
             return ndp;
@@ -800,7 +763,7 @@ public class DiskPartition extends Partition implements Closeable {
             }
             //
             // OK, try the merge again.
-            DiskPartition.reap(manager, mergeState.partNumber);
+            DiskPartition.reap(manager, mergeState.partOut.getPartitionNumber());
             return merge(partitions, delMaps, calculateDVL, depth + 1);
 
         } catch(Exception e) {
@@ -810,7 +773,7 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Clean up the unfinished partition.
-            DiskPartition.reap(manager, mergeState.partNumber);
+            DiskPartition.reap(manager, mergeState.partOut.getPartitionNumber());
             throw e;
         }
     }

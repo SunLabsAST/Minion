@@ -1,8 +1,8 @@
 package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
@@ -36,22 +36,12 @@ public class MergeState implements Cloneable {
     /**
      * A dictionary output for the merged dictionaries.
      */
-    public DictionaryOutput fieldDictOut;
+    public PartitionOutput partOut;
     
     /**
      * The field being merged.
      */
     public FieldInfo info;
-    
-    /**
-     * The number for the merged partition.
-     */
-    public int partNumber;
-
-    /**
-     * The header for the merged partition.
-     */
-    public PartitionHeader header;
     
     /**
      * The number of documents in the merged partition.
@@ -102,21 +92,12 @@ public class MergeState implements Cloneable {
     public File[] postFiles;
 
     /**
-     * A place where postings can be written;
-     */
-    public PostingsOutput[] postOut;
-    
-    /**
      * The underlying streams for the postings.
      */
     public OutputStream[] postStreams;
     
-    /**
-     * A place where vector lengths can be written.
-     */
-    public WriteableBuffer vectorLengthsBuffer;
-    
-    public MergeState(PartitionManager manager) {
+    public MergeState(PartitionManager manager, PartitionOutput partOut) {
         this.manager = manager;
+        this.partOut = partOut;
     }
 }

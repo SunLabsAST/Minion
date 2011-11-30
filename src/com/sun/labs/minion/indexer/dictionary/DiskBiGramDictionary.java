@@ -421,8 +421,8 @@ public class DiskBiGramDictionary extends DiskDictionary {
                 null,
                 mergeState.fakeStarts,
                 mergeState.entryIDMaps,
-                mergeState.fieldDictOut,
-                mergeState.postOut,
+                mergeState.partOut.getPartitionDictionaryOutput(),
+                mergeState.partOut.getPostingsOutput(),
                 false);
     }
 } // DiskBiGramDictionary

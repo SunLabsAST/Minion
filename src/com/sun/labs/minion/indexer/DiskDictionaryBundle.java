@@ -17,6 +17,7 @@ import com.sun.labs.minion.indexer.dictionary.IntEntry;
 import com.sun.labs.minion.indexer.dictionary.LongNameHandler;
 import com.sun.labs.minion.indexer.dictionary.NameDecoder;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.MergeState;
@@ -31,15 +32,14 @@ import com.sun.labs.minion.util.CDateParser;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
 import java.io.RandomAccessFile;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -671,9 +671,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
                       DiskDictionaryBundle[] bundles) 
             throws java.io.IOException {
         
-        int headerPos = mergeState.fieldDictOut.position();
+        DictionaryOutput fieldDictOut = mergeState.partOut.getPartitionDictionaryOutput();
+        int headerPos = fieldDictOut.position();
         FieldHeader mergeHeader = new FieldHeader();
-        mergeHeader.write(mergeState.fieldDictOut);
+        mergeHeader.write(fieldDictOut);
         
         //
         // ID maps for the entries in the dictionaries.  We'll store them all, 
@@ -753,15 +754,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
             
             if(foundDict) {
-                mergeHeader.dictOffsets[ord] = mergeState.fieldDictOut.position();
+                mergeHeader.dictOffsets[ord] = fieldDictOut.position();
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                                                   encoder, 
                                                   mDicts,
                                                   null,
                                                   mergeState.docIDStarts,
                                                   mergeState.postIDMaps,
-                                                  mergeState.fieldDictOut,
-                                                  mergeState.postOut, 
+                                                  fieldDictOut,
+                                                  mergeState.partOut.getPostingsOutput(), 
                                                   true);
             } else {
                 mergeHeader.dictOffsets[ord] = -1;
@@ -791,7 +792,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 entryIDMaps[Type.UNCASED_TOKENS.ordinal()];
         
         if(foundOne) {
-            mergeHeader.tokenBGOffset = mergeState.fieldDictOut.position();
+            mergeHeader.tokenBGOffset = fieldDictOut.position();
             DiskBiGramDictionary.merge(mergeState, bgDicts);
         }
 
@@ -815,7 +816,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 entryIDMaps[Type.UNCASED_SAVED.
                 ordinal()];
         if(foundOne) {
-            mergeHeader.savedBGOffset = mergeState.fieldDictOut.position();
+            mergeHeader.savedBGOffset = fieldDictOut.position();
             DiskBiGramDictionary.merge(mergeState, bgDicts);
         }
 
@@ -832,10 +833,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
             FileWriteableBuffer mdtvBuff = new FileWriteableBuffer(dtvRAF,
                                                                    16384);
             File dtvOffsetFile = File.createTempFile("dtvOff", "buff", id);
-            RandomAccessFile dtvOffsetRAF = new RandomAccessFile(dtvOffsetFile,
-                                                                 "rw");
-            FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(
-                    dtvOffsetRAF, 16384);
+            RandomAccessFile dtvOffsetRAF = new RandomAccessFile(dtvOffsetFile, "rw");
+            FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(dtvOffsetRAF, 1 << 16);
             
             for(int i = 0; i < bundles.length; i++) {
                 //
@@ -885,13 +884,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
             //
             // Transfer the temp buffers into the dictionary file.
-            mergeHeader.dtvOffset = mergeState.fieldDictOut.position();
-            mdtvBuff.write(mergeState.fieldDictOut);
+            mergeHeader.dtvOffset = fieldDictOut.position();
+            mdtvBuff.write(fieldDictOut);
             dtvRAF.close();
             dtvFile.delete();
 
-            mergeHeader.dtvPosOffset = mergeState.fieldDictOut.position();
-            mdtvOffsetBuff.write(mergeState.fieldDictOut);
+            mergeHeader.dtvPosOffset = fieldDictOut.position();
+            mdtvOffsetBuff.write(fieldDictOut);
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
         }
@@ -913,18 +912,19 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 // We need a disk dictionary for calculating the lengths, so we'll
                 // open the one that we just wrote.  We'll start by remembering where 
                 // we were in the file!
-                int mdsp = mergeState.fieldDictOut.position();
+                int mdsp = fieldDictOut.position();
 
                 RandomAccessFile[] mPostRAF = new RandomAccessFile[mergeState.postFiles.length];
                 for(int i = 0; i < mergeState.postFiles.length; i++) {
                     mPostRAF[i] = new RandomAccessFile(mergeState.postFiles[i], "rw");
                 }
-                mergeHeader.vectorLengthOffset = mergeState.vectorLengthsBuffer.position();
-                mergeState.fieldDictOut.position(mdp);
+                WriteableBuffer vlb = mergeState.partOut.getVectorLengthsBuffer();
+                mergeHeader.vectorLengthOffset = vlb.position();
+                fieldDictOut.position(mdp);
                 DiskDictionary newMainDict =
                         new DiskDictionary(mergeState.entryFactory,
                         new StringNameHandler(),
-                        mergeState.fieldDictOut,
+                        fieldDictOut,
                         mPostRAF);
                 DocumentVectorLengths.calculate(mergeState.info, 
                                                 mergeState.maxDocID,
@@ -932,12 +932,12 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                 mergeState.manager,
                                                 newMainDict.iterator(),
                                                 null,  // no term stats calculation during merges.
-                                                mergeState.vectorLengthsBuffer,
+                                                vlb,
                                                 mergeState.manager.getTermStatsDict());
                 for(RandomAccessFile mprf : mPostRAF) {
                     mprf.close();
                 }
-                mergeState.fieldDictOut.position(mdsp);
+                fieldDictOut.position(mdsp);
                 
             } else {
                 mergeHeader.vectorLengthOffset = -1;
@@ -946,10 +946,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
         
         //
         // Now zip back and write the header.
-        int endPos = mergeState.fieldDictOut.position();
-        mergeState.fieldDictOut.position(headerPos);
-        mergeHeader.write(mergeState.fieldDictOut);
-        mergeState.fieldDictOut.position(endPos);
+        int endPos = fieldDictOut.position();
+        fieldDictOut.position(headerPos);
+        mergeHeader.write(fieldDictOut);
+        fieldDictOut.position(endPos);
     }
 
     /**
