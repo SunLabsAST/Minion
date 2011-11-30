@@ -711,6 +711,7 @@ public class DiskPartition extends Partition implements Closeable {
             fieldDictOut.position(pos);
             
             mergeState.partOut.flush(null);
+            mergeState.partOut.close();
 
             
             DiskPartition ndp = manager.newDiskPartition(mergeState.partOut.getPartitionNumber(), manager);
