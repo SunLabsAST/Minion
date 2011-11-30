@@ -91,12 +91,7 @@ public class IDPostings implements Postings, MergeablePostings {
     /**
      * The ID we're collecting the frequency for.
      */
-    protected int curr;
-
-    /**
-     * The previous ID encountered during indexing.
-     */
-    protected int prevID;
+    protected int currentID;
 
     /**
      * The number of IDs in the postings.
@@ -140,7 +135,7 @@ public class IDPostings implements Postings, MergeablePostings {
      */
     public IDPostings() {
         ids = new int[4];
-        curr = -1;
+        currentID = -1;
     }
 
     /**
@@ -243,13 +238,13 @@ public class IDPostings implements Postings, MergeablePostings {
      */
     public void add(Occurrence o) {
         int oid = o.getID();
-        if(oid != curr) {
+        if(oid != currentID) {
             if(ids == null || nIDs + 1 >= ids.length) {
-                ids = Util.expandInt(ids, (nIDs + 1) * 2);
+                ids = Arrays.copyOf(ids, (nIDs + 1) * 2);
             }
             ids[nIDs++] = oid;
-            curr = oid;
-            lastID = curr;
+            currentID = oid;
+            lastID = currentID;
         }
     }
 
@@ -587,6 +582,16 @@ public class IDPostings implements Postings, MergeablePostings {
             return new UncompressedIDIterator(features);
         }
         return new CompressedIDIterator(features);
+    }
+
+    public void clear() {
+        if(ids == null) {
+            return;
+        }
+        nIDs = 0;
+        currentID = -1;
+        lastID = 0;
+        nSkips = 0;
     }
 
     /**

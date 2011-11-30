@@ -78,6 +78,8 @@ public class Dumper implements Configurable {
      * A pool of partition output objects.
      */
     protected BlockingQueue<PartitionOutput> poPool;
+    
+    private BlockingQueue<MemoryPartition>  mpq;
 
     /**
      * The interval for polling the partition queue.
@@ -136,6 +138,10 @@ public class Dumper implements Configurable {
      * Default constructor used for configuration.
      */
     public Dumper() {
+    }
+
+    public void setMemoryPartitionQueue(BlockingQueue<MemoryPartition> mpq) {
+        this.mpq = mpq;
     }
 
     public void dump(MemoryPartition part) {
@@ -256,6 +262,9 @@ public class Dumper implements Configurable {
                             logger.log(Level.SEVERE,
                                     "Error dumping partition, continuing", ex);
                         }
+                    }
+                    if(!mpq.offer (mph.part, 3, TimeUnit.SECONDS)) {
+                        logger.log(Level.SEVERE, String.format("Error replacing memory partition on queue"));
                     }
                 } catch(InterruptedException ex) {
                     logger.log(Level.WARNING,

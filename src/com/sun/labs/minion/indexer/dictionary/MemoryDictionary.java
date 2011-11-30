@@ -228,9 +228,18 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * Clears the dictionary, emptying it of all data.
      */
     public void clear() {
-        map.clear();
+        for(Iterator<Map.Entry<N,IndexEntry>> i = map.entrySet().iterator(); i.hasNext(); ) {
+            Map.Entry<N,IndexEntry> e = i.next();
+            IndexEntry entry = e.getValue();
+            if(entry.getN() > 3) {
+                entry.clear();
+            } else {
+                i.remove();
+            }
+        }
         id = 0;
         idMap = null;
+        sortedEntries = null;
     }
     
     public IndexEntry[] getSortedEntries() {

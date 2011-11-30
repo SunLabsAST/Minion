@@ -233,4 +233,13 @@ public class InvFileMemoryPartition extends MemoryPartition {
                        String.format("Error setting term stats %d", tsn), ex);
         }
     }
+    
+    public void clear() {
+        super.clear();
+        for(MemoryField mf : fields) {
+            if(mf != null) {
+                mf.clear();
+            }
+        }
+    }
 }

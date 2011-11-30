@@ -48,5 +48,9 @@ public class RAMPostingsOutput implements PostingsOutput {
     public void flush(RandomAccessFile raf) throws IOException {
         buff.write(raf.getChannel());
     }
-
+    
+    public RAMPostingsInput asInput() {
+        return new RAMPostingsInput(buff);
+    }
+    
 }

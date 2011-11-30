@@ -101,6 +101,10 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     public AbstractPartitionOutput(PartitionManager manager) throws IOException {
         this.manager = manager;
     }
+    
+    public AbstractPartitionOutput(File outputDir) throws IOException {
+        manager = new PartitionManager(outputDir);
+    }
 
     public int startPartition() throws IOException {
         if(started) {

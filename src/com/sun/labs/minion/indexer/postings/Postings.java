@@ -181,5 +181,12 @@ public interface Postings {
      * warning should be logged and <code>null</code> will be returned.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features);
+    
+    /**
+     * Clears the data from this postings object, which will allow it to be
+     * re-used during indexing.  This doesn't make much sense for query-time
+     * postings.
+     */
+    public void clear();
 
 }// Postings

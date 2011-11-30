@@ -63,11 +63,6 @@ public class IDFreqPostings extends IDPostings {
     protected int[] freqs;
 
     /**
-     * The frequency of the current ID.
-     */
-    protected int freq;
-
-    /**
      * The total number of occurrences in the postings list.  Note that this is
      * a long, even though the return value from getTotalOccurrences is an int.
      * This is because, while it doesn't make any sense to return a long's worth 
@@ -119,7 +114,7 @@ public class IDFreqPostings extends IDPostings {
     @Override
     public void add(Occurrence o) {
         int oid = o.getID();
-        if(oid != curr) {
+        if(oid != currentID) {
             nIDs++;
             pos++;
             if(ids == null || nIDs >= ids.length) {
@@ -127,10 +122,12 @@ public class IDFreqPostings extends IDPostings {
                 freqs = Util.expandInt(freqs, ids.length);
             }
             ids[pos] = oid;
-            curr = oid;
-            lastID = curr;
+            freqs[pos] = o.getCount();
+            currentID = oid;
+            lastID = currentID;
+        } else {
+            freqs[pos] += o.getCount();
         }
-        freqs[pos] += o.getCount();
     }
 
     @Override
@@ -162,7 +159,7 @@ public class IDFreqPostings extends IDPostings {
         int n = ((Postings) mp).getN();
         int[] tid = new int[Math.max(n, nIDs)];
         int[] tf = new int[Math.max(n, nIDs)];
-        
+
         PostingsIterator pi = ((Postings) mp).iterator(null);
         pi.next();
         int p1 = 0;
@@ -203,7 +200,7 @@ public class IDFreqPostings extends IDPostings {
             pi.next();
             p1++;
         }
-        
+
         if(p2 < nIDs) {
             int toadd = (nIDs - p2);
             if(np + toadd >= tid.length) {
@@ -214,10 +211,10 @@ public class IDFreqPostings extends IDPostings {
             System.arraycopy(freqs, p2, tf, np, toadd);
             np += toadd;
         }
-        
+
         nIDs = np;
         ids = tid;
-        lastID = ids[np-1];
+        lastID = ids[np - 1];
         freqs = tf;
     }
 
@@ -253,6 +250,12 @@ public class IDFreqPostings extends IDPostings {
             return new UncompressedIDFreqIterator(features);
         }
         return new CompressedIDFreqIterator(features);
+    }
+
+    @Override
+    public void clear() {
+        super.clear();
+        pos = -1;
     }
 
     public class UncompressedIDFreqIterator extends UncompressedIDIterator {
@@ -359,7 +362,7 @@ public class IDFreqPostings extends IDPostings {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder(nIDs*6);
+        StringBuilder sb = new StringBuilder(nIDs * 6);
         sb.append("nIDS: ").append(nIDs).append(" [");
         for(int i = 0; i < nIDs; i++) {
             if(i > 0) {
@@ -370,7 +373,5 @@ public class IDFreqPostings extends IDPostings {
         sb.append(']');
         return sb.toString();
     }
-
-
 } // IDFreqPostings
 

@@ -8,6 +8,7 @@ import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,8 +34,12 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
      * @param manager the manager responsible for the partition that we're dumping
      * @param files the files into which we'll write the partition data.
      */
-    public DiskPartitionOutput(PartitionManager manager) throws IOException, FileLockException {
+    public DiskPartitionOutput(PartitionManager manager) throws IOException {
         super(manager);
+    }
+    
+    public DiskPartitionOutput(File outputDir) throws IOException {
+        super(outputDir);
     }
 
     @Override

@@ -136,4 +136,14 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         ((MergeablePostings) post).merge((MergeablePostings) qe.post,
                                       idMap);
     }
+    
+    public void clear() {
+        if(post != null) {
+            post.clear();
+            id = 0;
+            n = 0;
+            size = 0;
+            offset = 0;
+        }
+    }
 }

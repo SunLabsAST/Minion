@@ -124,6 +124,10 @@ public class MemoryField extends Field {
         }
         return dicts.dump(partOut);
     }
+    
+    public void clear() {
+        dicts.clear();
+    }
 
     public MemoryDictionary getTermDictionary(boolean cased) {
         return dicts.getTermDictionary(cased);

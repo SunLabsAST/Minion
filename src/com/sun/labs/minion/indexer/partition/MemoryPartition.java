@@ -151,6 +151,10 @@ public abstract class MemoryPartition extends Partition {
         return partOut;
 
     }
+    
+    public void clear() {
+        docDict.clear();
+    }
 
     public MemoryDictionary getDocumentDictionary() {
         return docDict;

@@ -1,6 +1,5 @@
 package com.sun.labs.minion.indexer;
 
-
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.DateNameHandler;
 import com.sun.labs.minion.indexer.dictionary.DoubleNameHandler;
@@ -48,39 +47,31 @@ public class MemoryDictionaryBundle<N extends Comparable> {
          * Tokens in the case found in the document.
          */
         CASED_TOKENS,
-
         /**
          * Tokens transformed into lowercase.
          */
         UNCASED_TOKENS,
-
         /**
          * Tokens that have been transformed into lowercase and stemmed.
          */
         STEMMED_TOKENS,
-
         /**
          * Raw saved values from the document.
          */
         RAW_SAVED,
-
         /**
          * Lowercased saved values from the document.  Only used if this is a
          * string field.
          */
         UNCASED_SAVED,
-
         /**
          * A document vector with the raw tokens from the document.
          */
         RAW_VECTOR,
-
         /**
          * A document vector with the lowercased, stemmed tokens from the document.
          */
-        STEMMED_VECTOR,
-    }
-
+        STEMMED_VECTOR,}
     /**
      * The dictionaries making up this bundle, indexed by the ordinal of one of the
      * {@link Types}.
@@ -116,7 +107,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      * An array of the sets of entries saved per document at indexing time.
      */
     private List[] dv;
-    
+
     private List[] ucdv;
 
     private EntryFactory vectorEntryFactory = new EntryFactory(Postings.Type.ID_FREQ);
@@ -195,7 +186,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             throw new UnsupportedOperationException(String.format(
                     "Field: %s is not tokenized", info.getName()));
         }
-        
+
         IndexEntry ce = null;
         IndexEntry uce = null;
         IndexEntry se = null;
@@ -267,13 +258,13 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         // We'll just store the saved entries per-document, since we might be adding
         // entries in non-document ID order (e.g., when doing classification.)
         // We'll build the actual postings lists at dump time.
-        if (dicts[Type.RAW_SAVED.ordinal()] != null) {
+        if(dicts[Type.RAW_SAVED.ordinal()] != null) {
             IndexEntry rawSavedEntry = dicts[Type.RAW_SAVED.ordinal()].put(name);
-            if (docID >= dv.length) {
+            if(docID >= dv.length) {
                 dv = Arrays.copyOf(dv, (docID + 1) * 2);
             }
 
-            if (dv[docID] == null) {
+            if(dv[docID] == null) {
                 dv[docID] = new ArrayList<IndexEntry>();
             }
             dv[docID].add(rawSavedEntry);
@@ -281,15 +272,14 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         //
         // Handle the uncased values for string fields.
-        if (dicts[Type.UNCASED_SAVED.ordinal()] != null) {
-            IndexEntry uncasedSavedEntry = dicts[Type.UNCASED_SAVED.ordinal()].
-                    put(CharUtils.toLowerCase(
+        if(dicts[Type.UNCASED_SAVED.ordinal()] != null) {
+            IndexEntry uncasedSavedEntry = dicts[Type.UNCASED_SAVED.ordinal()].put(CharUtils.toLowerCase(
                     name.toString()));
-            if (docID >= ucdv.length) {
+            if(docID >= ucdv.length) {
                 ucdv = Arrays.copyOf(ucdv, (docID + 1) * 2);
             }
 
-            if (ucdv[docID] == null) {
+            if(ucdv[docID] == null) {
                 ucdv[docID] = new ArrayList<IndexEntry>();
             }
             ucdv[docID].add(uncasedSavedEntry);
@@ -311,25 +301,25 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      */
     public MemoryField.DumpResult dump(PartitionOutput partOut) throws
             java.io.IOException {
-        
+
         MemoryField.DumpResult ret = MemoryField.DumpResult.DICTS_DUMPED;
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
-        
+
         int headerPos = partDictOut.position();
         FieldHeader header = new FieldHeader();
         header.write(partDictOut);
 
         header.fieldID = info.getID();
         header.maxDocID = partOut.getMaxDocID();
-        
+
         //
         // The sorted entries from each of the dictionaries.
         IndexEntry[][] sortedEntries = new IndexEntry[Type.values().length][];
-        
+
         //
         // The ID maps from each of the dictionaries.
         int[][] entryIDMaps = new int[Type.values().length][];
-        
+
         //
         // Dump the dictionaries in this bundle.  This loop is a little gross, what
         // with the pre-dump and post-dump switches based on the type of dictionary
@@ -341,7 +331,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 header.dictOffsets[ord] = -1;
                 continue;
             }
-            
+
             //
             // Figure out the encoder for the type of dictionary.
             partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
@@ -351,7 +341,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
                 case RAW_SAVED:
                     partOut.setDictionaryEncoder(getEncoder(info));
-                    
+
                     //
                     // We didn't add any occurrence data to the dictionary
                     // while we were adding values, since
@@ -371,7 +361,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
                 case UNCASED_SAVED:
                     partOut.setDictionaryEncoder(getEncoder(info));
-                    
+
                     //
                     // We didn't add any occurrence data to the dictionary
                     // while we were adding values, since
@@ -401,7 +391,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 default:
                     partOut.setDictionaryEncoder(new StringNameHandler());
             }
-            
+
             header.dictOffsets[ord] = partDictOut.position();
             sortedEntries[ord] = dicts[ord].dump(partOut);
         }
@@ -409,11 +399,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         //
         // If we have tokens or saved values, then output any bigrams that we
         // need for accelerating wildcards.
-        IndexEntry[] sortedTokens = 
-                sortedEntries[Type.CASED_TOKENS.ordinal()] != null ?
-                sortedEntries[Type.CASED_TOKENS.ordinal()] :
-                sortedEntries[Type.UNCASED_TOKENS.ordinal()];
-        
+        IndexEntry[] sortedTokens =
+                sortedEntries[Type.CASED_TOKENS.ordinal()] != null
+                ? sortedEntries[Type.CASED_TOKENS.ordinal()]
+                : sortedEntries[Type.UNCASED_TOKENS.ordinal()];
+
         if(sortedTokens != null) {
             MemoryBiGramDictionary tbg = new MemoryBiGramDictionary(
                     new EntryFactory(Postings.Type.ID_FREQ));
@@ -433,7 +423,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         if(field.info.getType() == FieldInfo.Type.STRING) {
             MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
                     new EntryFactory(Postings.Type.ID_FREQ));
-            for (IndexEntry e : sortedEntries[Type.RAW_SAVED.ordinal()]) {
+            for(IndexEntry e : sortedEntries[Type.RAW_SAVED.ordinal()]) {
                 sbg.add(CharUtils.toLowerCase(e.getName().toString()),
                         e.getID());
             }
@@ -447,9 +437,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             header.savedBGOffset = -1;
         }
 
-      
+
         if(field.saved) {
-            
+
             //
             // Dump the map from document IDs to the values saved for that document
             // ID, and collect the positions in the buffer where the data for each
@@ -457,9 +447,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             WriteableBuffer dtv = new ArrayBuffer(partOut.getMaxDocID() * 4);
             WriteableBuffer dtvOffsets = new ArrayBuffer(partOut.getMaxDocID() * 4);
             for(int i = 1; i <= partOut.getMaxDocID(); i++) {
-                
+
                 dtvOffsets.byteEncode(dtv.position(), 4);
-                
+
                 //
                 // If there's no set here, or we're past the end of the array,
                 // encode 0 for the count of items for this document ID.
@@ -509,6 +499,29 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         return ret;
     }
 
+    public void clear() {
+        for(MemoryDictionary md : dicts) {
+            if(md != null) {
+                md.clear();
+            }
+        }
+        if(dv != null) {
+            for(List l : dv) {
+                if(l != null) {
+                    l.clear();
+                }
+            }
+        }
+        if(ucdv != null) {
+            for(List l : ucdv) {
+                if(l != null) {
+                    l.clear();
+                }
+            }
+        }
+        maxDocID = 0;
+    }
+
     public MemoryDictionary getTermDictionary(boolean cased) {
         if(cased) {
             return dicts[Type.CASED_TOKENS.ordinal()];
@@ -516,7 +529,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             return dicts[Type.UNCASED_TOKENS.ordinal()];
         }
     }
-
 
     /**
      * Gets a name for a given saved value, parsing from strings as necessary.
@@ -540,7 +552,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         return new Long(val.toString());
                     }
                 } catch(NumberFormatException nfe) {
-                    logger.warning(String.format("Non integer value: %s " 
+                    logger.warning(String.format("Non integer value: %s "
                             + " for integer saved field %s "
                             + ", ignoring %s", val,
                             info.getName(),
@@ -560,8 +572,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     logger.warning(String.format("Non float value: %s "
                             + " for float saved field %s "
                             + ", ignoring %s", val,
-                                                 info.getName(),
-                                                 val.getClass()));
+                            info.getName(),
+                            val.getClass()));
                     return null;
                 }
             case DATE:
@@ -605,5 +617,4 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 return new StringNameHandler();
         }
     }
-
 }

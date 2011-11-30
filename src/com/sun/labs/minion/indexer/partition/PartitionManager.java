@@ -173,6 +173,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public PartitionManager() {
         subDir = "index";
     }
+    
+    public PartitionManager(File indexDirFile) {
+        this.indexDirFile = indexDirFile;
+        init();
+    }
 
     public void addIndexListener(IndexListener il) {
         listeners.add(il);
@@ -190,8 +195,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // Pull stuff from the configuration.
-        indexDir = indexConfig.getIndexDirectory() + File.separatorChar + subDir;
-        indexDirFile = new File(indexDir);
+        indexDirFile = new File(indexConfig.getIndexDirectory(), subDir);
+        indexDir = indexDirFile.toString();
         lockDirFile = new File(lockDir);
         randID = (int) (Math.random() * Integer.MAX_VALUE);
 

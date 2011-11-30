@@ -268,6 +268,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * Threads to hold run our pipelines.
      */
     protected Thread[] indexingThreads;
+    
+    /**
+     * Memory partitions to use during indexing.
+     */
+    protected BlockingQueue<MemoryPartition> memoryPartitions;
 
     /**
      * The configuration name for this search engine.
@@ -1456,6 +1461,14 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 ps.getInt(PROP_NUM_INDEXING_THREADS);
         docsPerPartition = ps.getInt(PROP_DOCS_PER_PARTITION);
 
+        //
+        // Make a pool of memory partitions that can be re-used over time, two
+        // per indexing thread (one for indexing, one for dumping.)
+        memoryPartitions = new ArrayBlockingQueue<InvFileMemoryPartition>(numIndexingThreads * 2);
+        for(int i = 0; i < numIndexingThreads * 2; i++) {
+            memoryPartitions.add(new InvFileMemoryPartition(invFilePartitionManager));
+        }
+        
         indexers = new Indexer[numIndexingThreads];
         if(indexers.length == 1) {
             indexers[0] = new Indexer(docsPerPartition);
@@ -1486,6 +1499,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         buildClassifiers = ps.getBoolean(PROP_BUILD_CLASSIFIERS);
         minMemoryPercent = ps.getDouble(PROP_MIN_MEMORY_PERCENT);
         dumper = (Dumper) ps.getComponent(PROP_DUMPER);
+        dumper.setMemoryPartitionQueue(memoryPartitions);
     }
 
     /**
@@ -1526,8 +1540,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      */
     private class Indexer implements Runnable, SimpleIndexer {
 
-        private InvFileMemoryPartition part = new InvFileMemoryPartition(
-                invFilePartitionManager);
+        private InvFileMemoryPartition part;
 
         private boolean finished;
 
@@ -1544,6 +1557,14 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         
         public Indexer(int docsPerPart) {
             this.docsPerPart = docsPerPart;
+            try {
+                part = memoryPartitions.poll(10, TimeUnit.SECONDS);
+                if(part == null) {
+                    throw new IllegalStateException("Couldn't get memory parititon");
+                }
+            } catch(InterruptedException ex) {
+                throw new IllegalStateException("Error getting memory partition");
+            }
         }
 
         public int getDocsPerPart() {
@@ -1570,6 +1591,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         public synchronized void index(Indexable doc) {
             if(doc != null) {
+                if(part == null) {
+                    throw new IllegalStateException("Can't index without a partition");
+                }
                 part.index(doc);
                 nIndexed++;
                 if(docsPerPart > 0 && nIndexed == docsPerPart) {
@@ -1594,7 +1618,15 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         public void dump() {
             InvFileMemoryPartition op = part;
             synchronized(this) {
-                part = new InvFileMemoryPartition(invFilePartitionManager);
+                try {
+                    part = memoryPartitions.poll(70, TimeUnit.SECONDS);
+                    if(part == null) {
+                        logger.log(Level.SEVERE, String.format("Couldn't get memory partition"));
+                    }
+                } catch(InterruptedException ex) {
+                    logger.log(Level.SEVERE, String.format("Error getting memory partition"), ex);
+
+                }
             }
             dumper.dump(op);
         }
