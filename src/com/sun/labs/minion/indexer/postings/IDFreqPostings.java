@@ -56,7 +56,7 @@ public class IDFreqPostings extends IDPostings {
     /**
      * The position where we're collecting data.
      */
-    private int pos = -1;
+    protected int pos = -1;
 
     /**
      * The frequencies for these postings.

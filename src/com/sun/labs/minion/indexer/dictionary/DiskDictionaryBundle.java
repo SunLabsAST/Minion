@@ -880,10 +880,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
             //
             // Calculate document vector lengths.  We need an iterator for the 
             // main merged dictionary for this.
-            int mdp =
-                    (int) mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
+            long mdp = mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
             if(mdp < 0) {
-                mdp = (int) mergeHeader.dictOffsets[Type.CASED_TOKENS.ordinal()];
+                mdp = mergeHeader.dictOffsets[Type.CASED_TOKENS.ordinal()];
             }
             if(mdp >= 0) {
 

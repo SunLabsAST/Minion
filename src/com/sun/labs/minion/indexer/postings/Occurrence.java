@@ -26,8 +26,7 @@ package com.sun.labs.minion.indexer.postings;
 
 /**
  * An interface for occurrence information that can be used during
- * indexing.  An occurrence supports a single operation:  getting the ID of
- * the occurrence.
+ * indexing.
  */
 public interface Occurrence {
 

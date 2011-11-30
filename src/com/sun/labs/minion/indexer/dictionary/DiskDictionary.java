@@ -358,16 +358,14 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             // Create the postings inputs.
             for(int i = 0; i < this.postIn.length; i++) {
                 postIn[i] =
-                        new ChannelPostingsInput(
-                        postFiles[i].getChannel(),
-                        true);
+                        new ChannelPostingsInput(postFiles[i].getChannel(), true);
             }
         }
 
         if(dh.idToPosnSize > 0) {
             idToPosn = dictBuff.slice(dh.idToPosnPos, dh.idToPosnSize);
         }
-
+        
         names = dictBuff.slice(dh.namesPos, dh.namesSize);
         nameOffsets = dictBuff.slice(dh.nameOffsetsPos, dh.nameOffsetsSize);
         entryInfo = dictBuff.slice(dh.entryInfoPos, dh.entryInfoSize);
