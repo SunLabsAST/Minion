@@ -63,21 +63,26 @@ public class PositionPostingsTest {
 
     @Before
     public void setUp() {
-        for(RAMPostingsOutput po : postOut) {
-            po.cleanUp();
-        }
+        cleanUp();
     }
 
     @After
     public void tearDown() {
     }
 
+    private void cleanUp() {
+        for(RAMPostingsOutput po : postOut) {
+            po.cleanUp();
+        }
+    }
+   
     /**
      * Tests encoding our random data, dumping the data to a file if a failure occurs.
      * @throws Exception if there is an error
      */
     private void randomAddTest(int n, int nIter) throws Exception {
         for(int i = 0; i < nIter; i++) {
+            cleanUp();
             NanoWatch nw = new NanoWatch();
             TestData testData = null;
             try {
