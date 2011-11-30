@@ -80,6 +80,9 @@ import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
+import com.sun.labs.minion.indexer.postings.PostingsIterator;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
 import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.command.CommandInterface;
 import com.sun.labs.util.command.CommandInterpreter;
@@ -712,6 +715,73 @@ public class QueryTest extends SEMain {
 
             public String getHelp() {
                 return "[term] [term...] - Get morphological variants for one or more terms";
+            }
+        });
+        
+        shell.add("post", "Info", new CommandInterface() {
+
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 3) {
+                    return getHelp();
+                }
+                
+                String field = args[1];
+                FieldInfo fi = manager.getFieldInfo(field);
+                boolean getPositions = fi.hasAttribute(FieldInfo.Attribute.POSITIONS);
+                PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
+                feat.setPositions(getPositions);
+                List<DiskPartition> parts = manager.getActivePartitions();
+                List<Integer> ids = new ArrayList<Integer>();
+                List<Integer> freqs = new ArrayList<Integer>();
+                List<Integer> posns = new ArrayList<Integer>();
+                for(int i = 2; i < args.length; i++) {
+                    for(DiskPartition p : parts) {
+                        DiskField df = ((InvFileDiskPartition) p).getDF(fi);
+                        QueryEntry qe = df.getTerm(args[i], false);
+                        if(qe == null) {
+                            continue;
+                        }
+                        PostingsIterator pi = qe.iterator(feat);
+                        if(pi == null) {
+                            logger.log(Level.SEVERE, String.format("No iterator for %s in %s", args[i], field));
+                            continue;
+                        }
+                        shell.out.format("Postings for %s (%d) from %s in %s\n",
+                                args[i], qe.getN(), field, p);
+                        while(pi.next()) {
+                            ids.add(pi.getID());
+                            freqs.add(pi.getFreq());
+                            if(getPositions) {
+                                int[] psn = ((PostingsIteratorWithPositions) pi).getPositions();
+                                for(int j = 0; j < pi.getFreq(); j++) {
+                                    posns.add(psn[j]);
+                                }
+                            }
+                        }
+                        for(int id : ids) {
+                            shell.out.format("%d ", id);
+                        }
+                        shell.out.println("");
+                        for(int freq : freqs) {
+                            shell.out.format("%d ", freq);
+                        }
+                        shell.out.println("");
+                        if(getPositions) {
+                            for(int posn : posns) {
+                                shell.out.format("%d ", posn);
+                            }
+                            shell.out.println("");
+                        }
+                        ids.clear();
+                        freqs.clear();
+                        posns.clear();
+                    }
+                }
+                return "";
+            }
+
+            public String getHelp() {
+                return "field term [term...] - Get the postings associated with a term";
             }
         });
         
