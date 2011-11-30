@@ -3,12 +3,10 @@ package com.sun.labs.minion.indexer.partition;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -124,7 +122,6 @@ public class PartitionHeader {
         raf.writeInt(maxDocID);
         raf.writeInt(postingsChannelNames.length);
         Charset utf8 = Charset.forName("utf-8");
-        
         for(String pcn : postingsChannelNames) {
             byte[] bs = pcn.getBytes(utf8);
             raf.writeInt(bs.length);
