@@ -122,17 +122,6 @@ public interface Result extends Comparable<Result> {
     public float getScore();
     
     /**
-     * Gets the distance between this result and another based on a named
-     * feature vector value.
-     *
-     * @param r the other result
-     * @param name the name of the feature vector field
-     * @return the euclidean distance between the two results based on the
-     * give field.
-     */
-    public double getDistance(Result r, String name);
-    
-    /**
      * Gets the number of passages associated with this result.
      * @return the number of passages associated with this result.
      */

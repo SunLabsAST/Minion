@@ -25,7 +25,7 @@ package com.sun.labs.minion.retrieval;
 
 import java.util.StringTokenizer;
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.indexer.dictionary.BasicField;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import java.util.logging.Logger;
@@ -55,7 +55,7 @@ public class SortSpec {
     /**
      * Fetchers for any saved fields in the sorting spec.
      */
-    protected BasicField.Fetcher[] fetchers;
+    protected DiskField.Fetcher[] fetchers;
 
     /**
      * The directions in which to sort each of the fields.
@@ -127,10 +127,10 @@ public class SortSpec {
         size = ss.size;
         fields = (FieldInfo[]) ss.fields.clone();
         directions = (boolean[]) ss.directions.clone();
-        fetchers = new BasicField.Fetcher[size];
+        fetchers = new DiskField.Fetcher[size];
         for(int i = 0; i < size; i++) {
             if(fields[i] != null) {
-                fetchers[i] = part.getFieldStore().getFetcher(fields[i]);
+                fetchers[i] = part.getDF(fields[i]).getFetcher();
             }
         }
     }

@@ -22,7 +22,7 @@
  * information or have any questions.
  */
 
-package com.sun.labs.minion.classification;
+package com.sun.labs.minion;
 
 import java.io.Serializable;
 import java.util.Comparator;
@@ -58,7 +58,7 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * A weight comparator where small weights are less than large weights
      */
-    protected static Comparator<WeightedFeature> weightComparator =
+    protected static final Comparator<WeightedFeature> weightComparator =
             new Comparator<WeightedFeature>() {
 
         public int compare(WeightedFeature o1,
@@ -80,7 +80,7 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * An "inverse" weight comparator where large weights are less than small weights
      */
-    protected static Comparator<WeightedFeature> invWeightComparator =
+    protected static final Comparator<WeightedFeature> invWeightComparator =
             new Comparator<WeightedFeature>() {
 
         public int compare(WeightedFeature o1,

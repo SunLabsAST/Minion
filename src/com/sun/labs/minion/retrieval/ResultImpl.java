@@ -30,9 +30,6 @@ import java.util.List;
 import java.util.Map;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.FeatureVector;
-
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
-
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.QueryStats;
@@ -42,6 +39,7 @@ import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedField;
 import com.sun.labs.minion.engine.DocumentImpl;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import java.util.logging.Logger;
@@ -164,8 +162,8 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * Gets the document key entry associated with this document.
      * @return the doc key entry
      */
-    public DocKeyEntry getKeyEntry() {
-        return ag.part.getDocumentTerm(doc);
+    public QueryEntry getKeyEntry() {
+        return ag.part.getDocumentDictionary().getByID(doc);
     }
 
     /**
@@ -173,7 +171,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * this result.
      */
     public String getKey() {
-        return (String) ag.part.getDocumentTerm(doc).getName();
+        return (String) ag.part.getDocumentDictionary().getByID(doc).getName();
     }
 
     /**
@@ -192,7 +190,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     }
 
     public Document getDocument() {
-        DocKeyEntry dke = ag.part.getDocumentTerm(doc);
+        QueryEntry dke = ag.part.getDocumentDictionary().getByID(doc);
 
         //
         // If there's no such key, then return
@@ -253,56 +251,6 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
 
     public void setQueryStats(QueryStats qs) {
         this.qs = qs;
-    }
-
-    /**
-     * Gets the distance between this result and another based on a named
-     * feature vector value.
-     *
-     * @param r the other result
-     * @param name the name of the feature vector field
-     * @return the euclidean distance between the two results based on the
-     * give field.
-     */
-    public double getDistance(Result r, String name) {
-
-        //
-        // Do the lookup once, to get the field info and then use that.
-        FieldInfo fi = ag.part.getPartitionManager().getFieldInfo(name);
-        if(fi == null) {
-            return Double.POSITIVE_INFINITY;
-        }
-
-        FeatureVector v1 = (FeatureVector) ((InvFileDiskPartition) ag.part).
-                getFieldStore().getSavedField(fi);
-        FeatureVector v2 = (FeatureVector) ((InvFileDiskPartition) ((ResultImpl) r).ag.part).getFieldStore().
-                getSavedField(fi);
-
-        return v1.distance(doc, v2, ((ResultImpl) r).doc);
-    }
-
-    public double[] getDistance(List l, String name) {
-
-        double[] ret = new double[l.size()];
-
-        //
-        // Do the lookup once, to get the field info and then use that.
-        FieldInfo fi = ag.part.getPartitionManager().getFieldInfo(name);
-        if(fi == null) {
-            for(int i = 0; i < ret.length; i++) {
-                ret[i] = Double.POSITIVE_INFINITY;
-            }
-            return ret;
-        }
-
-        FeatureVector v1 = (FeatureVector) ((InvFileDiskPartition) ag.part).
-                getFieldStore().getSavedField(fi);
-        for(int i = 0; i < l.size(); i++) {
-            ResultImpl ri = (ResultImpl) l.get(i);
-            ret[i] = v1.distance(doc, (FeatureVector) ((InvFileDiskPartition) ri.ag.part).getFieldStore().
-                    getSavedField(fi), ri.doc);
-        }
-        return ret;
     }
 
     public int getDocID() {
@@ -409,8 +357,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         //
         // Get the default value for the field.
         if(fields[i] == null) {
-            fields[i] = ((InvFileDiskPartition) ag.part).getFieldStore().
-                    getDefaultSavedFieldData(sortSpec.fields[i]);
+            fields[i] = sortSpec.fields[i].getDefaultSavedValue();
         }
     }
 

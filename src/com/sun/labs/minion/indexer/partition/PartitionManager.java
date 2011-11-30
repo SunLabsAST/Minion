@@ -40,7 +40,6 @@ import com.sun.labs.minion.FieldFrequency;
 import com.sun.labs.minion.FieldValue;
 import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.minion.QueryConfig;
-import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedField;
 import com.sun.labs.util.props.ConfigBoolean;
@@ -55,23 +54,22 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.Closeable;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.UncachedTermStatsDictionary;
 import com.sun.labs.minion.retrieval.CollectionStats;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
-import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.SimpleFilter;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.dictionary.FeatureVector;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDictionary;
 import com.sun.labs.minion.indexer.dictionary.TermStatsFactory;
+import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
-import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.util.DirCopier;
 import java.util.Collection;
 import java.util.Date;
@@ -441,7 +439,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * removed from the old partitions.
      */
     protected synchronized void addNewPartition(int partNumber,
-                                                Set<Object> keys) {
+                                                Set<String> keys) {
         //
         // If we're asked to add a weird partition, don't do it.
         if(partNumber <= 0) {
@@ -482,7 +480,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     protected synchronized void addNewPartition(DiskPartition dp,
-                                                Set<Object> keys) {
+                                                Set<String> keys) {
 
         //
         // Get the latest version of the active file, locking out
@@ -689,7 +687,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      *
      * @param keys The list of document keys to delete.
      */
-    protected void deleteKeys(Set<Object> keys) {
+    protected void deleteKeys(Set<String> keys) {
 
         for(DiskPartition p : activeParts) {
             p.updatePartition(keys);
@@ -706,9 +704,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return the entry, or <code>null</code> if this key does not appear in
      * the index or if the associated document has been deleted
      */
-    public DocKeyEntry getDocumentTerm(String key) {
+    public QueryEntry getDocumentTerm(String key) {
         for(DiskPartition p : getActivePartitions()) {
-            DocKeyEntry dt = p.getDocumentTerm(key);
+            QueryEntry dt = p.getDocumentDictionary().get(key);
             if(dt != null) {
                 return dt;
             }
@@ -741,7 +739,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * associated document has been deleted.
      */
     public DocumentVector getDocumentVector(String key, String field) {
-        DocKeyEntry dt = getDocumentTerm(key);
+        QueryEntry dt = getDocumentTerm(key);
         if(dt != null) {
             return new DocumentVectorImpl(engine, dt, field);
         }
@@ -757,99 +755,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * associated document has been deleted.
      */
     public DocumentVector getDocumentVector(String key, WeightedField[] fields) {
-        DocKeyEntry dt = getDocumentTerm(key);
+        QueryEntry dt = getDocumentTerm(key);
         if(dt != null) {
             return new CompositeDocumentVectorImpl(engine, dt, fields);
         }
         return null;
-    }
-
-    /**
-     * Gets a set of results ordered by similarity to the given document, calculated
-     * by computing the euclidean distance based on the feature vector stored in the
-     * given field.
-     *
-     * @param key the key of the document to which we'll compute similarity.
-     * @param name the name of the field containing the feature vectors that
-     * we'll use in the similarity computation.
-     * @return a result set containing the distance between the given document
-     * and all of the documents.  The scores assigned to the documents are the
-     * distance scores, and so the returned set will be sorted in increasing
-     * order of the document score.  It is up to the application to handle the
-     * scores in whatever way they deem appropriate.
-     */
-    public ResultSet getSimilar(String key, String name) {
-        double[] vec = (double[]) getFieldValue(name, key);
-        List results = new ArrayList();
-        for(DiskPartition dp : activeParts) {
-            results.add(new ScoredGroup(dp,
-                                        ((InvFileDiskPartition) dp).
-                    euclideanDistance(vec, name)));
-        }
-
-        //
-        // Now go ahead and make a set of reults.  Note that we need to sort
-        // these results in increasing order, since they are based on distance,
-        // not similarity.
-        return new ResultSetImpl(engine, "+score", results);
-    }
-
-    public double getDistance(int d1, int d2, String name) {
-        InvFileDiskPartition p = (InvFileDiskPartition) activeParts.peek();
-        FeatureVector v1 = (FeatureVector) p.getFieldStore().getSavedField(name);
-        return v1.distance(d1,
-                           (FeatureVector) p.getFieldStore().getSavedField(name),
-                           d2);
-    }
-
-    /**
-     * Gets the distance between two documents, based on the values stored in
-     * in a given feature vector saved field.
-     *
-     * @param k1 the first key
-     * @param k2 the second key
-     * @param name the name of the feature vector field for which we want the
-     * distance
-     * @return the euclidean distance between the two documents' feature vectors.
-     * If the field value is not defined for either of the two documents, <code>
-     * Double.POSITIVE_INFINITY</code> is returned.
-     */
-    public double getDistance(String k1, String k2, String name) {
-        QueryEntry d1 = null;
-        QueryEntry d2 = null;
-
-        for(DiskPartition dp : getActivePartitions()) {
-
-            if(d1 == null) {
-                d1 = dp.getDocumentTerm(k1);
-            }
-
-            if(d2 == null) {
-                d2 = dp.getDocumentTerm(k2);
-            }
-
-            if(d1 != null && d2 != null) {
-                FeatureVector v1 =
-                        (FeatureVector) ((InvFileDiskPartition) d1.getPartition()).getFieldStore().
-                        getSavedField(name);
-
-                if(v1 == null) {
-                    return Double.POSITIVE_INFINITY;
-                }
-
-                FeatureVector v2 =
-                        (FeatureVector) ((InvFileDiskPartition) d2.getPartition()).getFieldStore().
-                        getSavedField(name);
-
-                if(v2 == null) {
-                    return Double.POSITIVE_INFINITY;
-                }
-
-                return v1.distance(d1.getID(), v2, d2.getID());
-            }
-        }
-
-        return Double.POSITIVE_INFINITY;
     }
 
     /**
@@ -863,11 +773,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     public SortedSet<FieldValue> getMatching(String field,
                                              String pattern) {
-        SortedSet<FieldValue> ret =
-                new TreeSet<FieldValue>();
-        for(Iterator i = getActivePartitions().iterator(); i.hasNext();) {
-            ret.addAll(((InvFileDiskPartition) i.next()).getFieldStore().
-                    getMatching(field, pattern));
+        SortedSet<FieldValue> ret = new TreeSet<FieldValue>();
+        FieldInfo fi = metaFile.getFieldInfo(field);
+        for(DiskPartition dp : getActivePartitions()) {
+
+            DiskField df = ((InvFileDiskPartition) dp).getDF(fi);
+            if(df != null) {
+                ret.addAll(df.getMatching(pattern));
+            }
         }
         return ret;
     }
@@ -1149,13 +1062,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     protected void reapPartition(int partNumber) {
         InvFileDiskPartition.reap(this, partNumber);
     }
-    /**
-     * A pattern for partition files that gets the partition number and the
-     * extension.
-     */
-    private static Pattern ppat = Pattern.compile("^p(\\d+).*\\.([^.]*)$");
-
-
+    
     /**
      * A pattern for partition files that gets the partition number and the
      * extension.
@@ -1351,26 +1258,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Do a final reap.
         reap();
-
-        //
-        // If this was a long indexing run, and we're supposed to compute
-        // document vector lengths, then do a final merge and take the
-        // opportunity to compute vector lengths and a term stats dictionary.
-        //
-        // Once that's done, we need to re-write the active partitions list!
-        if(calculateDVL && engine.getLongIndexingRun()) {
-            try {
-                DiskPartition mdp = mergeAll();
-                DocumentVectorLengths.calculate(mdp, termStatsDict,
-                                                true);
-                activeParts.clear();
-                activeParts.add(mdp);
-                activeFile.write(activeParts);
-            } catch(FileLockException ex) {
-                logger.log(Level.SEVERE, "Error locking active file after " +
-                        " long indexing run merge", ex);
-            }
-        }
 
         //
         // Close the open partitions and whatever else needs to be closed.
@@ -2259,7 +2146,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                         //
                         // No deletions, means move on.
                         if(preMaps[i] == null && postMap == null) {
-                            incr += curr.stats.nDocs;
+                            incr += curr.header.getnDocs();
                             continue;
                         }
 
@@ -2309,7 +2196,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                         //
                         // Fix up the increment.
                         if(idMap == null) {
-                            incr += curr.stats.nDocs;
+                            incr += curr.header.getnDocs();
                         } else {
                             incr += idMap[0];
                         }
@@ -2686,29 +2573,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     int getNumPostingsChannels() {
-        return partitionFactory.mainDictFactory.getNumPostingsChannels();
+        return 1;
     }
 
-    /**
-     * Indicates whether this index uses a cased main dictionary.
-     *
-     * @return <code>true</code> if the index stores cased information,
-     * <code>false</code> otherwise.
-     *
-     */
-    public boolean isCasedIndex() {
-        return partitionFactory.mainDictFactory.hasCasedEntry();
-    }
-
-    /**
-     * Indicates whether this index uses fielded document vectors.
-     * @return <code>true</code> if the document vectors for this index contain
-     * field information, <code>false</code> otherwise.
-     */
-    public boolean hasFieldedVectors() {
-        return partitionFactory.documentDictFactory.getEntryClass() ==
-                FieldedDocKeyEntry.class;
-    }
     @ConfigComponent(type = DiskPartitionFactory.class)
     public static final String PROP_PARTITION_FACTORY =
             "partition_factory";
@@ -2844,7 +2711,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         if(termStatsDict == null) {
             return new TermStatsImpl(name);
         }
-        TermStatsEntry tse = termStatsDict.getTermStats(name);
+        TermStatsQueryEntry tse = termStatsDict.getTermStats(name);
         return tse == null ? new TermStatsImpl(name) : tse.getTermStats();
     }
 

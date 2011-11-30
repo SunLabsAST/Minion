@@ -496,13 +496,6 @@ public class QueryConfig implements Cloneable,
             return false;
         }
 
-        //
-        // If this is an uncased index, then we always want to match case
-        // insensitively.
-        if(!((SearchEngineImpl) e).getPM().isCasedIndex()) {
-            return false;
-        }
-
         return !(alwaysFindCaseVariants ||
                 (allUpperIsCI && CharUtils.toUpperCase(s).
                 equals(s)) ||

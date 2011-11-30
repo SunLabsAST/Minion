@@ -1,6 +1,7 @@
 package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.FieldValue;
 import com.sun.labs.minion.indexer.dictionary.ArrayDictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DateNameHandler;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
@@ -10,6 +11,7 @@ import com.sun.labs.minion.indexer.dictionary.DoubleNameHandler;
 import com.sun.labs.minion.indexer.dictionary.LongNameHandler;
 import com.sun.labs.minion.indexer.dictionary.NameDecoder;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
+import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
@@ -24,7 +26,9 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -319,6 +323,38 @@ public class DiskField extends Field {
         return new ArrayDictionaryIterator(qes);
     }
 
+    public Set<FieldValue> getMatching(String pattern) {
+
+        Set<FieldValue> ret = new HashSet<FieldValue>();
+
+        if(info.getType() != FieldInfo.Type.STRING) {
+            logger.warning(String.format(
+                    "Can't get matching values for non-string field %s", info.
+                    getName()));
+            return ret;
+        }
+
+        //
+        // Check for all asterisks, indicating that we should return everything.
+        // We could be fancier here and catch question marks and only return things
+        // of the appropriate length.
+        if(pattern.matches("\\*+")) {
+            for(Entry e : rawSaved) {
+                ret.add(new FieldValue(e.getName().toString(), 1));
+            }
+        } else {
+
+            DictionaryIterator di = getMatchingIterator(pattern, true, -1,
+                                                        -1);
+            float l = pattern.length();
+            while(di.hasNext()) {
+                String n = di.next().getName().toString();
+                ret.add(new FieldValue(n, l / n.length()));
+            }
+        }
+        return ret;
+    }
+    
     /**
      * Gets an iterator for the character saved field values that contain a
      * given substring.

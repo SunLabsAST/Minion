@@ -29,13 +29,15 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.sun.labs.minion.classification.WeightedFeature;
+import com.sun.labs.minion.WeightedFeature;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
@@ -218,13 +220,16 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
                 return new WeightedFeature[0];
             }
 
-            wc.dvl = ((DiskPartition) dict.getPartition()).getDocumentVectorLength(docID, fieldID);
+            DiskField df = ((InvFileDiskPartition) dict.getPartition()).getDF(
+                    fieldID);
+
+            wc.dvl = df.getDocumentVectorLength(docID);
             List<WeightedFeature> fl = new ArrayList<WeightedFeature>();
-            if(getN() > 0.1 * ((DiskPartition) dict.getPartition()).getNEntries()) {
+            if(getN() > 0.1 * df.getTermDictionary(false).size()) {
                 //
                 // If we have a substantial portion of the entries in the dictionary,
                 // then just iterate through the dictionary and pick out the names.
-                LightIterator di = ((DiskPartition) dict.getPartition()).getMainDictionary().literator();
+                LightIterator di = df.getTermDictionary(false).literator();
                 while(pi.next()) {
                     while(di.next()) {
                         if(pi.getID() == di.getID()) {
@@ -244,7 +249,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
                     }
                 }
             } else {
-                DiskDictionary dd = ((DiskPartition) dict.getPartition()).getMainDictionary();
+                DiskDictionary dd = df.getTermDictionary(false);
                 while(pi.next()) {
                     QueryEntry qe = dd.getByID((int) pi.getID());
                     String name = qe.getName().toString();

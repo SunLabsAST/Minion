@@ -45,6 +45,6 @@ public interface IndexListener {
      * @param keys the keys of the documents that are in the newly dumped partition. 
      * The elements of the set can be safely cast to <code>String</code>.
      */
-    public void partitionAdded(SearchEngine e, Set<Object> keys);
+    public void partitionAdded(SearchEngine e, Set<String> keys);
     
 }

@@ -112,10 +112,15 @@ public class InvFileDiskPartition extends DiskPartition {
         if(fi == null) {
             return null;
         }
-        if(fi.getID() >= fields.length) {
+        return getDF(fi.getID());
+    }
+
+    public DiskField getDF(int fieldID) {
+
+        if(fieldID < 0 || fieldID >= fields.length) {
             return null;
         }
-        return fields[fi.getID()];
+        return fields[fieldID];
     }
 
     /**

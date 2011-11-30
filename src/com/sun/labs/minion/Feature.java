@@ -22,7 +22,7 @@
  * information or have any questions.
  */
 
-package com.sun.labs.minion.classification;
+package com.sun.labs.minion;
 
 import com.sun.labs.minion.indexer.postings.Occurrence;
 
