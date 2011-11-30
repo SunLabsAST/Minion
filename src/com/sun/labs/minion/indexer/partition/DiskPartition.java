@@ -621,8 +621,9 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // The new starting document IDs for the merged partition.
-            mergeState.docIDStart = new int[dicts.length];
-            mergeState.docIDStart[0] = 1;
+            mergeState.docIDStarts = new int[dicts.length];
+            mergeState.fakeStarts = new int[dicts.length];
+            mergeState.docIDStarts[0] = 1;
 
             //
             // The faked starts for merging things other than document IDs.
@@ -675,7 +676,7 @@ public class DiskPartition extends Partition implements Closeable {
                 // We need to figure out the new starting sequence numbers for
                 // each partition.
                 if(i > 0) {
-                    mergeState.docIDStart[i] = mergeState.docIDStart[i - 1] + mergeState.nUndel[i - 1];
+                    mergeState.docIDStarts[i] = mergeState.docIDStarts[i - 1] + mergeState.nUndel[i - 1];
                 }
                 mergeState.maxDocID += mergeState.nUndel[i];
             }
@@ -709,7 +710,7 @@ public class DiskPartition extends Partition implements Closeable {
             // Pick up the document dictionaries for the merge.
             for(int i = 0; i < dicts.length; i++) {
                 dicts[i] = mergeState.partitions[i].docDict;
-                mappers[i] = new DocEntryMapper(mergeState.docIDStart[i], mergeState.docIDMaps[i]);
+                mappers[i] = new DocEntryMapper(mergeState.docIDStarts[i], mergeState.docIDMaps[i]);
             }
             
             int[][] docDictIDMaps = new int[dicts.length][1];

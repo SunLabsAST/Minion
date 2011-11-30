@@ -42,6 +42,7 @@ import com.sun.labs.minion.indexer.entry.EntrySizeComparator;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.MergeState;
 import com.sun.labs.minion.indexer.partition.Partition;
 
 import com.sun.labs.minion.indexer.postings.Postings.Type;
@@ -49,7 +50,6 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
 import com.sun.labs.minion.util.CharUtils;
-import java.io.File;
 
 public class DiskBiGramDictionary extends DiskDictionary {
 
@@ -415,20 +415,18 @@ public class DiskBiGramDictionary extends DiskDictionary {
         return new ArrayGroup(ids, size);
     }
 
-    public void merge(File indexDir,
-            DiskBiGramDictionary[] dicts,
-                       int[] starts,
-                       int[][] postIDMaps,
-                       RandomAccessFile mDictFile,
-                       PostingsOutput postOut) throws java.io.IOException {
-        ((DiskDictionary) dicts[0]).merge(indexDir, new StringNameHandler(),
-                                          (DiskDictionary[]) dicts,
-                                          null,
-                                          starts,
-                                          postIDMaps,
-                                          mDictFile,
-                                          new PostingsOutput[]{postOut},
-                                          false);
+    public static void merge(MergeState mergeState, 
+            DiskBiGramDictionary[] dicts ) throws java.io.IOException {
+        DiskDictionary.merge(
+                mergeState.manager.getIndexDir(), 
+                new StringNameHandler(),
+                (DiskDictionary[]) dicts,
+                null,
+                mergeState.fakeStarts,
+                mergeState.entryIDMaps,
+                mergeState.dictRAF,
+                mergeState.postOut,
+                false);
     }
 } // DiskBiGramDictionary
 

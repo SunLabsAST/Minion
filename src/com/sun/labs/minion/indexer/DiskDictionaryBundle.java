@@ -739,7 +739,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                   encoder, 
                                                   mDicts,
                                                   null,
-                                                  mergeState.docIDStart,
+                                                  mergeState.docIDStarts,
                                                   mergeState.postIDMaps,
                                                   mergeState.dictRAF, 
                                                   mergeState.postOut, 
@@ -750,31 +750,33 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
 
         DiskBiGramDictionary[] bgDicts = new DiskBiGramDictionary[bundles.length];
-        DiskBiGramDictionary bgMerger = null;
+        boolean foundOne = false;
         for(int i = 0; i < bundles.length; i++) {
+            
             if (bundles[i] == null) {
                 bgDicts[i] = null;
             } else {
                 bgDicts[i] = bundles[i].tokenBigrams;
             }
             if (bgDicts[i] != null) {
-                bgMerger = bgDicts[i];
+                foundOne = true;
             }
         }
 
-        if(bgMerger != null) {
-            int[][] tokenIDMap = entryIDMaps[Type.UNCASED_TOKENS.ordinal()] != null ?
-                    entryIDMaps[Type.UNCASED_TOKENS.ordinal()] :
-                    entryIDMaps[Type.CASED_TOKENS.ordinal()];
+        //
+        // The entry ID maps token dictionaries, which we'll use to merge
+        // the bigram dictionaries.
+        mergeState.entryIDMaps = 
+                entryIDMaps[Type.UNCASED_TOKENS.ordinal()] != null ? 
+                entryIDMaps[Type.UNCASED_TOKENS.ordinal()] : 
+                entryIDMaps[Type.CASED_TOKENS.ordinal()];
+        if(foundOne) {
             mergeHeader.tokenBGOffset = mergeState.dictRAF.getFilePointer();
-            bgMerger.merge(mergeState.manager.getIndexDir(), 
-                           bgDicts, mergeState.docIDStart, tokenIDMap, 
-                           mergeState.dictRAF,
-                           mergeState.postOut[0]);
+            DiskBiGramDictionary.merge(mergeState, bgDicts);
         }
 
         Arrays.fill(bgDicts, null);
-        bgMerger = null;
+        foundOne = false;
 
         for(int i = 0; i < bundles.length; i++) {
             if (bundles[i] == null) {
@@ -783,21 +785,18 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 bgDicts[i] = bundles[i].savedBigrams;
             }
             if(bgDicts[i] != null) {
-                bgMerger = bgDicts[i];
+                foundOne = true;
             }
         }
 
-        int[][] savedValueIDMap = 
+        mergeState.entryIDMaps = 
                 entryIDMaps[Type.RAW_SAVED.ordinal()] != null ? 
                 entryIDMaps[Type.RAW_SAVED.ordinal()] : 
                 entryIDMaps[Type.UNCASED_SAVED.
                 ordinal()];
-        if(bgMerger != null) {
+        if(foundOne) {
             mergeHeader.savedBGOffset = mergeState.dictRAF.getFilePointer();
-            bgMerger.merge(mergeState.manager.getIndexDir(), 
-                           bgDicts, mergeState.docIDStart, 
-                           savedValueIDMap, mergeState.dictRAF,
-                           mergeState.postOut[0]);
+            DiskBiGramDictionary.merge(mergeState, bgDicts);
         }
 
         //
@@ -834,7 +833,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 // Copy the values from this field.
                 ReadableBuffer dtvDup = bundles[i].dtvData.duplicate();
                 int[] docIDMap = mergeState.docIDMaps[i];
-                int[] valIDMap = savedValueIDMap[i];
+                int[] valIDMap = mergeState.entryIDMaps[i];
                 
                 for(int j = 0; j < bundles[i].header.maxDocID; j++) {
                     int n = dtvDup.byteDecode();

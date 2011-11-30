@@ -2122,9 +2122,18 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             try {
                 newDP = toMerge.get(0).merge(toMerge, preDelMaps, true);
             } catch(Exception e) {
-                logger.log(Level.SEVERE, "Exception merging partitions: " +
-                        toMerge,
-                           e);
+                StringBuilder sb = new StringBuilder();
+                boolean first = true;
+                for(DiskPartition tm : toMerge) {
+                    if(!first) {
+                        sb.append(' ');
+                    } else {
+                        first = false;
+                    }
+                    sb.append(tm.partNumber);
+                }
+                logger.log(Level.SEVERE, 
+                        String.format("Exception merging partitions [%s]", sb.toString()), e);
             }
 
             if(newDP != null) {

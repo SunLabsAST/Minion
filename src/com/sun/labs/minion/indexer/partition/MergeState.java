@@ -60,7 +60,13 @@ public class MergeState implements Cloneable {
     /**
      * An array of the new starting document ID for each of the merged partitions.
      */
-    public int[] docIDStart;
+    public int[] docIDStarts;
+    
+    /**
+     * An array of fake starting ids, used for merging postings that do not contain
+     * document IDs.
+     */
+    public int[] fakeStarts;
 
     /**
      * The number of undeleted documents in each partition that is being merged.
@@ -78,6 +84,11 @@ public class MergeState implements Cloneable {
      * merge.
      */
     public int[][] docIDMaps;
+    
+    /**
+     * Maps from old entry IDs to new entry IDs from the merged dictionary.
+     */
+    public int[][] entryIDMaps;
     
     /**
      * The file containing the merged dictionary.

@@ -167,8 +167,8 @@ public abstract class MemoryPartition extends Partition {
             postStream[i].close();
         }
         sw.stop();
-        logger.info(String.format("%d docs took %dms", docDict.size(), sw.
-                getTime()));
+        logger.info(String.format("Dumped %d, %d docs took %dms", partNumber, 
+                docDict.size(), sw.getTime()));
 
         manager.addNewPartition(partNumber, docDict.getKeys());
         return partNumber;
