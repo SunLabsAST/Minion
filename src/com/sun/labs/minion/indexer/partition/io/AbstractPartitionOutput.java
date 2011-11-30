@@ -159,8 +159,8 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
             throw new IllegalStateException("Already outputting a partition, can't start another");
         }
         try {
-            this.partition = partition;
             partitionHeader = new PartitionHeader();
+            partitionHeader.setPostingsChannelNames(postingsChannelNames);
             partitionNumber = partitionManager.getMetaFile().getNextPartitionNumber();
             postOutFiles = partitionManager.makePostingsFiles(partitionNumber, postingsChannelNames);
         } catch(FileLockException ex) {
