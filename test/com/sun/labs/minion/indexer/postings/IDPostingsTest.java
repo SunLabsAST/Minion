@@ -173,6 +173,7 @@ public class IDPostingsTest {
                     "Incorrect ID: %d should be %d, decoded: %d", curr,
                     x, gap),
                        curr == x);
+            prev = curr;
         }
     }
 
@@ -206,6 +207,7 @@ public class IDPostingsTest {
 
             InputStream pdis = getClass().getResourceAsStream(s);
             if(pdis == null) {
+                logger.info(String.format("Couldn't find %s", s));
                 continue;
             }
             logger.info(String.format("Testing data %s", s));
@@ -214,6 +216,7 @@ public class IDPostingsTest {
             gzis.close();
             IDPostings idp = encodeData(td);
             testIteration(idp, td);
+            testPostingsEncoding(idp, td);
         }
     }
 
