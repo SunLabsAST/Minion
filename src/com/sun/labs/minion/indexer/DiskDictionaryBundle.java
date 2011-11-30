@@ -223,8 +223,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
      */
     public QueryEntry getTerm(String name, boolean caseSensitive) {
         QueryEntry ret = null;
-        logger.info(String.format("%s name: %s cs: %s dict: %s", 
-                info.getName(), name, caseSensitive,dicts[Type.UNCASED_TOKENS.ordinal()] ));
         if(caseSensitive) {
             if(field.cased) {
                 ret = dicts[Type.CASED_TOKENS.ordinal()].get(name);
@@ -236,7 +234,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         name, info.getName()));
             }
         } else if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-            logger.info(String.format("here"));
             ret = dicts[Type.UNCASED_TOKENS.ordinal()].get(CharUtils.
                     toLowerCase(name));
         }
@@ -805,7 +802,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                                  "rw");
             FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(
                     dtvOffsetRAF, 16384);
-            DiskDictionaryBundle exemplar = null;
+            
             for(int i = 0; i < bundles.length; i++) {
                 //
                 // This partition didn't have this field, but we still want to
@@ -818,10 +815,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     continue;
                 }
                 
-                if(exemplar == null) {
-                    exemplar = bundles[i];
-                }
-
                 //
                 // Copy the values from this field.
                 ReadableBuffer dtvDup = bundles[i].dtvData.duplicate();
@@ -867,6 +860,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
             mdtvOffsetBuff.write(dtvOffsetRAF.getChannel());
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
+        }
+        
+        //
+        // Calculate document vectors.
+        if(mergeState.info.hasAttribute(FieldInfo.Attribute.VECTORED)) {
 
             //
             // Calculate document vector lengths.  We need an iterator for the 
@@ -889,7 +887,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 mergeHeader.vectorLengthOffset = mergeState.vectorLengthRAF.getFilePointer();
                 mergeState.dictRAF.seek(mdp);
                 DiskDictionary newMainDict =
-                        new DiskDictionary(exemplar.entryFactory,
+                        new DiskDictionary(mergeState.entryFactory,
                         new StringNameHandler(),
                         mergeState.dictRAF,
                         mPostRAF);

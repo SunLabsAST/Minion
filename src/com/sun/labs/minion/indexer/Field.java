@@ -3,6 +3,7 @@ package com.sun.labs.minion.indexer;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Stemmer;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
+import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.util.CDateParser;
 import java.util.logging.Logger;
@@ -31,15 +32,18 @@ public abstract class Field {
     protected FieldInfo info;
 
     protected Partition partition;
+    
+    protected EntryFactory entryFactory;
 
     /**
      * A stemmer for stemming.
      */
     protected Stemmer stemmer;
 
-    public Field(Partition partition, FieldInfo info) {
+    public Field(Partition partition, FieldInfo info, EntryFactory entryFactory) {
         this.partition = partition;
         this.info = info;
+        this.entryFactory = entryFactory;
         tokenized = info.hasAttribute(FieldInfo.Attribute.TOKENIZED);
         stemmed = info.hasAttribute(FieldInfo.Attribute.STEMMED);
         saved = info.hasAttribute(FieldInfo.Attribute.SAVED);
@@ -65,6 +69,10 @@ public abstract class Field {
 
     public Stemmer getStemmer() {
         return stemmer;
+    }
+    
+    public EntryFactory getEntryFactory() {
+        return entryFactory;
     }
 
     public abstract int getMaximumDocumentID();

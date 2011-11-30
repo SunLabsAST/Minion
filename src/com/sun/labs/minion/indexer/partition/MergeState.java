@@ -1,6 +1,7 @@
 package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.io.File;
 import java.io.OutputStream;
@@ -25,6 +26,11 @@ public class MergeState implements Cloneable {
      * The partitions being merged.
      */
     public DiskPartition[] partitions;
+    
+    /**
+     *  A factory for the entries in the token dictionaries being merged.
+     */
+    public EntryFactory entryFactory;
     
     /**
      * The field being merged.

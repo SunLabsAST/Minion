@@ -20,18 +20,17 @@ import java.util.logging.Logger;
 public class DiskField extends Field {
 
     static final Logger logger = Logger.getLogger(DiskField.class.getName());
-
     private DiskDictionaryBundle bundle;
 
     public DiskField(DiskPartition partition,
             FieldInfo info,
-                     RandomAccessFile dictFile,
-                     RandomAccessFile vectorLengthsFile,
-                     RandomAccessFile[] postIn,
-                     EntryFactory factory) throws java.io.IOException {
-        super(partition, info);
+            RandomAccessFile dictFile,
+            RandomAccessFile vectorLengthsFile,
+            RandomAccessFile[] postIn,
+            EntryFactory entryFactory) throws java.io.IOException {
+        super(partition, info, entryFactory);
         bundle = new DiskDictionaryBundle(this, dictFile, vectorLengthsFile,
-                                          postIn, factory);
+                postIn, entryFactory);
     }
 
     @Override
@@ -111,10 +110,10 @@ public class DiskField extends Field {
      * field is not saved
      */
     public DictionaryIterator getSavedValuesIterator(boolean caseSensitive,
-                                                     Comparable lowerBound,
-                                                     boolean includeLower,
-                                                     Comparable upperBound,
-                                                     boolean includeUpper) {
+            Comparable lowerBound,
+            boolean includeLower,
+            Comparable upperBound,
+            boolean includeUpper) {
         return bundle.getSavedValuesIterator(
                 caseSensitive,
                 lowerBound,
@@ -139,9 +138,9 @@ public class DiskField extends Field {
      * imposed.
      */
     public DictionaryIterator getMatchingIterator(String val,
-                                                  boolean caseSensitive,
-                                                  int maxEntries,
-                                                  long timeLimit) {
+            boolean caseSensitive,
+            int maxEntries,
+            long timeLimit) {
         return bundle.getMatchingIterator(
                 val, caseSensitive,
                 maxEntries,
@@ -150,11 +149,11 @@ public class DiskField extends Field {
     }
 
     public List<QueryEntry> getMatching(String pattern, boolean caseSensitive,
-                                        int maxEntries, long timeLimit) {
+            int maxEntries, long timeLimit) {
         return bundle.getMatching(pattern,
-                                  caseSensitive,
-                                  maxEntries,
-                                  timeLimit);
+                caseSensitive,
+                maxEntries,
+                timeLimit);
 
     }
 
@@ -178,11 +177,11 @@ public class DiskField extends Field {
      * as a substring, or <code>null</code> if there are no such values.
      */
     public DictionaryIterator getSubstringIterator(String val,
-                                                   boolean caseSensitive,
-                                                   boolean starts,
-                                                   boolean ends,
-                                                   int maxEntries,
-                                                   long timeLimit) {
+            boolean caseSensitive,
+            boolean starts,
+            boolean ends,
+            int maxEntries,
+            long timeLimit) {
         return bundle.getSubstringIterator(
                 val,
                 caseSensitive,
@@ -230,7 +229,7 @@ public class DiskField extends Field {
     public float getDocumentVectorLength(int docID) {
         return bundle.getDocumentVectorLength(docID);
     }
-    
+
     public DocumentVectorLengths getDocumentVectorLengths() {
         return bundle.getDocumentVectorLengths();
     }
@@ -247,12 +246,12 @@ public class DiskField extends Field {
         bundle.normalize(docs, scores, n, qw);
     }
 
-    public static void merge(MergeState mergeState, DiskField[] fields) 
+    public static void merge(MergeState mergeState, DiskField[] fields)
             throws java.io.IOException {
 
 
         DiskDictionaryBundle[] bundles = new DiskDictionaryBundle[fields.length];
-        for(int i = 0; i < fields.length; i++) {
+        for (int i = 0; i < fields.length; i++) {
             bundles[i] = fields[i].bundle;
         }
         DiskDictionaryBundle.merge(mergeState, bundles);
@@ -267,5 +266,4 @@ public class DiskField extends Field {
     public DiskDictionaryBundle.Fetcher getFetcher() {
         return bundle.getFetcher();
     }
-
 }

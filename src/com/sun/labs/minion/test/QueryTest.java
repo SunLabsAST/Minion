@@ -318,7 +318,7 @@ public class QueryTest extends SEMain {
      */
     public void setPrompt() {
 
-        StringBuffer v = new StringBuffer();
+        StringBuilder v = new StringBuilder();
 
         if(displayPassage) {
             v.append('d');
@@ -549,9 +549,9 @@ public class QueryTest extends SEMain {
             try {
                 nHits = Integer.parseInt(q.substring(q.indexOf(' ') + 1).trim());
             } catch(NumberFormatException nfe) {
-                logger.warning("Invalid number of hits: " + q.substring(q.
+                logger.warning(String.format("Invalid number of hits: %s", q.substring(q.
                         indexOf(' ') + 1).
-                        trim());
+                        trim()));
             }
         } else if(q.startsWith(":sort")) {
 
@@ -1756,7 +1756,7 @@ public class QueryTest extends SEMain {
                     }
                 } else {
                     List val = r.getField(fn);
-                    if(val.size() == 0) {
+                    if(val.isEmpty()) {
                         vals[i] = null;
                     } else if(val.size() == 1) {
                         vals[i] = val.get(0);

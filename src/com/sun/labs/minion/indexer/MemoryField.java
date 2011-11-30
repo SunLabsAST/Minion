@@ -42,7 +42,7 @@ public class MemoryField extends Field {
     private FieldStage fieldStage;
 
     public MemoryField(MemoryPartition partition, FieldInfo info, EntryFactory factory) {
-        super(partition, info);
+        super(partition, info, factory);
         dicts = new MemoryDictionaryBundle<Comparable>(this, factory);
         String pipelineFactoryName = info.getPipelineFactoryName();
         if(pipelineFactoryName != null) {

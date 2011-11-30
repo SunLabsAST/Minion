@@ -359,6 +359,7 @@ public class InvFileDiskPartition extends DiskPartition {
                 fieldOffset = -1;
             } else {
                 mergeState.info = fi;
+                mergeState.entryFactory = merger.getEntryFactory();
                 DiskField.merge(mergeState, mFields);
             }
             mergeState.header.addOffset(fi.getID(), fieldOffset);
