@@ -180,7 +180,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
                     "Error making term stats dictionary file for %s", this));
         }
 
-        dumpState.vectorLengthsFile = new RandomAccessFile(manager.makeVectorLengthFile(partNumber), "rw");
+        dumpState.vectorLengthsFile = new RandomAccessFile(manager.makeVectorLengthFile(dumpState.partNumber), "rw");
 
         //
         // Dump the fields.  Keep track of the offsets of the field and of the
