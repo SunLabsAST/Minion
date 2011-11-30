@@ -419,9 +419,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         }
                         MemoryBiGramDictionary tbg = (MemoryBiGramDictionary) dicts[ord];
                         for(IndexEntry e : sortedTokens) {
-                            if(e.isUsed()) {
-                                tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
-                            }
+                            tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
                         }
                         partOut.setDictionaryEncoder(new StringNameHandler());
                         partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
@@ -432,16 +430,16 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         continue;
                     }
                     break;
+                    
                 case SAVED_VALUE_BIGRAMS:
                     if(field.getInfo().getType() == FieldInfo.Type.STRING) {
-                        MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
-                                new EntryFactory(Postings.Type.ID_FREQ));
-                        dicts[ord] = sbg;
+                        if(dicts[ord] == null) {
+                            dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
+                        }
+                        MemoryBiGramDictionary sbg = (MemoryBiGramDictionary) dicts[ord];
                         for(IndexEntry e : sortedEntries[Type.RAW_SAVED.ordinal()]) {
-                            if(e.isUsed()) {
-                                sbg.add(CharUtils.toLowerCase(e.getName().toString()),
-                                        e.getID());
-                            }
+                            sbg.add(CharUtils.toLowerCase(e.getName().toString()),
+                                    e.getID());
                         }
                         partOut.setDictionaryEncoder(new StringNameHandler());
                         partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
