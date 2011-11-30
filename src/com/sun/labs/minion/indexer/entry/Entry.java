@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  */
 public abstract class Entry<N extends Comparable> implements Comparable<Entry>, Cloneable {
 
-    private static Logger logger = Logger.getLogger(Entry.class.getName());
+    private static final Logger logger = Logger.getLogger(Entry.class.getName());
 
     /**
      * The ID of this entry.
