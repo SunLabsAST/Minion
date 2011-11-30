@@ -819,6 +819,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     dtvOffsetRAF, 1 << 16);
 
             for(int i = 0; i < bundles.length; i++) {
+                
                 //
                 // This partition didn't have this field, but we still want to
                 // fill in values.
@@ -834,11 +835,12 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 // Copy the values from this field.
                 ReadableBuffer dtvDup = bundles[i].dtvData.duplicate();
                 int[] docIDMap = mergeState.docIDMaps[i];
-                int[] valIDMap = mergeState.entryIDMaps[i];
+                int[] valIDMap = entryIDMaps[Type.RAW_SAVED.ordinal()][i];
 
                 for(int j = 0; j < bundles[i].header.maxDocID; j++) {
+                    
                     int n = dtvDup.byteDecode();
-
+                    
                     if(docIDMap != null && docIDMap[j + 1] < 0) {
                         //
                         // Skip this document's data.
@@ -967,7 +969,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 }
             }
 
-            if(nMerged % 50000 == 0) {
+            if(nMerged % 50000 != 0) {
                 logger.info(String.format("Regenerated %d", nMerged));
             }
         } else {
