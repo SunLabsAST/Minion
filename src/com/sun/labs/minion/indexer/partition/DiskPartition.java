@@ -698,7 +698,7 @@ public class DiskPartition extends Partition implements Closeable {
             
             for(int i = 0; i < mergeState.postFiles.length; i++) {
                 mergeState.postStreams[i] =
-                        new BufferedOutputStream(new FileOutputStream(files[i]),
+                        new BufferedOutputStream(new FileOutputStream(mergeState.postFiles[i]),
                                                  8192);
                 mergeState.postOut[i] = new StreamPostingsOutput(mergeState.postStreams[i]);
             }
