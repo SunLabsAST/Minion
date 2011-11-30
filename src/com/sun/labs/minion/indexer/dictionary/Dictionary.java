@@ -60,12 +60,4 @@ public interface Dictionary<N extends Comparable> extends Iterable<Entry> {
      */
     public int size();
 
-    /**
-     * Gets an iterator for the entries in the dictionary.
-     *
-     * @return An iterator for the entries in the dictionary.
-     */
-    @Override
-    public Iterator<Entry> iterator();
-
 } // Dictionary
