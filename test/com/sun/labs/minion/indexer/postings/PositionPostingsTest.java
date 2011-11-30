@@ -140,7 +140,7 @@ public class PositionPostingsTest {
             long bsize = sizes[0] + sizes[1];
             long nb = 8 * data.ids.length+ 4 * data.numPosns;
 
-            logger.fine(String.format(" %d bytes for %d bytes of data,"
+            logger.finer(String.format(" %d bytes for %d bytes of data,"
                     + " Compression: %.2f%%", bsize,
                     nb, 100 - ((double) bsize / nb) * 100));
         }
@@ -206,48 +206,54 @@ public class PositionPostingsTest {
         }
     }
 
-    private void randomAppend(int size) throws java.io.IOException {
+    private void randomSingleAppend(int size) throws java.io.IOException {
         TestData d1 = new TestData(rand.nextInt(size)+20);
         TestData d2 = new TestData(rand.nextInt(size)+20);
-        checkAppend(d1, d2, true);
+        checkAppend(true, d1, d2);
     }
 
-    private void checkAppend(TestData d1, TestData d2, boolean dump) throws java.io.IOException {
+    private void checkAppend(boolean dump, TestData... tds) throws java.io.IOException {
 
 
         cleanUp();
-        PositionPostings p1 = d1.addData();
-        PositionPostings p2 = d2.addData();
-        int lastID = p1.getLastID();
-
-        long o1[] = new long[2];
-        int s1[] = new int[2];
-        long o2[] = new long[2];
-        int s2[] = new int[2];
-        p1.write(postOut, o1, s1);
-        p2.write(postOut, o2, s2);
-
-        TestData atd = new TestData(d1, d2);
+        PositionPostings[] ps = new PositionPostings[tds.length];
+        long[][] tdOffsets = new long[tds.length][2];
+        int[][] tdSizes = new int[tds.length][2];
+        int[] starts = new int[tds.length];
+        starts[0] = 1;
+        for(int i = 0; i < tds.length; i++) {
+            ps[i] = tds[i].addData();
+            ps[i].write(postOut, tdOffsets[i], tdSizes[i]);
+            if(i > 0) {
+                starts[i] = starts[i-1] + tds[i-1].ids[tds[i-1].ids.length-1];
+            }
+        }
+        
 
         try {
-            PositionPostings append = new PositionPostings();
-            p1 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, o1, s1);
-            append.append(p1, 1);
-            p2 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, o2, s2);
-            append.append(p2, lastID + 1);
-            long o3[] = new long[2];
-            int s3[] = new int[2];
-            append.write(postOut, o3, s3);
-            append = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, o3, s3);
-            checkPostingsEncoding(append, atd, o3, s3);
+        PositionPostings append = new PositionPostings();
+        for(int i = 0; i < ps.length; i++) {
+            ps[i] = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, tdOffsets[i], tdSizes[i]);
+            append.append(ps[i], starts[i]);
+        }
+
+        TestData atd = new TestData(tds);
+
+            long ao[] = new long[2];
+            int as[] = new int[2];
+            append.write(postOut, ao, as);
+            append = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, ao, as);
+            checkPostingsEncoding(append, atd, ao, as);
             atd.iteration(append);  
         } catch(AssertionError er) {
             if(dump) {
                 File f = File.createTempFile("randomappend", ".data");
                 logger.severe(String.format("Random data in %s", f));
                 PrintWriter out = new PrintWriter(new FileWriter(f));
-                d1.dump(out);
-                d2.dump(out);
+                out.println(tdSizes.length);
+                for(TestData td : tds) {
+                    td.dump(out);
+                }
                 out.close();
             }
             throw (er);
@@ -256,8 +262,10 @@ public class PositionPostingsTest {
                 File f = File.createTempFile("randomappend", ".data");
                 logger.severe(String.format("Random data in %s", f));
                 PrintWriter out = new PrintWriter(new FileWriter(f));
-                d1.dump(out);
-                d2.dump(out);
+                out.println(tdSizes.length);
+                for(TestData td : tds) {
+                    td.dump(out);
+                }
                 out.close();
             }
             throw (ex);
@@ -363,7 +371,7 @@ public class PositionPostingsTest {
             TestData d1 = new TestData(r);
             TestData d2 = new TestData(r);
             r.close();
-            checkAppend(d1, d2, false);
+            checkAppend(false, d1, d2);
         }
     }
     
@@ -371,7 +379,19 @@ public class PositionPostingsTest {
     public void testAppend() throws java.io.IOException {
         for(int i = 0; i < 256; i++) {
             logger.fine(String.format("Random append %d/%d", i+1, 256));
-            randomAppend(8196);
+            randomSingleAppend(8196);
+        }
+    }
+    
+//    @Test
+    public void testMultiAppend() throws java.io.IOException {
+        for(int i = 0; i < 256; i++) {
+            for(int j = 3; j < 10; j++) {
+                TestData[] tds = new TestData[j];
+                for(int k = 0; k < tds.length; k++) {
+                    tds[k] = new TestData(8196);
+                }
+            }
         }
     }
     
