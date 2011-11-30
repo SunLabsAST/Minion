@@ -72,6 +72,7 @@ import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.util.DirCopier;
+import com.sun.labs.util.props.ConfigStringList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -124,6 +125,194 @@ import java.util.regex.Pattern;
  * manager object.  The name defaults to the name of the index directory.
  */
 public class PartitionManager implements com.sun.labs.util.props.Configurable {
+
+    private static final Logger logger = Logger.getLogger(PartitionManager.class.getName());
+
+    @ConfigComponent(type = DiskPartitionFactory.class)
+    public static final String PROP_PARTITION_FACTORY = "partition_factory";
+
+    private DiskPartitionFactory partitionFactory;
+
+    @ConfigComponent(type = com.sun.labs.minion.IndexConfig.class)
+    public static final String PROP_INDEX_CONFIG = "index_config";
+
+    @ConfigInteger(defaultValue = 5)
+    public static final String PROP_MERGE_RATE = "merge_rate";
+    
+    /**
+     * A property for the maximum number of open partitions that we'll allow.
+     * Once this number of open partitions is crossed, no new partitions will
+     * be allowed to be dumped until the number of partitions can be decreased.
+     * Generally speaking, this is an exceptional condition and it will cause
+     * indexing to slow down substantially.  We need to monitor this because
+     * having too many open partitions can lead to running out of filehandles.
+     */
+    @ConfigInteger(defaultValue = 40)
+    public static final String PROP_OPEN_PARTITION_HIGH_WATER_MARK =
+            "open_partition_high_water_mark";
+
+    private int openPartitionHighWaterMark;
+
+    /**
+     * A property for the "low water" number of open partitions that we'll allow.
+     * Once the highwater mark for open partitions has been reached, no more
+     * partitions may be added to the index until the number of open partitions can
+     * be decreased below this value.
+     */
+    @ConfigInteger(defaultValue = 20)
+    public static final String PROP_OPEN_PARTITION_LOW_WATER_MARK =
+            "open_partition_low_water_mark";
+
+    private int openPartitionLowWaterMark;
+
+    @ConfigInteger(defaultValue = 20)
+    public static final String PROP_MAX_MERGE_SIZE = "max_merge_size";
+
+    private int maxMergeSize;
+
+    @ConfigInteger(defaultValue = 1000)
+    public static final String PROP_ACTIVE_CHECK_INTERVAL = "active_check_interval";
+
+    private int activeCheckInterval;
+
+    @ConfigInteger(defaultValue = 15000)
+    public static final String PROP_PART_CLOSE_DELAY = "part_close_delay";
+
+    private int partCloseDelay;
+
+    @ConfigInteger(defaultValue = 15000)
+    public static final String PROP_PART_REAP_DELAY = "part_reap_delay";
+
+    private int partReapDelay;
+
+    @ConfigBoolean(defaultValue = true)
+    public static final String PROP_CALCULATE_DVL = "calculate_dvl";
+
+    private boolean calculateDVL;
+
+    @ConfigString
+    public static final String PROP_LOCK_DIR = "lock_dir";
+
+    private String lockDir;
+
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_REAP_DOES_NOTHING = "reap_does_nothing";
+
+    private boolean reapDoesNothing;
+
+    /**
+     * A configuration property that can be used to name an index directory
+     * whose contents should be copied into the current directory when it is
+     * created.  All data in that directory will be copied, whether it's index
+     * data or not.
+     */
+    @ConfigString(defaultValue = "", mandatory = false)
+    public static final String PROP_STARTING_DATA = "starting_data";
+
+    /**
+     * The tag for this module.
+     */
+    protected String managerTag = "PM";
+
+    /**
+     * The directory where locks will be put.
+     */
+    protected File lockDirFile;
+
+    /**
+     * The file containing the list of active partitions.
+     */
+    protected ActiveFile activeFile;
+
+    /**
+     * A lock for the collection so that only one merge may be ongoing
+     * at any time.
+     */
+    protected FileLock mergeLock;
+
+    /**
+     * The list of partitions that we're managing.
+     */
+    protected final Queue<DiskPartition> activeParts =
+            new ConcurrentLinkedQueue<DiskPartition>();
+
+    /**
+     * The current statistics for this collection.
+     */
+    private CollectionStats collectionStats;
+
+    /**
+     * The list of parts to close.
+     */
+    protected final Queue<Closeable> thingsToClose =
+            new ConcurrentLinkedQueue<Closeable>();
+
+    /**
+     * A list of partitions that have been merged.
+     */
+    protected final Queue<DiskPartition> mergedParts =
+            new ConcurrentLinkedQueue<DiskPartition>();
+
+    /**
+     * A thread to be used during merge operations.
+     */
+    protected Thread mergeThread;
+
+    /**
+     * A house keeper class.
+     */
+    protected HouseKeeper keeper;
+
+    /**
+     * A timer for periodic events.
+     */
+    private Timer timer;
+
+    /**
+     * The <code>MetaFile</code> containing the number for the next partition
+     * to write and the field name maps.
+     */
+    protected MetaFile metaFile;
+
+    /**
+     * The directory where the index is.  Shared by all PartitionManagers
+     * in a given directory.
+     */
+    protected String indexDir;
+
+    /**
+     * The <code>File</code> containing the directory where the index is
+     * held.
+     */
+    protected File indexDirFile;
+
+    /**
+     * The amount of space (in bytes) that we're willing to devote to
+     * buffering postings entries during merges.  The default is 5MB.
+     */
+    protected int mergeSpace = 5 * 1024 * 1024;
+
+    /**
+     * The rate of partition merges - bigger means less merges,
+     * faster indexing, more parts, slower queries
+     */
+    protected int mergeRate = 5;
+
+    /**
+     * A random number that we can use to tell the difference between
+     * various partition managers.
+     */
+    protected int randID;
+
+    /**
+     * The subdirectory of the main index directory where we will put our
+     * partitions.
+     */
+    protected String subDir;
+
+    private File startingDataDir;
+
+    private PartitionOutput mergePartitionOutput;
 
     /**
      * The search engine that is using us.
@@ -259,13 +448,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // The name of our active file.
-        activeFile = new ActiveFile(indexDirFile, lockDirFile, logTag);
+        activeFile = new ActiveFile(indexDirFile, lockDirFile, managerTag);
 
         //
         // Set up the lock for the merge.  We make this a single try, no
         // pause lock because we don't want to wait until the lock is
         // ready, we simply want to see whether we can get it.
-        mergeLock = new FileLock(lockDirFile, new File("merge." + logTag), 0,
+        mergeLock = new FileLock(lockDirFile, new File("merge." + managerTag), 0,
                 TimeUnit.SECONDS);
 
         //
@@ -1384,7 +1573,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return a file for the active file for this index
      */
     protected File makeActiveFile() {
-        return new File(indexDirFile, String.format("AL.%s", logTag));
+        return new File(indexDirFile, String.format("AL.%s", managerTag));
     }
 
     /**
@@ -1413,7 +1602,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return a file for the meta file file this index
      */
     protected File makeMetaFile() {
-        return new File(indexDirFile, String.format("MF.%s", logTag));
+        return new File(indexDirFile, String.format("MF.%s", managerTag));
     }
 
     /**
@@ -1453,28 +1642,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * name.
      */
     public static File makePostingsFile(String iD, int partNumber,
-            int number) {
+            String type) {
         String fn;
-        if(number > 0) {
-            fn = String.format("p%d.%d.post", partNumber, number);
-        } else {
+        if(type == null) {
             fn = String.format("p%d.post", partNumber);
+        } else {
+            fn = String.format("p%d.%s", partNumber, type);
         }
         return new File(iD, fn); 
-    }
-
-    /**
-     * Makes a <code>File</code> for a postings file.
-     *
-     * @param partNumber The number of the partition for which we're making
-     * a postings file
-     * @param number The number of the postings file.  If this is less than
-     * 0, it will be ignored.
-     * @return A <code>File</code> initialized with an appropriate path.
-     * name.
-     */
-    public File makePostingsFile(int partNumber, int number) {
-        return makePostingsFile(indexDir, partNumber, number);
     }
 
     /**
@@ -1487,7 +1662,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * name.
      */
     public File makePostingsFile(int partNumber, String type) {
-        return makePostingsFile(indexDir, partNumber, -1);
+        return makePostingsFile(indexDir, partNumber, type);
     }
 
     /**
@@ -2484,114 +2659,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         protected boolean done;
 
     }
-    /**
-     * The directory where locks will be put.
-     */
-    protected File lockDirFile;
-
-    /**
-     * The file containing the list of active partitions.
-     */
-    protected ActiveFile activeFile;
-
-    /**
-     * A lock for the collection so that only one merge may be ongoing
-     * at any time.
-     */
-    protected FileLock mergeLock;
-
-    /**
-     * The list of partitions that we're managing.
-     */
-    protected final Queue<DiskPartition> activeParts =
-            new ConcurrentLinkedQueue<DiskPartition>();
-
-    /**
-     * The current statistics for this collection.
-     */
-    private CollectionStats collectionStats;
-
-    /**
-     * The list of parts to close.
-     */
-    protected final Queue<Closeable> thingsToClose =
-            new ConcurrentLinkedQueue<Closeable>();
-
-    /**
-     * A list of partitions that have been merged.
-     */
-    protected final Queue<DiskPartition> mergedParts =
-            new ConcurrentLinkedQueue<DiskPartition>();
-
-    /**
-     * A thread to be used during merge operations.
-     */
-    protected Thread mergeThread;
-
-    /**
-     * A house keeper class.
-     */
-    protected HouseKeeper keeper;
-
-    /**
-     * A timer for periodic events.
-     */
-    private Timer timer;
-
-    /**
-     * The <code>MetaFile</code> containing the number for the next partition
-     * to write and the field name maps.
-     */
-    protected MetaFile metaFile;
-
-    /**
-     * The directory where the index is.  Shared by all PartitionManagers
-     * in a given directory.
-     */
-    protected String indexDir;
-
-    /**
-     * The <code>File</code> containing the directory where the index is
-     * held.
-     */
-    protected File indexDirFile;
-
-    /**
-     * The amount of space (in bytes) that we're willing to devote to
-     * buffering postings entries during merges.  The default is 5MB.
-     */
-    protected int mergeSpace = 5 * 1024 * 1024;
-
-    /**
-     * The rate of partition merges - bigger means less merges,
-     * faster indexing, more parts, slower queries
-     */
-    protected int mergeRate = 5;
-
-    /**
-     * A random number that we can use to tell the difference between
-     * various partition managers.
-     */
-    protected int randID;
-
+    
     public int getRandID() {
         return randID;
     }
-    /**
-     * The log.
-     */
-    static Logger logger = Logger.getLogger(PartitionManager.class.getName());
-
-    /**
-     * The tag for this module.
-     */
-    protected String logTag = "PM";
-
-    /**
-     * The subdirectory of the main index directory where we will put our
-     * partitions.
-     */
-    protected String subDir;
 
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
@@ -2641,60 +2712,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         return 1;
     }
     
-    @ConfigComponent(type = DiskPartitionFactory.class)
-    public static final String PROP_PARTITION_FACTORY =
-            "partition_factory";
-
-    private DiskPartitionFactory partitionFactory;
-
-    @ConfigComponent(type = com.sun.labs.minion.IndexConfig.class)
-    public static final String PROP_INDEX_CONFIG = "index_config";
-
-    @ConfigInteger(defaultValue = 5)
-    public static final String PROP_MERGE_RATE = "merge_rate";
-
-    /**
-     * A property for the maximum number of open partitions that we'll allow.
-     * Once this number of open partitions is crossed, no new partitions will
-     * be allowed to be dumped until the number of partitions can be decreased.
-     * Generally speaking, this is an exceptional condition and it will cause
-     * indexing to slow down substantially.  We need to monitor this because
-     * having too many open partitions can lead to running out of filehandles.
-     */
-    @ConfigInteger(defaultValue = 40)
-    public static final String PROP_OPEN_PARTITION_HIGH_WATER_MARK =
-            "open_partition_high_water_mark";
-
-    private int openPartitionHighWaterMark;
-
-    /**
-     * A property for the "low water" number of open partitions that we'll allow.
-     * Once the highwater mark for open partitions has been reached, no more
-     * partitions may be added to the index until the number of open partitions can
-     * be decreased below this value.
-     */
-    @ConfigInteger(defaultValue = 20)
-    public static final String PROP_OPEN_PARTITION_LOW_WATER_MARK =
-            "open_partition_low_water_mark";
-
-    private int openPartitionLowWaterMark;
-
-    @ConfigInteger(defaultValue = 20)
-    public static final String PROP_MAX_MERGE_SIZE =
-            "max_merge_size";
-
-    private int maxMergeSize;
-
-    @ConfigInteger(defaultValue = 1000)
-    public static final String PROP_ACTIVE_CHECK_INTERVAL = "active_check_interval";
-
-    private int activeCheckInterval;
-
-    @ConfigInteger(defaultValue = 15000)
-    public static final String PROP_PART_CLOSE_DELAY = "part_close_delay";
-
-    private int partCloseDelay;
-
     public int getPartCloseDelay() {
         return partCloseDelay;
     }
@@ -2707,21 +2724,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         return calculateDVL;
     }
 
-    @ConfigInteger(defaultValue = 15000)
-    public static final String PROP_PART_REAP_DELAY = "part_reap_delay";
-
-    private int partReapDelay;
-
-    @ConfigBoolean(defaultValue = true)
-    public static final String PROP_CALCULATE_DVL = "calculate_dvl";
-
-    private boolean calculateDVL;
-
-    @ConfigString
-    public static final String PROP_LOCK_DIR = "lock_dir";
-
-    private String lockDir;
-
     public String getLockDir() {
         return lockDir;
     }
@@ -2730,24 +2732,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         this.lockDir = lockDir;
     }
     
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_REAP_DOES_NOTHING = "reap_does_nothing";
-
-    private boolean reapDoesNothing;
-
-    /**
-     * A configuration property that can be used to name an index directory
-     * whose contents should be copied into the current directory when it is
-     * created.  All data in that directory will be copied, whether it's index
-     * data or not.
-     */
-    @ConfigString(defaultValue = "", mandatory = false)
-    public static final String PROP_STARTING_DATA = "starting_data";
-
-    private File startingDataDir;
-    
-    private PartitionOutput mergePartitionOutput;
-
     /**
      * Gets the term statisitics dictionary for this index
      *
