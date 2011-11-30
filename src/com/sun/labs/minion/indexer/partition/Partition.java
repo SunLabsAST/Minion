@@ -99,7 +99,7 @@ public abstract class Partition implements Comparable<Partition> {
      * @return an array of files.  The first is for the dictionary, and the
      * remaining are for the postings files.
      */
-    protected File[] getMainFiles() {
+    public File[] getMainFiles() {
         return getMainFiles(manager, partNumber);
     }
 
@@ -110,17 +110,17 @@ public abstract class Partition implements Comparable<Partition> {
      * @return an array of files.  The first is for the dictionary, and the
      * remaining are for the postings files.
      */
-    protected static File[] getMainFiles(PartitionManager manager,
+    public static File[] getMainFiles(PartitionManager manager,
             int partNumber) {
 
         int nFiles = manager.getNumPostingsChannels();
         File[] ret = new File[nFiles + 1];
-        ret[0] = manager.makeDictionaryFile(partNumber, null);
+        ret[0] = manager.makeDictionaryFile(partNumber);
         if(nFiles == 1) {
             ret[1] = manager.makePostingsFile(partNumber, null);
         } else {
             for(int i = 1; i <= nFiles; i++) {
-                ret[i] = manager.makePostingsFile(partNumber, null, i);
+                ret[i] = manager.makePostingsFile(partNumber, i);
             }
         }
 

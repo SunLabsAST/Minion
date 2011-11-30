@@ -6,7 +6,7 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
-import com.sun.labs.minion.indexer.partition.DumpState;
+import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
 import java.io.OutputStreamWriter;
 import com.sun.labs.util.LabsLogFormatter;
 import java.util.logging.Handler;
@@ -228,7 +228,7 @@ public class DictionaryAndPostingsTest {
             RandomAccessFile raf = new RandomAccessFile(dictFile, "rw");
             File postFile = File.createTempFile("all", ".post");
             postFile.deleteOnExit();
-            DumpState dumpState = new DumpState(DictionaryTest.tmpDir);
+            DiskPartitionOutput dumpState = new DiskPartitionOutput(DictionaryTest.tmpDir);
             dumpState.postStream = new OutputStream[] {new BufferedOutputStream(
                     new FileOutputStream(postFile))};
             dumpState.postOut = new PostingsOutput[] {new StreamPostingsOutput(dumpState.postStream[0])};

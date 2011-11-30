@@ -6,8 +6,8 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
-import com.sun.labs.minion.indexer.partition.DumpState;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.pipeline.StageAdapter;
 import com.sun.labs.minion.pipeline.Token;
@@ -115,14 +115,14 @@ public class MemoryField extends Field {
      * @throws java.io.IOException if there is an error during the
      * writing.
      */
-    public DumpResult dump(DumpState dumpState) throws
+    public DumpResult dump(PartitionOutput partOut) throws
             java.io.IOException {
         //
         // If there's nothing in the field, then call it a day.
         if(dicts.getMaxDocID() == 0) {
             return DumpResult.NOTHING_DUMPED;
         }
-        return dicts.dump(dumpState);
+        return dicts.dump(partOut);
     }
 
     public MemoryDictionary getTermDictionary(boolean cased) {

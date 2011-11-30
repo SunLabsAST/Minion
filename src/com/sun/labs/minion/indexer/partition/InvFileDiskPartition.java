@@ -34,6 +34,7 @@ import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -340,7 +341,8 @@ public class InvFileDiskPartition extends DiskPartition {
             throws Exception {
 
         File vlf = manager.makeVectorLengthFile(mergeState.partNumber);
-        mergeState.vectorLengthRAF = new RandomAccessFile(vlf, "rw");
+        RandomAccessFile vlfRAF = new RandomAccessFile(vlf, "rw");
+        mergeState.vectorLengthsBuffer = new FileWriteableBuffer(vlfRAF, 8192);
         
         for(FieldInfo fi : manager.getMetaFile()) {
             DiskField[] mFields = new DiskField[mergeState.partitions.length];
@@ -365,7 +367,8 @@ public class InvFileDiskPartition extends DiskPartition {
             mergeState.header.addOffset(fi.getID(), fieldOffset);
         }
 
-        mergeState.vectorLengthRAF.close();
+        ((FileWriteableBuffer) mergeState.vectorLengthsBuffer).flush();
+        vlfRAF.close();
     }
 
     /**

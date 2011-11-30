@@ -25,6 +25,7 @@ package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.indexer.partition.PartitionManager.Merger;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.PropertyException;
@@ -34,7 +35,6 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.util.NanoWatch;
 import java.io.IOException;
 import java.util.Date;
@@ -107,7 +107,7 @@ public class AsyncDumper implements Runnable, Dumper {
 
     private NanoWatch nw;
 
-    static Logger logger = Logger.getLogger(AsyncDumper.class.getName());
+    static final Logger logger = Logger.getLogger(AsyncDumper.class.getName());
 
     protected static String logTag = "ADMP";
 
@@ -144,8 +144,11 @@ public class AsyncDumper implements Runnable, Dumper {
                 MPHolder mph = toDump.poll(pollInterval, TimeUnit.SECONDS);
                 if(mph != null && mph.time.after(pm.getLastPurgeTime())) {
                     try {
-                        mph.part.dump();
-
+                        
+                        PartitionOutput partOut = mph.part.dump();
+                        partOut.flush(mph.part.getDocumentDictionary().getKeys());
+                        partOut.close();
+                        
                         //
                         // Merges will happen synchronously in the thread
                         // running the dumper, which will help regulate
@@ -170,8 +173,7 @@ public class AsyncDumper implements Runnable, Dumper {
                 }
             } catch(InterruptedException ex) {
                 logger.log(Level.WARNING,
-                           "Dumper interrupted during poll, exiting with " + toDump.
-                        size() + " partitions waiting");
+                           String.format("Dumper interrupted during poll, exiting with %d partitions waiting", toDump.size()));
                 return;
             }
             if(done) {
@@ -186,8 +188,10 @@ public class AsyncDumper implements Runnable, Dumper {
         for(MPHolder sh : l) {
             if(sh.time.after(pm.getLastPurgeTime())) {
                 try {
-                    sh.part.dump();
+                    PartitionOutput partOut = sh.part.dump();
+                    partOut.flush(sh.part.getDocumentDictionary().getKeys());
                 } catch(IOException ex) {
+
                     logger.log(Level.SEVERE, String.format(
                             "Error dumping partition"), ex);
                 }

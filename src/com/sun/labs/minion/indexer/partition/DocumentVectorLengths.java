@@ -34,14 +34,15 @@ import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
-import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -110,7 +111,7 @@ public class DocumentVectorLengths {
      * @param gts the dictionary of global term stats.
      * @throws java.io.IOException if there is any error writing the vector lengths
      */
-    public static void calculate(Field f, DumpState dumpState,
+    public static void calculate(Field f, PartitionOutput partOut,
                                  TermStatsDiskDictionary gts)
             throws java.io.IOException {
         Partition p = f.getPartition();
@@ -119,8 +120,8 @@ public class DocumentVectorLengths {
                   p.maxDocumentID,
                   p.getPartitionManager(),
                   f.getTermDictionary(false).iterator(),
-                  dumpState.termStatsDictOut, 
-                  dumpState.vectorLengthsFile, gts);
+                  partOut.getTermStatsDictionaryOutput(), 
+                  partOut.getVectorLengthsBuffer(), gts);
     }
 
     public static void calculate(FieldInfo fi,
@@ -129,7 +130,7 @@ public class DocumentVectorLengths {
                                  PartitionManager manager,
                                  Iterator<Entry> mdi,
                                  DictionaryOutput termStatsOut,
-                                 RandomAccessFile vectorLengthsFile,
+                                 WriteableBuffer vectorLengthsBuffer,
                                  TermStatsDiskDictionary gts)
             throws java.io.IOException {
         
@@ -235,13 +236,11 @@ public class DocumentVectorLengths {
 
         //
         // Write the document vectors.
-        vectorLengthsFile.writeInt(maxDocID);
-        FileWriteableBuffer b = new FileWriteableBuffer(vectorLengthsFile, 8192);
+        vectorLengthsBuffer.byteEncode(maxDocID, 4);
         for(int i = 1; i < vl.length; i++) {
-            b.encode((float) Math.sqrt(vl[i]));
+            vectorLengthsBuffer.encode((float) Math.sqrt(vl[i]));
         }
-        b.flush();
-
+        
         if(adjustStats) {
             termStatsOut.finish();
         }

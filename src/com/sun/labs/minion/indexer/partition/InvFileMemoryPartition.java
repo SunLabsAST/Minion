@@ -30,10 +30,12 @@ import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
-import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.pipeline.Token;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
@@ -168,19 +170,20 @@ public class InvFileMemoryPartition extends MemoryPartition {
     }
 
     @Override
-    protected void dumpCustom(DumpState dumpState) throws IOException {
+    protected void dumpCustom(PartitionOutput partOut) throws IOException {
 
         int tsn = 0;
+        
+        DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
+        DictionaryOutput termStatsDictOut = null;
         try {
-            dumpState.termStatsDictOut = new DiskDictionaryOutput(dumpState.indexDir);
-            dumpState.termStatsDictOut.byteEncode(0, 8);
+            termStatsDictOut = partOut.getTermStatsDictionaryOutput();
+            termStatsDictOut.byteEncode(0, 8);
         } catch(Exception ex) {
-            logger.severe(String.format(
-                    "Error making term stats dictionary file for %s", this));
+            logger.log(Level.SEVERE, String.format(
+                    "Error making term stats dictionary file for %s", this), ex);
         }
-
-        dumpState.vectorLengthsFile = new RandomAccessFile(manager.makeVectorLengthFile(dumpState.partNumber), "rw");
-
+        
         //
         // Dump the fields.  Keep track of the offsets of the field and of the
         // offsets for the term statistics dictionaries for the fields.
@@ -192,14 +195,14 @@ public class InvFileMemoryPartition extends MemoryPartition {
             
             //
             // Remember where we are 
-            long fieldOffset = dumpState.fieldDictOut.position();
-            long termStatsOff = dumpState.termStatsDictOut.position();
+            long fieldOffset = partDictOut.position();
+            long termStatsOff = termStatsDictOut.position();
             
             logger.fine(String.format("Dumping %s", mf.getInfo().getName()));
             
             //
             // Dump the dictionary and deal with the result.
-            switch(mf.dump(dumpState)) {
+            switch(mf.dump(partOut)) {
                 case NOTHING_DUMPED:
                     logger.finer(String.format("No dicts dumped"));
                     fieldOffset = -1;
@@ -211,32 +214,23 @@ public class InvFileMemoryPartition extends MemoryPartition {
                 case EVERYTHING_DUMPED:
                     break;
             }
-            dumpState.partHeader.addOffset(mf.getInfo().getID(), fieldOffset);
+            partOut.getPartitionHeader().addOffset(mf.getInfo().getID(), fieldOffset);
             tsh.addOffset(mf.getInfo().getID(), termStatsOff);
         }
 
         try {
-            if(dumpState.termStatsDictOut != null) {
-                tsn = manager.getMetaFile().getNextTermStatsNumber();
-                int tshpos = dumpState.termStatsDictOut.position();
-                tsh.write(dumpState.termStatsDictOut);
-                int end = dumpState.termStatsDictOut.position();
-                dumpState.termStatsDictOut.position(0);
-                dumpState.termStatsDictOut.byteEncode(tshpos, 8);
-                dumpState.termStatsDictOut.position(end);
+            if(termStatsDictOut != null) {
+                int tshpos = termStatsDictOut.position();
+                tsh.write(termStatsDictOut);
+                int end = termStatsDictOut.position();
+                termStatsDictOut.position(0);
+                termStatsDictOut.byteEncode(tshpos, 8);
+                termStatsDictOut.position(end);
                 
-                RandomAccessFile tsRAF = new RandomAccessFile(manager.makeTermStatsFile(tsn), "rw");
-                dumpState.termStatsDictOut.flush(tsRAF);
-                dumpState.termStatsDictOut.close();
-                tsRAF.close();
-                manager.getMetaFile().setTermStatsNumber(tsn);
-                manager.updateTermStats();
             }
         } catch(Exception ex) {
             logger.log(Level.SEVERE,
                        String.format("Error setting term stats %d", tsn), ex);
         }
-
-        dumpState.vectorLengthsFile.close();
     }
 }

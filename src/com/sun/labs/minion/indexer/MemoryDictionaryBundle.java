@@ -9,11 +9,12 @@ import com.sun.labs.minion.indexer.dictionary.MemoryBiGramDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
-import com.sun.labs.minion.indexer.partition.DumpState;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.DocOccurrence;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
@@ -308,17 +309,18 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      * @param maxID the maximum ID for this
      * @throws java.io.IOException
      */
-    public MemoryField.DumpResult dump(DumpState dumpState) throws
+    public MemoryField.DumpResult dump(PartitionOutput partOut) throws
             java.io.IOException {
         
         MemoryField.DumpResult ret = MemoryField.DumpResult.DICTS_DUMPED;
+        DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
         
-        int headerPos = dumpState.fieldDictOut.position();
+        int headerPos = partDictOut.position();
         FieldHeader header = new FieldHeader();
-        header.write(dumpState.fieldDictOut);
+        header.write(partDictOut);
 
         header.fieldID = info.getID();
-        header.maxDocID = dumpState.maxDocID;
+        header.maxDocID = partOut.getMaxDocID();
         
         //
         // The sorted entries from each of the dictionaries.
@@ -342,13 +344,13 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             
             //
             // Figure out the encoder for the type of dictionary.
-            dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
-            dumpState.idMap = MemoryDictionary.IDMap.NONE;
-            dumpState.postIDMap = null;
+            partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
+            partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+            partOut.setPostingsIDMap(null);
             switch(type) {
 
                 case RAW_SAVED:
-                    dumpState.encoder = getEncoder(info);
+                    partOut.setDictionaryEncoder(getEncoder(info));
                     
                     //
                     // We didn't add any occurrence data to the dictionary
@@ -368,7 +370,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     break;
 
                 case UNCASED_SAVED:
-                    dumpState.encoder = getEncoder(info);
+                    partOut.setDictionaryEncoder(getEncoder(info));
                     
                     //
                     // We didn't add any occurrence data to the dictionary
@@ -387,21 +389,21 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     }
                     break;
                 case RAW_VECTOR:
-                    dumpState.encoder = new StringNameHandler();
-                    dumpState.renumber = MemoryDictionary.Renumber.NONE;
-                    dumpState.idMap = MemoryDictionary.IDMap.NONE;
-                    dumpState.postIDMap = entryIDMaps[Type.CASED_TOKENS.ordinal()];
+                    partOut.setDictionaryEncoder(new StringNameHandler());
+                    partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
+                    partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+                    partOut.setPostingsIDMap(entryIDMaps[Type.CASED_TOKENS.ordinal()]);
                 case STEMMED_VECTOR:
-                    dumpState.encoder = new StringNameHandler();
-                    dumpState.renumber = MemoryDictionary.Renumber.NONE;
-                    dumpState.idMap = MemoryDictionary.IDMap.NONE;
-                    dumpState.postIDMap = entryIDMaps[Type.STEMMED_TOKENS.ordinal()];
+                    partOut.setDictionaryEncoder(new StringNameHandler());
+                    partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
+                    partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+                    partOut.setPostingsIDMap(entryIDMaps[Type.STEMMED_TOKENS.ordinal()]);
                 default:
-                    dumpState.encoder = new StringNameHandler();
+                    partOut.setDictionaryEncoder(new StringNameHandler());
             }
             
-            header.dictOffsets[ord] = dumpState.fieldDictOut.position();
-            sortedEntries[ord] = dicts[ord].dump(dumpState);
+            header.dictOffsets[ord] = partDictOut.position();
+            sortedEntries[ord] = dicts[ord].dump(partOut);
         }
 
         //
@@ -418,12 +420,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             for(IndexEntry e : sortedTokens) {
                 tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
             }
-            header.tokenBGOffset = dumpState.fieldDictOut.position();
-            dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
-            dumpState.idMap = MemoryDictionary.IDMap.NONE;
-            dumpState.postIDMap = null;
-            dumpState.encoder = new StringNameHandler();
-            tbg.dump(dumpState);
+            header.tokenBGOffset = partDictOut.position();
+            partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
+            partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+            partOut.setPostingsIDMap(null);
+            partOut.setDictionaryEncoder(new StringNameHandler());
+            tbg.dump(partOut);
         } else {
             header.tokenBGOffset = -1;
         }
@@ -435,12 +437,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 sbg.add(CharUtils.toLowerCase(e.getName().toString()),
                         e.getID());
             }
-            header.savedBGOffset = dumpState.fieldDictOut.position();
-            dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
-            dumpState.idMap = MemoryDictionary.IDMap.NONE;
-            dumpState.postIDMap = null;
-            dumpState.encoder = new StringNameHandler();
-            sbg.dump(dumpState);
+            header.savedBGOffset = partDictOut.position();
+            partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
+            partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+            partOut.setPostingsIDMap(null);
+            partOut.setDictionaryEncoder(new StringNameHandler());
+            sbg.dump(partOut);
         } else {
             header.savedBGOffset = -1;
         }
@@ -452,9 +454,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             // Dump the map from document IDs to the values saved for that document
             // ID, and collect the positions in the buffer where the data for each
             // document is recorded.
-            WriteableBuffer dtv = new ArrayBuffer(dumpState.maxDocID * 4);
-            WriteableBuffer dtvOffsets = new ArrayBuffer(dumpState.maxDocID * 4);
-            for(int i = 1; i <= dumpState.maxDocID; i++) {
+            WriteableBuffer dtv = new ArrayBuffer(partOut.getMaxDocID() * 4);
+            WriteableBuffer dtvOffsets = new ArrayBuffer(partOut.getMaxDocID() * 4);
+            for(int i = 1; i <= partOut.getMaxDocID(); i++) {
                 
                 dtvOffsets.byteEncode(dtv.position(), 4);
                 
@@ -475,10 +477,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             //
             // Write the maps, recording the offset and size data in our
             // header.
-            header.dtvOffset = dumpState.fieldDictOut.position();
-            dtv.write(dumpState.fieldDictOut);
-            header.dtvPosOffset = dumpState.fieldDictOut.position();
-            dtvOffsets.write(dumpState.fieldDictOut);
+            header.dtvOffset = partDictOut.position();
+            dtv.write(partDictOut);
+            header.dtvPosOffset = partDictOut.position();
+            dtvOffsets.write(partDictOut);
         } else {
             header.dtvOffset = -1;
             header.dtvPosOffset = -1;
@@ -488,9 +490,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
             //
             // Write out our document vector lengths.
-            header.vectorLengthOffset = dumpState.vectorLengthsFile.getFilePointer();
-            DocumentVectorLengths.calculate(field,
-                    dumpState,
+            logger.info(String.format("Calculating vector lengths for %s", field.info.getName()));
+            WriteableBuffer vlb = partOut.getVectorLengthsBuffer();
+            header.vectorLengthOffset = vlb.position();
+            DocumentVectorLengths.calculate(field, partOut,
                     field.partition.getPartitionManager().
                     getTermStatsDict());
             ret = MemoryField.DumpResult.EVERYTHING_DUMPED;
@@ -500,10 +503,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         //
         // Now zip back and write the header.
-        int endPos = dumpState.fieldDictOut.position();
-        dumpState.fieldDictOut.position(headerPos);
-        header.write(dumpState.fieldDictOut);
-        dumpState.fieldDictOut.position(endPos);
+        int endPos = partDictOut.position();
+        partDictOut.position(headerPos);
+        header.write(partDictOut);
+        partDictOut.position(endPos);
         return ret;
     }
 

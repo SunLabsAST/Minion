@@ -432,15 +432,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * keys for the documents indexed into the new partition.  They will be
      * removed from the old partitions.
      */
-    protected synchronized void addNewPartition(int partNumber,
+    public synchronized void addNewPartition(int partNumber,
             Set<String> keys) {
         //
         // If we're asked to add a weird partition, don't do it.
         if(partNumber <= 0) {
 
             if(partNumber == -1) {
-                logger.warning("Add new partition: " + partNumber
-                        + " ignored");
+                logger.warning(String.format("Add new partition: %d ignored", partNumber));
             }
 
             //
@@ -462,7 +461,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             return;
         }
 
-        logger.finer("Started addNewPartition " + partNumber);
+        logger.finer(String.format("Started addNewPartition %d", partNumber));
         try {
             DiskPartition ndp = newDiskPartition(partNumber, this);
             addNewPartition(ndp, keys);
@@ -1027,8 +1026,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     logger.fine(String.format("Reaped DP: %s", remFilter.partNum));
                 }
             } else if(delFilter.accept(curr)
-                    && !makeDictionaryFile(delFilter.partNum,
-                    "main").exists()) {
+                    && !makeDictionaryFile(delFilter.partNum).exists()) {
 
                 //
                 // Remove an orphaned deletion map.
@@ -1354,7 +1352,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return a file for the active file for this index
      */
     protected File makeActiveFile() {
-        return new File(indexDir + File.separator + "AL." + logTag);
+        return new File(indexDirFile, String.format("AL.%s", logTag));
     }
 
     /**
@@ -1383,7 +1381,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return a file for the meta file file this index
      */
     protected File makeMetaFile() {
-        return new File(indexDir + File.separator + "MF." + logTag);
+        return new File(indexDirFile, String.format("MF.%s", logTag));
     }
 
     /**
@@ -1392,15 +1390,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @param iD The index directory
      * @param partNumber The number of the partition for which we're making
      * a dictionary <code>File</code>.
-     * @param type The dictionary type.
      * @return A <code>File<code> initialized with an appropriate path.
      * name.
      */
-    public static File makeDictionaryFile(String iD, int partNumber,
-            String type) {
-        return new File(iD + File.separator + "p" + partNumber
-                + (type != null ? ("."
-                + type) : "") + ".dict");
+    public static File makeDictionaryFile(String iD, int partNumber) {
+        return new File(iD, String.format("p%d.dict", partNumber));
     }
 
     /**
@@ -1408,12 +1402,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      *
      * @param partNumber The number of the partition for which we're making
      * a dictionary <code>File</code>.
-     * @param type the dictionary type
      * @return A <code>File<code> initialized with an appropriate path.
      * name.
      */
-    public File makeDictionaryFile(int partNumber, String type) {
-        return makeDictionaryFile(indexDir, partNumber, type);
+    public File makeDictionaryFile(int partNumber) {
+        return makeDictionaryFile(indexDir, partNumber);
     }
 
     /**
@@ -1422,19 +1415,20 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @param iD The index directory
      * @param partNumber The number of the partition for which we're making
      * a postings file
-     * @param type The type of postings file
      * @param number The number of the postings file.  If this is less than
      * 0, it will be ignored.
      * @return A <code>File</code> initialized with an appropriate path.
      * name.
      */
     public static File makePostingsFile(String iD, int partNumber,
-            String type,
             int number) {
-        return new File(iD + File.separator + "p" + partNumber
-                + (type != null ? ("."
-                + type) : "")
-                + (number > 0 ? ("." + number) : "") + ".post");
+        String fn;
+        if(number > 0) {
+            fn = String.format("p%d.%d.post", partNumber, number);
+        } else {
+            fn = String.format("p%d.post", partNumber);
+        }
+        return new File(iD, fn); 
     }
 
     /**
@@ -1442,14 +1436,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      *
      * @param partNumber The number of the partition for which we're making
      * a postings file
-     * @param type The type of postings file
      * @param number The number of the postings file.  If this is less than
      * 0, it will be ignored.
      * @return A <code>File</code> initialized with an appropriate path.
      * name.
      */
-    public File makePostingsFile(int partNumber, String type, int number) {
-        return makePostingsFile(indexDir, partNumber, type, number);
+    public File makePostingsFile(int partNumber, int number) {
+        return makePostingsFile(indexDir, partNumber, number);
     }
 
     /**
@@ -1462,7 +1455,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * name.
      */
     public File makePostingsFile(int partNumber, String type) {
-        return makePostingsFile(indexDir, partNumber, type, -1);
+        return makePostingsFile(indexDir, partNumber, -1);
     }
 
     /**
@@ -1476,7 +1469,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * name.
      */
     public static File makeDeletedDocsFile(String iD, int partNumber) {
-        return new File(iD + File.separator + "p" + partNumber + ".del");
+        return new File(iD, String.format("p%d.del", partNumber));
     }
 
     /**
@@ -1516,7 +1509,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * name.
      */
     public static File makeVectorLengthFile(String iD, int partNumber) {
-        return new File(iD + File.separator + "p" + partNumber + ".vl");
+        return new File(iD, String.format("p%d.vl", partNumber));
     }
 
     /**
@@ -1530,7 +1523,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * name.
      */
     public static File makeRemovedPartitionFile(String iD, int partNumber) {
-        return new File(iD + File.separator + "p" + partNumber + ".rem");
+        return new File(iD, String.format("p%d.rem", partNumber));
     }
 
     /**
@@ -1547,7 +1540,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     public static File makeTaxonomyFile(String iD, int partNumber) {
-        return new File(iD + File.separator + "p" + partNumber + ".tax");
+        return new File(iD, String.format("p%d.tax", partNumber));
     }
 
     public File makeTaxonomyFile(int partNumber) {
@@ -1866,7 +1859,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             Random rand = new java.util.Random();
             while(true) {
                 nextPartitionNumber = rand.nextInt(1000000) + 500000;
-                File f = makeDictionaryFile(nextPartitionNumber, "main");
+                File f = makeDictionaryFile(nextPartitionNumber);
                 try {
                     if(f.createNewFile()) {
                         logger.warning("Error accessing partition number: "
@@ -2585,6 +2578,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     int getNumPostingsChannels() {
         return 1;
     }
+    
     @ConfigComponent(type = DiskPartitionFactory.class)
     public static final String PROP_PARTITION_FACTORY =
             "partition_factory";
@@ -2730,7 +2724,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         return tse == null ? new TermStatsImpl(name) : tse.getTermStats();
     }
 
-    protected void updateTermStats() throws java.io.IOException,
+    public void updateTermStats() throws java.io.IOException,
             FileLockException {
 
         int newTSN = metaFile.getTermStatsNumber();

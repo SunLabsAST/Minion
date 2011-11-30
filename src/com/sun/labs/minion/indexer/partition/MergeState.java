@@ -4,9 +4,9 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
 import java.io.OutputStream;
-import java.io.RandomAccessFile;
 import java.util.logging.Logger;
 
 /**
@@ -114,7 +114,7 @@ public class MergeState implements Cloneable {
     /**
      * A place where vector lengths can be written.
      */
-    public RandomAccessFile vectorLengthRAF;
+    public WriteableBuffer vectorLengthsBuffer;
     
     public MergeState(PartitionManager manager) {
         this.manager = manager;

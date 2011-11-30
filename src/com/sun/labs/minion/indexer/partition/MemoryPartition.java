@@ -23,13 +23,17 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import java.io.File;
+import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
+import com.sun.labs.minion.util.FileLockException;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.StopWatch;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -82,45 +86,47 @@ public abstract class MemoryPartition extends Partition {
      * @throws java.io.IOException if there is any error writing the partition
      * data to disk
      */
-    protected int dump() throws java.io.IOException {
+    protected PartitionOutput dump() throws java.io.IOException {
 
         //
         // Do nothing if we have no data.
         if(docDict.size() == 0) {
-            return -1;
+            return null;
         }
         
         StopWatch sw = new StopWatch();
         sw.start();
         
-        int nextPartNumber = manager.getNextPartitionNumber();
-        File[] files = getMainFiles(manager, nextPartNumber);
-        DumpState dumpState = new DumpState(nextPartNumber, manager, files);
-
-
-        //
-        // Get a file for the dictionaries.
-        dumpState.partHeader = new PartitionHeader();
+        DiskPartitionOutput partOut;
+        
+        try {
+            partOut = new DiskPartitionOutput(manager);
+        } catch (FileLockException ex) {
+            logger.log(Level.SEVERE, String.format("Error dumping partition"), ex);
+            return null;
+        }
+        
+        PartitionHeader partHeader = partOut.getPartitionHeader();
+        DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 
         //
         // A spot for the partition header offset to be written.
-        int phoffsetpos = dumpState.fieldDictOut.position();
-        dumpState.fieldDictOut.byteEncode(0, 8);
+        int phoffsetpos = partDictOut.position();
+        partDictOut.byteEncode(0, 8);
 
         //
         // Dump the document dictionary.
-        dumpState.partHeader.setDocDictOffset(dumpState.fieldDictOut.position());
-        dumpState.renumber = MemoryDictionary.Renumber.NONE;
-        dumpState.idMap = MemoryDictionary.IDMap.NONE;
-        dumpState.postIDMap = null;
-        dumpState.encoder = new StringNameHandler();
-        docDict.dump(dumpState);
+        partHeader.setDocDictOffset(partDictOut.position());
+        partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
+        partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+        partOut.setPostingsIDMap(null);
+        partOut.setDictionaryEncoder(new StringNameHandler());
+        docDict.dump(partOut);
 
         //
         // Set the number of documents.
-        dumpState.maxDocID = maxDocumentID;
-        dumpState.partHeader.setnDocs(docDict.size());
-        dumpState.partHeader.setMaxDocID(maxDocumentID);
+        partOut.setMaxDocID(maxDocumentID);
+        partOut.setNDocs(docDict.size());
 
         //
         // If we deleted some documents along the way, then dump that data
@@ -132,32 +138,25 @@ public abstract class MemoryPartition extends Partition {
 
         //
         // Dump any custom data -- to be filled in by subclasses.
-        dumpCustom(dumpState);
+        dumpCustom(partOut);
         
         //
         // Write the partition header, then return to the top of the file to
         // say where it is.
-        int phoffset = dumpState.fieldDictOut.position();
-        dumpState.partHeader.write(dumpState.fieldDictOut);
-        int pos = dumpState.fieldDictOut.position();
-        dumpState.fieldDictOut.position(phoffsetpos);
-        dumpState.fieldDictOut.byteEncode(phoffset, 8);
-        dumpState.fieldDictOut.position(pos);
-
-        //
-        // Flush the dictionary output to our dictionary file.
-        RandomAccessFile dictFile = new RandomAccessFile(files[0], "rw");
-        dumpState.fieldDictOut.flush(dictFile);
-        dictFile.close();
-        dumpState.close();
+        int phoffset = partDictOut.position();
+        partHeader.write(partDictOut);
+        int pos = partDictOut.position();
+        partDictOut.position(phoffsetpos);
+        partDictOut.byteEncode(phoffset, 8);
+        partDictOut.position(pos);
         
         sw.stop();
-        logger.info(String.format("Dumped %d, %d docs took %dms", 
-                dumpState.partNumber, 
+        logger.info(String.format("Dumped %d, %d docs took %dms",
+                partOut.getPartitionNumber(),
                 docDict.size(), sw.getTime()));
+        
+        return partOut;
 
-        manager.addNewPartition(dumpState.partNumber, docDict.getKeys());
-        return partNumber;
     }
 
     public MemoryDictionary getDocumentDictionary() {
@@ -173,6 +172,6 @@ public abstract class MemoryPartition extends Partition {
      * @throws java.io.IOException if there is any error writing the data
      * to disk
      */
-    protected abstract void dumpCustom(DumpState dumpState) throws java.io.IOException;
+    protected abstract void dumpCustom(PartitionOutput dumpState) throws java.io.IOException;
 } // MemoryPartition
 

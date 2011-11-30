@@ -919,7 +919,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 for(int i = 0; i < mergeState.postFiles.length; i++) {
                     mPostRAF[i] = new RandomAccessFile(mergeState.postFiles[i], "rw");
                 }
-                mergeHeader.vectorLengthOffset = mergeState.vectorLengthRAF.getFilePointer();
+                mergeHeader.vectorLengthOffset = mergeState.vectorLengthsBuffer.position();
                 mergeState.fieldDictOut.position(mdp);
                 DiskDictionary newMainDict =
                         new DiskDictionary(mergeState.entryFactory,
@@ -932,7 +932,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                 mergeState.manager,
                                                 newMainDict.iterator(),
                                                 null,  // no term stats calculation during merges.
-                                                mergeState.vectorLengthRAF,
+                                                mergeState.vectorLengthsBuffer,
                                                 mergeState.manager.getTermStatsDict());
                 for(RandomAccessFile mprf : mPostRAF) {
                     mprf.close();

@@ -77,7 +77,7 @@ public class DiskDictionaryOutput extends AbstractDictionaryOutput {
         namesFile = Util.getTempFile(path, "names", ".n");
         namesRAF = new RandomAccessFile(namesFile, "rw");
         names = new FileWriteableBuffer(namesRAF, bufferSize);
-
+        
         nameOffsetsFile = Util.getTempFile(path, "offsets", ".no");
         nameOffsetsRAF = new RandomAccessFile(nameOffsetsFile, "rw");
         nameOffsets = new FileWriteableBuffer(nameOffsetsRAF, bufferSize);

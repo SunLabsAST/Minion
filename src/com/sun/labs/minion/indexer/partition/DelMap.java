@@ -206,6 +206,39 @@ public class DelMap implements Cloneable {
     }
 
     /**
+     * Writes this map to a buffer
+     * @param buff the buffer to which we'll write this map
+     */
+    public synchronized boolean write(WriteableBuffer buff) {
+
+        if(!dirty || nDeleted == 0 || delMap == null) {
+            return false;
+        }
+
+        boolean releaseNeeded = false;
+        try {
+            if(lock != null && !lock.hasLock()) {
+                lock.acquireLock();
+                releaseNeeded = true;
+            }
+            
+            buff.byteEncode(delMap.position(), 4);
+            ((WriteableBuffer) delMap).write(buff);
+            dirty = false;
+        } catch(Exception e) {
+            logger.log(Level.SEVERE, "Error during write", e);
+        } finally {
+            if(releaseNeeded) {
+                try {
+                    lock.releaseLock();
+                } catch(Exception e2) {
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
      * Synchronizes the map in memory with the map on disk.
      *
      */

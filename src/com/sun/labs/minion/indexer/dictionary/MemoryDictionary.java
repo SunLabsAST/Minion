@@ -32,8 +32,9 @@ import java.util.logging.Logger;
 
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
-import com.sun.labs.minion.indexer.partition.DumpState;
 import com.sun.labs.minion.indexer.partition.Partition;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
+import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -343,49 +344,55 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * @throws java.io.IOException When there is an error writing either of
      * the channels.
      */
-    public IndexEntry[] dump(DumpState dumpState) throws java.io.IOException {
+    public IndexEntry[] dump(PartitionOutput partOut) throws java.io.IOException {
         logger.fine(String.format("Dumping %d entries", map.size()));
 
-        DictionaryOutput dout = dumpState.fieldDictOut;
+        DictionaryOutput dout = partOut.getPartitionDictionaryOutput();
+        PostingsOutput[] postOut = partOut.getPostingsOutput();
         
         //
         // Start the dump.
-        dout.start(dumpState.encoder, dumpState.renumber, dumpState.postOut.length);
+        dout.start(partOut.getDictionaryEncoder(),
+                partOut.getDictionaryRenumber(), 
+                postOut.length);
 
         DictionaryHeader dh = dout.getHeader();
         dh.maxEntryID = id;
         
         //
         // Record the starting positions for each of our postings outputs.
-        for(int i = 0; i < dumpState.postOut.length; i++) {
-            dh.postStart[i] = dumpState.postOut[i].position();
+        for(int i = 0; i < postOut.length; i++) {
+            dh.postStart[i] = postOut[i].position();
         }
 
         //
         // Sort the entries in preparation for writing them out.  This will
         // generate an old-to-new ID mapping if we're renumbering.
-        IndexEntry[] sorted = sort(dumpState.renumber, dumpState.idMap);
+        IndexEntry[] sorted = sort(partOut.getDictionaryRenumber(), 
+                partOut.getDictionaryIDMap());
 
+        int[] postingsIDMap = partOut.getPostingsIDMap();
+        
         //
         // Write the postings and entries.
         for(IndexEntry entry : sorted) {
             
             //
             // Write it out.
-            if(entry.writePostings(dumpState.postOut, dumpState.postIDMap) == true) {
+            if(entry.writePostings(postOut, postingsIDMap) == true) {
                 dout.write(entry);
             }
         }
 
         //
         // Flush whatever's left in the postings buffers. 
-        for(int i = 0; i < dumpState.postOut.length; i++) {
-            dumpState.postOut[i].flush();
-            dh.postEnd[i] = dumpState.postOut[i].position();
+        for(int i = 0; i < postOut.length; i++) {
+            postOut[i].flush();
+            dh.postEnd[i] = postOut[i].position();
         }
         
         //
-        // Write the final dictionary.
+        // We're done dumping this dictionary.
         dout.finish();
         
         return sorted;

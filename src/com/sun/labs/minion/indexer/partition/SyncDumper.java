@@ -24,6 +24,7 @@
 package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.PropertyException;
@@ -85,7 +86,8 @@ public class SyncDumper implements Dumper {
     public void dump(MemoryPartition part) {
 
         try {
-            part.dump();
+            PartitionOutput po = part.dump();
+            po.flush(part.getDocumentDictionary().getKeys());
 
             //
             // Check whether we need to do GC after this dump.

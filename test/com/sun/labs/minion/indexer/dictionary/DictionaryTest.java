@@ -1,6 +1,6 @@
 package com.sun.labs.minion.indexer.dictionary;
 
-import com.sun.labs.minion.indexer.partition.DumpState;
+import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -174,7 +174,7 @@ public class DictionaryTest {
         sd.put("c");
         sd.put("a");
 
-        DumpState dumpState = new DumpState(tmpDir);
+        DiskPartitionOutput dumpState = new DiskPartitionOutput(tmpDir);
         dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
         dumpState.idMap = MemoryDictionary.IDMap.NONE;
         dumpState.encoder = new StringNameHandler();
@@ -183,7 +183,7 @@ public class DictionaryTest {
         File f = File.createTempFile("string", ".dict");
         f.deleteOnExit();
         RandomAccessFile dictFile = new RandomAccessFile(f, "rw");
-        dumpState.fieldDictOut.flush(dictFile);
+        dumpState.partDictOut.flush(dictFile);
         dictFile.close();
     }
 
