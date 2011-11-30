@@ -144,24 +144,24 @@ public class DictionaryHeader {
     }
     
     public DictionaryHeader(ReadableBuffer b) throws java.io.IOException {
-        size = b.byteDecode(8);
-        maxEntryID = b.byteDecode(8);
-        idToPosnPos = b.byteDecode(8);
-        idToPosnSize = b.byteDecode(8);
-        nameOffsetsPos = b.byteDecode(8);
-        nameOffsetsSize = b.byteDecode(8);
-        namesPos = b.byteDecode(8);
-        namesSize = b.byteDecode(8);
-        entryInfoOffsetsPos = b.byteDecode(8);
-        entryInfoOffsetsSize = b.byteDecode(8);
-        entryInfoPos = b.byteDecode(8);
-        entryInfoSize = b.byteDecode(8);
+        size = b.byteDecodeLong(8);
+        maxEntryID = b.byteDecodeLong(8);
+        idToPosnPos = b.byteDecodeLong(8);
+        idToPosnSize = b.byteDecodeLong(8);
+        nameOffsetsPos = b.byteDecodeLong(8);
+        nameOffsetsSize = b.byteDecodeLong(8);
+        namesPos = b.byteDecodeLong(8);
+        namesSize = b.byteDecodeLong(8);
+        entryInfoOffsetsPos = b.byteDecodeLong(8);
+        entryInfoOffsetsSize = b.byteDecodeLong(8);
+        entryInfoPos = b.byteDecodeLong(8);
+        entryInfoSize = b.byteDecodeLong(8);
         int n = b.byteDecode(4);
         postStart = new long[n];
         postEnd = new long[n];
         for(int i = 0; i < n; i++) {
-            postStart[i] = b.byteDecode(8);
-            postEnd[i] = b.byteDecode(8);
+            postStart[i] = b.byteDecodeLong(8);
+            postEnd[i] = b.byteDecodeLong(8);
         }
         magic = b.byteDecode(4);
         if(magic != GOOD_MAGIC) {
