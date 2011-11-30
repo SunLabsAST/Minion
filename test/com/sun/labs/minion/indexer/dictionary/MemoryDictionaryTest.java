@@ -8,10 +8,17 @@ import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -29,12 +36,32 @@ public class MemoryDictionaryTest {
     static Logger logger =
             Logger.getLogger(MemoryDictionaryTest.class.getName());
 
+    static List<String> wordList;
+
+    static List<String> shuffleList;
+
     public MemoryDictionaryTest() {
     }
 
     @BeforeClass
     public static void setUpClass() throws Exception {
         tmpDir = new File(System.getProperty("java.io.tmpdir"));
+        wordList = new ArrayList<String>();
+        InputStream pdis = MemoryDictionaryTest.class.getResourceAsStream("/com/sun/labs/minion/indexer/dictionary/resource/words.gz");
+        if(pdis == null) {
+            logger.severe(String.format("Couldn't find test data!"));
+            return;
+        }
+        BufferedReader r = new BufferedReader(new InputStreamReader(new GZIPInputStream(
+                pdis)));
+        String w;
+        while((w = r.readLine()) != null) {
+            wordList.add(w);
+        }
+
+        shuffleList = new ArrayList<String>(wordList);
+        Collections.shuffle(shuffleList);
+        logger.info(String.format("list: %d shuffle: %d", wordList.size(), shuffleList.size()));
     }
 
     @AfterClass
@@ -47,15 +74,6 @@ public class MemoryDictionaryTest {
 
     @After
     public void tearDown() {
-    }
-
-    public File getFile(String prefix) {
-        try {
-            return File.createTempFile(prefix, ".dict");
-        } catch(java.io.IOException ex) {
-
-            return null;
-        }
     }
 
     /**
@@ -172,12 +190,44 @@ public class MemoryDictionaryTest {
         sd.put("c");
         sd.put("a");
 
-        File f = getFile("string");
+        File f = File.createTempFile("string", ".dict");
+        f.deleteOnExit();
         RandomAccessFile dictFile = new RandomAccessFile(f, "rw");
         sd.dump(tmpDir, new StringNameHandler(), dictFile,
                 new PostingsOutput[0], MemoryDictionary.Renumber.NONE,
                 MemoryDictionary.IDMap.NONE, null);
         dictFile.close();
-        f.delete();
+    }
+
+    @Test
+    public void testAllWordsDump() throws Exception {
+        MemoryDictionary<String> sd = new MemoryDictionary<String>(new EntryFactory(
+                Postings.Type.NONE));
+        for(String s : wordList) {
+            sd.put(s);
+        }
+        File f = File.createTempFile("all", ".dict");
+        f.deleteOnExit();
+        RandomAccessFile dictFile = new RandomAccessFile(f, "rw");
+        sd.dump(tmpDir, new StringNameHandler(), dictFile,
+                new PostingsOutput[0], MemoryDictionary.Renumber.NONE,
+                MemoryDictionary.IDMap.NONE, null);
+        dictFile.close();
+    }
+
+    @Test
+    public void testShuffleWordsDump() throws Exception {
+        MemoryDictionary<String> sd = new MemoryDictionary<String>(new EntryFactory(
+                Postings.Type.NONE));
+        for(String s : shuffleList) {
+            sd.put(s);
+        }
+        File f = File.createTempFile("all", ".dict");
+        f.deleteOnExit();
+        RandomAccessFile dictFile = new RandomAccessFile(f, "rw");
+        sd.dump(tmpDir, new StringNameHandler(), dictFile,
+                new PostingsOutput[0], MemoryDictionary.Renumber.NONE,
+                MemoryDictionary.IDMap.NONE, null);
+        dictFile.close();
     }
 }
