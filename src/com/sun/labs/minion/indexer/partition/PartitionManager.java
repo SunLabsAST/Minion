@@ -287,7 +287,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 try {
                     currTSF = makeTermStatsFile(metaFile.getTermStatsNumber());
                     if(!currTSF.exists()) {
-                        UncachedTermStatsDictionary.create(indexDir, currTSF);
+                        UncachedTermStatsDictionary.create(indexDirFile, currTSF);
                     }
                     termStatsDict = termstatsDictFactory.getDictionary(currTSF);
                 } catch(java.io.IOException ioe) {

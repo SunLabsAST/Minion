@@ -139,10 +139,10 @@ public abstract class Tokenizer extends StageAdapter implements
      */
     public void startField(FieldInfo fi) {
         flush();
-        makeTokens = fi.isTokenized();
-        indexed = fi.isIndexed();
-        saveData = fi.isSaved();
-        trimSpaces = fi.isTrimmed();
+        makeTokens = fi.hasAttribute(FieldInfo.Attribute.TOKENIZED);
+        indexed = fi.hasAttribute(FieldInfo.Attribute.INDEXED);
+        saveData = fi.hasAttribute(FieldInfo.Attribute.SAVED);
+        trimSpaces = false;
         downstream.startField(fi);
     }
 

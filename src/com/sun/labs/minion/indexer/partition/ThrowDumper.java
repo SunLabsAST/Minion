@@ -55,9 +55,7 @@ public class ThrowDumper implements Dumper {
      * Dumps the given stage synchronously.
      */
     public void dump(Stage s) {
-        logger.info(((MemoryPartition) s).docDict.
-                size() + " " +
-                ((MemoryPartition) s).mainDict.size());
+        logger.info(String.format("Dumping %d docs", ((MemoryPartition) s).docDict.size()));
     }
 
     public void finish() {

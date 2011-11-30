@@ -24,12 +24,13 @@
 
 package com.sun.labs.minion.indexer.partition;
 
+import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
 import com.sun.labs.util.props.ConfigBoolean;
 
 /**
@@ -39,29 +40,14 @@ import com.sun.labs.util.props.ConfigBoolean;
  *
  */
 public class DiskPartitionFactory implements Configurable {
-    
+
     /**
-     * A property for the factory that we'll use to create the main dictionary.
+     * An entry factory for the main dictionary.
      */
-    @ConfigComponent(type=com.sun.labs.minion.indexer.dictionary.DictionaryFactory.class)
-    public static final String PROP_MAIN_DICT_FACTORY = "main_dict_factory";
-    
-    /**
-     * The main dictionary factory.
-     */
-    protected DictionaryFactory mainDictFactory;
-    
-    /**
-     * A property for the factory that we'll use to create the document
-     * dictionaries for partitions.
-     */
-    @ConfigComponent(type=com.sun.labs.minion.indexer.dictionary.DictionaryFactory.class)
-    public static final String PROP_DOCUMENT_DICT_FACTORY = "document_dict_factory";
-    
-    /**
-     * The document dictionary factory.
-     */
-    protected DictionaryFactory documentDictFactory;
+    @ConfigComponent(type=com.sun.labs.minion.indexer.entry.EntryFactory.class)
+    public static final String PROP_ENTRY_FACTORY = "entryFactory";
+
+    EntryFactory entryFactory;
     
     /**
      * A property for the size of the in-memory buffer to use when merging
@@ -93,8 +79,7 @@ public class DiskPartitionFactory implements Configurable {
     }
     
     public void newProperties(PropertySheet ps) throws PropertyException {
-        mainDictFactory = (DictionaryFactory) ps.getComponent(PROP_MAIN_DICT_FACTORY);
-        documentDictFactory = (DictionaryFactory) ps.getComponent(PROP_DOCUMENT_DICT_FACTORY);
+        entryFactory = (EntryFactory) ps.getComponent(PROP_ENTRY_FACTORY);
         mergeBuffSize = ps.getInt(PROP_MERGE_BUFF_SIZE);
         cacheVectorLengths = ps.getBoolean(PROP_CACHE_VECTOR_LENGTHS);
         termCacheSize = ps.getInt(PROP_TERM_CACHE_SIZE);
@@ -110,12 +95,12 @@ public class DiskPartitionFactory implements Configurable {
      */
     public DiskPartition getDiskPartition(int number, PartitionManager m)
     throws java.io.IOException {
-        return new DiskPartition(number, m, mainDictFactory, documentDictFactory, cacheVectorLengths, termCacheSize);
+        return new DiskPartition(number, m, Postings.Type.ID_FREQ);
     }
 
     public DiskPartition getBaseDiskPartition(int number, PartitionManager m)
             throws java.io.IOException {
-        return new DiskPartition(number, m, mainDictFactory, documentDictFactory, cacheVectorLengths, termCacheSize);
+        return new DiskPartition(number, m, Postings.Type.ID_FREQ);
     }
     
 }

@@ -27,7 +27,6 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 
 import com.sun.labs.minion.indexer.partition.PartitionManager;
-import com.sun.labs.minion.indexer.partition.PartitionStats;
 import java.util.Collection;
 
 /**
@@ -91,11 +90,6 @@ public class CollectionStats {
         this.pm = pm;
         for(DiskPartition p : parts) {
             nDocs            += p.getNDocs();
-            PartitionStats s  = p.getStats();
-            nTokens          += s.nTokens;
-            maxfdt            = Math.max(maxfdt, s.maxfdt);
-            maxft             = Math.max(maxft, s.maxft);
-            nd               += s.nd;
         }
         avgDocLen = (float) nTokens / nDocs;
     }

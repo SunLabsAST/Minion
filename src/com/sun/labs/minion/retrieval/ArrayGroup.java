@@ -25,13 +25,13 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.ResultAccessor;
 import com.sun.labs.minion.ScoreModifier;
+import com.sun.labs.minion.indexer.DiskField;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.sun.labs.minion.indexer.dictionary.BasicField;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -770,8 +770,8 @@ public class ArrayGroup implements Cloneable {
                 continue;
             }
             if(part instanceof InvFileDiskPartition) {
-                ret.put(((InvFileDiskPartition) part).getFieldStore().
-                        getFieldName(i), pass[i]);
+//                ret.put(((InvFileDiskPartition) part).getFieldStore().
+//                        getFieldName(i), pass[i]);
             }
         }
         return ret;
@@ -864,7 +864,7 @@ public class ArrayGroup implements Cloneable {
         int pos = -1;
 
         public DocIterator() {
-            fetchers = new HashMap<String, BasicField.Fetcher>();
+            fetchers = new HashMap<String, DiskField.Fetcher>();
         }
 
         /**
@@ -915,35 +915,34 @@ public class ArrayGroup implements Cloneable {
 
         //
         // Implementation of ResultAccessor
-        private Map<String, BasicField.Fetcher> fetchers;
+        private Map<String, DiskField.Fetcher> fetchers;
 
         public String getKey() {
-            return part.getDocumentTerm(getDoc()).getName().toString();
+            return part.getDocumentDictionary().getByID(docs[pos]).getName().toString();
         }
 
-        private BasicField.Fetcher getFetcher(String field) {
-            BasicField.Fetcher f = fetchers.get(field);
+        private DiskField.Fetcher getFetcher(String field) {
+            DiskField.Fetcher f = fetchers.get(field);
             if(f == null) {
-                f = ((InvFileDiskPartition) part).getFieldStore().
-                        getFetcher(field);
-                fetchers.put(field, f);
+                fetchers.put(field,
+                        ((InvFileDiskPartition) part).getDF(field).getFetcher());
             }
             return f;
         }
 
         public List<Object> getField(String field) {
-            BasicField.Fetcher f = getFetcher(field);
+            DiskField.Fetcher f = getFetcher(field);
             return f == null ? Collections.emptyList() : f.fetch(docs[pos]);
         }
 
         public List<Object> getField(String field, List<Object> l) {
             l.clear();
-            BasicField.Fetcher f = getFetcher(field);
+            DiskField.Fetcher f = getFetcher(field);
             return f == null ? Collections.emptyList() : f.fetch(docs[pos], l);
         }
 
         public Object getSingleFieldValue(String field) {
-            BasicField.Fetcher f = getFetcher(field);
+            DiskField.Fetcher f = getFetcher(field);
             return f == null ? null : f.fetchOne(docs[pos]);
         }
     }

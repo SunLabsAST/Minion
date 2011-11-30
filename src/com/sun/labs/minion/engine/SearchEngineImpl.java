@@ -58,7 +58,6 @@ import com.sun.labs.minion.Searcher;
 import com.sun.labs.minion.SimpleIndexer;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.WeightedField;
-import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.retrieval.CollectionStats;

@@ -62,6 +62,11 @@ public abstract class Partition implements Comparable<Partition> {
 
     private String name;
 
+    /**
+     * Gets the number of undeleted documents in the partition.
+     * @return the number of undeleted documents in the partition.
+     */
+    public abstract int getNDocs();
 
     /**
      * Gets the number for this partition.

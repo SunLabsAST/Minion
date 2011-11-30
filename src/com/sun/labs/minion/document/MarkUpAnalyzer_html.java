@@ -823,12 +823,11 @@ public class MarkUpAnalyzer_html extends MarkUpAnalyzer {
         // Some sets of attributes that we can reuse.
         EnumSet<FieldInfo.Attribute> all =
                 EnumSet.allOf(FieldInfo.Attribute.class);
-        all.remove(FieldInfo.Attribute.CASE_SENSITIVE);
+        all.remove(FieldInfo.Attribute.CASED);
         EnumSet<FieldInfo.Attribute> nv = all.clone();
         nv.remove(FieldInfo.Attribute.VECTORED);
         EnumSet<FieldInfo.Attribute> st =
-                EnumSet.of(FieldInfo.Attribute.SAVED,
-                           FieldInfo.Attribute.TRIMMED);
+                EnumSet.of(FieldInfo.Attribute.SAVED);
 
         addrField =
                 new FieldInfo("to", st, FieldInfo.Type.STRING);

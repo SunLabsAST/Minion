@@ -23,8 +23,8 @@
  */
 package com.sun.labs.minion.retrieval;
 
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
-
+import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 
 import java.util.logging.Logger;
@@ -245,21 +245,10 @@ public class WeightingComponents {
         return cs.getTermStats(term);
     }
 
-    /**
-     * Initializes any document-level statistics that can be determined
-     * from a document key.
-     *
-     * @param key a document key entry from a dicitionary.
-     * @return this set of weighting components.
-     */
-    public WeightingComponents setDocument(DocKeyEntry key) {
-        return setDocument(key, null);
-    }
-
-    public WeightingComponents setDocument(DocKeyEntry key, String field) {
+    public WeightingComponents setDocument(QueryEntry key, DiskField field) {
         nd = key.getN();
         ld = key.getTotalOccurrences();
-        dvl = key.getDocumentVectorLength(field);
+        dvl = field.getDocumentVectorLength(key.getID());
         return this;
     }
 

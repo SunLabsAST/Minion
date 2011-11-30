@@ -93,11 +93,22 @@ public class InvFileDiskPartition extends DiskPartition {
         }
     }
 
-    private DiskField getDF(String name) {
+    /**
+     * Gets the field for a given name.
+     * @param name the name of the field
+     * @return the field for that name, or <code>null</code> if there is no such field.
+     */
+    public DiskField getDF(String name) {
         return getDF(manager.getFieldInfo(name));
     }
 
-    private DiskField getDF(FieldInfo fi) {
+    /**
+     * Gets the field associated with a given field information object.
+     * @param fi the field info object for the field to fetch
+     * @return the field for this object or <code>null</code> if there is no
+     * such field in this partition.
+     */
+    public DiskField getDF(FieldInfo fi) {
         if(fi == null) {
             return null;
         }

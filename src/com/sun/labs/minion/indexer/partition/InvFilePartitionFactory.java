@@ -24,12 +24,10 @@
 
 package com.sun.labs.minion.indexer.partition;
 
-import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigDouble;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
 
 /**
  * A factory class for inverted file partitions.
@@ -38,16 +36,6 @@ import com.sun.labs.minion.indexer.dictionary.DictionaryFactory;
  */
 public class InvFilePartitionFactory extends DiskPartitionFactory {
     
-    @ConfigComponent(type=com.sun.labs.minion.indexer.dictionary.DictionaryFactory.class)
-    public static final String PROP_FIELD_STORE_DICT_FACTORY = "field_store_dict_factory";
-    
-    private DictionaryFactory fieldStoreDictFactory;
-    
-    @ConfigComponent(type=com.sun.labs.minion.indexer.dictionary.DictionaryFactory.class)
-    public static final String PROP_BIGRAM_DICT_FACTORY = "bigram_dict_factory";
-    
-    private DictionaryFactory bigramDictFactory;
-
     @ConfigInteger(defaultValue=3)
     public static final String PROP_MIN_STEM_LENGTH = "min_stem_length";
     
@@ -66,19 +54,11 @@ public class InvFilePartitionFactory extends DiskPartitionFactory {
     
     public DiskPartition getDiskPartition(int number, PartitionManager m) 
     throws java.io.IOException {
-         return new InvFileDiskPartition(number, m, 
-                mainDictFactory, 
-                documentDictFactory,
-                fieldStoreDictFactory,
-                bigramDictFactory,
-                cacheVectorLengths,
-                termCacheSize);
+         return new InvFileDiskPartition(number, m);
    }
     
     public void newProperties(PropertySheet ps) throws PropertyException {
         super.newProperties(ps);
-        fieldStoreDictFactory = (DictionaryFactory) ps.getComponent(PROP_FIELD_STORE_DICT_FACTORY);
-        bigramDictFactory = (DictionaryFactory) ps.getComponent(PROP_BIGRAM_DICT_FACTORY);
         minStemLength = ps.getInt(PROP_MIN_STEM_LENGTH);
         stemMatchCutoff = ps.getFloat(PROP_STEM_MATCH_CUTOFF);
     }

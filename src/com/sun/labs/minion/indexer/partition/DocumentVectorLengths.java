@@ -151,7 +151,7 @@ public class DocumentVectorLengths {
         if(adjustStats) {
             gtw = new DictionaryWriter(
                     p.getPartitionManager().getIndexDir(),
-                    new StringNameHandler(), null, 0,
+                    new StringNameHandler(), 0,
                     MemoryDictionary.Renumber.RENUMBER);
         }
 
