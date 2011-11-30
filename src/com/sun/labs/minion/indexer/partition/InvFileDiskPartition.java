@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
@@ -381,16 +382,17 @@ public class InvFileDiskPartition extends DiskPartition {
         }
     }
     
-    public static void regenerateTermStats(DiskPartition[] partitions,
-            PartitionOutput partOut) throws java.io.IOException {
-        
-        DictionaryOutput termStatsDictOut = partOut.getTermStatsDictionaryOutput();
-        TermStatsHeader tsh = partOut.getTermStatsHeader();
-        //
-        // Remember where the header goes.
-        termStatsDictOut.byteEncode(0, 8);
+    public static void generateTermStats(DiskPartition[] partitions,
+            DictionaryOutput termStatsDictOut) throws java.io.IOException {
 
-        for(FieldInfo fi : partOut.getPartitionManager().getMetaFile()) {
+        //
+        // The header and where it goes.
+        TermStatsHeader tsh = new TermStatsHeader();
+        termStatsDictOut.byteEncode(0, 8);
+        
+        MetaFile mf = partitions[0].manager.getMetaFile();
+
+        for(FieldInfo fi : mf) {
             
             if(!fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
                 //
@@ -412,16 +414,20 @@ public class InvFileDiskPartition extends DiskPartition {
                 tsh.addOffset(fi.getID(), -1);
                 continue;
             }
-            tsh.addOffset(fi.getID(), termStatsDictOut.position());
-            DiskField.regenerateTermStats(fields, partOut);
+            long tsdPos = termStatsDictOut.position();
+            if(DiskField.generateTermStats(fields, termStatsDictOut)) {
+                tsh.addOffset(fi.getID(), tsdPos);
+            } else {
+                tsh.addOffset(fi.getID(), -1);
+            }
         }
+        
         long tshpos = termStatsDictOut.position();
         tsh.write(termStatsDictOut);
         long end = termStatsDictOut.position();
         termStatsDictOut.position(0);
         termStatsDictOut.byteEncode(tshpos, 8);
         termStatsDictOut.position(end);
-
     }
     
     public void calculateVectorLengths(PartitionOutput partOut) throws IOException {

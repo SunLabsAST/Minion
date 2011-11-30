@@ -121,7 +121,6 @@ public class DocumentVectorLengths {
                   p.maxDocumentID,
                   p.getPartitionManager(),
                   f.getTermDictionary(false).iterator(),
-                  partOut.getTermStatsDictionaryOutput(), 
                   partOut.getVectorLengthsBuffer(), gts);
     }
 
@@ -130,7 +129,6 @@ public class DocumentVectorLengths {
                                  int maxDocID,
                                  PartitionManager manager,
                                  Iterator<Entry> mdi,
-                                 DictionaryOutput termStatsOut,
                                  WriteableBuffer vectorLengthsBuffer,
                                  TermStatsDiskDictionary gts)
             throws java.io.IOException {
@@ -141,11 +139,6 @@ public class DocumentVectorLengths {
         if(gts != null) {
             gti = gts.iterator(fi);
         }
-        boolean adjustStats = termStatsOut != null;
-
-        if(adjustStats) {
-            termStatsOut.start(null, new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, 0);
-        }
         
         //
         // Get a set of postings features for running the postings.
@@ -153,9 +146,6 @@ public class DocumentVectorLengths {
                 getWeightingFunction();
         WeightingComponents wc = manager.getQueryConfig().
                 getWeightingComponents();
-        if(adjustStats) {
-            wc.N += nDocs;
-        }
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
 
         //
@@ -197,9 +187,6 @@ public class DocumentVectorLengths {
                 TermStatsImpl ts = gte.getTermStats();
                 
                 PostingsIterator pi = mde.iterator(feat);
-                if(adjustStats) {
-                    ts.add(mde);
-                }
                 wf.initTerm(wc.setTerm(ts));
                 addPostings(pi, vl);
                 gte = null;
@@ -227,15 +214,6 @@ public class DocumentVectorLengths {
             }
 
             //
-            // Write the entry to the new global term stats dictionary.  Note
-            // that we're only writing entries that have more than on occurrence,
-            // mostly just to keep the size of the dictionary down.  We should
-            // probably make this configurable.
-            if(adjustStats && we.getN() > 1) {
-                termStatsOut.write(we);
-            }
-
-            //
             // Advance whichever iterators are necessary.
             if(gte == null && gti != null && gti.hasNext()) {
                 gte = (TermStatsQueryEntry) gti.next();
@@ -251,10 +229,6 @@ public class DocumentVectorLengths {
         vectorLengthsBuffer.byteEncode(maxDocID, 4);
         for(int i = 1; i < vl.length; i++) {
             vectorLengthsBuffer.encode((float) Math.sqrt(vl[i]));
-        }
-        
-        if(adjustStats) {
-            termStatsOut.finish();
         }
     }
 

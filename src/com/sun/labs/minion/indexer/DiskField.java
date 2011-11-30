@@ -5,7 +5,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
-import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
@@ -281,8 +281,8 @@ public class DiskField extends Field {
         DiskDictionaryBundle.merge(mergeState, bundles);
     }
 
-    public static void regenerateTermStats(DiskField[] fields,
-            PartitionOutput partOut) {
+    public static boolean generateTermStats(DiskField[] fields,
+            DictionaryOutput termStatsDictOut) {
 
         DiskDictionaryBundle[] bundles = new DiskDictionaryBundle[fields.length];
         boolean found = false;
@@ -298,8 +298,9 @@ public class DiskField extends Field {
             }
         }
         if(found) {
-            DiskDictionaryBundle.regenerateTermStats(bundles, partOut);
+            return DiskDictionaryBundle.generateTermStats(bundles, termStatsDictOut);
         }
+        return false;
     }
 
     public void calculateVectorLengths(PartitionOutput partOut) throws java.io.IOException {

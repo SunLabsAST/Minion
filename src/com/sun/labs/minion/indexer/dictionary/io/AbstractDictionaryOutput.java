@@ -166,9 +166,14 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         if(!started) {
             throw new IllegalStateException("Can't finish a dictionary that hasn't been started");
         }
-
+        
         //
-        // Encode the id to posn data, if necessary.
+        // Don't bother finishing an empty dictionary.
+        if(names.position() == 0) {
+            started = false;
+            finished = true;
+            return;
+        }
 
         //
         // Sizes of the various buffers that make up the dictionary.

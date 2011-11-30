@@ -849,7 +849,7 @@ public class QueryTest extends SEMain {
         shell.add("rts", "Maintenance", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
-                manager.recalculateTermStats();
+                manager.generateTermStats();
                 return "Term stats recalculated";
             }
 

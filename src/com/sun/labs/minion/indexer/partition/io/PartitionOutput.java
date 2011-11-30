@@ -70,10 +70,6 @@ public interface PartitionOutput {
     
     public void setPostingsOutput(PostingsOutput[] postOut);
     
-    public DictionaryOutput getTermStatsDictionaryOutput();
-    
-    public TermStatsHeader getTermStatsHeader();
-    
     public WriteableBuffer getDeletionsBuffer();
 
     public WriteableBuffer getVectorLengthsBuffer();

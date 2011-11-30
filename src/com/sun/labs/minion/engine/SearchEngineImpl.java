@@ -1196,7 +1196,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
         try {
             invFilePartitionManager.mergeAll();
-            invFilePartitionManager.recalculateTermStats();
+            invFilePartitionManager.generateTermStats();
         } catch(Exception e) {
             throw new SearchEngineException("Error optimizing index", e);
         }

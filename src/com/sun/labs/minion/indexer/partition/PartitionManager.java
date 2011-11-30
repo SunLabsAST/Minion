@@ -65,6 +65,8 @@ import com.sun.labs.minion.util.SimpleFilter;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.partition.io.AbstractPartitionOutput;
 import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
@@ -72,7 +74,7 @@ import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.util.DirCopier;
-import com.sun.labs.util.props.ConfigStringList;
+import com.sun.labs.util.NanoWatch;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -80,6 +82,7 @@ import java.util.Queue;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -313,6 +316,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     private File startingDataDir;
 
     private PartitionOutput mergePartitionOutput;
+    
+    private DictionaryOutput termStatsDictionaryOutput;
 
     /**
      * The search engine that is using us.
@@ -475,10 +480,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 }
                 metaFile.unlock();
             } catch(com.sun.labs.minion.util.FileLockException fle) {
-                logger.severe("Error locking meta file: " + fle);
+                logger.severe(String.format("Error locking meta file: %s", fle));
                 return;
             } catch(java.io.IOException ioe) {
-                logger.severe("Error reading meta file: " + ioe);
+                logger.severe(String.format("Error reading meta file: %s", ioe));
                 try {
                     metaFile.unlock();
                 } catch(Exception e) {
@@ -536,6 +541,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         timer.scheduleAtFixedRate(new HouseKeeper(),
                 activeCheckInterval,
                 activeCheckInterval);
+        if(!isLongIndexingRun()) {
+            timer.scheduleAtFixedRate(new TermStatsKeeper(),
+                    10000,
+                    10000);
+        }
     }
 
     /**
@@ -1435,7 +1445,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return the number of tokens represented by the index.
      */
     public long getNTokens() {
-        return new CollectionStats(this).getNTokens();
+        return (new CollectionStats(this)).getNTokens();
     }
 
     /**
@@ -2254,14 +2264,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @throws com.sun.labs.minion.util.FileLockException if there is an error
      * locking the meta file to get the number for the next term stats dictionary.
      */
-    public void recalculateTermStats() throws java.io.IOException,
+    public void generateTermStats() throws java.io.IOException,
             FileLockException {
         
-        InvFileDiskPartition.regenerateTermStats(getActivePartitions().toArray(new DiskPartition[0]), mergePartitionOutput);
+        InvFileDiskPartition.generateTermStats(getActivePartitions().toArray(new DiskPartition[0]), termStatsDictionaryOutput);
         int tsn = metaFile.getNextTermStatsNumber();
         File newTSF = makeTermStatsFile(tsn);
         RandomAccessFile raf = new RandomAccessFile(newTSF, "rw");
-        mergePartitionOutput.getTermStatsDictionaryOutput().flush(raf);
+        termStatsDictionaryOutput.flush(raf);
         raf.close();
         metaFile.setTermStatsNumber(tsn);
         updateTermStats();
@@ -2666,6 +2676,49 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
     }
     
+    protected class TermStatsKeeper extends TimerTask {
+        
+        /**
+         * The number of documents in the collection the last time that we
+         * woke up.
+         */
+        private int lastNumDocs;
+        
+        private AtomicBoolean running = new AtomicBoolean(false);
+        
+        public TermStatsKeeper() {
+            lastNumDocs = getNDocs();
+        }
+
+        @Override
+        public void run() {
+            //
+            // We want to make sure that we won't be running more than one update
+            // at a time, since some updates might take longer than the interval
+            // between checks.
+            if(running.compareAndSet(false, true)) {
+                int numDocs = getNDocs();
+                float deltaRatio = Math.abs(((float) numDocs - lastNumDocs) / numDocs);
+                if(deltaRatio > 0.1) {
+                    logger.info(String.format("TermStatsKeeper: %d %d %.2f", lastNumDocs, numDocs, deltaRatio * 100));
+                    NanoWatch nw = new NanoWatch();
+                    nw.start();
+                    try {
+                        generateTermStats();
+                    } catch(FileLockException ex) {
+                        logger.log(Level.SEVERE, String.format("Error recalculating term stats"), ex);
+                    } catch(IOException ex) {
+                        logger.log(Level.SEVERE, String.format("Error recalculating term stats"), ex);
+                    }
+                    nw.stop();
+                    logger.info(String.format("Generated term stats in %.2fs", nw.getTimeMillis()));
+                }
+                lastNumDocs = numDocs;
+                running.compareAndSet(true, false);
+            }
+        }
+    }
+    
     public int getRandID() {
         return randID;
     }
@@ -2708,6 +2761,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         
         try {
             mergePartitionOutput = new DiskPartitionOutput(this);
+            termStatsDictionaryOutput = new DiskDictionaryOutput(indexDirFile);
         } catch(IOException ex) {
             throw new PropertyException(ex, ps.getInstanceName(), null, "Error making partition output for merges");
         }

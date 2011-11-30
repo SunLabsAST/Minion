@@ -583,19 +583,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             header.vectorLengthOffset = vlb.position();
             
             try {
-                Partition p = field.getPartition();
-                DocumentVectorLengths.calculate(field.getInfo(),
-                        p.getNDocs(),
-                        p.getMaxDocumentID(),
-                        p.getPartitionManager(),
-                        getTermDictionary(false).iterator(),
-                        null,
-                        partOut.getVectorLengthsBuffer(),
-                        null);
-//            DocumentVectorLengths.calculate(field, partOut,
-//                    field.getPartition().getPartitionManager().
-//                    getTermStatsDict());
-            ret = MemoryField.MarshallResult.EVERYTHING_DUMPED;
+                DocumentVectorLengths.calculate(field, partOut,
+                        field.getPartition().getPartitionManager().
+                        getTermStatsDict());
+                ret = MemoryField.MarshallResult.EVERYTHING_DUMPED;
             } catch (RuntimeException ex) {
                 logger.log(Level.SEVERE, String.format("Exception calculating document vector lengths for %s", info.getName()));
                 throw(ex);

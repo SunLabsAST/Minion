@@ -186,21 +186,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
         int tsn = 0;
         
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
-        DictionaryOutput termStatsDictOut = null;
-        if(!partOut.isLongIndexingRun()) {
-//            try {
-//                termStatsDictOut = partOut.getTermStatsDictionaryOutput();
-//                termStatsDictOut.byteEncode(0, 8);
-//            } catch(Exception ex) {
-//                logger.log(Level.SEVERE, String.format(
-//                        "Error making term stats dictionary file for %s", this), ex);
-//            }
-        }
         
         //
         // Dump the fields.  Keep track of the offsets of the field and of the
         // offsets for the term statistics dictionaries for the fields.
-        TermStatsHeader tsh = partOut.getTermStatsHeader();
         for(MemoryField mf : fields) {
             if(mf == null) {
                 continue;
@@ -209,10 +198,6 @@ public class InvFileMemoryPartition extends MemoryPartition {
             //
             // Remember where we are 
             long fieldOffset = partDictOut.position();
-            long termStatsOff = -1;
-            if(termStatsDictOut != null) {
-                termStatsOff = termStatsDictOut.position();
-            }
             
             logger.fine(String.format("Dumping %s", mf.getInfo().getName()));
             
@@ -222,32 +207,13 @@ public class InvFileMemoryPartition extends MemoryPartition {
                 case NOTHING_DUMPED:
                     logger.finer(String.format("No dicts dumped"));
                     fieldOffset = -1;
-                    termStatsOff = -1;
                     break;
                 case DICTS_DUMPED:
-                    termStatsOff = -1;
-                    break;
                 case EVERYTHING_DUMPED:
                     break;
             }
             
             partOut.getPartitionHeader().addOffset(mf.getInfo().getID(), fieldOffset);
-            tsh.addOffset(mf.getInfo().getID(), termStatsOff);
-        }
-
-        try {
-            if(termStatsDictOut != null) {
-                long tshpos = termStatsDictOut.position();
-                tsh.write(termStatsDictOut);
-                long end = termStatsDictOut.position();
-                termStatsDictOut.position(0);
-                termStatsDictOut.byteEncode(tshpos, 8);
-                termStatsDictOut.position(end);
-                
-            }
-        } catch(Exception ex) {
-            logger.log(Level.SEVERE,
-                       String.format("Error setting term stats %d", tsn), ex);
         }
     }
     

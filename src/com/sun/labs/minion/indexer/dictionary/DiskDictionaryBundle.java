@@ -126,7 +126,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         entryFactory = new EntryFactory(Postings.Type.ID_FREQ);
                     }
                     break;
-                    
+
                 case RAW_SAVED:
                 case UNCASED_SAVED:
                     decoder = getDecoder();
@@ -187,7 +187,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
 
     }
-    
+
     public String[] getPostingsChannelNames() {
         String[] max = null;
         for(DiskDictionary dict : dicts) {
@@ -200,7 +200,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
         return max;
     }
-    
+
     public Postings.Type getTokenPostingsType() {
         if(info.hasAttribute(FieldInfo.Attribute.POSITIONS)) {
             return Postings.Type.ID_FREQ_POS;
@@ -208,7 +208,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             return Postings.Type.ID_FREQ;
         }
     }
-    
+
     public DiskDictionary getSavedValuesDictionary() {
         return dicts[Type.RAW_SAVED.ordinal()];
     }
@@ -275,7 +275,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
         return ret;
     }
-    
+
     public QueryEntry getDocumentTerm(int id) {
         if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
             return dicts[Type.UNCASED_TOKENS.ordinal()].getByID(id);
@@ -388,7 +388,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             return null;
         }
 
-        Comparable val = 
+        Comparable val =
                 MemoryDictionaryBundle.getEntryName(stringVal, info, dateParser);
 
         if(field.getInfo().getType() != FieldInfo.Type.STRING) {
@@ -396,7 +396,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         } else {
 
             if(caseSensitive) {
-                    return dicts[Type.RAW_SAVED.ordinal()].get(val);
+                return dicts[Type.RAW_SAVED.ordinal()].get(val);
             } else {
                 if(dicts[Type.UNCASED_SAVED.ordinal()] != null) {
                     return dicts[Type.UNCASED_SAVED.ordinal()].get(val);
@@ -561,12 +561,12 @@ public class DiskDictionaryBundle<N extends Comparable> {
             return null;
         }
         QueryEntry[] qes = dicts[Type.RAW_SAVED.ordinal()].getSubstring(
-                    (DiskBiGramDictionary) dicts[Type.SAVED_VALUE_BIGRAMS.ordinal()],
-                    val,
-                    caseSensitive,
-                    starts, ends,
-                    maxEntries,
-                    timeLimit);
+                (DiskBiGramDictionary) dicts[Type.SAVED_VALUE_BIGRAMS.ordinal()],
+                val,
+                caseSensitive,
+                starts, ends,
+                maxEntries,
+                timeLimit);
         return new ArrayDictionaryIterator(qes);
     }
 
@@ -704,9 +704,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
         mergeHeader.maxDocID = mergeState.maxDocID;
         mergeHeader.write(fieldDictOut);
         DiskDictionaryBundle exemplar = null;
-        
+
         boolean debug = mergeState.info.getName().equalsIgnoreCase("references");
-        
+
         //
         // Find a non-null bundle for when we need an actual bundle.
         for(DiskDictionaryBundle bundle : bundles) {
@@ -753,7 +753,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 mergeHeader.dictOffsets[ord] = -1;
                 continue;
             }
-            
+
             NameEncoder encoder = null;
             mergeHeader.dictOffsets[ord] = fieldDictOut.position();
 
@@ -817,9 +817,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     DiskBiGramDictionary.merge(mergeState, bgDicts);
                     continue;
             }
-            
+
             logger.fine(String.format(" Merging %s", type));
-            
+
             try {
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                         encoder,
@@ -833,7 +833,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             } catch(RuntimeException ex) {
                 logger.log(Level.SEVERE, String.format("Exception merging %s of field %s",
                         type, mergeState.info.getName()));
-                throw(ex);
+                throw (ex);
             }
         }
 
@@ -842,7 +842,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED) && entryIDMaps[Type.RAW_SAVED.ordinal()] != null) {
 
             File id = mergeState.manager.getIndexDir();
-            
+
             //
             // File backed buffers for the offsets and encoded values
             File dtvFile = File.createTempFile("dtv", "buff", id);
@@ -854,11 +854,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     "rw");
             FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(
                     dtvOffsetRAF, 1 << 16);
-            
+
             logger.fine(String.format("Merging docs to values"));
-            
+
             for(int i = 0; i < bundles.length; i++) {
-                
+
                 //
                 // This partition didn't have this field, but we still want to
                 // fill in values.
@@ -877,9 +877,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 int[] valIDMap = entryIDMaps[Type.RAW_SAVED.ordinal()][i];
 
                 for(int j = 0; j < bundles[i].header.maxDocID; j++) {
-                    
+
                     int n = dtvDup.byteDecode();
-                 
+
                     if(docIDMap != null && docIDMap[j + 1] < 0) {
                         //
                         // Skip this document's data.
@@ -920,9 +920,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         //
         // Calculate document vector lengths.
-        if(mergeState.info.hasAttribute(FieldInfo.Attribute.INDEXED) &&
-                !mergeState.partOut.isLongIndexingRun()) {
-            
+        if(mergeState.info.hasAttribute(FieldInfo.Attribute.INDEXED)
+                && !mergeState.partOut.isLongIndexingRun()) {
+
             logger.fine(String.format("Calculating document vector lengths"));
 
             //
@@ -947,29 +947,28 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     mPostRAF[i] = new RandomAccessFile(postOutFiles[i], "rw");
                 }
                 try {
-                WriteableBuffer vlb = mergeState.partOut.getVectorLengthsBuffer();
-                mergeHeader.vectorLengthOffset = vlb.position();
-                fieldDictOut.position(mdp);
-                DiskDictionary newMainDict =
-                        new DiskDictionary(new EntryFactory(exemplar.getTokenPostingsType()),
-                        new StringNameHandler(),
-                        fieldDictOut,
-                        mPostRAF);
-                DocumentVectorLengths.calculate(mergeState.info,
-                        mergeState.maxDocID,
-                        mergeState.maxDocID,
-                        mergeState.manager,
-                        newMainDict.iterator(),
-                        null, // no term stats calculation during merges.
-                        vlb,
-                        mergeState.manager.getTermStatsDict());
-                for(RandomAccessFile mprf : mPostRAF) {
-                    mprf.close();
-                }
-                fieldDictOut.position(mdsp);
+                    WriteableBuffer vlb = mergeState.partOut.getVectorLengthsBuffer();
+                    mergeHeader.vectorLengthOffset = vlb.position();
+                    fieldDictOut.position(mdp);
+                    DiskDictionary newMainDict =
+                            new DiskDictionary(new EntryFactory(exemplar.getTokenPostingsType()),
+                            new StringNameHandler(),
+                            fieldDictOut,
+                            mPostRAF);
+                    DocumentVectorLengths.calculate(mergeState.info,
+                            mergeState.maxDocID,
+                            mergeState.maxDocID,
+                            mergeState.manager,
+                            newMainDict.iterator(),
+                            vlb,
+                            mergeState.manager.getTermStatsDict());
+                    for(RandomAccessFile mprf : mPostRAF) {
+                        mprf.close();
+                    }
+                    fieldDictOut.position(mdsp);
                 } catch(RuntimeException ex) {
                     logger.log(Level.SEVERE, String.format("Exception computing vectors for merged partition on field %s", mergeState.info.getName()));
-                    throw(ex);
+                    throw (ex);
                 }
 
             } else {
@@ -985,15 +984,23 @@ public class DiskDictionaryBundle<N extends Comparable> {
         fieldDictOut.position(endPos);
     }
 
-    public static void regenerateTermStats(DiskDictionaryBundle[] bundles,
-            PartitionOutput partOut) {
+    /**
+     * Generates term statistics for the main token dictionaries in the given
+     * bundles.
+     * @param bundles the bundles to use when generating term statistics.
+     * @param partOut the partition output where the term statistics should be
+     * written.
+     * @return <code>true</code> if any term statistics were written, <code>false</code>
+     * otherwise.
+     */
+    public static boolean generateTermStats(DiskDictionaryBundle[] bundles,
+            DictionaryOutput termStatsDictOut) {
 
         //
         // Special case of a single partition, we just need to iterate through
         // the entries and copy out the data, so no need for messing with the heap.
         int nMerged = 0;
         int tsid = 1;
-        DictionaryOutput termStatsDictOut = partOut.getTermStatsDictionaryOutput();
         termStatsDictOut.start(null, new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, 0);
 
         if(bundles.length == 1) {
@@ -1013,13 +1020,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     termStatsDictOut.write(tse);
                 }
                 nMerged++;
-                if(nMerged % 50000 == 0) {
-                    logger.info(String.format("Regenerated %d", nMerged));
+                if(nMerged % 50000 == 0 && logger.isLoggable(Level.FINER)) {
+                    logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
                 }
             }
 
-            if(nMerged % 50000 != 0) {
-                logger.info(String.format("Regenerated %d", nMerged));
+            if(nMerged % 50000 != 0 && logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
             }
         } else {
 
@@ -1078,15 +1085,16 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     termStatsDictOut.write(tse);
                 }
                 nMerged++;
-                if(nMerged % 100000 == 0) {
-                    logger.info(String.format("Regenerated %d", nMerged));
+                if(nMerged % 100000 == 0 && logger.isLoggable(Level.FINER)) {
+                    logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
                 }
             }
-            if(nMerged % 100000 != 0) {
-                logger.info(String.format("Regenerated %d", nMerged));
+            if(nMerged % 100000 != 0 && logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
             }
         }
         termStatsDictOut.finish();
+        return nMerged > 0;
     }
 
     public void calculateVectorLengths(PartitionOutput partOut) throws java.io.IOException {
@@ -1094,15 +1102,14 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // Remember where the vector lengths start.
         header.vectorLengthOffset = partOut.getVectorLengthsBuffer().position();
         DiskPartition p = (DiskPartition) field.getPartition();
-        DocumentVectorLengths.calculate(field.getInfo(), 
-                p.getNDocs(), 
+        DocumentVectorLengths.calculate(field.getInfo(),
+                p.getNDocs(),
                 p.getMaxDocumentID(),
                 p.getPartitionManager(),
                 field.getTermDictionary(false).iterator(),
-                null,
-                partOut.getVectorLengthsBuffer(), 
+                partOut.getVectorLengthsBuffer(),
                 p.getPartitionManager().getTermStatsDict());
-        
+
         //
         // Re-write our header.
         dictFile.seek(headerPos);

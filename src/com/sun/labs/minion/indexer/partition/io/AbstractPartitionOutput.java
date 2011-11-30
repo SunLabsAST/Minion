@@ -91,16 +91,6 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     protected MemoryDictionary.Renumber renumber;
 
     /**
-     * A dictionary output for the term stats for the entire collection.
-     */
-    protected DictionaryOutput termStatsDictOut;
-    
-    /**
-     * A header for the term stats dictionary.
-     */
-    protected TermStatsHeader termStatsHeader;
-    
-    /**
      * A buffer for writing vector lengths.
      */
     protected WriteableBuffer vectorLengthsBuffer;
@@ -215,13 +205,6 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         this.postOut = postOut;
     }
 
-    public TermStatsHeader getTermStatsHeader() {
-        if(termStatsHeader == null) {
-            termStatsHeader = new TermStatsHeader();
-        }
-        return termStatsHeader;
-    }
-
     public MemoryPartition getPartition() {
         return partition;
     }
@@ -321,25 +304,6 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
             delFile.close();
         }
 
-        //
-        // Dump the new term stats dictionary, if there is one.  There won't be if
-        // this partition output was used for merging.
-        if(termStatsDictOut != null && termStatsDictOut.position() > 0) {
-            try {
-                int tsn = partitionManager.getMetaFile().getNextTermStatsNumber();
-
-                RandomAccessFile termStatsFile = new RandomAccessFile(partitionManager.makeTermStatsFile(tsn), "rw");
-                termStatsDictOut.flush(termStatsFile);
-                termStatsFile.close();
-
-                partitionManager.getMetaFile().setTermStatsNumber(tsn);
-                partitionManager.updateTermStats();
-            } catch(FileLockException ex) {
-                throw new IOException(String.format(
-                        "Error dumping flushing term stats %d", partitionNumber), ex);
-            }
-
-        }
         if(keys != null && !keys.isEmpty()) {
             partitionManager.addNewPartition(partitionNumber, keys);
         }
@@ -348,9 +312,6 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
 
     public void cleanUp() {
         partDictOut.cleanUp();
-        if(termStatsDictOut != null) {
-            termStatsDictOut.cleanUp();
-        }
         if(postOut != null) {
             for(PostingsOutput po : postOut) {
                 po.cleanUp();
@@ -365,9 +326,6 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     public void close() throws IOException {
         if(partDictOut != null) {
             partDictOut.close();
-        }
-        if(termStatsDictOut != null) {
-            termStatsDictOut.close();
         }
         if(postOut != null) {
             for(PostingsOutput po : postOut) {
