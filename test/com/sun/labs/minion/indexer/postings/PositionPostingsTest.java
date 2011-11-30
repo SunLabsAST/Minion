@@ -276,7 +276,7 @@ public class PositionPostingsTest implements PostingsTest {
     /**
      * Tests simple addition of occurrences.
      */
-//    @Test
+    @Test
     public void testSimpleAdd() throws Exception {
         TestData simple = new TestData(new int[]{1, 4, 7, 10},
                 new int[]{1, 1, 1, 1},
@@ -287,7 +287,7 @@ public class PositionPostingsTest implements PostingsTest {
     /**
      * Tests adding IDs multiple times.
      */
-//    @Test
+    @Test
     public void testSimpleMultipleAdd() throws Exception {
         TestData simple = new TestData(
                 new int[]{1, 4, 7, 8, 10, 11, 17},
@@ -300,7 +300,7 @@ public class PositionPostingsTest implements PostingsTest {
     /**
      * Tests adding IDs multiple times.
      */
-//    @Test
+    @Test
     public void testSimpleClear() throws Exception {
         TestData simple = new TestData(
                 new int[]{1, 4, 7, 8, 10, 11, 17},
@@ -318,17 +318,17 @@ public class PositionPostingsTest implements PostingsTest {
         simple.iteration(p, true, true);
     }
 
-//    @Test
+    @Test
     public void testSmallRandomAdds() throws Exception {
         randomAdd(16, 256);
     }
 
-//    @Test
+    @Test
     public void testMediumRandomAdds() throws Exception {
         randomAdd(256, 256);
     }
 
-//    @Test
+    @Test
     public void testLargeRandomAdds() throws Exception {
         randomAdd(8192, 256);
     }
@@ -342,7 +342,7 @@ public class PositionPostingsTest implements PostingsTest {
      * Tests encoding data that has had problems before, ensuring that we
      * don't re-introduce old problems.
      */
-//    @Test
+    @Test
     public void testPreviousData() throws Exception {
         for(String s : previousData) {
             BufferedReader r = getInputReader(s);
@@ -362,7 +362,7 @@ public class PositionPostingsTest implements PostingsTest {
      * Tests encoding data that has had problems before, ensuring that we
      * don't re-introduce old problems.
      */
-//    @Test
+    @Test
     public void testPreviousAppends() throws Exception {
         for(String s : previousAppends) {
 
@@ -377,7 +377,7 @@ public class PositionPostingsTest implements PostingsTest {
         }
     }
 
-//    @Test
+    @Test
     public void testAppend() throws java.io.IOException {
         for(int i = 0; i < 256; i++) {
             logger.fine(String.format("Random append %d/%d", i + 1, 256));
@@ -385,7 +385,7 @@ public class PositionPostingsTest implements PostingsTest {
         }
     }
 
-//    @Test
+    @Test
     public void testStepUpAppend() throws java.io.IOException {
         for(int i = 1; i < 256; i += 2) {
             TestData td1 = new TestData(rand, zipf, i);
@@ -397,7 +397,7 @@ public class PositionPostingsTest implements PostingsTest {
         }
     }
 
-//    @Test
+    @Test
     public void testMultiAppend() throws java.io.IOException {
         for(int i = 0; i < 128; i++) {
             for(int j = 3; j < 20; j++) {
@@ -411,7 +411,7 @@ public class PositionPostingsTest implements PostingsTest {
         }
     }
 
-//    @Test
+    @Test
     public void testTestDataAppend() {
         TestData[] mltd = new TestData[5];
         for(int i = 0; i < mltd.length; i++) {
