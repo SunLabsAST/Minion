@@ -524,29 +524,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     "Can't get matching values for non-string field %s", info.getName()));
             return null;
         }
-        QueryEntry[] qes;
-        if(caseSensitive) {
-            qes = dicts[Type.RAW_SAVED.ordinal()].getSubstring(
+        QueryEntry[] qes = dicts[Type.RAW_SAVED.ordinal()].getSubstring(
                     (DiskBiGramDictionary) dicts[Type.SAVED_VALUE_BIGRAMS.ordinal()],
                     val,
                     caseSensitive,
                     starts, ends,
                     maxEntries,
                     timeLimit);
-        } else {
-            if(dicts[Type.UNCASED_SAVED.ordinal()] == null) {
-                logger.warning(String.format(
-                        "Can't get uncased matches for string field %s",
-                        info.getName()));
-                return null;
-            }
-            qes = dicts[Type.UNCASED_SAVED.ordinal()].getSubstring((DiskBiGramDictionary) dicts[Type.SAVED_VALUE_BIGRAMS.ordinal()],
-                    val.toLowerCase(),
-                    false, starts,
-                    ends,
-                    maxEntries,
-                    timeLimit);
-        }
         return new ArrayDictionaryIterator(qes);
     }
 
@@ -778,10 +762,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     continue;
 
                 case SAVED_VALUE_BIGRAMS:
-                    mergeState.entryIDMaps =
-                            entryIDMaps[Type.RAW_SAVED.ordinal()] != null
-                            ? entryIDMaps[Type.RAW_SAVED.ordinal()]
-                            : entryIDMaps[Type.UNCASED_SAVED.ordinal()];
+                    mergeState.entryIDMaps = entryIDMaps[Type.RAW_SAVED.ordinal()];
                     for(int i = 0; i < mDicts.length; i++) {
                         bgDicts[i] = (DiskBiGramDictionary) mDicts[i];
                     }
