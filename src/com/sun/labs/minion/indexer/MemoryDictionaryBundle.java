@@ -490,7 +490,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
             //
             // Write out our document vector lengths.
-            logger.info(String.format("Calculating vector lengths for %s", field.info.getName()));
             WriteableBuffer vlb = partOut.getVectorLengthsBuffer();
             header.vectorLengthOffset = vlb.position();
             DocumentVectorLengths.calculate(field, partOut,

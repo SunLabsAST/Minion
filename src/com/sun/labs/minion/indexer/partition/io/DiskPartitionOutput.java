@@ -51,6 +51,21 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
         deletionsBuffer = new ArrayBuffer(1024);
     }
 
+    public DiskPartitionOutput(File indexDir) throws IOException, FileLockException {
+        super(indexDir);
+        File[] files = new File[] {new File(indexDir, "p1.dict")};
+        partDictOut = new DiskDictionaryOutput(manager.getIndexDir());
+        postStream = new OutputStream[files.length - 1];
+        postOut = new PostingsOutput[postStream.length];
+        for(int i = 1; i < files.length; i++) {
+            postStream[i - 1] = new BufferedOutputStream(
+                    new FileOutputStream(files[i]), 32768);
+            postOut[i - 1] = new StreamPostingsOutput(postStream[i - 1]);
+        }
+
+        vectorLengthsBuffer = new ArrayBuffer(1024);
+        deletionsBuffer = new ArrayBuffer(1024);
+    }
     @Override
     public DictionaryOutput getTermStatsDictionaryOutput() {
         if(termStatsDictOut == null) {

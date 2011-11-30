@@ -146,7 +146,11 @@ public class AsyncDumper implements Runnable, Dumper {
                     try {
                         
                         PartitionOutput partOut = mph.part.dump();
+                        NanoWatch fw = new NanoWatch();
+                        fw.start();
                         partOut.flush(mph.part.getDocumentDictionary().getKeys());
+                        fw.stop();
+                        logger.info(String.format("Part flush took %.3fms", fw.getTimeMillis()));
                         partOut.close();
                         
                         //

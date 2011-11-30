@@ -46,6 +46,8 @@ public interface PartitionOutput {
     
     public PostingsOutput[] getPostingsOutput();
     
+    public void setPostingsOutput(PostingsOutput[] postOut);
+    
     public DictionaryOutput getTermStatsDictionaryOutput();
     
     public WriteableBuffer getDeletionsBuffer();

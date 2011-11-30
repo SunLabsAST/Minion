@@ -10,6 +10,7 @@ import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Set;
@@ -88,6 +89,12 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         partHeader = new PartitionHeader();
         partNumber = manager.getMetaFile().getNextPartitionNumber();
     }
+    
+    public AbstractPartitionOutput(File indexDir) {
+        this.manager = null;
+        partHeader = new PartitionHeader();
+        partNumber =  1;
+    }
 
     public WriteableBuffer getDeletionsBuffer() {
         return deletionsBuffer;
@@ -117,6 +124,10 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         return postOut;
     }
 
+    public void setPostingsOutput(PostingsOutput[] postOut) {
+        this.postOut = postOut;
+    }
+    
     public DictionaryOutput getTermStatsDictionaryOutput() {
         return termStatsDictOut;
     }
@@ -211,13 +222,10 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     }
 
     public void close() throws IOException {
-        logger.info(String.format("closing"));
         if(partDictOut != null) {
-            logger.info(String.format("closing partDict"));
             partDictOut.close();
         }
         if(termStatsDictOut != null) {
-            logger.info(String.format("closing termStats"));
             termStatsDictOut.close();
         }
         if(postOut != null) {
