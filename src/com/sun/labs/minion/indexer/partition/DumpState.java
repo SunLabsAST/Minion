@@ -36,7 +36,7 @@ public class DumpState {
      * The partition manager for the partition that is being dumped.
      */
     public PartitionManager manager;
-    
+
     /**
      * A header for the partition being dumped.
      */
@@ -46,7 +46,7 @@ public class DumpState {
      * A dictionary output for this dump.
      */
     public DictionaryOutput fieldDictOut;
-    
+
     /**
      * A dictionary output for the term stats for the entire collection.
      */
@@ -61,41 +61,47 @@ public class DumpState {
      * A place to put postings.
      */
     public PostingsOutput[] postOut;
-    
+
     /**
      * A random access file for document vector length output.
      */
     public RandomAccessFile vectorLengthsFile;
-    
+
     /**
      * An encoder for names during the dump.
      */
     public NameEncoder encoder;
-    
+
     /**
      * How entries should be renumbered.
      */
     public MemoryDictionary.Renumber renumber;
-    
+
     /**
      * How IDs in the dictionary should be remapped.
      */
     public MemoryDictionary.IDMap idMap;
-    
+
     /**
      * A postings ID map to use when dumping.
      */
     public int[] postIDMap;
-    
+
     /**
      * The maximum document ID for the dump.
      */
     public int maxDocID;
 
-    public DumpState(PartitionManager manager, File[] files) throws IOException {
+    /**
+     * Creates a dump state that can be passed around during dumping.
+     * @param partNumber the partition number that we're dumping
+     * @param manager the manager responsible for the partition that we're dumping
+     * @param files the files into which we'll write the partition data.
+     */
+    public DumpState(int partNumber, PartitionManager manager, File[] files) throws IOException {
+        this.partNumber = partNumber;
         this.manager = manager;
         indexDir = manager.getIndexDir();
-        partNumber = manager.getNextPartitionNumber();
         fieldDictOut = new DiskDictionaryOutput(indexDir);
         postStream = new OutputStream[files.length - 1];
         postOut = new PostingsOutput[postStream.length];
@@ -107,18 +113,18 @@ public class DumpState {
             postOut[i - 1] = new StreamPostingsOutput(postStream[i - 1]);
         }
     }
-    
+
     public DumpState(String indexDir) throws IOException {
         this(new File(indexDir));
     }
-    
+
     public DumpState(File indexDir) throws IOException {
         this.indexDir = indexDir;
         fieldDictOut = new DiskDictionaryOutput(indexDir);
         postStream = new OutputStream[0];
         postOut = new PostingsOutput[0];
     }
-    
+
     public void close() throws IOException {
         for(int i = 0; i < postStream.length; i++) {
             postOut[i].flush();

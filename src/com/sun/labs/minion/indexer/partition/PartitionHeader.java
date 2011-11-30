@@ -5,12 +5,15 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * A header for a partition, indicating where field information can be found
  * in the files.
  */
 public class PartitionHeader {
+    
+    private static final Logger logger = Logger.getLogger(PartitionHeader.class.getName());
 
     /**
      * The number of documents in the partition.
@@ -54,6 +57,7 @@ public class PartitionHeader {
 
     public void addOffset(int id, long offset) {
         fieldOffsets.add(new FieldOffset(id, offset));
+        nFields++;
     }
 
     public List<FieldOffset> getFieldOffsets() {

@@ -30,6 +30,8 @@ import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.StopWatch;
+import com.sun.labs.minion.util.buffer.Buffer.DecodeMode;
+import com.sun.labs.minion.util.buffer.Buffer.Portion;
 import java.util.logging.Logger;
 
 /**
@@ -93,24 +95,23 @@ public abstract class MemoryPartition extends Partition {
         StopWatch sw = new StopWatch();
         sw.start();
         
-        File[] files = getMainFiles();
+        int nextPartNumber = manager.getNextPartitionNumber();
+        File[] files = getMainFiles(manager, nextPartNumber);
+        DumpState dumpState = new DumpState(nextPartNumber, manager, files);
 
-        DumpState dumpState = new DumpState(manager, files);
 
         //
         // Get a file for the dictionaries.
-        RandomAccessFile dictFile = new RandomAccessFile(files[0], "rw");
-
         dumpState.partHeader = new PartitionHeader();
 
         //
         // A spot for the partition header offset to be written.
-        long phoffsetpos = dictFile.getFilePointer();
-        dictFile.writeLong(0);
+        int phoffsetpos = dumpState.fieldDictOut.position();
+        dumpState.fieldDictOut.byteEncode(0, 8);
 
         //
         // Dump the document dictionary.
-        dumpState.partHeader.setDocDictOffset(dictFile.getFilePointer());
+        dumpState.partHeader.setDocDictOffset(dumpState.fieldDictOut.position());
         dumpState.renumber = MemoryDictionary.Renumber.NONE;
         dumpState.idMap = MemoryDictionary.IDMap.NONE;
         dumpState.postIDMap = null;
@@ -135,27 +136,28 @@ public abstract class MemoryPartition extends Partition {
         dumpCustom(dumpState);
         
         //
-        // Flush the dictionary output to our dictionary file.
-        dumpState.fieldDictOut.flush(dictFile);
-
-        //
         // Write the partition header, then return to the top of the file to
         // say where it is.
-        long phoffset = dictFile.getFilePointer();
-        dumpState.partHeader.write(dictFile);
-        long pos = dictFile.getFilePointer();
-        dictFile.seek(phoffsetpos);
-        dictFile.writeLong(phoffset);
-        dictFile.seek(pos);
+        int phoffset = dumpState.fieldDictOut.position();
+        dumpState.partHeader.write(dumpState.fieldDictOut);
+        int pos = dumpState.fieldDictOut.position();
+        dumpState.fieldDictOut.position(phoffsetpos);
+        dumpState.fieldDictOut.byteEncode(phoffset, 8);
+        dumpState.fieldDictOut.position(pos);
 
+        //
+        // Flush the dictionary output to our dictionary file.
+        RandomAccessFile dictFile = new RandomAccessFile(files[0], "rw");
+        dumpState.fieldDictOut.flush(dictFile);
         dictFile.close();
-        
         dumpState.close();
+        
         sw.stop();
-        logger.info(String.format("Dumped %d, %d docs took %dms", partNumber, 
+        logger.info(String.format("Dumped %d, %d docs took %dms", 
+                dumpState.partNumber, 
                 docDict.size(), sw.getTime()));
 
-        manager.addNewPartition(partNumber, docDict.getKeys());
+        manager.addNewPartition(dumpState.partNumber, docDict.getKeys());
         return partNumber;
     }
 

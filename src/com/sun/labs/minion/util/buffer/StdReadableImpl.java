@@ -222,29 +222,42 @@ public abstract class StdReadableImpl implements ReadableBuffer {
         StringBuilder b = new StringBuilder((end - start + 1) * 8);
         b.append(String.format("position: %d limit: %d\n", position(), limit()));
 
-        if (start < 0 || end < 0) {
+        if(start < 0 || end < 0) {
             return b.toString();
         }
 
         b.append(countBits(start, end)).append(" bits set\n");
+        int currDecodeInt = 0;
         long currDecode = 0;
-        long inCurr = 0;
+        int inCurr = 0;
 
         int shift = 0;
-        for (int i = start, j = 0; i < end; i++, j += 8) {
+        switch(decode) {
+            case BYTE_ENCODED:
+                shift = 0;
+                break;
+            case INTEGER:
+                shift = 24;
+                break;
+            case LONG:
+                shift = 56;
+                break;
+        }
+
+        for(int i = start, j = 0; i < end; i++, j += 8) {
             byte curr = get(i);
             b.append(String.format("%s%7d%7d %s",
                     i > start ? "\n" : "",
-                    j, i, 
+                    j, i,
                     StdBufferImpl.byteToBinaryString(curr)));
 
             //
             // See if we need to dump an encoded integer that we've been collecting.
-            switch (decode) {
+            switch(decode) {
                 case BYTE_ENCODED:
                     currDecode |= ((long) (curr & 0x7F)) << shift;
-                    if ((curr & 0x80) == 0) {
-                        b.append(String.format(" %d", currDecode));
+                    if((curr & 0x80) == 0) {
+                        b.append(String.format(" %8d", currDecode));
                         currDecode = 0;
                         shift = 0;
                     } else {
@@ -252,28 +265,27 @@ public abstract class StdReadableImpl implements ReadableBuffer {
                     }
                     break;
                 case INTEGER:
-                    currDecode |= ((long) (curr & 0xFF)) << shift;
+                    currDecodeInt |= ((int) (curr & 0xFF)) << shift;
                     inCurr++;
-                    shift += 8;
-                    if (inCurr % 4 == 0) {
-                        b.append(String.format(" %d", currDecode));
-                        currDecode = 0;
-                        shift = 0;
+                    shift -= 8;
+                    if(inCurr % 4 == 0) {
+                        b.append(String.format(" %8d", currDecodeInt));
+                        currDecodeInt = 0;
+                        shift = 24;
                         inCurr = 0;
                     }
                     break;
                 case LONG:
                     currDecode |= ((long) (curr & 0xFF)) << shift;
                     inCurr++;
-                    shift += 8;
-                    if (inCurr % 8 == 0) {
-                        b.append(String.format(" %d", currDecode));
+                    shift -= 8;
+                    if(inCurr % 8 == 0) {
+                        b.append(String.format(" %8d", currDecode));
                         currDecode = 0;
-                        shift = 0;
+                        shift = 56;
                         inCurr = 0;
                     }
                     break;
-
             }
 
         }

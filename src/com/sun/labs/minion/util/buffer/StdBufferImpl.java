@@ -24,6 +24,8 @@
 
 package com.sun.labs.minion.util.buffer;
 
+import java.util.logging.Logger;
+
 
 /**
  * A abstract class that implements most of the
@@ -35,6 +37,8 @@ package com.sun.labs.minion.util.buffer;
  * @see ReadableBuffer
  */
 public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
+    
+    private static final Logger logger = Logger.getLogger(StdBufferImpl.class.getName()); 
 
     /**
      * Gets the number of bytes required to directly encode a given number.
@@ -469,9 +473,9 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         }
 
         b.append(countBits(start, end)).append(" bits set\n");
-        long currDecode = 0;
         int currDecodeInt = 0;
-        long inCurr = 0;
+        long currDecode = 0;
+        int inCurr = 0;
         
         int shift = 0;
         switch(decode) {
@@ -485,7 +489,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
                 shift = 56;
                 break;
         }
-
+        
         for (int i = start, j = 0; i < end; i++, j += 8) {
             byte curr = get(i);
             b.append(String.format("%s%7d%7d %s",

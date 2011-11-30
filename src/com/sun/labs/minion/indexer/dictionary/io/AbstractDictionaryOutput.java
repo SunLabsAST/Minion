@@ -99,9 +99,9 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
     }
 
     public DictionaryHeader getHeader() {
-        if(!started) {
-            throw new IllegalStateException("Can't get a header when the dictionary has not been started");
-        }
+//        if(!started) {
+//            throw new IllegalStateException("Can't get a header when the dictionary has not been started");
+//        }
         return header;
     }
 

@@ -23,13 +23,11 @@ public class TermStatsHeader implements Iterable<Map.Entry<Integer, Long>> {
     }
 
     public TermStatsHeader(RandomAccessFile raf) throws java.io.IOException {
-        logger.info(String.format("off: %d", raf.getFilePointer()));
         offsets = new HashMap<Integer, Long>();
         int n = raf.readInt();
         for(int i = 0; i < n; i++) {
             offsets.put(raf.readInt(), raf.readLong());
         }
-        logger.info(String.format("%s", this));
     }
 
     public void write(RandomAccessFile raf) throws java.io.IOException {
