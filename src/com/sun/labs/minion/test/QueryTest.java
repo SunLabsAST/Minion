@@ -186,6 +186,7 @@ public class QueryTest extends SEMain {
         addCommands();
         setPrompt();
         shell.setDefaultCommand("q");
+        shell.setParseQuotes(false);
     }
 
     public static void usage() {
@@ -283,8 +284,12 @@ public class QueryTest extends SEMain {
     }
 
     private static String join(String[] a, String j) {
+        return join(a, 0, a.length, j);
+    }
+    
+    private static String join(String[] a, int start, int end, String j) {
         StringBuilder sb = new StringBuilder();
-        for(int i = 0; i < a.length; i++) {
+        for(int i = start; i < end; i++) {
             if(i > 0) {
                 sb.append(j);
             }
@@ -295,25 +300,22 @@ public class QueryTest extends SEMain {
 
     private void addCommands() {
         
-        shell.addGroup("query", "Commands for specifying queries and their result formats");
-        shell.addGroup("info", "Information about the index");
-        shell.addGroup("terms", "Information about specific terms");
-        shell.addGroup("maint", "Commands that maintain the index");
+        shell.addGroup("Query", "Commands for specifying queries and their result formats");
+        shell.addGroup("Info", "Information about the index");
+        shell.addGroup("Terms", "Information about specific terms");
+        shell.addGroup("Maintenance", "Commands that maintain the index");
         
-        shell.add("q", "query", new CommandInterface() {
+        shell.add("q", "Query", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 //
                 // Run a query.
-                String q = join(strings, " ");
+                String q = join(args, 1, args.length, " ");
                 try {
-                    ResultSet r = searcher.search(q, sortSpec,
-                            queryOp, grammar);
+                    ResultSet r = searcher.search(q, sortSpec, queryOp, grammar);
                     displayResults(r);
-                } catch(ParseException pe) {
-                    logger.log(Level.WARNING, "", pe);
-                } catch(SearchEngineException se) {
-                    logger.log(Level.SEVERE, "Error running search", se);
+                } catch(Exception ex) {
+                    logger.log(Level.SEVERE, String.format("Error running search"), ex);
                 }
                 return "";
             }
@@ -323,11 +325,11 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.addAlias("q", "query");
+        shell.addAlias("q", "Query");
         
-        shell.add("stats", "info", new CommandInterface() {
+        shell.add("stats", "Info", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
                  stats();
                  return "";
             }
@@ -337,11 +339,14 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("qop", "query", new CommandInterface() {
+        shell.add("qop", "Query", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length == 1) {
+                    return String.format("Query op is: %s", queryOp);
+                }
                 try {
-                    queryOp = Searcher.Operator.valueOf(strings[0]);
+                    queryOp = Searcher.Operator.valueOf(args[1].toUpperCase());
                 } catch(IllegalArgumentException ex) {
                     shell.out.format("Didn't recognize operator, valid options are: %s\n",
                             Arrays.toString(Searcher.Operator.values()));
@@ -350,10 +355,12 @@ public class QueryTest extends SEMain {
             }
 
             public String getHelp() {
-                return "Set the default query operator";
+                return String.format("qop - Set the default query operator values: %s", 
+                        Arrays.toString(Searcher.Operator.values()));
             }
         });
-        shell.add("deff", "query", new CommandInterface() {
+        
+        shell.add("deff", "Query", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
@@ -372,9 +379,9 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("qstats", "query", new CommandInterface() {
+        shell.add("qstats", "Query", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 queryStats();
                 return "";
             }
@@ -384,9 +391,9 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("nd", "query", new CommandInterface() {
+        shell.add("nd", "Query", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 return String.format("%d docs", engine.getNDocs());
             }
 
@@ -395,13 +402,18 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("ts", "terms", new CommandInterface() {
+        shell.add("ts", "Terms", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                
+                if(args.length == 1) {
+                    return "Must specify one or more terms";
+                }
                 
                 TermStatsDiskDictionary tsd = manager.getTermStatsDict();
                 StringBuilder sb = new StringBuilder();
-                for(String word : strings) {
+                for(int i = 1; i < args.length; i++) {
+                    String word = args[i];
                     TermStats ts = tsd.getTermStats(word);
                     sb.append(String.format("%s: %s", word, ts));
                 }                
@@ -413,34 +425,34 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("n", "query", new CommandInterface() {
+        shell.add("n", "Query", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
-                if(strings.length == 0) {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length == 1) {
                     return "Need to specify the number of hits";
                 }
-                nHits = Integer.parseInt(strings[0]);
+                nHits = Integer.parseInt(args[1]);
                 return String.format("Set number of hits to %d", nHits);
             }
 
             public String getHelp() {
-                return "Set the number of hits to return";
+                return "num - Set the number of hits to return";
             }
         });
         
-        shell.add("sort", "query", new CommandInterface() {
+        shell.add("sort", "Query", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
-                sortSpec = join(strings, " ");
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                sortSpec = join(args, 1, args.length, " ");
                 return "";
             }
 
             public String getHelp() {
-                return "[sortspec] Set the sorting spec";
+                return "sortspec - Set the sorting spec";
             }
         });
         
-        shell.add("display", "query", new CommandInterface() {
+        shell.add("display", "Query", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 displaySpec.setDisplayFields(Arrays.copyOfRange(args, 1, args.length));
@@ -452,10 +464,14 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("format", "query", new CommandInterface() {
+        shell.add("format", "Query", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
-                displaySpec.setFormatString(join(Arrays.copyOfRange(args, 1, args.length), " "));
+                
+                if(args.length == 1) {
+                    return "Must specify display string";
+                }
+                displaySpec.setFormatString(join(args, 1, args.length, " "));
                 return String.format("Display spec is %s", displaySpec);
             }
 
@@ -464,14 +480,14 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("gram", "query", new CommandInterface() {
+        shell.add("gram", "Query", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
-                if(strings.length == 1) {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length == 1) {
                     return "Currently using " + grammar;
                 }
                 try {
-                    grammar = Searcher.Grammar.valueOf(strings[1].toUpperCase());
+                    grammar = Searcher.Grammar.valueOf(args[1].toUpperCase());
                 } catch(IllegalArgumentException ex) {
                     return String.format(
                             "Unrecognized grammar, valid values are: %s\n",
@@ -485,7 +501,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("term", "terms", new CommandInterface() {
+        shell.add("term", "Terms", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
@@ -519,11 +535,11 @@ public class QueryTest extends SEMain {
             }
 
             public String getHelp() {
-                return "[term...] Perform a case sensitive term lookup for one or more terms";
+                return "[term...] - Perform a case sensitive term lookup for one or more terms";
             }
         });
 
-        shell.add("termi", "terms", new CommandInterface() {
+        shell.add("termi", "Terms", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
@@ -559,14 +575,15 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("wild", "terms", new CommandInterface() {
+        shell.add("wild", "Terms", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
-                if(strings.length == 0) {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length == 1) {
                     return "Must specify one or more patterns";
                 }
 
-                for(String pat : strings) {
+                for(int i = 1; i < args.length; i++) {
+                    String pat = args[i];
                     for(DiskPartition p : manager.getActivePartitions()) {
                         for(DiskField df : ((InvFileDiskPartition) p).getDiskFields()) {
 
@@ -598,10 +615,10 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("morph", "terms", new CommandInterface() {
+        shell.add("morph", "Terms", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
-                if(args.length == 0) {
+                if(args.length == 1) {
                     return "Must specify one or more terms";
                 }
 
@@ -635,13 +652,13 @@ public class QueryTest extends SEMain {
             }
 
             public String getHelp() {
-                return "[term] [term...] Get morphological variants for one or more terms";
+                return "[term] [term...] - Get morphological variants for one or more terms";
             }
         });
 
-        shell.add("rts", "maint", new CommandInterface() {
+        shell.add("rts", "Maintenance", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 manager.recalculateTermStats();
                 return "Term stats recalculated";
             }
@@ -651,9 +668,9 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("fields", "info", new CommandInterface() {
+        shell.add("fields", "Info", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 MetaFile mf = manager.getMetaFile();
                 shell.out.println(mf.toString());
                 return "";
@@ -664,11 +681,17 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("del", "maint", new CommandInterface() {
+        shell.add("del", "Maintenance", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length == 1) {
+                    return "Must specify keys to delete";
+                }
+                
                 StringBuilder sb = new StringBuilder();
-                for(String key : strings) {
+                
+                for(int i = 1; i < args.length; i++) {
+                    String key = args[i];
                     manager.deleteDocument(key);
                     sb.append(String.format("Deleted %s\n", key));
                 }
@@ -680,10 +703,10 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("delq", "maint", new CommandInterface() {
+        shell.add("delq", "Maintenance", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
-                String q = join(strings, " ");
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                String q = join(args, 1, args.length, " ");
                 try {
                     //
                     // Run the query
@@ -715,22 +738,22 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("deld", "maint", new CommandInterface() {
+        shell.add("deld", "Maintenance", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
 
-                if(strings.length < 2) {
+                if(args.length < 3) {
                     return "Must specify partition number and document IDs";
                 }
 
-                int part = Integer.parseInt(strings[0]);
+                int part = Integer.parseInt(args[1]);
                 for(DiskPartition p : manager.getActivePartitions()) {
                     if(p.getPartitionNumber() == part) {
-                        for(int i = 1; i < strings.length; i++) {
+                        for(int i = 2; i < args.length; i++) {
                             boolean success = p.deleteDocument(Integer.parseInt(
-                                    strings[i]));
+                                    args[i]));
                             shell.out.format("Deletion of %d in %d returned %s ",
-                                    Integer.parseInt(strings[i]),
+                                    Integer.parseInt(args[i]),
                                     p.getPartitionNumber(), success);
                         }
                     }
@@ -746,21 +769,21 @@ public class QueryTest extends SEMain {
         
         shell.add("get", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
-                if(strings.length < 3) {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 4) {
                     return "Must specify a partition number, document ID and a list of fields";
                 }
                 
-                int pn = Integer.parseInt(strings[0]);
-                int d = Integer.parseInt(strings[1]);
+                int pn = Integer.parseInt(args[1]);
+                int d = Integer.parseInt(args[2]);
                 for(DiskPartition p : manager.getActivePartitions()) {
                     if(p.getPartitionNumber() == pn) {
 
-                        for(int i = 2; i < strings.length; i++) {
+                        for(int i = 3; i < args.length; i++) {
                             DiskField df = ((InvFileDiskPartition) p).getDF(
-                                    strings[i]);
+                                    args[i]);
                             Object v = df.getFetcher().fetch(d);
-                            shell.out.format("%s: %s", strings[i], v);
+                            shell.out.format("%s: %s", args[i], v);
                         }
                     }
                 }
@@ -769,40 +792,42 @@ public class QueryTest extends SEMain {
 
 
             public String getHelp() {
-                return "partNum docID field [field...] Get field values from a particular doc";
+                return "partNum docID field [field...] - Get field values from a particular doc";
             }
         });
         
-        shell.add("merge", "maint", new CommandInterface() {
+        shell.add("merge", "Maintenance", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
-                if(strings.length == 0) {
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length == 1) {
                     ci.out.println("Merging all partitions");
                     manager.mergeAll();
                     return "Merged all partitions";
                 } else {
                     ArrayList<Integer> parts = new ArrayList<Integer>();
-                    for(String pn : strings) {
-                        parts.add(Integer.parseInt(pn));
+                    for(int i = 1; i < args.length; i++) {
+                        parts.add(Integer.parseInt(args[i]));
                     }
 
-                    PartitionManager.Merger merger =
-                            manager.getMergerFromNumbers(parts);
+                    PartitionManager.Merger merger = manager.getMergerFromNumbers(parts);
                     merger.merge();
                     return "Merged " + parts;
                 }
             }
 
             public String getHelp() {
-                return "pn [pn] ... Merge a number of partitions";
+                return "pn [pn] ... - Merge a number of partitions";
             }
         });
         
         shell.add("sim", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
-                String key1 = strings[0];
-                String key2 = strings[1];
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 3) {
+                    return "Must specify two document keys";
+                }
+                String key1 = args[1];
+                String key2 = args[2];
 
                 DocumentVector dv1 = engine.getDocumentVector(key1);
                 DocumentVector dv2 = engine.getDocumentVector(key2);
@@ -823,11 +848,15 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("findsim", "query", new CommandInterface() {
+        shell.add("findsim", "Query", new CommandInterface() {
 
-            public String execute(CommandInterpreter ci, String[] strings) throws Exception {
-                String key = strings[0];
-                double skim = strings.length > 1 ? Double.parseDouble(strings[1]) : 1.0;
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 2) {
+                    return "Must specify document key";
+                }
+                
+                String key = args[1];
+                double skim = args.length > 2 ? Double.parseDouble(args[2]) : 1.0;
                 DocumentVector dv = engine.getDocumentVector(key);
                 if(dv != null) {
                     ResultSet rs = ((DocumentVectorImpl) dv).findSimilar("-score",
@@ -844,9 +873,13 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("dv", "terms", new CommandInterface() {
+        shell.add("dv", "Terms", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 3) {
+                    return "Must specify field and document key";
+                }
+                
                 String field = args[1];
                 String dockey = args[2];
                 DocumentVector dv = engine.getDocumentVector(dockey, field);
@@ -859,7 +892,7 @@ public class QueryTest extends SEMain {
             }
 
             public String getHelp() {
-                return "field dockey Show the document vector for a given field in a given document";
+                return "field dockey - Show the document vector for a given field in a given document";
             }
         });
     }
