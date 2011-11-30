@@ -215,6 +215,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         indexDir = indexDirFile.toString();
         lockDirFile = new File(lockDir);
         randID = (int) (Math.random() * Integer.MAX_VALUE);
+        
+        //
+        // Empty collection stats to start with.  Updating the partitions
+        // below will change it if there is some data already in the index.
+        collectionStats = new CollectionStats(this, Collections.EMPTY_LIST);
 
         //
         // Set up the query timer.
@@ -355,8 +360,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     public List<DiskPartition> updateActiveParts(boolean addNew) throws
             Exception {
-
-        boolean releaseNeeded = false;
 
         //
         // Re-read the meta file.
