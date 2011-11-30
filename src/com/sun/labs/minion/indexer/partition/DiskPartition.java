@@ -78,12 +78,14 @@ public class DiskPartition extends Partition implements Closeable {
     /**
      * The dictionary file.
      */
-    protected RandomAccessFile dictFile;
+    protected RandomAccessFile dictRAF;
+    
+    protected File[] postFiles;
 
     /**
      * The postings file.
      */
-    protected RandomAccessFile[] postFiles;
+    protected RandomAccessFile[] postRAFs;
 
     /**
      * The document dictionary.
@@ -128,11 +130,6 @@ public class DiskPartition extends Partition implements Closeable {
     private long closeTime;
 
     /**
-     * Buffer size for merging.
-     */
-    protected static int BUFF_SIZE = 1024 * 1024;
-
-    /**
      * Minimum length of a stem.
      */
     protected static int MIN_LEN = 3;
@@ -168,29 +165,29 @@ public class DiskPartition extends Partition implements Closeable {
 
         //
         // Open the dictionary and postings files.
-        dictFile = new RandomAccessFile(manager.makeDictionaryFile(partNumber), "rw");
+        dictRAF = new RandomAccessFile(manager.makeDictionaryFile(partNumber), "rw");
 
         //
         // Jump to where the partition header is and read it.  We don't need
         // to jump back because the header contains all of the offsets for the
         // stuff that we want.
-        long headerOffset = dictFile.readLong();
-        dictFile.seek(headerOffset);
-        header = new PartitionHeader(dictFile);
+        long headerOffset = dictRAF.readLong();
+        dictRAF.seek(headerOffset);
+        header = new PartitionHeader(dictRAF);
 
         String[] pcn = header.getPostingsChannelNames();
-        File[] pf = manager.makePostingsFiles(partNumber, pcn);
-        postFiles = new RandomAccessFile[pf.length];
-        for(int i = 0; i < pf.length; i++) {
+        postFiles = manager.makePostingsFiles(partNumber, pcn);
+        postRAFs = new RandomAccessFile[postFiles.length];
+        for(int i = 0; i < postFiles.length; i++) {
             allPostingsChannelNames.add(pcn[i]);
-            postFiles[i] = new RandomAccessFile(pf[i], "r");
+            postRAFs[i] = new RandomAccessFile(postFiles[i], "r");
         }
 
-        dictFile.seek(header.getDocDictOffset());
+        dictRAF.seek(header.getDocDictOffset());
         docDict = new DiskDictionary<String>(
                 new EntryFactory(documentPostingsType),
                 new StringNameHandler(),
-                dictFile, postFiles);
+                dictRAF, postRAFs);
         docDict.setName("doc");
         docDict.setPartition(this);
 
@@ -278,10 +275,10 @@ public class DiskPartition extends Partition implements Closeable {
         try {
 
             syncDeletedMap();
-            if(dictFile != null) {
-                dictFile.close();
-                for(RandomAccessFile pf : postFiles) {
-                    pf.close();
+            if(dictRAF != null) {
+                dictRAF.close();
+                for(int i = 0; i < postFiles.length; i++) {
+                    postRAFs[i].close();
                 }
             }
         } catch(java.io.IOException ioe) {
@@ -526,7 +523,7 @@ public class DiskPartition extends Partition implements Closeable {
      * merge.
      */
     private ByteBuffer[] getInputBuffers(int size) {
-        ByteBuffer[] ret = new ByteBuffer[postFiles.length];
+        ByteBuffer[] ret = new ByteBuffer[postRAFs.length];
         for(int i = 0; i < ret.length; i++) {
             ret[i] = ByteBuffer.allocateDirect(size);
         }

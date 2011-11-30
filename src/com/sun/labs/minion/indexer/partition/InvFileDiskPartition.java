@@ -94,11 +94,11 @@ public class InvFileDiskPartition extends DiskPartition {
                 continue;
             }
                    
-            dictFile.seek(offset.getOffset());
+            dictRAF.seek(offset.getOffset());
             FieldInfo info = manager.getMetaFile().getFieldInfo(offset.getId());
             fields[offset.getId()] =
-                    new DiskField(this, info, dictFile, vectorLengths,
-                    postFiles);
+                    new DiskField(this, info, dictRAF, vectorLengths,
+                    postRAFs);
         }
     }
 
