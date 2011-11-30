@@ -100,7 +100,13 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * saved.
      */
     private IndexEntry[] sortedEntries;
-
+    
+    /**
+     * The number of used entries in this dictionary.  Computed at sort time,
+     * so if this is non-zero, then the dictionary has been sorted.
+     */
+    private int nUsed;
+    
     /**
      * The log.
      */
@@ -239,8 +245,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             }
         }
         id = 0;
-        idMap = null;
-        sortedEntries = null;
+        nUsed = 0;
     }
 
     public IndexEntry[] getSortedEntries() {
@@ -261,25 +266,38 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     protected IndexEntry[] sort(Renumber renumber, IDMap idMapType) {
         
         //
-        // Only put the elements that were used in the array for sorting.
-        List<IndexEntry> used = new ArrayList<IndexEntry>(map.size());
+        // Figure out how many used elements there were in the map.
+        nUsed = 0;
         for(IndexEntry e : map.values()) {
             if(e.isUsed()) {
-                used.add(e);
+                nUsed++;
             }
         }
         
         //
+        // Make sure that we've the space for them.
+        if(sortedEntries == null || sortedEntries.length < nUsed) {
+            sortedEntries = new IndexEntry[nUsed];
+            if(idMapType != IDMap.NONE) {
+                idMap = new int[nUsed];
+            }
+        }
+        
+        nUsed = 0;
+        for(IndexEntry e : map.values()) {
+            if(e.isUsed()) {
+                sortedEntries[nUsed++] = e;
+            }
+        }
+        
+        logger.fine(String.format("nUsed: %d", nUsed));
+        
+        //
         // Sort.
-        sortedEntries = used.toArray(new IndexEntry[0]);
-        Util.sort(sortedEntries);
+        Util.sort(sortedEntries, 0, nUsed);
 
         //
-        // Check if we need to keep an ID map.
-        if(idMapType != IDMap.NONE) {
-            idMap = new int[sortedEntries.length + 1];
-        }
-
+        // Renumber entries if necessary.
         switch(renumber) {
             case NONE:
                 break;
@@ -287,17 +305,20 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
                 int newID = 1;
                 switch(idMapType) {
                     case NONE:
-                        for(IndexEntry e : sortedEntries) {
+                        for(int i = 0; i < nUsed; i++) {
+                            Entry e = sortedEntries[i];
                             e.setID(newID++);
                         }
                         break;
                     case OLDTONEW:
-                        for(IndexEntry e : sortedEntries) {
+                        for(int i = 0; i < nUsed; i++) {
+                            Entry e = sortedEntries[i];
                             idMap[e.getID()] = newID;
                             e.setID(newID++);
                         }
                     case NEWTOOLD:
-                        for(IndexEntry e : sortedEntries) {
+                        for(int i = 0; i < nUsed; i++) {
+                            Entry e = sortedEntries[i];
                             idMap[newID] = e.getID();
                             e.setID(newID++);
                         }
@@ -387,14 +408,14 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Sort the entries in preparation for writing them out.  This will
         // generate an old-to-new ID mapping if we're renumbering.
-        IndexEntry[] sorted = sort(partOut.getDictionaryRenumber(),
-                partOut.getDictionaryIDMap());
+        sort(partOut.getDictionaryRenumber(), partOut.getDictionaryIDMap());
 
         int[] postingsIDMap = partOut.getPostingsIDMap();
 
         //
         // Write the postings and entries.
-        for(IndexEntry entry : sorted) {
+        for(int i = 0 ; i < nUsed; i++) {
+            IndexEntry entry = sortedEntries[i];
             if(entry.writePostings(postOut, postingsIDMap)) {
                 dout.write(entry);
             }
@@ -411,7 +432,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         // We're done dumping this dictionary.
         dout.finish();
 
-        return sorted;
+        return sortedEntries;
     }
 
     /**
@@ -423,17 +444,14 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
 
         int pos = 0;
 
-        int last;
-
         public MemoryDictionaryIterator() {
             if(sortedEntries == null) {
                 throw new UnsupportedOperationException("Entries must be sorted before they can be iterated!");
             }
-            last = sortedEntries.length - 1;
         }
 
         public boolean hasNext() {
-            return pos < last;
+            return pos < nUsed;
         }
 
         public Entry next() {
@@ -446,18 +464,19 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
 
         public int estimateSize() {
             int est = 0;
-            for(int i = 0; i < sortedEntries.length; i++) {
+            for(int i = 0; i < nUsed; i++) {
                 est += sortedEntries[i].getN();
             }
             return est;
         }
 
         public int getNEntries() {
-            return sortedEntries.length;
+            return nUsed;
         }
 
         @Override
         public void setUnbufferedPostings(boolean unbufferedPostings) {
         }
     }
+    
 }

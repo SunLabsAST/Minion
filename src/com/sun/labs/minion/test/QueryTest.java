@@ -681,6 +681,41 @@ public class QueryTest extends SEMain {
                 return "[pn] [pn]... - List the keys in specified partitions";
             }
         });
+        
+        shell.add("svals", "Info", new CommandInterface() {
+
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 3) {
+                    return "Must specify partition number and field names";
+                }
+                int pn = Integer.parseInt(args[1]);
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    if(p.getPartitionNumber() == pn) {
+                        for(int i = 2; i < args.length; i++) {
+                            DiskField df = ((InvFileDiskPartition) p).getDF(args[i]);
+                            if(df == null) {
+                                shell.out.format("No field %s\n", args[i]);
+                                continue;
+                            }
+                            DiskDictionary sdict = df.getSavedValuesDictionary();
+                            if(sdict == null) {
+                                shell.out.format("No saved values for %s\n", args[i]);
+                                continue;
+                            }
+                            for(Object o : sdict) {
+                                Entry e = (Entry) o;
+                                shell.out.format("%s %d\n", e.getName(), e.getID());
+                            }
+                        }
+                    }
+                }
+                return "";
+            }
+
+            public String getHelp() {
+                return "pn field [field]... - Prints all the values for a saved field in that partition";
+            }
+        });
 
         shell.add("rts", "Maintenance", new CommandInterface() {
 

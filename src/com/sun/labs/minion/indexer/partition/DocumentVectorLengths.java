@@ -314,6 +314,9 @@ public class DocumentVectorLengths {
      */
     public static void normalize(List<DocumentVectorLengths> dvls, int[] docs, float[] scores, int p, float qw) {
         if(dvls.size() == 1) {
+            if(dvls.get(0) == null) {
+                return;
+            }
             dvls.get(0).normalize(docs, scores, p, qw);
             return;
         }

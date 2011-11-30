@@ -184,6 +184,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
 
     }
+    
+    public DiskDictionary getSavedValuesDictionary() {
+        return dicts[Type.RAW_SAVED.ordinal()];
+    }
 
     public FieldHeader getHeader() {
         return header;
@@ -798,7 +802,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     "rw");
             FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(
                     dtvOffsetRAF, 1 << 16);
-
+            
             for(int i = 0; i < bundles.length; i++) {
                 
                 //
@@ -821,7 +825,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 for(int j = 0; j < bundles[i].header.maxDocID; j++) {
                     
                     int n = dtvDup.byteDecode();
-                    
+                 
                     if(docIDMap != null && docIDMap[j + 1] < 0) {
                         //
                         // Skip this document's data.

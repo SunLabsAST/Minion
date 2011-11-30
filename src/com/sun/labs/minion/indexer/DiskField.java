@@ -166,6 +166,10 @@ public class DiskField extends Field {
                 timeLimit);
 
     }
+    
+    public DiskDictionary getSavedValuesDictionary() {
+        return bundle.getSavedValuesDictionary();
+    }
 
     /**
      * Gets an iterator for the character saved field values that contain a

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -306,6 +307,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      */
     public MemoryField.DumpResult dump(PartitionOutput partOut) throws
             java.io.IOException {
+        boolean debug = field.getInfo().getName().equals("timestamp");
 
         MemoryField.DumpResult ret = MemoryField.DumpResult.DICTS_DUMPED;
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
@@ -316,11 +318,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         header.fieldID = info.getID();
         header.maxDocID = partOut.getMaxDocID();
-
-        //
-        // The sorted entries from each of the dictionaries.
-        IndexEntry[][] sortedEntries = new IndexEntry[Type.values().length][];
-
+        
+        
         //
         // The ID maps from each of the dictionaries.
         int[][] entryIDMaps = new int[Type.values().length][];
@@ -363,13 +362,14 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     // in document ID order.
                     Occurrence co = new OccurrenceImpl();
                     for(int i = 0; i < dv.length; i++) {
-                        if(dv[i] != null) {
+                        if(dv[i] != null && !dv[i].isEmpty()) {
                             co.setID(i);
                             for(IndexEntry e : (List<IndexEntry>) dv[i]) {
                                 e.add(co);
                             }
                         }
                     }
+                    
                     break;
 
                 case UNCASED_SAVED:
@@ -383,7 +383,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     // in document ID order.
                     Occurrence uo = new OccurrenceImpl();
                     for(int i = 0; i < dv.length; i++) {
-                        if(ucdv[i] != null) {
+                        if(ucdv[i] != null && !dv[i].isEmpty()) {
                             uo.setID(i);
                             for(IndexEntry e : (List<IndexEntry>) ucdv[i]) {
                                 e.add(uo);
@@ -406,19 +406,22 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     break;
 
                 case TOKEN_BIGRAMS:
-                    IndexEntry[] sortedTokens =
-                            sortedEntries[Type.CASED_TOKENS.ordinal()] != null
-                            ? sortedEntries[Type.CASED_TOKENS.ordinal()]
-                            : sortedEntries[Type.UNCASED_TOKENS.ordinal()];
+                    MemoryDictionary tdict = null;
+                    if(dicts[Type.CASED_TOKENS.ordinal()] != null) {
+                        tdict = dicts[Type.CASED_TOKENS.ordinal()];
+                    } else {
+                        tdict = dicts[Type.UNCASED_TOKENS.ordinal()];
+                    }
 
                     //
                     // We'll create this one on the fly.
-                    if(sortedTokens != null) {
+                    if(tdict != null) {
                         if(dicts[ord] == null) {
                             dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
                         }
                         MemoryBiGramDictionary tbg = (MemoryBiGramDictionary) dicts[ord];
-                        for(IndexEntry e : sortedTokens) {
+                        for(Object o : tdict) {
+                            IndexEntry e = (IndexEntry) o;
                             tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
                         }
                         partOut.setDictionaryEncoder(new StringNameHandler());
@@ -437,7 +440,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                             dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
                         }
                         MemoryBiGramDictionary sbg = (MemoryBiGramDictionary) dicts[ord];
-                        for(IndexEntry e : sortedEntries[Type.RAW_SAVED.ordinal()]) {
+                        for(Object o : dicts[Type.RAW_SAVED.ordinal()]) {
+                            IndexEntry e = (IndexEntry) o;
                             sbg.add(CharUtils.toLowerCase(e.getName().toString()),
                                     e.getID());
                         }
@@ -455,9 +459,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             }
 
             header.dictOffsets[ord] = partDictOut.position();
-            sortedEntries[ord] = dicts[ord].dump(partOut);
-        }
-
+            dicts[ord].dump(partOut);
+       }
+        
         if(field.isSaved()) {
 
             //
@@ -478,8 +482,15 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     continue;
                 }
                 List<IndexEntry> dvs = (List<IndexEntry>) dv[i];
+                
+                if(debug) {
+//                    logger.info(String.format("doc: %d n: %d", i, dvs.size()));
+                }
                 dtv.byteEncode(dvs.size());
                 for(IndexEntry e : dvs) {
+                    if(debug) {
+//                        logger.info(String.format(" %s id: %d", ((Date) e.getName()).getTime(), e.getID()));
+                    }
                     dtv.byteEncode(e.getID());
                 }
             }
