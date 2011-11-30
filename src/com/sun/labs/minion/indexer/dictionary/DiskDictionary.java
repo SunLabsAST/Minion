@@ -365,9 +365,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         }
 
         if(dh.idToPosnSize > 0) {
-            idToPosn =
-                    new NIOFileReadableBuffer(dictFile, dh.idToPosnPos,
-                    dh.idToPosnSize);
+            idToPosn = dictBuff.slice((int) dh.idToPosnPos, dh.idToPosnSize);
         }
 
         names = dictBuff.slice((int) dh.namesPos, dh.namesSize);
