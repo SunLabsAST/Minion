@@ -105,6 +105,8 @@ public abstract class MemoryPartition extends Partition {
             return null;
         }
         
+        partOut.startPartition();
+        
         PartitionHeader partHeader = partOut.getPartitionHeader();
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 

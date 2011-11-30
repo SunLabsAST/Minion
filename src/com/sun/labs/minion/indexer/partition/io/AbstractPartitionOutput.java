@@ -60,7 +60,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      * A postings ID map to use when dumping.
      */
     protected int[] postingsIDMap;
-    
+
     /**
      * The files where we're putting the postings.
      */
@@ -91,18 +91,25 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      */
     protected WriteableBuffer deletionsBuffer;
 
-    public AbstractPartitionOutput(PartitionManager manager) throws IOException, FileLockException {
+    private boolean started = false;
+
+    public AbstractPartitionOutput(PartitionManager manager) throws IOException {
         this.manager = manager;
-        partHeader = new PartitionHeader();
-        partNumber = manager.getMetaFile().getNextPartitionNumber();
-        File[] files = MemoryPartition.getMainFiles(manager, partNumber);
-        postOutFiles = Arrays.copyOfRange(files, 1, files.length);
-   }
-    
-    public AbstractPartitionOutput(File indexDir) {
-        this.manager = null;
-        partHeader = new PartitionHeader();
-        partNumber =  1;
+    }
+
+    public int startPartition() throws IOException {
+        if(started) {
+            throw new IllegalStateException("Already outputting a partition, can't start another");
+        }
+        try {
+            partHeader = new PartitionHeader();
+            partNumber = manager.getMetaFile().getNextPartitionNumber();
+            File[] files = MemoryPartition.getMainFiles(manager, partNumber);
+            postOutFiles = Arrays.copyOfRange(files, 1, files.length);
+        } catch(FileLockException ex) {
+            throw new IOException("Error getting partition number", ex);
+        }
+        return partNumber;
     }
 
     public WriteableBuffer getDeletionsBuffer() {
@@ -140,7 +147,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     public void setPostingsOutput(PostingsOutput[] postOut) {
         this.postOut = postOut;
     }
-    
+
     public DictionaryOutput getTermStatsDictionaryOutput() {
         return termStatsDictOut;
     }
@@ -190,7 +197,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     }
 
     public void flush(Set<String> keys) throws IOException {
-        
+
         //
         // Flush the main dictionary output to our dictionary file.
         RandomAccessFile dictFile = new RandomAccessFile(manager.makeDictionaryFile(partNumber), "rw");
@@ -223,8 +230,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
             try {
                 int tsn = manager.getMetaFile().getNextTermStatsNumber();
 
-                RandomAccessFile termStatsFile = new RandomAccessFile(manager.
-                        makeTermStatsFile(tsn), "rw");
+                RandomAccessFile termStatsFile = new RandomAccessFile(manager.makeTermStatsFile(tsn), "rw");
                 termStatsDictOut.flush(termStatsFile);
                 termStatsFile.close();
 
@@ -239,6 +245,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         if(keys != null) {
             manager.addNewPartition(partNumber, keys);
         }
+        started = false;
     }
 
     public void close() throws IOException {

@@ -14,6 +14,8 @@ import java.util.Set;
  * An interface for things that want to write partition data.
  */
 public interface PartitionOutput {
+    
+    public int startPartition() throws IOException;
 
     public int getPartitionNumber();
     

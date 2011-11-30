@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 public class RAMPartitionOutput extends AbstractPartitionOutput {
 
     private static final Logger logger = Logger.getLogger(RAMPartitionOutput.class.getName());
-    
+
     /**
      * Creates a dump state that can be passed around during dumping.
      * @param partNumber the partition number that we're dumping
@@ -30,6 +30,11 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
      */
     public RAMPartitionOutput(PartitionManager manager) throws IOException, FileLockException {
         super(manager);
+    }
+
+    @Override
+    public int startPartition() throws IOException {
+        int ret = super.startPartition();
         partDictOut = new RAMDictionaryOutput(manager.getIndexDir());
         postOut = new PostingsOutput[postOutFiles.length];
         for(int i = 0; i < postOut.length; i++) {
@@ -37,17 +42,9 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
         }
         vectorLengthsBuffer = new ArrayBuffer(1024);
         deletionsBuffer = new ArrayBuffer(1024);
+        return ret;
     }
 
-    public RAMPartitionOutput(File indexDir) throws IOException, FileLockException {
-        super(indexDir);
-        partDictOut = new RAMDictionaryOutput(manager.getIndexDir());
-        postOut = new PostingsOutput[1];
-        postOut[0] = new RAMPostingsOutput();
-        vectorLengthsBuffer = new ArrayBuffer(1024);
-        deletionsBuffer = new ArrayBuffer(1024);
-    }
-    
     @Override
     public DictionaryOutput getTermStatsDictionaryOutput() {
         if(termStatsDictOut == null) {

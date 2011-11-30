@@ -594,6 +594,7 @@ public class DiskPartition extends Partition implements Closeable {
         //
         // A place to store state and pass it around while we're merging.
         MergeState mergeState = new MergeState(manager, new DiskPartitionOutput(manager));
+        mergeState.partOut.startPartition();
 
         //
         // A honkin' big try, so that we can get rid of any failed merges.
