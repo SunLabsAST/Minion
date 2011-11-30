@@ -1,5 +1,8 @@
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
+import com.sun.labs.minion.indexer.partition.DumpState;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -12,7 +15,6 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -173,12 +175,16 @@ public class DictionaryTest {
         sd.put("c");
         sd.put("a");
 
+        DumpState dumpState = new DumpState(tmpDir);
+        dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
+        dumpState.idMap = MemoryDictionary.IDMap.NONE;
+        dumpState.encoder = new StringNameHandler();
+        sd.dump(dumpState);
+        logger.info(String.format("Dump completed"));
         File f = File.createTempFile("string", ".dict");
         f.deleteOnExit();
         RandomAccessFile dictFile = new RandomAccessFile(f, "rw");
-        sd.dump(tmpDir, new StringNameHandler(), dictFile,
-                new PostingsOutput[0], MemoryDictionary.Renumber.NONE,
-                MemoryDictionary.IDMap.NONE, null);
+        dumpState.fieldDictOut.flush(dictFile);
         dictFile.close();
     }
 

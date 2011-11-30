@@ -21,9 +21,11 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.logging.Logger;
 
@@ -31,112 +33,96 @@ import java.util.logging.Logger;
  * A class that contains the header information for a dictionary.
  */
 public class DictionaryHeader {
-    
-    private static final Logger logger = Logger.getLogger(DictionaryHeader.class.getName()); 
+
+    private static final Logger logger = Logger.getLogger(DictionaryHeader.class.getName());
 
     /**
      *  A magic number, written last.
      */
-    protected int magic;
+    public int magic;
 
     /**
      * The number of entries in the dictionary.
      */
-    protected int size;
+    public int size;
 
     /**
      * The maximum ID assigned to an entry, which may be different than the
      * size.
      */
-    protected int maxEntryID;
+    public int maxEntryID;
 
     /**
      * The offset of the ID to position map in the file.
      */
-    protected long idToPosnPos;
+    public long idToPosnPos;
 
     /**
      * The size of the map from ID to position in the dictionary.
      */
-    protected int idToPosnSize;
-
-    /**
-     * The number of bytes that each ID to posn map entry requires.
-     */
-    protected int idToPosnBytes = 4;
+    public int idToPosnSize;
 
     /**
      * The position of the names offset buffer.
      */
-    protected long nameOffsetsPos;
+    public long nameOffsetsPos;
 
     /**
      * The size of the names offset buffer.
      */
-    protected int nameOffsetsSize;
-
-    /**
-     * The number of bytes used to encode the offsets for the uncompressed
-     * names.
-     */
-    protected int nameOffsetsBytes = 4;
+    public int nameOffsetsSize;
 
     /**
      * The position of the names buffer.
      */
-    protected long namesPos;
-    
+    public long namesPos;
+
     /**
      * The size of the names buffer.
      */
-    protected int namesSize;
+    public int namesSize;
 
     /**
      * The number of name offsets.
      */
-    protected int nOffsets;
+    public int nOffsets;
 
     /**
      * The position of the entry info offsets buffer.
      */
-    protected long entryInfoOffsetsPos;
-    
+    public long entryInfoOffsetsPos;
+
     /**
      * The size of the entry info offsets buffer.
      */
-    protected int entryInfoOffsetsSize;
-
-    /**
-     * The number of bytes used to encode the offsets for the term
-     * information.
-     */
-    protected int entryInfoOffsetsBytes = 4;
+    public int entryInfoOffsetsSize;
 
     /**
      * The position of the entry info buffer.
      */
-    protected long entryInfoPos;
+    public long entryInfoPos;
 
     /**
      * The size of the entry info buffer.
      */
-    protected int entryInfoSize;
+    public int entryInfoSize;
 
     /**
      * The starting offsets for postings associated with this dictionary.
      */
-    protected long[] postStart;
+    public long[] postStart;
 
     /**
      * The ending offsets for postings associated with this dictionary.
      */
-    protected long[] postEnd;
+    public long[] postEnd;
 
     /**
      * Good magic.
      */
-    protected static final int GOOD_MAGIC = Integer.MAX_VALUE;
-    protected static final int BAD_MAGIC = Integer.MIN_VALUE;
+    public static final int GOOD_MAGIC = Integer.MAX_VALUE;
+
+    public static final int BAD_MAGIC = Integer.MIN_VALUE;
 
     /**
      * Creates an empty header, suitable for filling during dumping.
@@ -154,20 +140,46 @@ public class DictionaryHeader {
      * Creates a dictionary header by reading it from the provided channel.
      */
     public DictionaryHeader(RandomAccessFile dictFile)
-        throws java.io.IOException {
+            throws java.io.IOException {
         read(dictFile);
+    }
+    
+    public DictionaryHeader(ReadableBuffer b) throws java.io.IOException {
+        size = b.byteDecode(4);
+        maxEntryID = b.byteDecode(4);
+        idToPosnPos = b.byteDecode(8);
+        idToPosnSize = b.byteDecode(4);
+        nameOffsetsPos = b.byteDecode(8);
+        nameOffsetsSize = b.byteDecode(4);
+        namesPos = b.byteDecode(8);
+        namesSize = b.byteDecode(4);
+        entryInfoOffsetsPos = b.byteDecode(8);
+        entryInfoOffsetsSize = b.byteDecode(4);
+        entryInfoPos = b.byteDecode(8);
+        entryInfoSize = b.byteDecode(4);
+        int n = b.byteDecode(4);
+        postStart = new long[n];
+        postEnd = new long[n];
+        for(int i = 0; i < n; i++) {
+            postStart[i] = b.byteDecode(8);
+            postEnd[i] = b.byteDecode(8);
+        }
+        magic = b.byteDecode(4);
+        if(magic != GOOD_MAGIC) {
+            throw new java.io.IOException("Error reading magic number");
+        }
+        computeValues();
     }
 
     /**
      * Computes derived values.
      */
-    protected void computeValues() {
-        nameOffsetsBytes      = 4;
-        entryInfoOffsetsBytes = 4;
-        nOffsets              = nameOffsetsSize / nameOffsetsBytes;
-        idToPosnBytes         = 4;
+    public void computeValues() {
+        nOffsets = nameOffsetsSize / 4;
+        if(maxEntryID == 0) {
+            maxEntryID = size + 1;
+        }
     }
-
 
     /**
      * Tells the header that the magic is good.
@@ -180,20 +192,20 @@ public class DictionaryHeader {
      * Reads a dictionary header from the given channel.
      */
     public void read(RandomAccessFile dictFile)
-        throws java.io.IOException {
-	
-        size                 = dictFile.readInt();
-        maxEntryID           = dictFile.readInt();
-        idToPosnPos          = dictFile.readLong();
-        idToPosnSize         = dictFile.readInt();
-        nameOffsetsPos       = dictFile.readLong();
-        nameOffsetsSize      = dictFile.readInt();
-        namesPos             = dictFile.readLong();
-        namesSize            = dictFile.readInt();
-        entryInfoOffsetsPos  = dictFile.readLong();
+            throws java.io.IOException {
+
+        size = dictFile.readInt();
+        maxEntryID = dictFile.readInt();
+        idToPosnPos = dictFile.readLong();
+        idToPosnSize = dictFile.readInt();
+        nameOffsetsPos = dictFile.readLong();
+        nameOffsetsSize = dictFile.readInt();
+        namesPos = dictFile.readLong();
+        namesSize = dictFile.readInt();
+        entryInfoOffsetsPos = dictFile.readLong();
         entryInfoOffsetsSize = dictFile.readInt();
-        entryInfoPos         = dictFile.readLong();
-        entryInfoSize        = dictFile.readInt();
+        entryInfoPos = dictFile.readLong();
+        entryInfoSize = dictFile.readInt();
         int n = dictFile.readInt();
         postStart = new long[n];
         postEnd = new long[n];
@@ -212,7 +224,7 @@ public class DictionaryHeader {
      * Writes a dictionary header to the given channel.
      */
     public void write(RandomAccessFile dictFile)
-        throws java.io.IOException {
+            throws java.io.IOException {
         dictFile.writeInt(size);
         dictFile.writeInt(maxEntryID);
         dictFile.writeLong(idToPosnPos);
@@ -233,26 +245,46 @@ public class DictionaryHeader {
         dictFile.writeInt(magic);
     }
 
+    public void write(WriteableBuffer b) {
+        b.byteEncode(size, 4);
+        b.byteEncode(maxEntryID, 4);
+        b.byteEncode(idToPosnPos, 8);
+        b.byteEncode(idToPosnSize, 4);
+        b.byteEncode(nameOffsetsPos, 8);
+        b.byteEncode(nameOffsetsSize, 4);
+        b.byteEncode(namesPos, 8);
+        b.byteEncode(namesSize, 4);
+        b.byteEncode(entryInfoOffsetsPos, 8);
+        b.byteEncode(entryInfoOffsetsSize, 4);
+        b.byteEncode(entryInfoPos, 8);
+        b.byteEncode(entryInfoSize, 4);
+        b.byteEncode(postStart.length, 4);
+        for(int i = 0; i < postStart.length; i++) {
+            b.byteEncode(postStart[i], 8);
+            b.byteEncode(postEnd[i], 7);
+        }
+        b.byteEncode(magic, 1);
+    }
+
     /**
      * Gets the maximum ID in the dictionary.
      */
     public int getMaxID() {
         return maxEntryID;
     }
-    
+
     @Override
     public String toString() {
-        return "size: " + size + 
-                " maxEntryID: " + maxEntryID + 
-                " namesPos: " + namesPos +
-                " namesSize: " + namesSize + 
-                " nameOffsetsPos: " + nameOffsetsPos +
-                " nameOffsetsSize: " + nameOffsetsSize + 
-                " entryInfoPos: " + entryInfoPos +
-                " entryInfoSize: " + entryInfoSize + 
-                " entryInfoOffsetsPos: " + entryInfoOffsetsPos +
-                " entryInfoOffsetsSize: " + entryInfoOffsetsSize + 
-                " id2p: " + idToPosnSize;
+        return "size: " + size
+                + " maxEntryID: " + maxEntryID
+                + " namesPos: " + namesPos
+                + " namesSize: " + namesSize
+                + " nameOffsetsPos: " + nameOffsetsPos
+                + " nameOffsetsSize: " + nameOffsetsSize
+                + " entryInfoPos: " + entryInfoPos
+                + " entryInfoSize: " + entryInfoSize
+                + " entryInfoOffsetsPos: " + entryInfoOffsetsPos
+                + " entryInfoOffsetsSize: " + entryInfoOffsetsSize
+                + " id2p: " + idToPosnSize;
     }
-
 } // DictionaryHeader

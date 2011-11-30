@@ -4,6 +4,8 @@
  */
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -84,10 +86,7 @@ public class DictionaryMergeTest {
             common.addAll(td.uniq);
         }
         
-        File f = File.createTempFile("merge", ".dict");
-        f.deleteOnExit();
-        
-        RandomAccessFile mf = new RandomAccessFile(f, "rw");
+        DictionaryOutput dictOut = new DiskDictionaryOutput(tmpDir);
         DiskDictionary[] dicts = new DiskDictionary[testData.length];
         for(int i = 0; i < dicts.length; i++) {
             dicts[i] = testData[i].dd;
@@ -98,9 +97,15 @@ public class DictionaryMergeTest {
                 dicts,
                 null,
                 new int[dicts.length],
-                new int[dicts.length][], mf,
+                new int[dicts.length][], 
+                dictOut,
                 new PostingsOutput[0], true);
         
+        File f = File.createTempFile("merge", ".dict");
+        f.deleteOnExit();
+        RandomAccessFile mf = new RandomAccessFile(f, "rw");
+        dictOut.flush(mf);
+        dictOut.close();
         mf.close();
         return f;
         

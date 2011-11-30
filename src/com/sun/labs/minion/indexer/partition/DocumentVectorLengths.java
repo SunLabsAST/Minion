@@ -24,7 +24,6 @@
 package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
@@ -32,6 +31,7 @@ import com.sun.labs.minion.indexer.dictionary.DictionaryWriter;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
@@ -111,9 +111,7 @@ public class DocumentVectorLengths {
      * @param gts the dictionary of global term stats.
      * @throws java.io.IOException if there is any error writing the vector lengths
      */
-    public static void calculate(Field f,
-                                 RandomAccessFile tsdFile,
-                                 RandomAccessFile vlFile,
+    public static void calculate(Field f, DumpState dumpState,
                                  TermStatsDiskDictionary gts)
             throws java.io.IOException {
         Partition p = f.getPartition();
@@ -122,7 +120,8 @@ public class DocumentVectorLengths {
                   p.maxDocumentID,
                   p.getPartitionManager(),
                   f.getTermDictionary(false).iterator(),
-                  tsdFile, vlFile, gts);
+                  dumpState.termStatsDictOut, 
+                  dumpState.vectorLengthsFile, gts);
     }
 
     public static void calculate(FieldInfo fi,
@@ -130,23 +129,18 @@ public class DocumentVectorLengths {
                                  int maxDocID,
                                  PartitionManager manager,
                                  Iterator<Entry> mdi,
-                                 RandomAccessFile tsdFile,
-                                 RandomAccessFile vlFile,
+                                 DictionaryOutput termStatsOut,
+                                 RandomAccessFile vectorLengthsFile,
                                  TermStatsDiskDictionary gts)
             throws java.io.IOException {
 
         //
         // Get iterators for our two dictionaries and a place to write the new term stats.
         DictionaryIterator gti = gts.iterator(fi);
-        DictionaryWriter gtw = null;
-
-        boolean adjustStats = tsdFile != null;
+        boolean adjustStats = termStatsOut != null;
 
         if(adjustStats) {
-            gtw = new DictionaryWriter(
-                    manager.getIndexDir(),
-                    new StringNameHandler(), 0,
-                    MemoryDictionary.Renumber.RENUMBER);
+            termStatsOut.start(new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, 0);
         }
         
         //
@@ -226,7 +220,7 @@ public class DocumentVectorLengths {
             //
             // Write the entry to the new global term stats dictionary.
             if(adjustStats) {
-                gtw.write(we);
+                termStatsOut.write(we);
             }
 
             //
@@ -242,17 +236,16 @@ public class DocumentVectorLengths {
 
         //
         // Write the document vectors.
-        vlFile.writeInt(maxDocID);
-        FileWriteableBuffer b = new FileWriteableBuffer(vlFile, 8192);
+        vectorLengthsFile.writeInt(maxDocID);
+        FileWriteableBuffer b = new FileWriteableBuffer(vectorLengthsFile, 8192);
         for(int i = 1; i < vl.length; i++) {
             b.encode((float) Math.sqrt(vl[i]));
         }
         b.flush();
 
         if(adjustStats) {
-            gtw.finish(tsdFile);
+            termStatsOut.finish();
         }
-
     }
 
     /**

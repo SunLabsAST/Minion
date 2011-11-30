@@ -24,6 +24,7 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.QueryStats;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +54,7 @@ import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.io.File;
+import java.io.IOException;
 import java.util.WeakHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -146,7 +148,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * The log.
      */
-    protected static Logger logger = Logger.getLogger(DiskDictionary.class.
+    protected static final Logger logger = Logger.getLogger(DiskDictionary.class.
             getName());
 
     /**
@@ -335,6 +337,46 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                      infoOffsetsBufferSize);
         bst = new BinarySearchTree(cacheSize);
     }
+    
+    public DiskDictionary(EntryFactory factory,
+                          NameDecoder decoder, 
+                          DictionaryOutput dictOut,
+                          RandomAccessFile[] postFiles) throws java.io.IOException {
+        ReadableBuffer dictBuff = dictOut.getReadableBuffer();
+        dictBuff.position(dictOut.position());
+        this.factory = factory;
+        this.postFiles = postFiles;
+        this.decoder = decoder;
+
+        //
+        // Read the header.
+        dh = new DictionaryHeader(dictBuff);
+
+        if(postFiles != null) {
+            this.postIn = new PostingsInput[postFiles.length];
+            //
+            // Create the postings inputs.
+            for(int i = 0; i < this.postIn.length; i++) {
+                postIn[i] =
+                        new ChannelPostingsInput(
+                        postFiles[i].getChannel(),
+                        true);
+            }
+        }
+
+        if(dh.idToPosnSize > 0) {
+            idToPosn =
+                    new NIOFileReadableBuffer(dictFile, dh.idToPosnPos,
+                    dh.idToPosnSize);
+        }
+
+        names = dictBuff.slice((int) dh.namesPos, dh.namesSize);
+        nameOffsets = dictBuff.slice((int) dh.nameOffsetsPos, dh.nameOffsetsSize);
+        entryInfo = dictBuff.slice((int) dh.entryInfoPos, dh.entryInfoSize);
+        entryInfoOffsets = dictBuff.slice((int) dh.entryInfoOffsetsPos,
+                dh.entryInfoOffsetsSize);
+        bst = new BinarySearchTree(256);
+    }
 
     public DictionaryHeader getHeader() {
         return dh;
@@ -504,8 +546,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // ID.
         int posn;
         if(lus.localIDToPosn != null) {
-            posn = lus.localIDToPosn.byteDecode(id * dh.idToPosnBytes,
-                                                dh.idToPosnBytes);
+            posn = lus.localIDToPosn.byteDecode(id * 4, 4);
         } else {
             posn = id - 1;
         }
@@ -623,9 +664,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Walk this block of entries.  Note we're re-decoding one
         // entry, but we won't worry about this until absolutely necessary.
-        int offset =
-                lus.localNameOffsets.byteDecode(dh.nameOffsetsBytes * mid,
-                                                dh.nameOffsetsBytes);
+        int offset = lus.localNameOffsets.byteDecode(4 * mid, 4);
 
         lus.localNames.position(offset);
 
@@ -682,9 +721,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Get the offset of the uncompressed entry.
         
-        int offset =
-                lus.localNameOffsets.byteDecode(
-                dh.nameOffsetsBytes * pos, dh.nameOffsetsBytes);
+        int offset = lus.localNameOffsets.byteDecode(4 * pos, 4);
 
         //
         // Get the name of the entry at that position.
@@ -739,8 +776,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
         //
         // Position the info buffer for decoding the info for this entry.
-        lus.localInfo.position(lus.localInfoOffsets.byteDecode(posn *
-                dh.entryInfoOffsetsBytes, dh.entryInfoOffsetsBytes));
+        lus.localInfo.position(lus.localInfoOffsets.byteDecode(posn * 4, 4));
         QueryEntry ret = factory.getQueryEntry(name, lus.localInfo);
         ret.setDictionary(this);
         ret.setPostingsInput(postIn);
@@ -1299,7 +1335,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                          EntryMapper[] mappers,
                          int[] starts,
                          int[][] postIDMaps, 
-                         RandomAccessFile mDictFile,
+                         DictionaryOutput dictOut,
                          PostingsOutput[] postOut, boolean appendPostings)
             throws java.io.IOException {
         
@@ -1342,13 +1378,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         }
 
         //
-        // We'll need a writer for the merged dictionary.
-        DictionaryWriter dw =
-                new DictionaryWriter(indexDir, encoder,
-                                     postOut.length,
-                                     keepIDToPosn
-                ? MemoryDictionary.Renumber.NONE
-                : MemoryDictionary.Renumber.RENUMBER);
+        // Where we'll write the dictionary.
+        dictOut.start(encoder, MemoryDictionary.Renumber.NONE, postOut.length);
         
         int[] mapped = new int[idMaps.length];
 
@@ -1369,7 +1400,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             // If we have entry mappers, then get the ID from the entry at
             // the top of the heap, which will have been remapped.
             // Otherwise, just set the number in order.
-            int newid = mappers != null ? top.curr.getID() : (dw.dh.size + 1);
+            int newid = mappers != null ? top.curr.getID() : (dictOut.getHeader().size + 1);
 
             //
             // Make a new entry for the merged data.
@@ -1445,7 +1476,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 //
                 // Add the new entry to the dictionary that we're building.
                 try {
-                    dw.write(me);
+                    dictOut.write(me);
                 } catch(java.lang.ArithmeticException ame) {
                     logger.severe(String.format(
                             "Arithmetic exception encoding postings for entry: %s", me.
@@ -1466,21 +1497,23 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 }
             }
 
-            if(dw.dh.size % 10000 == 0) {
-                logger.fine(String.format(" Merged %d entries", dw.dh.size));
+            if(logger.isLoggable(Level.FINE)) {
+                if(dictOut.getHeader().size % 10000 == 0) {
+                    logger.fine(String.format(" Merged %d entries", dictOut.getHeader().size));
+                }
             }
         }
 
         for(int i = 0; i < postOut.length; i++) {
             postOut[i].flush();
-            dw.dh.postEnd[i] = postOut[i].position();
+            dictOut.getHeader().postEnd[i] = postOut[i].position();
         }
 
-        idMaps[0][0] = dw.dh.maxEntryID;
+        idMaps[0][0] = dictOut.getHeader().maxEntryID;
 
         //
         // Finish of the writing of the entries to the merged dictionary.
-        dw.finish(mDictFile);
+        dictOut.finish();
         
         //
         // Return the maps from old to new IDs.
@@ -1502,14 +1535,11 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     public void remapPostings(IndexEntry entryFactory,
                               NameEncoder encoder,
                               int[] postMap,
-                              RandomAccessFile dictFile,
+                              DictionaryOutput dictOut,
                               PostingsOutput[] postOut) throws
             java.io.IOException {
 
-        DictionaryWriter dw =
-                new DictionaryWriter(part.getPartitionManager().getIndexDir(), encoder,
-                                     postOut.length,
-                                     MemoryDictionary.Renumber.NONE);
+        dictOut.start(encoder, MemoryDictionary.Renumber.NONE, postOut.length);
 
         //
         // Track what the highest ID is in the new dictionary
@@ -1583,7 +1613,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
                     //
                     // Write out the new entry
-                    dw.write(ent);
+                    dictOut.write(ent);
                 }
             }
         }
@@ -1592,18 +1622,18 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // Clear out the streams...
         for(int i = 0; i < postOut.length; i++) {
             postOut[i].flush();
-            dw.dh.postEnd[i] = postOut[i].position();
+            dictOut.getHeader().postEnd[i] = postOut[i].position();
         }
 
         //
         // Update the max entry id
-        if(maxEntryId != dw.dh.size) {
-            dw.dh.maxEntryID = maxEntryId;
+        if(maxEntryId != dictOut.getHeader().size) {
+            dictOut.getHeader().maxEntryID = maxEntryId;
         }
 
         //
         // Tell the writer to finish up
-        dw.finish(dictFile);
+        dictOut.finish();
 
         logger.info("Remapped postings");
     }
@@ -2011,10 +2041,9 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 return estSize;
             }
             estSize = 0;
-            lus.localInfoOffsets.position(startPos * dh.entryInfoOffsetsBytes);
+            lus.localInfoOffsets.position(startPos * 4);
             for(int i = startPos; i < stopPos; i++) {
-                lus.localInfo.position(lus.localInfoOffsets.byteDecode(
-                        dh.entryInfoOffsetsBytes));
+                lus.localInfo.position(lus.localInfoOffsets.byteDecode(4));
                 estSize += lus.localInfo.byteDecode();
             }
             return estSize;
@@ -2062,9 +2091,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         }
 
         public int getN() {
-            lus.localInfoOffsets.position(posn * dh.entryInfoOffsetsBytes);
-            lus.localInfo.position(lus.localInfoOffsets.byteDecode(
-                    dh.entryInfoOffsetsBytes));
+            lus.localInfoOffsets.position(posn * 4);
+            lus.localInfo.position(lus.localInfoOffsets.byteDecode(4));
             return lus.localInfo.byteDecode();
         }
 

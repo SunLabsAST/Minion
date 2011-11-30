@@ -23,11 +23,7 @@
  */
 package com.sun.labs.minion.indexer.postings;
 
-import com.sun.labs.minion.retrieval.WeightingComponents;
-import com.sun.labs.minion.retrieval.WeightingFunction;
 import java.util.Arrays;
-
-
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.Buffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
@@ -199,7 +195,7 @@ public class IDPostings implements Postings, MergeablePostings {
             // Now, the values for the bit positions of the entries are
             // from the *end* of the skip table, and we want them to be
             // from the beginning of the buffer so that we can use
-            // BABuffer.seek to jump to them.  So we need to figure out
+            // jump directly to them.  So we need to figure out
             // how much to add.
             dataStart = post.position();
             for(int i = 0; i <= nSkips; i++) {

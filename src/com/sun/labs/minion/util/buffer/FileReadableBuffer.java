@@ -80,7 +80,7 @@ public class FileReadableBuffer extends StdReadableImpl {
     /**
      * A log.
      */
-    protected static Logger logger = Logger.getLogger(FileReadableBuffer.class.getName());
+    protected static final Logger logger = Logger.getLogger(FileReadableBuffer.class.getName());
 
     /**
      * A tag for our log entries.

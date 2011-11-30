@@ -4,6 +4,9 @@
  */
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
+import com.sun.labs.minion.indexer.partition.DumpState;
 import java.io.OutputStreamWriter;
 import com.sun.labs.util.LabsLogFormatter;
 import java.util.logging.Handler;
@@ -225,16 +228,16 @@ public class DictionaryAndPostingsTest {
             RandomAccessFile raf = new RandomAccessFile(dictFile, "rw");
             File postFile = File.createTempFile("all", ".post");
             postFile.deleteOnExit();
-            OutputStream os = new BufferedOutputStream(
-                    new FileOutputStream(postFile));
-            md.dump(DictionaryTest.tmpDir,
-                    new StringNameHandler(), raf,
-                    new PostingsOutput[]{new StreamPostingsOutput(os)},
-                    MemoryDictionary.Renumber.NONE,
-                    MemoryDictionary.IDMap.NONE, null);
-
+            DumpState dumpState = new DumpState(DictionaryTest.tmpDir);
+            dumpState.postStream = new OutputStream[] {new BufferedOutputStream(
+                    new FileOutputStream(postFile))};
+            dumpState.postOut = new PostingsOutput[] {new StreamPostingsOutput(dumpState.postStream[0])};
+            dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
+            dumpState.idMap = MemoryDictionary.IDMap.NONE;
+            dumpState.encoder = new StringNameHandler();
+            md.dump(dumpState);
+            dumpState.close();
             raf.close();
-            os.close();
 
             raf = new RandomAccessFile(dictFile, "r");
             RandomAccessFile praf = new RandomAccessFile(postFile, "r");

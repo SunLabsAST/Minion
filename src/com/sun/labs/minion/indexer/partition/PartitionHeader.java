@@ -1,5 +1,6 @@
 package com.sun.labs.minion.indexer.partition;
 
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -92,6 +93,17 @@ public class PartitionHeader {
         raf.writeInt(nDocs);
         raf.writeInt(maxDocID);
    }
+    
+    public void write(WriteableBuffer b) {
+        b.byteEncode(docDictOffset, 8);
+        b.byteEncode(fieldOffsets.size(), 4);
+        for(FieldOffset fo : fieldOffsets) {
+            fo.write(b);
+        }
+        b.byteEncode(nDocs, 4);
+        b.byteEncode(maxDocID, 4);
+        
+    }
 
     @Override
     public String toString() {
@@ -135,6 +147,11 @@ public class PartitionHeader {
         public void write(RandomAccessFile raf) throws java.io.IOException {
             raf.writeInt(id);
             raf.writeLong(offset);
+        }
+
+        public void write(WriteableBuffer b) {
+            b.byteEncode(id, 4);
+            b.byteEncode(offset, 8);
         }
 
         @Override

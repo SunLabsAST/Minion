@@ -26,6 +26,7 @@ package com.sun.labs.minion.util.buffer;
 
 import com.sun.labs.minion.util.ChannelUtil;
 import java.io.DataOutput;
+import java.io.IOException;
 import java.io.OutputStream;
 
 import java.nio.ByteBuffer;
@@ -185,6 +186,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @param b The buffer that we want to append to this buffer.
      * @param n The number of bytes to append onto this buffer.
      */
+    @Override
     public WriteableBuffer append(ReadableBuffer b, int n) {
 
         //
@@ -260,8 +262,18 @@ public class NIOBuffer extends StdBufferImpl {
      */
     public void write(WritableByteChannel chan)
         throws java.io.IOException {
-        ChannelUtil.writeFully(chan,
-                               (ByteBuffer) units.flip());
+        write(chan, 0, units.position());
+    }
+
+    public void write(WritableByteChannel chan, int start, int end) throws IOException {
+        ByteBuffer dup = units.duplicate();
+        dup.position(start);
+        dup.limit(end);
+        ChannelUtil.writeFully(chan, dup);
+    }
+
+    public void write(WriteableBuffer b) {
+        b.append(getReadableBuffer());
     }
 
     /**
@@ -304,6 +316,7 @@ public class NIOBuffer extends StdBufferImpl {
         int pos = units.position();
         os.write(array(), 0, pos);
     }
+    
     /**
      * Gets a readable buffer from this writeable one.  The readable buffer
      * will share the representation with the buffer that generated it.
@@ -390,6 +403,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @return the decoded int.
      * @see #byteEncode
      */
+    @Override
     public int byteDecode() {
 
         byte 	curr  = (byte) 0x80;

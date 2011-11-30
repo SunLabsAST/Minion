@@ -23,17 +23,11 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.StopWatch;
 import java.util.logging.Logger;
 
@@ -97,29 +91,16 @@ public abstract class MemoryPartition extends Partition {
         
         StopWatch sw = new StopWatch();
         sw.start();
-
-        partNumber = manager.getNextPartitionNumber();
-
+        
         File[] files = getMainFiles();
+
+        DumpState dumpState = new DumpState(manager, files);
 
         //
         // Get a file for the dictionaries.
         RandomAccessFile dictFile = new RandomAccessFile(files[0], "rw");
 
-        //
-        // Get channels for the postings.
-        OutputStream[] postStream = new OutputStream[files.length - 1];
-        PostingsOutput[] postOut = new PostingsOutput[files.length - 1];
-        for(int i = 1; i < files.length; i++) {
-            postStream[i - 1] =
-                    new BufferedOutputStream(new FileOutputStream(files[i]),
-                                             32768);
-            postOut[i - 1] = new StreamPostingsOutput(postStream[i - 1]);
-        }
-
-        File indexDir = manager.getIndexDir();
-
-        header = new PartitionHeader();
+        dumpState.partHeader = new PartitionHeader();
 
         //
         // A spot for the partition header offset to be written.
@@ -128,16 +109,16 @@ public abstract class MemoryPartition extends Partition {
 
         //
         // Dump the document dictionary.
-        header.setDocDictOffset(dictFile.getFilePointer());
-        docDict.dump(indexDir, new StringNameHandler(),
-                     dictFile, postOut,
-                     MemoryDictionary.Renumber.NONE, MemoryDictionary.IDMap.NONE,
-                     null);
+        dumpState.partHeader.setDocDictOffset(dictFile.getFilePointer());
+        dumpState.renumber = MemoryDictionary.Renumber.NONE;
+        dumpState.idMap = MemoryDictionary.IDMap.NONE;
+        dumpState.postIDMap = null;
+        docDict.dump(dumpState);
 
         //
         // Set the number of documents.
-        header.setnDocs(docDict.size());
-        header.setMaxDocID(maxDocumentID);
+        dumpState.partHeader.setnDocs(docDict.size());
+        dumpState.partHeader.setMaxDocID(maxDocumentID);
 
         //
         // If we deleted some documents along the way, then dump that data
@@ -149,23 +130,25 @@ public abstract class MemoryPartition extends Partition {
 
         //
         // Dump any custom data -- to be filled in by subclasses.
-        dumpCustom(indexDir, partNumber, header, dictFile, postOut);
+        dumpCustom(dumpState);
+        
+        //
+        // Flush the dictionary output to our dictionary file.
+        dumpState.fieldDictOut.flush(dictFile);
 
         //
         // Write the partition header, then return to the top of the file to
         // say where it is.
         long phoffset = dictFile.getFilePointer();
-        header.write(dictFile);
+        dumpState.partHeader.write(dictFile);
         long pos = dictFile.getFilePointer();
         dictFile.seek(phoffsetpos);
         dictFile.writeLong(phoffset);
         dictFile.seek(pos);
 
         dictFile.close();
-        for(int i = 0; i < postStream.length; i++) {
-            postOut[i].flush();
-            postStream[i].close();
-        }
+        
+        dumpState.close();
         sw.stop();
         logger.info(String.format("Dumped %d, %d docs took %dms", partNumber, 
                 docDict.size(), sw.getTime()));
@@ -183,18 +166,10 @@ public abstract class MemoryPartition extends Partition {
      * exists to be overridden in a subclass and provides no functionality
      * at this level.
      *
-     * @param partNumber the number of the partition that we're dumping.
-     * @param indexDir the directory where we're dumping the data
-     * @param ph a header for this partition
-     * @param dictFile a file where dictionaries can be dumped
-     * @param postOut where postings can be dumped
+     * @param dumpState a state holder for dumping
      * @throws java.io.IOException if there is any error writing the data
      * to disk
      */
-    protected abstract void dumpCustom(
-            File indexDir,
-            int partNumber,
-            PartitionHeader ph,
-            RandomAccessFile dictFile, PostingsOutput[] postOut) throws java.io.IOException;
+    protected abstract void dumpCustom(DumpState dumpState) throws java.io.IOException;
 } // MemoryPartition
 

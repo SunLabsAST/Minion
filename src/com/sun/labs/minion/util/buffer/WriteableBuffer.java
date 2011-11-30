@@ -193,6 +193,12 @@ public interface WriteableBuffer extends Buffer {
      * @param b The <CODE>java.nio</CODE> buffer to which we will write this buffer.
      */
     public void write(ByteBuffer b);
+    
+    /**
+     * Write this buffer to another.
+     * @param b the buffer to which we'll write our data.
+     */
+    public void write(WriteableBuffer b);
 
     /**
      * Write the buffer to a channel.
@@ -200,6 +206,14 @@ public interface WriteableBuffer extends Buffer {
      * @throws java.io.IOException if there is any error writing the buffer.
      */
     public void write(WritableByteChannel chan) throws java.io.IOException;
+    
+    /**
+     * Writes a portion of the buffer to a channel
+     * @param chan the channel to write to
+     * @param start the inclusive starting position in the buffer
+     * @param end  the exclusive ending position in the buffer.
+     */
+    public void write(WritableByteChannel chan, int start, int end) throws java.io.IOException;
 
     /**
      * Write the buffer to a data output.

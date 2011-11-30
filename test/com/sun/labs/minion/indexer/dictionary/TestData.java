@@ -1,7 +1,10 @@
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.partition.DumpState;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.io.BufferedReader;
@@ -91,13 +94,16 @@ public class TestData {
             md.put(w);
             uniq.add(w);
         }
+        DumpState dumpState = new DumpState(DictionaryTest.tmpDir);
+        dumpState.renumber = MemoryDictionary.Renumber.RENUMBER;
+        dumpState.idMap = MemoryDictionary.IDMap.NONE;
+        dumpState.encoder = new StringNameHandler();
+        md.dump(dumpState);
         dictFile = File.createTempFile("all", ".dict");
         dictFile.deleteOnExit();
         raf = new RandomAccessFile(dictFile, "rw");
-        md.dump(DictionaryTest.tmpDir, new StringNameHandler(), raf,
-                new PostingsOutput[0],
-                MemoryDictionary.Renumber.NONE,
-                MemoryDictionary.IDMap.NONE, null);
+        dumpState.fieldDictOut.flush(raf);
+        dumpState.close();
         raf.close();
         raf = new RandomAccessFile(dictFile, "r");
         dd = new DiskDictionary<String>(new EntryFactory<String>(

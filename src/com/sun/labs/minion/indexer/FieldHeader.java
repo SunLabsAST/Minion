@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.indexer;
 
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -126,6 +127,21 @@ class FieldHeader {
         f.writeLong(dtvPosOffset);
         f.writeLong(dtvOffset);
         f.writeLong(vectorLengthOffset);
+    }
+    
+    public void write(WriteableBuffer b) {
+        b.byteEncode(fieldID, 4);
+        b.byteEncode(maxDocID, 4);
+        b.byteEncode(dictOffsets.length, 4);
+        for(int i = 0; i < dictOffsets.length; i++) {
+            b.byteEncode(dictOffsets[i], 8);
+        }
+        b.byteEncode(tokenBGOffset, 8);
+        b.byteEncode(savedBGOffset, 8);
+        b.byteEncode(dtvPosOffset, 8);
+        b.byteEncode(dtvOffset, 8);
+        b.byteEncode(vectorLengthOffset, 8);
+        
     }
 
     @Override

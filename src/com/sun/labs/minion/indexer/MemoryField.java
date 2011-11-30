@@ -6,13 +6,11 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.partition.DumpState;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
-import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.pipeline.StageAdapter;
 import com.sun.labs.minion.pipeline.Token;
-import java.io.File;
-import java.io.RandomAccessFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -117,20 +115,14 @@ public class MemoryField extends Field {
      * @throws java.io.IOException if there is an error during the
      * writing.
      */
-    public DumpResult dump(File path,
-                     RandomAccessFile fieldDictFile,
-                     PostingsOutput[] postOut,
-                     RandomAccessFile termStatsDictFile,
-                     RandomAccessFile vectorLengthsFile,
-                     int maxID) throws
+    public DumpResult dump(DumpState dumpState) throws
             java.io.IOException {
         //
         // If there's nothing in the field, then call it a day.
         if(dicts.getMaxDocID() == 0) {
             return DumpResult.NOTHING_DUMPED;
         }
-        return dicts.dump(path, fieldDictFile, postOut, termStatsDictFile,
-                   vectorLengthsFile, maxID);
+        return dicts.dump(dumpState);
     }
 
     public MemoryDictionary getTermDictionary(boolean cased) {

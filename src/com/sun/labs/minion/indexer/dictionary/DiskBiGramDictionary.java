@@ -421,7 +421,7 @@ public class DiskBiGramDictionary extends DiskDictionary {
                 null,
                 mergeState.fakeStarts,
                 mergeState.entryIDMaps,
-                mergeState.dictRAF,
+                mergeState.fieldDictOut,
                 mergeState.postOut,
                 false);
     }

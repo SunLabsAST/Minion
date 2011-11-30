@@ -23,8 +23,8 @@
  */
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.Entry;
-import java.io.RandomAccessFile;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -32,9 +32,8 @@ import java.util.logging.Logger;
 
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
-import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.indexer.partition.DumpState;
 import com.sun.labs.minion.indexer.partition.Partition;
-import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -344,38 +343,28 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * @throws java.io.IOException When there is an error writing either of
      * the channels.
      */
-    public IndexEntry[] dump(File path,
-            NameEncoder encoder,
-            RandomAccessFile dictFile,
-            PostingsOutput[] postOut,
-            Renumber renumber,
-            IDMap idMapType,
-            int[] postIDMap)
-            throws java.io.IOException {
-        logger.fine(String.format("Dumping %d entries", map.size()));
+    public IndexEntry[] dump(DumpState dumpState) throws java.io.IOException {
+        logger.info(String.format("Dumping %d entries", map.size()));
 
+        DictionaryOutput dout = dumpState.fieldDictOut;
+        
         //
-        // Get a writer for the dictionary.  If we're not renumbering, it
-        // will need to keep an ID to position map.
-        DictionaryWriter dw = new DictionaryWriter(path,
-                encoder,
-                postOut.length,
-                renumber);
+        // Start the dump.
+        dout.start(dumpState.encoder, dumpState.renumber, dumpState.postOut.length);
 
-        //
-        // Set the max entry ID.
-        dw.dh.maxEntryID = id;
-
+        DictionaryHeader dh = dout.getHeader();
+        dh.maxEntryID = id;
+        
         //
         // Record the starting positions for each of our postings outputs.
-        for(int i = 0; i < postOut.length; i++) {
-            dw.dh.postStart[i] = postOut[i].position();
+        for(int i = 0; i < dumpState.postOut.length; i++) {
+            dh.postStart[i] = dumpState.postOut[i].position();
         }
 
         //
         // Sort the entries in preparation for writing them out.  This will
         // generate an old-to-new ID mapping if we're renumbering.
-        IndexEntry[] sorted = sort(renumber, idMapType);
+        IndexEntry[] sorted = sort(dumpState.renumber, dumpState.idMap);
 
         //
         // Write the postings and entries.
@@ -383,27 +372,24 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             
             //
             // Write it out.
-            if(entry.writePostings(postOut, postIDMap) == true) {
-//                logger.fine(String.format("wrote postings for %s, %d entries in list", entry.getName(), entry.getN()));
-                dw.write(entry);
-            } else {
-//                logger.fine(String.format("No postings for %s", entry.getName()));
+            if(entry.writePostings(dumpState.postOut, dumpState.postIDMap) == true) {
+                dout.write(entry);
             }
         }
 
         //
-        // Flush whatever's left in the postings buffers.
-        for(int i = 0; i < postOut.length; i++) {
-            postOut[i].flush();
-            dw.dh.postEnd[i] = postOut[i].position();
+        // Flush whatever's left in the postings buffers. 
+        for(int i = 0; i < dumpState.postOut.length; i++) {
+            dumpState.postOut[i].flush();
+            dh.postEnd[i] = dumpState.postOut[i].position();
         }
+        
+        logger.info(String.format("done dict dump"));
 
         //
         // Write the final dictionary.
-        dw.finish(dictFile);
+        dout.finish();
         
-//        logger.fine(String.format("header:\n%s", dw.dh));
-
         return sorted;
     }
 

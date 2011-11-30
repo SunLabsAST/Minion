@@ -21,10 +21,10 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.util.buffer;
 
 import java.io.DataOutput;
+import java.io.IOException;
 import java.io.OutputStream;
 
 import java.nio.ByteBuffer;
@@ -33,6 +33,7 @@ import java.nio.channels.WritableByteChannel;
 import com.sun.labs.minion.util.ChannelUtil;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.Util;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -51,9 +52,9 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * The array backing our data.
      */
     protected byte[] units;
-    
+
     /**
-     * The increase factor to use when resizing the buffer.  Initially we will
+     * The increase factor to use when resizing the buffer.  Initially, we will
      * double the size of the buffer, but at each increase in size we will
      * double the increase factor.
      */
@@ -85,13 +86,8 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
     /**
      * The log for this buffer.
      */
-    protected static Logger logger = Logger.getLogger(ArrayBuffer.class.getName());
+    protected static final Logger logger = Logger.getLogger(ArrayBuffer.class.getName());
 
-    /**
-     * A tag to use in logging.
-     */
-    protected static String logTag = "AB";
-    
     /**
      * Creates an array backed buffer that we can use when duplicating or
      * slicing.
@@ -144,12 +140,12 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      */
     protected void checkBounds(int p) {
         if(p >= units.length) {
-            units = Util.expandByte(units, p * increaseFactor);
+            units = Arrays.copyOf(units, p * increaseFactor);
             increaseFactor *= 2;
             lim = units.length;
         }
     }
-    
+
     //
     // Implementation of Buffer.
     /**
@@ -169,7 +165,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * set.
      */
     public void position(int position) {
-        pos = position+off;
+        pos = position + off;
     }
 
     /**
@@ -178,12 +174,11 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @return The number of bytes remaining in the buffer.
      */
     public int remaining() {
-        return lim+off - pos;
+        return lim + off - pos;
     }
-    
+
     //
     // Remaining implementation of WriteableBuffer.
-
     /**
      * Sets the capacity of the buffer to the given amount.
      *
@@ -206,7 +201,6 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
     public WriteableBuffer put(byte b) {
         return put(pos++, b);
     }
-        
 
     /**
      * Puts a single byte onto this buffer at the given position.
@@ -215,22 +209,12 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @return This buffer, to allow chained invocations.
      */
     public WriteableBuffer put(int p, byte b) {
-        checkBounds(p+1);
+        checkBounds(p + 1);
         units[p] = b;
         return this;
     }
 
-   /**
-     * Encodes an integer in a byte-aligned fashion, using the minimal
-     * number of bytes.  The basic idea: use the 7 lower order bits of a
-     * byte to encode a number.  If the 8th bit is 0, then there are no
-     * further bytes in this number.  If the 8th bit is one, then the next
-     * byte continues the number.  Note that this means that a number that
-     * would completly fill an integer will take 5 bytes to encode.
-     * 
-     * @return the number of bytes used to encode the number.
-     * @param n The number to encode.
-     */
+    @Override
     public int byteEncode(long n) {
         if(n < 0) {
             throw new ArithmeticException(String.format("Negative value %d cannot by byte encoded", n));
@@ -242,12 +226,12 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         // encoding, saving bounds checks for each byte.
         if(n < Integer.MAX_VALUE) {
             if(n < 16384) {
-                checkBounds(pos+2);
+                checkBounds(pos + 2);
             } else {
-                checkBounds(pos+5);
+                checkBounds(pos + 5);
             }
         } else {
-            checkBounds(pos+10);
+            checkBounds(pos + 10);
         }
 
         //
@@ -261,7 +245,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
             n >>>= 7;
             nBytes++;
         } while(n > 0);
-	
+
         return nBytes;
     }
 
@@ -273,7 +257,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @return This buffer, to allow chained invocations.
      */
     public WriteableBuffer put(byte[] b, int o, int n) {
-        capacity(pos+n);
+        capacity(pos + n);
         System.arraycopy(b, o, units, pos, n);
         pos += n;
         return this;
@@ -286,6 +270,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param b The buffer that we wish to append onto this buffer.
      * @param n The number of bytes to append onto this buffer.
      */
+    @Override
     public WriteableBuffer append(ReadableBuffer b, int n) {
 
         //
@@ -293,11 +278,11 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         if(n == 0) {
             return this;
         }
-        
+
         //
         // Expand our array here, if necessary.
-        capacity(pos+n);
-        
+        capacity(pos + n);
+
         //
         // We can handle ArrayBuffers much faster.
         if(b instanceof ArrayBuffer) {
@@ -360,11 +345,17 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @throws java.io.IOException If there is any error writing to the channel.
      */
     public void write(WritableByteChannel chan)
-        throws java.io.IOException {
+            throws java.io.IOException {
+        write(chan, 0, pos);
+    }
+
+    public void write(WritableByteChannel chan, int start, int end) throws IOException {
         ChannelUtil.writeFully(chan,
-                               (ByteBuffer) ByteBuffer.wrap(units, 0, pos)
-                               .position(pos)
-                               .flip());
+                (ByteBuffer) ByteBuffer.wrap(units, start, end - start));
+    }
+
+    public void write(WriteableBuffer b) {
+        b.append(getReadableBuffer());
     }
 
     /**
@@ -375,7 +366,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @throws java.io.IOException If there is any error writing the buffer.
      */
     public void write(DataOutput o)
-        throws java.io.IOException {
+            throws java.io.IOException {
         o.write(units, 0, pos);
     }
 
@@ -385,7 +376,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @throws java.io.IOException If there is any error writing the buffer.
      */
     public void write(OutputStream os)
-        throws java.io.IOException {
+            throws java.io.IOException {
         os.write(units, 0, pos);
     }
 
@@ -405,7 +396,6 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
 
     //
     // Remaining implementation of ReadableBuffer.
-
     /**
      * Duplicates this buffer, so that it can be used safely by other
      * readers.
@@ -415,8 +405,8 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
     public ReadableBuffer duplicate() {
         ArrayBuffer ret = new ArrayBuffer();
         ret.units = units;
-        ret.pos   = pos;
-        ret.off   = off;
+        ret.pos = pos;
+        ret.off = off;
         return ret;
     }
 
@@ -430,12 +420,12 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
     public ReadableBuffer slice(int p, int s) {
         ArrayBuffer ret = new ArrayBuffer();
         ret.units = units;
-        ret.pos = p+off;
+        ret.pos = p + off;
         ret.off = ret.pos;
         ret.limit(s);
         return ret;
     }
-    
+
     /**
      * The limit of this buffer, i.e., the last readable position.
      * @return The position of the last byte that can be read from or
@@ -469,7 +459,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @return The byte at the given position.
      */
     public byte get(int i) {
-        return units[off+i];
+        return units[off + i];
     }
 
     /**
@@ -482,9 +472,9 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      */
     public int byteDecode() {
 
-        byte 	curr  = (byte) 0x80;
-        int 	res   = 0;
-        int 	shift = 0;
+        byte curr = (byte) 0x80;
+        int res = 0;
+        int shift = 0;
 
         while((curr & 0x80) != 0) {
             curr = units[pos++];
@@ -503,7 +493,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         try {
             result = (ArrayBuffer) super.clone();
             result.units = units.clone();
-        } catch (CloneNotSupportedException e) {
+        } catch(CloneNotSupportedException e) {
             throw new InternalError();
         }
         return result;
@@ -519,16 +509,16 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         java.util.Random rand = new java.util.Random();
         int n = Integer.parseInt(args[0]);
         ArrayBuffer b = new ArrayBuffer(n);
-        int[] nums = new int[n+1];
+        int[] nums = new int[n + 1];
         int[] limits = {255, 65535, 16777215, Integer.MAX_VALUE};
         for(int limit = 1; limit <= 4; limit++) {
-	    
+
             NanoWatch nw = new NanoWatch();
             nw.start();
             b.clear();
-            int max = limits[limit-1];
+            int max = limits[limit - 1];
             System.out.println("Max: " + max);
-            for(int i = 0; i < n ; i++) {
+            for(int i = 0; i < n; i++) {
                 nums[i] = rand.nextInt(max);
                 b.byteEncode(nums[i], limit);
             }

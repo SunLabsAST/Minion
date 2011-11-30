@@ -671,9 +671,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                       DiskDictionaryBundle[] bundles) 
             throws java.io.IOException {
         
-        long headerPos = mergeState.dictRAF.getFilePointer();
+        int headerPos = mergeState.fieldDictOut.position();
         FieldHeader mergeHeader = new FieldHeader();
-        mergeHeader.write(mergeState.dictRAF);
+        mergeHeader.write(mergeState.fieldDictOut);
         
         //
         // ID maps for the entries in the dictionaries.  We'll store them all, 
@@ -753,14 +753,14 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
             
             if(foundDict) {
-                mergeHeader.dictOffsets[ord] = mergeState.dictRAF.getFilePointer();
+                mergeHeader.dictOffsets[ord] = mergeState.fieldDictOut.position();
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                                                   encoder, 
                                                   mDicts,
                                                   null,
                                                   mergeState.docIDStarts,
                                                   mergeState.postIDMaps,
-                                                  mergeState.dictRAF, 
+                                                  mergeState.fieldDictOut,
                                                   mergeState.postOut, 
                                                   true);
             } else {
@@ -791,7 +791,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 entryIDMaps[Type.UNCASED_TOKENS.ordinal()];
         
         if(foundOne) {
-            mergeHeader.tokenBGOffset = mergeState.dictRAF.getFilePointer();
+            mergeHeader.tokenBGOffset = mergeState.fieldDictOut.position();
             DiskBiGramDictionary.merge(mergeState, bgDicts);
         }
 
@@ -815,7 +815,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 entryIDMaps[Type.UNCASED_SAVED.
                 ordinal()];
         if(foundOne) {
-            mergeHeader.savedBGOffset = mergeState.dictRAF.getFilePointer();
+            mergeHeader.savedBGOffset = mergeState.fieldDictOut.position();
             DiskBiGramDictionary.merge(mergeState, bgDicts);
         }
 
@@ -885,15 +885,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
             //
             // Transfer the temp buffers into the dictionary file.
-            FileChannel dictChan = mergeState.dictRAF.getChannel();
-            
-            mergeHeader.dtvOffset = mergeState.dictRAF.getFilePointer();
-            mdtvBuff.write(dictChan);
+            mergeHeader.dtvOffset = mergeState.fieldDictOut.position();
+            mdtvBuff.write(mergeState.fieldDictOut);
             dtvRAF.close();
             dtvFile.delete();
 
-            mergeHeader.dtvPosOffset = mergeState.dictRAF.getFilePointer();
-            mdtvOffsetBuff.write(dictChan);
+            mergeHeader.dtvPosOffset = mergeState.fieldDictOut.position();
+            mdtvOffsetBuff.write(mergeState.fieldDictOut);
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
         }
@@ -905,9 +903,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
             //
             // Calculate document vector lengths.  We need an iterator for the 
             // main merged dictionary for this.
-            long mdp = mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
+            int mdp = (int) mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
             if(mdp < 0) {
-                mdp = mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
+                mdp = (int) mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()];
             }
             if(mdp >= 0) {
                 
@@ -915,18 +913,18 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 // We need a disk dictionary for calculating the lengths, so we'll
                 // open the one that we just wrote.  We'll start by remembering where 
                 // we were in the file!
-                long mdsp = mergeState.dictRAF.getFilePointer();
+                int mdsp = mergeState.fieldDictOut.position();
 
                 RandomAccessFile[] mPostRAF = new RandomAccessFile[mergeState.postFiles.length];
                 for(int i = 0; i < mergeState.postFiles.length; i++) {
                     mPostRAF[i] = new RandomAccessFile(mergeState.postFiles[i], "rw");
                 }
                 mergeHeader.vectorLengthOffset = mergeState.vectorLengthRAF.getFilePointer();
-                mergeState.dictRAF.seek(mdp);
+                mergeState.fieldDictOut.position(mdp);
                 DiskDictionary newMainDict =
                         new DiskDictionary(mergeState.entryFactory,
                         new StringNameHandler(),
-                        mergeState.dictRAF,
+                        mergeState.fieldDictOut,
                         mPostRAF);
                 DocumentVectorLengths.calculate(mergeState.info, 
                                                 mergeState.maxDocID,
@@ -939,7 +937,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 for(RandomAccessFile mprf : mPostRAF) {
                     mprf.close();
                 }
-                mergeState.dictRAF.seek(mdsp);
+                mergeState.fieldDictOut.position(mdsp);
                 
             } else {
                 mergeHeader.vectorLengthOffset = -1;
@@ -948,10 +946,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
         
         //
         // Now zip back and write the header.
-        long endPos = mergeState.dictRAF.getFilePointer();
-        mergeState.dictRAF.seek(headerPos);
-        mergeHeader.write(mergeState.dictRAF);
-        mergeState.dictRAF.seek(endPos);
+        int endPos = mergeState.fieldDictOut.position();
+        mergeState.fieldDictOut.position(headerPos);
+        mergeHeader.write(mergeState.fieldDictOut);
+        mergeState.fieldDictOut.position(endPos);
     }
 
     /**

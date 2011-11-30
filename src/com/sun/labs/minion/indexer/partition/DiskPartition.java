@@ -38,6 +38,7 @@ import java.util.Set;
 import com.sun.labs.minion.indexer.Closeable;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
+import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
 import com.sun.labs.minion.indexer.entry.DuplicateKeyException;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
@@ -601,6 +602,7 @@ public class DiskPartition extends Partition implements Closeable {
         //
         // Set up to write the files for the merged entries.
         mergeState.partNumber = manager.getNextPartitionNumber();
+        mergeState.fieldDictOut = new DiskDictionaryOutput(manager.getIndexDir());
 
         //
         // A honkin' big try, so that we can get rid of any failed merges.
@@ -688,9 +690,7 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Get a channel for the main dictionary.
-            mergeState.dictFile = files[0];
             mergeState.postFiles = Arrays.copyOfRange(files, 1, files.length);
-            mergeState.dictRAF = new RandomAccessFile(files[0], "rw");
             mergeState.postStreams = new OutputStream[mergeState.postFiles.length];
             mergeState.postOut = new PostingsOutput[mergeState.postFiles.length];
             
@@ -703,8 +703,8 @@ public class DiskPartition extends Partition implements Closeable {
 
             //
             // Write a placeholder for the offset of the partition header.
-            long phoffsetpos = mergeState.dictRAF.getFilePointer();
-            mergeState.dictRAF.writeLong(0);
+            int phoffsetpos = mergeState.fieldDictOut.position();
+            mergeState.fieldDictOut.byteEncode(0L, 8);
 
             //
             // Pick up the document dictionaries for the merge.
@@ -719,32 +719,39 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // Merge the document dictionaries.  We'll need to remap the
             logger.fine("Merge document dictionary");
-            mergeState.header.setDocDictOffset(mergeState.dictRAF.getFilePointer());
+            mergeState.header.setDocDictOffset(mergeState.fieldDictOut.position());
             DiskDictionary.merge(manager.getIndexDir(),
                     new StringNameHandler(),
                            dicts,
                            mappers,
                            fakeStart, 
                            docDictIDMaps,
-                           mergeState.dictRAF, 
+                           mergeState.fieldDictOut, 
                            mergeState.postOut, true);
 
 
             mergeCustom(mergeState);
 
-            long phoffset = mergeState.dictRAF.getFilePointer();
+            int phoffset = mergeState.fieldDictOut.position();
             
-            mergeState.header.write(mergeState.dictRAF);
-            long pos = mergeState.dictRAF.getFilePointer();
-            mergeState.dictRAF.seek(phoffsetpos);
-            mergeState.dictRAF.writeLong(phoffset);
-            mergeState.dictRAF.seek(pos);
-
-            mergeState.dictRAF.close();
+            mergeState.header.write(mergeState.fieldDictOut);
+            int pos = mergeState.fieldDictOut.position();
+            mergeState.fieldDictOut.position(phoffsetpos);
+            mergeState.fieldDictOut.byteEncode((long) phoffset, 8);
+            mergeState.fieldDictOut.position(pos);
             for(int i = 0; i < mergeState.postStreams.length; i++) {
                 mergeState.postOut[i].flush();
                 mergeState.postStreams[i].close();
             }
+            
+            //
+            // Put the data in its final resting place.
+            mergeState.postFiles = Arrays.copyOfRange(files, 1, files.length);
+            RandomAccessFile dictRAF = new RandomAccessFile(files[0], "rw");
+            mergeState.fieldDictOut.flush(dictRAF);
+            dictRAF.close();
+            mergeState.fieldDictOut.close();
+
             
             DiskPartition ndp = manager.newDiskPartition(mergeState.partNumber, manager);
             mw.stop();

@@ -151,7 +151,23 @@ public class ChannelUtil {
      */
     public static ByteBuffer readFully(FileChannel c, long off, ByteBuffer b)
             throws java.io.IOException {
-        while(b.remaining() > 0) {
+        return readFully(c, off, b.remaining(), b);
+    }
+
+    /**
+     * Reads part of a byte buffer fully from the given channel at the given
+     * position, retrying if necessary. 
+     *
+     * @param c The channel that we will write to.
+     * @param off The offset to read from.
+     * @param n the number of bytes to read.
+     * @param b The buffer we wish to write.
+     * @return The buffer.
+     * @throws java.io.IOException If there is any error during reading.
+     */
+    public static ByteBuffer readFully(FileChannel c, long off, int n, ByteBuffer b)
+            throws java.io.IOException {
+        while(n > 0) {
             int bytesRead = c.read(b, off);
 
             //
@@ -160,10 +176,11 @@ public class ChannelUtil {
                 break;
             }
             off += bytesRead;
+            n -= bytesRead;
         }
         return b;
     }
-
+    
     /**
      * Transfers the complete content of a channel to another, making sure
      * that all data is written.
