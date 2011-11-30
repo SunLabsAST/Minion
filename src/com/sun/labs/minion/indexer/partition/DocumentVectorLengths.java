@@ -219,7 +219,7 @@ public class DocumentVectorLengths {
 
             //
             // Write the entry to the new global term stats dictionary.
-            if(adjustStats) {
+            if(adjustStats && we.getN() > 1) {
                 termStatsOut.write(we);
             }
 

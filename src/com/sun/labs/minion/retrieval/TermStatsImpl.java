@@ -44,17 +44,17 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
     /**
      * The maximum frequency for the term.
      */
-    protected int maxfdt;
+    protected int maxfdt = 1;
     
     /**
      * The number of documents in which the term occurs.
      */
-    protected int ft;
+    protected int ft =1;
     
     /**
      * The total number of occurrences for the term.
      */
-    protected long Ft;
+    protected long Ft = 1;
     
     /**
      * Creates an empty set of term stats to which we can add terms.

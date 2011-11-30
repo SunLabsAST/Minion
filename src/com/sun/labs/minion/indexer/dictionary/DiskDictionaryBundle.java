@@ -960,9 +960,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
             while(di.hasNext()) {
                 QueryEntry qe = (QueryEntry) di.next();
-                TermStatsIndexEntry tse = new TermStatsIndexEntry((String) qe.getName(), tsid++);
-                tse.getTermStats().add(qe);
-                termStatsDictOut.write(tse);
+                //
+                // If we only ended up with 1 document, then forget about this one.
+                if(qe.getN() > 1) {
+                    TermStatsIndexEntry tse = new TermStatsIndexEntry((String) qe.getName(), tsid++);
+                    tse.getTermStats().add(qe);
+                    termStatsDictOut.write(tse);
+                }
                 nMerged++;
                 if(nMerged % 50000 == 0) {
                     logger.info(String.format("Regenerated %d", nMerged));
@@ -1025,7 +1029,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     }
                     top = h.peek();
                 }
-                termStatsDictOut.write(tse);
+                if(tse.getN() > 1) {
+                    termStatsDictOut.write(tse);
+                }
                 nMerged++;
                 if(nMerged % 100000 == 0) {
                     logger.info(String.format("Regenerated %d", nMerged));
