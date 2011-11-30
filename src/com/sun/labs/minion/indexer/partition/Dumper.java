@@ -23,7 +23,9 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
+import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.partition.PartitionManager.Merger;
+import com.sun.labs.minion.indexer.partition.io.AbstractPartitionOutput;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.partition.io.RAMPartitionOutput;
 import com.sun.labs.util.props.ConfigInteger;
@@ -143,6 +145,12 @@ public class Dumper implements Configurable {
     public void setMemoryPartitionQueue(BlockingQueue<InvFileMemoryPartition> mpq) {
         this.mpPool = mpq;
     }
+    
+    public void setLongIndexingRun(boolean longIndexingRun) {
+        for(PartitionOutput po : partOuts) {
+            ((AbstractPartitionOutput) po).setLongIndexingRun(longIndexingRun);
+        }
+    }
 
     public void dump(InvFileMemoryPartition part) {
         try {
@@ -185,6 +193,7 @@ public class Dumper implements Configurable {
             throws PropertyException {
 
         partitionManager = (PartitionManager) ps.getComponent(PROP_PARTITION_MANAGER);
+        boolean longIndexingRun = ((SearchEngineImpl) partitionManager.getEngine()).isLongIndexingRun();
 
         int queueLength = ps.getInt(PROP_DUMP_QUEUE_LENGTH);
         int poolSize = ps.getInt(PROP_POOL_SIZE);
@@ -197,6 +206,7 @@ public class Dumper implements Configurable {
             try {
                 partOuts[i] = new RAMPartitionOutput(partitionManager);
                 ((RAMPartitionOutput) partOuts[i]).setName("PO-" + i);
+                ((RAMPartitionOutput) partOuts[i]).setLongIndexingRun(longIndexingRun);
                 poPool.put(partOuts[i]);
             } catch(Exception ex) {
                 throw new PropertyException(ex, ps.getInstanceName(), PROP_POOL_SIZE, "Error creating output pool");

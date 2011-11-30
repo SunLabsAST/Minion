@@ -10,6 +10,7 @@ import com.sun.labs.minion.indexer.partition.PartitionHeader;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.FileLockException;
+import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +27,8 @@ import java.util.logging.Logger;
 public abstract class AbstractPartitionOutput implements PartitionOutput {
 
     private static final Logger logger = Logger.getLogger(AbstractPartitionOutput.class.getName());
+    
+    private boolean longIndexingRun;
     
     /**
      * The partition being output.
@@ -108,6 +111,8 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
 
     public AbstractPartitionOutput(PartitionManager manager) throws IOException {
         this.manager = manager;
+        vectorLengthsBuffer = new ArrayBuffer(8 * 1024);
+        deletionsBuffer = new ArrayBuffer(8 * 1024);
     }
     
     public AbstractPartitionOutput(File outputDir) throws IOException {
@@ -183,6 +188,10 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         return termStatsDictOut;
     }
 
+    public MemoryPartition getPartition() {
+        return partition;
+    }
+
     public WriteableBuffer getVectorLengthsBuffer() {
         return vectorLengthsBuffer;
     }
@@ -227,6 +236,14 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         return postingsIDMap;
     }
 
+    public boolean isLongIndexingRun() {
+        return longIndexingRun;
+    }
+
+    public void setLongIndexingRun(boolean longIndexingRun) {
+        this.longIndexingRun = longIndexingRun;
+    }
+
     public void flush() throws IOException {
 
         //
@@ -241,23 +258,28 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
             }
         }
 
-        //
-        // The vector lengths.
-        RandomAccessFile vectorLengthsFile = new RandomAccessFile(manager.makeVectorLengthFile(partNumber), "rw");
-        vectorLengthsBuffer.write(vectorLengthsFile.getChannel());
-        vectorLengthsFile.close();
+        if(vectorLengthsBuffer.position() > 0) {
+            //
+            // The vector lengths.
+            RandomAccessFile vectorLengthsFile = new RandomAccessFile(manager.makeVectorLengthFile(partNumber), "rw");
+            vectorLengthsBuffer.write(vectorLengthsFile.getChannel());
+            vectorLengthsBuffer.clear();
+            vectorLengthsFile.close();
+        }
 
         //
         // Deleted docs.
         if(deletionsBuffer.countBits() > 0) {
             RandomAccessFile delFile = new RandomAccessFile(manager.makeDeletedDocsFile(partNumber), "rw");
             deletionsBuffer.write(delFile);
+            deletionsBuffer.clear();
+            delFile.close();
         }
 
         //
         // Dump the new term stats dictionary, if there is one.  There won't be if
         // this partition output was used for merging.
-        if(termStatsDictOut != null) {
+        if(termStatsDictOut != null && termStatsDictOut.position() > 0) {
             try {
                 int tsn = manager.getMetaFile().getNextTermStatsNumber();
 

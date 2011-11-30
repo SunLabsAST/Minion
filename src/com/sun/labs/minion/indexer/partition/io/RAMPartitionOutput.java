@@ -6,11 +6,8 @@ import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.RAMPostingsOutput;
-import com.sun.labs.minion.util.buffer.ArrayBuffer;
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,8 +32,6 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
         for(int i = 0; i < postOut.length; i++) {
             postOut[i] = new RAMPostingsOutput();
         }
-        vectorLengthsBuffer = new ArrayBuffer(1024);
-        deletionsBuffer = new ArrayBuffer(1024);
     }
 
     @Override

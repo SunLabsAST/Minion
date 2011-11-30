@@ -175,12 +175,14 @@ public class InvFileMemoryPartition extends MemoryPartition {
         
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
         DictionaryOutput termStatsDictOut = null;
-        try {
-            termStatsDictOut = partOut.getTermStatsDictionaryOutput();
-            termStatsDictOut.byteEncode(0, 8);
-        } catch(Exception ex) {
-            logger.log(Level.SEVERE, String.format(
-                    "Error making term stats dictionary file for %s", this), ex);
+        if(!partOut.isLongIndexingRun()) {
+            try {
+                termStatsDictOut = partOut.getTermStatsDictionaryOutput();
+                termStatsDictOut.byteEncode(0, 8);
+            } catch(Exception ex) {
+                logger.log(Level.SEVERE, String.format(
+                        "Error making term stats dictionary file for %s", this), ex);
+            }
         }
         
         //
@@ -195,7 +197,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
             //
             // Remember where we are 
             long fieldOffset = partDictOut.position();
-            long termStatsOff = termStatsDictOut.position();
+            long termStatsOff = -1;
+            if(termStatsDictOut != null) {
+                termStatsOff = termStatsDictOut.position();
+            }
             
             logger.fine(String.format("Dumping %s", mf.getInfo().getName()));
             

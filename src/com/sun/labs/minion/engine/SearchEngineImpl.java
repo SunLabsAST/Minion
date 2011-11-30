@@ -30,7 +30,6 @@ import com.sun.labs.minion.IndexableString;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryUsage;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
@@ -86,7 +85,6 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
 import com.sun.labs.minion.indexer.partition.Dumper;
 import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
-import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.query.And;
@@ -1279,7 +1277,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         dumper.finish();
         
         try {
-            invFilePartitionManager.shutdown();
+            invFilePartitionManager.close();
 
             //
             // Dump the configuration into the index directory.
@@ -1513,7 +1511,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * run, in which case term statistics dictionaries and document vector lengths
      * will not be calculated until the engine is shutdown.
      */
-    public boolean getLongIndexingRun() {
+    public boolean isLongIndexingRun() {
         return longIndexingRun;
     }
 
@@ -1525,6 +1523,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      */
     public void setLongIndexingRun(boolean longIndexingRun) {
         this.longIndexingRun = longIndexingRun;
+        dumper.setLongIndexingRun(longIndexingRun);
     }
     
     public void setDocsPerPartition(int docsPerPartition) {

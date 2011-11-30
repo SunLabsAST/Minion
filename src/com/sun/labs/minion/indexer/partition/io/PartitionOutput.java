@@ -19,6 +19,8 @@ public interface PartitionOutput {
     public int startPartition(MemoryPartition partition) throws IOException;
     
     public void setKeys(Set<String> keys);
+    
+    public MemoryPartition getPartition();
 
     public int getPartitionNumber();
     
@@ -61,6 +63,8 @@ public interface PartitionOutput {
     public WriteableBuffer getDeletionsBuffer();
 
     public WriteableBuffer getVectorLengthsBuffer();
+    
+    public boolean isLongIndexingRun();
     
     public void flush() throws IOException;
 

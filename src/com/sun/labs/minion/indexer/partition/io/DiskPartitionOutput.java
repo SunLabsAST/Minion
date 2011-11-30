@@ -6,7 +6,6 @@ import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
-import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +35,7 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
      */
     public DiskPartitionOutput(PartitionManager manager) throws IOException {
         super(manager);
+        partDictOut = new DiskDictionaryOutput(manager.getIndexDir());
     }
     
     public DiskPartitionOutput(File outputDir) throws IOException {
@@ -45,21 +45,15 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
     @Override
     public int startPartition(MemoryPartition partition) throws IOException {
         int ret = super.startPartition(partition);
-        partDictOut = new DiskDictionaryOutput(manager.getIndexDir());
         postStream = new OutputStream[postOutFiles.length];
         postOut = new PostingsOutput[postStream.length];
         for(int i = 0; i < postOutFiles.length; i++) {
             postStream[i] = new BufferedOutputStream(
-                    new FileOutputStream(postOutFiles[i]), 32768);
+                    new FileOutputStream(postOutFiles[i]), 512 * 1024);
             postOut[i] = new StreamPostingsOutput(postStream[i]);
         }
-
-        vectorLengthsBuffer = new ArrayBuffer(1024);
-        deletionsBuffer = new ArrayBuffer(1024);
         return ret;
     }
-    
-    
 
     @Override
     public DictionaryOutput getTermStatsDictionaryOutput() {
@@ -77,8 +71,10 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
     @Override
     public void close() throws IOException {
         super.close();
-        for(int i = 0; i < postStream.length; i++) {
-            postStream[i].close();
+        if(postStream != null) {
+            for(int i = 0; i < postStream.length; i++) {
+                postStream[i].close();
+            }
         }
     }
 }

@@ -66,6 +66,8 @@ import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
+import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.util.DirCopier;
@@ -904,7 +906,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // We need a lock that we can retry on to give the merge time to finish.
         // We're going to use a long timeout, because if we're in here, the indexer
         // is in trouble, and this needs to get taken care of!
-        FileLock ourMergeLock = new FileLock(mergeLock, 60, TimeUnit.SECONDS);
+        FileLock ourMergeLock = new FileLock(mergeLock, 5, TimeUnit.SECONDS);
         try {
             ourMergeLock.acquireLock();
         } catch(IOException ex) {
@@ -912,8 +914,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     "Error getting merge lock when too many partitions", ex);
             return false;
         } catch(FileLockException fle) {
-            logger.log(Level.SEVERE,
-                    "Error getting merge lock when too many partitions", fle);
+            logger.log(Level.INFO, "Unable to get merge lock when too many partitions");
             return false;
         }
         
@@ -1240,13 +1241,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     /**
-     * Shuts down the manager.  Mostly this consists of writing the list of
+     * Closes down the manager.  Mostly this consists of writing the list of
      * active partitions.  This requires the file to be locked.
      *
      * @throws java.io.IOException if there is an error writing the active
      * file of partitions or closing one of the partitions.
      */
-    public synchronized void shutdown() throws java.io.IOException {
+    public synchronized void close() throws java.io.IOException {
 
         //
         // If there is a thread merging, then wait for it to finish.
@@ -1277,6 +1278,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             c.createRemoveFile();
         }
         thingsToClose.clear();
+        
+        mergePartitionOutput.close();
 
         logger.fine(String.format("Shutdown %s %d", indexDir, randID));
     }
@@ -1801,7 +1804,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             boolean calculateDVL) {
         //
         // If we don't have any partitions left, then we're done.
-        if(diskParts.size() == 0) {
+        if(diskParts.isEmpty()) {
             return null;
         }
 
@@ -1814,7 +1817,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // Run the merge, using the first element.
         DiskPartition ndp = null;
         try {
-            ndp = diskParts.get(0).merge(diskParts, delMaps, calculateDVL);
+            ndp = diskParts.get(0).merge(diskParts, delMaps, mergePartitionOutput, calculateDVL);
         } catch(Exception e) {
             logger.log(Level.SEVERE, "Error merging partitions: " + diskParts, e);
         }
@@ -1823,26 +1826,22 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // If we were successful, then return the new partition number for
         // the merged partition.
         if(ndp != null) {
-            logger.info("Partitions merged.  New partition: " + ndp);
+            logger.info(String.format("Partitions merged.  New partition: %s", ndp));
 
             //
             // Set the merged partitions for closing and mark the partitions
             // to be removde.
-            for(int i = 0; i < diskParts.size();
-                    i++) {
-                DiskPartition dp = diskParts.get(i);
+            for(DiskPartition dp : diskParts) {
                 dp.setCloseTime(System.currentTimeMillis() + partCloseDelay);
                 thingsToClose.add(dp);
                 try {
                     dp.removedFile.createNewFile();
                 } catch(java.io.IOException ioe) {
-                    logger.log(Level.SEVERE, "Unable to create removed file "
-                            + "after merge"
-                            + ioe);
+                    logger.log(Level.SEVERE, 
+                            "Unable to create removed file after merge", ioe);
                 }
             }
         }
-
 
         //
         // Return the new partition number.
@@ -2116,7 +2115,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             //
             // Do the merge.
             try {
-                newDP = toMerge.get(0).merge(toMerge, preDelMaps, true);
+                newDP = toMerge.get(0).merge(toMerge, preDelMaps, mergePartitionOutput, !engine.isLongIndexingRun());
             } catch(Exception e) {
                 StringBuilder sb = new StringBuilder();
                 boolean first = true;
@@ -2552,7 +2551,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // If we're re-called, then do a shutdown before initializing.
         if(activeParts != null && activeParts.size() > 0) {
             try {
-                shutdown();
+                close();
             } catch(IOException ex) {
                 logger.log(Level.SEVERE,
                         "Error shutting down for re-initialization",
@@ -2566,7 +2565,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         maxMergeSize = ps.getInt(PROP_MAX_MERGE_SIZE);
         activeCheckInterval = ps.getInt(PROP_ACTIVE_CHECK_INTERVAL);
         partCloseDelay = ps.getInt(PROP_PART_CLOSE_DELAY);
-        asyncMerges = ps.getBoolean(PROP_ASYNC_MERGES);
         partReapDelay = ps.getInt(PROP_PART_REAP_DELAY);
         calculateDVL = ps.getBoolean(PROP_CALCULATE_DVL);
         lockDir = ps.getString(PROP_LOCK_DIR);
@@ -2578,6 +2576,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         String startingData = ps.getString(PROP_STARTING_DATA);
         if(!startingData.equals("")) {
             startingDataDir = new File(startingData);
+        }
+        
+        try {
+            mergePartitionOutput = new DiskPartitionOutput(this);
+        } catch(IOException ex) {
+            throw new PropertyException(ex, ps.getInstanceName(), null, "Error making partition output for merges");
         }
 
         init();
@@ -2652,10 +2656,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public boolean getCalculateDVL() {
         return calculateDVL;
     }
-    @ConfigBoolean(defaultValue = true)
-    public static final String PROP_ASYNC_MERGES = "async_merges";
-
-    private boolean asyncMerges;
 
     @ConfigInteger(defaultValue = 15000)
     public static final String PROP_PART_REAP_DELAY = "part_reap_delay";
@@ -2679,6 +2679,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public void setLockDir(String lockDir) {
         this.lockDir = lockDir;
     }
+    
     @ConfigBoolean(defaultValue = false)
     public static final String PROP_REAP_DOES_NOTHING = "reap_does_nothing";
 
@@ -2694,6 +2695,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public static final String PROP_STARTING_DATA = "starting_data";
 
     private File startingDataDir;
+    
+    private PartitionOutput mergePartitionOutput;
 
     /**
      * Gets the term statisitics dictionary for this index

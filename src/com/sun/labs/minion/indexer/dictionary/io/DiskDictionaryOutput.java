@@ -4,12 +4,15 @@ import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import java.io.File;
 import java.io.RandomAccessFile;
+import java.util.logging.Logger;
 
 /**
  * A class for outputting dictionaries to disk-based files using disk-based
  * temporary buffers.
  */
 public class DiskDictionaryOutput extends AbstractDictionaryOutput {
+    
+    private static final Logger logger = Logger.getLogger(DiskDictionaryOutput.class.getName());
     
     /**
      * A file to hold the temporary names buffer.
@@ -71,7 +74,7 @@ public class DiskDictionaryOutput extends AbstractDictionaryOutput {
     }
     
     public DiskDictionaryOutput(File path, int bufferSize) throws java.io.IOException {
-        
+
         //
         // Temp files for the buffers we'll write.
         namesFile = Util.getTempFile(path, "names", ".n");

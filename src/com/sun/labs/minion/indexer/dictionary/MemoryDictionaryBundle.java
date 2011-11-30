@@ -498,8 +498,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             header.dtvPosOffset = -1;
         }
 
-        if(getTermDictionary(false) != null) {
-
+        if(getTermDictionary(false) != null && !partOut.isLongIndexingRun()) {
             //
             // Write out our document vector lengths.
             WriteableBuffer vlb = partOut.getVectorLengthsBuffer();

@@ -28,10 +28,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.PriorityQueue;
 
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
-import com.sun.labs.minion.pipeline.Token;
 import java.io.File;
 import java.util.Arrays;
 import java.util.logging.Logger;

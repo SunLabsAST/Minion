@@ -41,11 +41,11 @@ import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -532,9 +532,10 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public DiskPartition merge(List<DiskPartition> partitions,
                                List<DelMap> delMaps,
+                               PartitionOutput partOut,
                                boolean calculateDVL)
             throws Exception {
-        return merge(partitions, delMaps, calculateDVL, 0);
+        return merge(partitions, delMaps, partOut, calculateDVL, 0);
     }
 
     /**
@@ -557,6 +558,7 @@ public class DiskPartition extends Partition implements Closeable {
      */
     public DiskPartition merge(List<DiskPartition> partitions,
                                List<DelMap> delMaps,
+                               PartitionOutput partOut,
                                boolean calculateDVL, int depth)
             throws Exception {
 
@@ -594,7 +596,7 @@ public class DiskPartition extends Partition implements Closeable {
         
         //
         // A place to store state and pass it around while we're merging.
-        MergeState mergeState = new MergeState(manager, new DiskPartitionOutput(manager));
+        MergeState mergeState = new MergeState(manager, partOut);
         mergeState.partOut.startPartition(null);
 
         //
@@ -713,8 +715,6 @@ public class DiskPartition extends Partition implements Closeable {
             fieldDictOut.position(pos);
             
             mergeState.partOut.flush();
-            mergeState.partOut.close();
-
             
             DiskPartition ndp = manager.newDiskPartition(mergeState.partOut.getPartitionNumber(), manager);
             mw.stop();
@@ -764,7 +764,7 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // OK, try the merge again.
             DiskPartition.reap(manager, mergeState.partOut.getPartitionNumber());
-            return merge(partitions, delMaps, calculateDVL, depth + 1);
+            return merge(partitions, delMaps, mergeState.partOut, calculateDVL, depth + 1);
 
         } catch(Exception e) {
 
