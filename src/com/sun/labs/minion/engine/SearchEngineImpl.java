@@ -263,8 +263,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return ret;
     }
 
-    public TermStats getTermStats(String term) {
-        return invFilePartitionManager.getTermStats(term);
+    public TermStats getTermStats(String term, String field) {
+        return invFilePartitionManager.getTermStats(term, field);
+    }
+
+    public TermStats getTermStats(String term, FieldInfo field) {
+        return invFilePartitionManager.getTermStats(term, field);
     }
 
     public Document getDocument(String key) {

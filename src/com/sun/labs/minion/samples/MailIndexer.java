@@ -85,7 +85,6 @@ public class MailIndexer {
                 FieldInfo.getIndexedAttributes();
         EnumSet<FieldInfo.Attribute> sa = ia.clone();
         sa.add(FieldInfo.Attribute.SAVED);
-        sa.add(FieldInfo.Attribute.TRIMMED);
 
         //
         // Define the fields. We could have done this in the config file, but 

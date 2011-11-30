@@ -24,6 +24,7 @@
 package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.QueryStats;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import java.util.List;
@@ -47,17 +48,17 @@ public class TermCache implements CacheValueComputer<TermCacheKey, TermCacheElem
 
     private ConcurrentLRUCache<TermCacheKey, TermCacheElement> cache;
 
-    protected DiskPartition part;
+    private DiskField df;
 
-    public TermCache(DiskPartition part) {
-        this(200, part);
+    public TermCache(DiskField df) {
+        this(200, df);
     }
 
-    public TermCache(int size, DiskPartition part) {
-        this.part = part;
+    public TermCache(int size, DiskField df) {
+        this.df = df;
         cache = new ConcurrentLRUCache<TermCacheKey, TermCacheElement>(size,
                                                                        this);
-        cache.setName(part + " tc");
+        cache.setName(String.format("%s-tc", df.getInfo().getName()));
     }
 
     @Override
@@ -65,22 +66,12 @@ public class TermCache implements CacheValueComputer<TermCacheKey, TermCacheElem
         PostingsIteratorFeatures feat = key.getFeat();
 
         QueryStats qs = feat == null ? null : feat.getQueryStats();
-        TermCacheElement ret;
 
         if(qs != null) {
             qs.termCacheMisses++;
         }
 
-        if(feat != null && feat.getFields() != null) {
-            //
-            // We need fielded postings
-            ret = new FieldedTermCacheElement(key.getNames(), feat, part);
-        } else {
-            //
-            // Whole-doc postings.
-            ret = new TermCacheElement(key.getNames(), feat, part);
-        }
-        return ret;
+        return new TermCacheElement(key.getNames(), feat, df);
     }
 
     /**

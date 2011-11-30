@@ -1,2 +1,0 @@
-(HashMap <and> thread)
-(GUI <or> table)

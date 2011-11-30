@@ -27,10 +27,12 @@ import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.samples.MTQuery;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.NanoWatch;
@@ -97,7 +99,6 @@ public class MTDictReader implements Runnable {
                     iter, nw.getAvgTimeMillis()));
             iter++;
         }
-        lus = dict.getLookupState();
     }
 
     public static void usage() {
@@ -188,11 +189,13 @@ public class MTDictReader implements Runnable {
                 engineImpl.getPM().getActivePartitions();
         DiskDictionary selectedDict = null;
         int numTerms = 0;
-        for (DiskPartition part : partitions) {
-            DiskDictionary main = part.getMainDictionary();
-            if (main.size() > numTerms) {
-                numTerms = main.size();
-                selectedDict = main;
+        for(DiskPartition part : partitions) {
+            for(DiskField df : ((InvFileDiskPartition) part).getDiskFields()) {
+                DiskDictionary main = df.getTermDictionary(false);
+                if(main.size() > numTerms) {
+                    numTerms = main.size();
+                    selectedDict = main;
+                }
             }
         }
 
@@ -214,7 +217,7 @@ public class MTDictReader implements Runnable {
         List<String> terms = new ArrayList<String>();
         DictionaryIterator dit = selectedDict.iterator();
         while (dit.hasNext() && terms.size() < maxTerms) {
-            QueryEntry e = dit.next();
+            QueryEntry e = (QueryEntry) dit.next();
             if (curr++ % mod == 0) {
                 terms.add((String)e.getName());
             }

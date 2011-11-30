@@ -23,6 +23,7 @@ import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
@@ -265,6 +266,10 @@ public class DiskField extends Field {
         }
 
         return uncasedTokens.getByID(id);
+    }
+
+    public TermStatsImpl getTermStats(String name) {
+        return partition.getPartitionManager().getTermStats(name, info);
     }
 
     public QueryEntry getStem(String stem) {

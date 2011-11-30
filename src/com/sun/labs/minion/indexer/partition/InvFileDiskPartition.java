@@ -153,6 +153,10 @@ public class InvFileDiskPartition extends DiskPartition {
         return fields[fieldID];
     }
 
+    public DiskField[] getDiskFields() {
+        return fields;
+    }
+
     /**
      * Gets some or all of the data saved in a given field, in a given
      * document.

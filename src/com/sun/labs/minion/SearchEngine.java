@@ -174,8 +174,16 @@ public interface SearchEngine extends Searcher {
      * @return the statistics associated with the given term, or <code>null</code>
      * if the term does not occur in the collection.
      */
-    public TermStats getTermStats(String term);
+    public TermStats getTermStats(String term, String field);
 
+    /**
+     * Gets the collection level term statistics for the given term.
+     * @param term the term for which we want the statisitics
+     * @return the statistics associated with the given term, or <code>null</code>
+     * if the term does not occur in the collection.
+     */
+    public TermStats getTermStats(String term, FieldInfo field);
+    
     /**
      * Gets a document with a given key.
      *

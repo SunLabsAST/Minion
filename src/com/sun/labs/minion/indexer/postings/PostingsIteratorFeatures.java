@@ -63,6 +63,12 @@ public class PostingsIteratorFeatures implements Cloneable {
     protected boolean positions;
 
     /**
+     * Whether the iterator will return postings for case-sensitive or case
+     * insensitive variations.
+     */
+    protected boolean caseSensitive;
+
+    /**
      * Creates a default set of features.
      */
     public PostingsIteratorFeatures() {
@@ -171,6 +177,14 @@ public class PostingsIteratorFeatures implements Cloneable {
      */
     public boolean getPositions() {
         return positions;
+    }
+
+    public boolean isCaseSensitive() {
+        return caseSensitive;
+    }
+
+    public void setCaseSensitive(boolean caseSensitive) {
+        this.caseSensitive = caseSensitive;
     }
 
     /**

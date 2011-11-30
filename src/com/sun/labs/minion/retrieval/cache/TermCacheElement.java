@@ -24,9 +24,10 @@
 package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.QueryStats;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+
 
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -45,11 +46,12 @@ import java.util.logging.Logger;
  */
 public class TermCacheElement {
 
-    private static Logger logger = Logger.getLogger(TermCacheElement.class.getName());
+    private static Logger logger = Logger.getLogger(TermCacheElement.class.
+            getName());
 
     protected List<String> terms;
-    
-    protected DiskPartition part;
+
+    protected DiskField df;
 
     protected PostingsIteratorFeatures feat;
 
@@ -74,16 +76,18 @@ public class TermCacheElement {
      *
      * @param terms the terms to cache in this element.
      * @param feat the features that we'll use when adding terms to this cache element.
-     * @param part the partition from which the term has been selected.
+     * @param df the partition from which the term has been selected.
      */
-    protected TermCacheElement(List<String> terms, PostingsIteratorFeatures feat, DiskPartition part) {
+    protected TermCacheElement(List<String> terms,
+            PostingsIteratorFeatures feat,
+                               DiskField df) {
         this.terms = new ArrayList<String>(terms);
         this.feat = feat;
-        this.part = part;
+        this.df = df;
         wf = feat.getWeightingFunction();
         wc = feat.getWeightingComponents();
         for(String term : terms) {
-            add(part.getTerm(term));
+            add(df.getTerm(term, feat.isCaseSensitive()));
         }
     }
 
@@ -92,8 +96,7 @@ public class TermCacheElement {
             return null;
         }
 
-        TermStatsImpl ets = part.getPartitionManager().getTermStats(
-                e.getName().toString());
+        TermStatsImpl ets = df.getTermStats(e.getName().toString());
         wc.setTerm(ets);
         float qw = wf.initTerm(wc);
         sqw += qw * qw;
@@ -113,7 +116,7 @@ public class TermCacheElement {
     public float getQueryWeight() {
         return sqw;
     }
-    
+
     /**
      * Adds a dictionary entry to this cache element.
      * 
@@ -124,7 +127,7 @@ public class TermCacheElement {
         if(pi == null) {
             return;
         }
-        
+
         QueryStats qs = feat == null ? null : feat.getQueryStats();
 
         if(qs != null) {
@@ -222,7 +225,8 @@ public class TermCacheElement {
             return new ScoredGroup(0);
         }
         computeWeights();
-        ScoredGroup ret = new ScoredGroup(part, ids.clone(), weights.clone(), n);
+        ScoredGroup ret = new ScoredGroup((DiskPartition) df.getPartition(),
+                                          ids.clone(), weights.clone(), n);
         ret.setQueryWeight(sqw);
         return ret;
     }
@@ -300,8 +304,9 @@ public class TermCacheElement {
             return counts[p];
         }
 
-        public int compareTo(Object o) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        public int compareTo(PostingsIterator o) {
+            return getID() - o.getID();
         }
     }
 } // TermCacheElement
+

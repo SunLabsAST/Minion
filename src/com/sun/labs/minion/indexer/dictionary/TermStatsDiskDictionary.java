@@ -28,19 +28,31 @@ import com.sun.labs.minion.indexer.Closeable;
 import com.sun.labs.minion.indexer.entry.TermStatsEntryFactory;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
+import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A term statistics dictionary to use at query time.
  */
 public class TermStatsDiskDictionary implements Closeable {
 
+    private static Logger logger = Logger.getLogger(TermStatsDiskDictionary.class.
+            getName());
+
     private int dictNumber;
 
     private TermStatsHeader header;
 
     private PartitionManager manager;
+
+    private File termStatsFile;
+
+    private RandomAccessFile raf;
 
     private DiskDictionary[] fieldDicts;
 
@@ -51,27 +63,39 @@ public class TermStatsDiskDictionary implements Closeable {
     private int size;
 
     public TermStatsDiskDictionary(int dictNumber,
-                                   RandomAccessFile raf,
+                                   File termStatsFile,
                                    PartitionManager manager) throws
             java.io.IOException {
         this.dictNumber = dictNumber;
-        long headerPos = raf.readLong();
-        raf.seek(headerPos);
-        header = new TermStatsHeader(raf);
+        this.termStatsFile = termStatsFile;
+        this.manager = manager;
+        
         fieldDicts = new DiskDictionary[manager.getMetaFile().size() + 1];
-        for(Map.Entry<Integer, Long> e : header) {
-            raf.seek(e.getValue());
-            fieldDicts[e.getKey()] = new DiskDictionary(
-                    new TermStatsEntryFactory(),
-                    new StringNameHandler(), raf, null);
-            size = Math.max(fieldDicts[e.getKey()].size(), size);
+
+        //
+        // The very first go-round, we might not have stats.
+        if(!termStatsFile.exists()) {
+            header = new TermStatsHeader();
+        } else {
+            raf = new RandomAccessFile(termStatsFile, "r");
+            long headerPos = raf.readLong();
+            raf.seek(headerPos);
+            header = new TermStatsHeader(raf);
+            for(Map.Entry<Integer, Long> e : header) {
+                raf.seek(e.getValue());
+                fieldDicts[e.getKey()] = new DiskDictionary(
+                        new TermStatsEntryFactory(),
+                        new StringNameHandler(), raf, null);
+                size = Math.max(fieldDicts[e.getKey()].size(), size);
+            }
         }
     }
 
     /**
      * Gets the term statistics associated with the given term.
-     * 
+     *
      * @param term the term for which we want collection statistics.
+     * @param field the field for which we want stats for the term
      * @return the term statistics associated with the given term, or <code>null</code>
      * if that term does not occur in the index
      */
@@ -81,7 +105,40 @@ public class TermStatsDiskDictionary implements Closeable {
     }
 
     /**
+     * Gets the term stats across all the fields.
+     *
+     * @param term the term to get stats for
+     * @return the combined term statistics
+     */
+    public TermStatsImpl getTermStats(String term) {
+        TermStatsImpl total = new TermStatsImpl(term);
+        for(DiskDictionary dd : fieldDicts) {
+            if(dd != null) {
+                TermStatsQueryEntry qe = (TermStatsQueryEntry) dd.get(term);
+                if(qe != null) {
+                    total.add(qe.getTermStats());
+                }
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Gets the term statistics associated with the given term.
+     *
+     * @param term the term for which we want collection statistics.
+     * @param fi the field for which we want stats for the term
+     * @return the term statistics associated with the given term, or <code>null</code>
+     * if that term does not occur in the index
+     */
+    public TermStatsQueryEntry getTermStats(String term, FieldInfo fi) {
+        DiskDictionary dd = getDict(fi);
+        return dd == null ? null : (TermStatsQueryEntry) dd.get(term);
+    }
+
+    /**
      * Gets an for this dictionary.
+     * @param field the field for which we want the iterator
      * @return an iterator for the term stats.
      */
     public DictionaryIterator iterator(String field) {
@@ -89,6 +146,11 @@ public class TermStatsDiskDictionary implements Closeable {
         return dd == null ? null : dd.iterator();
     }
 
+    /**
+     * Gets an for this dictionary.
+     * @param field the field for which we want the iterator
+     * @return an iterator for the term stats.
+     */
     public DictionaryIterator iterator(FieldInfo field) {
         if(field.getID() >= fieldDicts.length) {
             return null;
@@ -99,6 +161,10 @@ public class TermStatsDiskDictionary implements Closeable {
 
     private DiskDictionary getDict(String field) {
         FieldInfo fi = manager.getMetaFile().getFieldInfo(field);
+        return getDict(fi);
+    }
+
+    private DiskDictionary getDict(FieldInfo fi) {
         if(fi == null) {
             return null;
         }
@@ -118,7 +184,15 @@ public class TermStatsDiskDictionary implements Closeable {
     }
 
     public boolean close(long currTime) {
-        closed = closeTime <= currTime;
+        if(closeTime <= currTime) {
+            try {
+                raf.close();
+            } catch(IOException ex) {
+                logger.log(Level.SEVERE, String.format(
+                        "Error closing term stats file %s", termStatsFile), ex);
+            }
+            closed = true;
+        }
         return closed;
     }
 
@@ -133,4 +207,5 @@ public class TermStatsDiskDictionary implements Closeable {
     public void createRemoveFile() {
         manager.makeRemovedTermStatsFile(dictNumber);
     }
+
 }

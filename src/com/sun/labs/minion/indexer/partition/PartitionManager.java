@@ -56,7 +56,6 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.Closeable;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.MetaFile;
-import com.sun.labs.minion.indexer.dictionary.UncachedTermStatsDictionary;
 import com.sun.labs.minion.retrieval.CollectionStats;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
@@ -66,7 +65,6 @@ import com.sun.labs.minion.util.SimpleFilter;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
-import com.sun.labs.minion.indexer.dictionary.TermStatsFactory;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
@@ -140,6 +138,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     private TermStatsDiskDictionary termStatsDict;
 
     private File currTSF;
+
+    private int currTSN;
 
     /**
      * A timer that can be used during querying to time tasks.
@@ -281,13 +281,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             //
             // Open our dictionary of term stats if we're the sort of partition
             // manager that's going to need term stats.
-            if(calculateDVL) {
                 try {
-                    currTSF = makeTermStatsFile(metaFile.getTermStatsNumber());
-                    if(!currTSF.exists()) {
-                        UncachedTermStatsDictionary.create(indexDirFile, currTSF);
-                    }
-                    termStatsDict = termstatsDictFactory.getDictionary(currTSF);
+
+                    currTSN = metaFile.getTermStatsNumber();
+                    termStatsDict = new TermStatsDiskDictionary(currTSN, makeTermStatsFile(
+                            currTSN), this);
                 } catch(java.io.IOException ioe) {
                     logger.log(Level.SEVERE,
                                "Error opening term stats dictionary",
@@ -297,7 +295,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                                "Error opening term stats dictionary",
                                fle);
                 }
-            }
 
             updateActiveParts(true);
         } catch(java.io.IOException ioe) {
@@ -1372,11 +1369,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @param tsn the number of the term statistics file to make
      * @return a file for the global term statistics for this index
      */
-    protected File makeTermStatsFile(int tsn) {
+    public File makeTermStatsFile(int tsn) {
         return makeTermStatsFile(indexDirFile, tsn);
     }
 
-    protected static File makeTermStatsFile(File indexDirFile, int tsn) {
+    public static File makeTermStatsFile(File indexDirFile, int tsn) {
         return new File(indexDirFile, String.format("termstats.%d.dict", tsn));
     }
 
@@ -2581,11 +2578,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             startingDataDir = new File(startingData);
         }
 
-        if(calculateDVL) {
-            termstatsDictFactory =
-                    (TermStatsFactory) ps.getComponent(
-                    PROP_TERMSTATS_DICT_FACTORY);
-        }
         init();
     }
 
@@ -2685,13 +2677,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public void setLockDir(String lockDir) {
         this.lockDir = lockDir;
     }
-    @ConfigComponent(type =
-    com.sun.labs.minion.indexer.dictionary.TermStatsFactory.class, mandatory =
-    false)
-    public static final String PROP_TERMSTATS_DICT_FACTORY =
-            "termstats_dict_factory";
-
-    private TermStatsFactory termstatsDictFactory;
 
     @ConfigBoolean(defaultValue = false)
     public static final String PROP_REAP_DOES_NOTHING = "reap_does_nothing";
@@ -2732,17 +2717,30 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         return tse == null ? new TermStatsImpl(name) : tse.getTermStats();
     }
 
+    /**
+     * Gets the term statistics for a term
+     * @param name the name of the term for which we want term statistics
+     * @return the statistics associated with the given name, or an empty set
+     * of term statistics if there are none for the given name
+     */
+    public TermStatsImpl getTermStats(String name, FieldInfo fi) {
+        if(termStatsDict == null) {
+            return new TermStatsImpl(name);
+        }
+        TermStatsQueryEntry tse = termStatsDict.getTermStats(name, fi);
+        return tse == null ? new TermStatsImpl(name) : tse.getTermStats();
+    }
+
     protected void updateTermStats() throws java.io.IOException,
             FileLockException {
-        File newTSF = makeTermStatsFile(metaFile.getTermStatsNumber());
-        if(!newTSF.equals(currTSF) && newTSF.exists()) {
 
+        int newTSN = metaFile.getTermStatsNumber();
+        if(newTSN != currTSN) {
+            File newTSF = makeTermStatsFile(newTSN);
             TermStatsDiskDictionary oldTSD = termStatsDict;
-            termStatsDict = termstatsDictFactory.getDictionary(newTSF);
-
-            //
-            // Set up the new dictionary.
+            termStatsDict = new TermStatsDiskDictionary(newTSN, newTSF, this);
             currTSF = newTSF;
+            currTSN = newTSN;
 
             //
             // Set up to (eventually) close and delete the term stats dictionary, which might be in

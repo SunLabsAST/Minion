@@ -211,6 +211,45 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         initFeatures();
     }
 
+    public DocumentVectorImpl(String key, DiskField df, WeightingFunction wf,
+                              WeightingComponents wc) {
+        e = df.getPartition().getPartitionManager().getEngine();
+        this.key = df.getVector(key);
+        keyName = key;
+        this.df = df;
+        this.wf = wf;
+        this.wc = wc.setDocument(this.key, df);
+        length = wc.dvl;
+        initFeatures();
+    }
+
+    /**
+     * Builds the features for the feature vector.
+     */
+    private void initFeatures() {
+
+        QueryEntry ve = df.getVector(keyName);
+        if(ve == null) {
+            v = new WeightedFeature[0];
+            return;
+        }
+
+        PostingsIterator pi = ve.iterator(new PostingsIteratorFeatures());
+        if(pi == null) {
+            v = new WeightedFeature[0];
+            return;
+        }
+
+        v = new WeightedFeature[pi.getN()];
+        int p = 0;
+        while(pi.next()) {
+            int tid = pi.getID();
+            QueryEntry qe = df.getTerm(tid, false);
+            v[p++] = new WeightedFeature(qe.getName().toString(), tid, pi.
+                    getWeight());
+        }
+    }
+
     public DocumentVector copy() {
         DocumentVectorImpl ret = new DocumentVectorImpl();
         ret.e = e;
@@ -636,33 +675,6 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         ResultSetImpl ret = new ResultSetImpl(e, sortOrder, groups);
         ret.setQueryStats(qs);
         return ret;
-    }
-
-    /**
-     * Builds the features for the feature vector.
-     */
-    private void initFeatures() {
-
-        QueryEntry ve = df.getVector(keyName);
-        if(ve == null) {
-            v = new WeightedFeature[0];
-            return;
-        }
-
-        PostingsIterator pi = ve.iterator(new PostingsIteratorFeatures());
-        if(pi == null) {
-            v = new WeightedFeature[0];
-            return;
-        }
-        
-        v = new WeightedFeature[pi.getN()];
-        int p = 0;
-        while(pi.next()) {
-            int tid = pi.getID();
-            QueryEntry qe = df.getTerm(tid, false);
-            v[p++] = new WeightedFeature(qe.getName().toString(), tid, pi.
-                    getWeight());
-        }
     }
 
     // Doc inherited from interface.  Gets a HashMap of the top N terms, or

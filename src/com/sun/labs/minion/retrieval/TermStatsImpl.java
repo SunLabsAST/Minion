@@ -81,48 +81,6 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
     }
     
     /**
-     * Builds the collection wide statistics from the partitions in a
-     * partition manager.
-     *
-     * @param name the name of the term we're building stats for
-     * @param m a partition manager for the collection
-     */
-    public TermStatsImpl(String name, PartitionManager m) {
-        this.name = name;
-        init(m.getActivePartitions().iterator());
-    } // TermStats constructor
-    
-    /**
-     * Builds the collection wide statistics from the partitions in a
-     * partition manager.
-     *
-     * @param name the name of the term we're building stats for
-     * @param l a list of partitions for which we want to build the stats
-     */
-    public TermStatsImpl(String name, List l) {
-        this.name = name;
-        init(l.iterator());
-    } // TermStats constructor
-    
-    /**
-     * Initializes the stats from an iterator for a list of partitions.
-     *
-     * @param i the iterator
-     */
-    protected void init(Iterator<DiskPartition> i) {
-        while(i.hasNext()) {
-            DiskPartition p = i.next();
-            if(p.isClosed()) {
-                continue;
-            }
-            Entry e = p.getTerm(name);
-            if(e != null) {
-                add(e);
-            }
-        }
-    }
-    
-    /**
      * Adds the stats for a term to these term stats.
      */
     public void add(Entry e) {

@@ -24,7 +24,6 @@ public class TermCacheKey {
             Collections.sort(this.names);
         }
         StringBuilder sb = new StringBuilder();
-        getFields(sb);
         for(String n : names) {
             sb.append('/');
             sb.append(n);
@@ -34,17 +33,6 @@ public class TermCacheKey {
 
     public TermCacheKey(String name, PostingsIteratorFeatures feat) {
         this(Collections.singletonList(name), feat);
-    }
-
-    private void getFields(StringBuilder sb) {
-        if(feat != null) {
-            int[] fields = feat.getFields();
-            if(fields != null) {
-                for(int f : fields) {
-                    sb.append(f);
-                }
-            }
-        }
     }
 
     public PostingsIteratorFeatures getFeat() {

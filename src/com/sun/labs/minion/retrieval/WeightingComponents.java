@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -46,7 +47,7 @@ import java.util.logging.Logger;
  *
  * <p>
  *
- * For example, in typical query processing scenarios we will create a set
+ * For example, in typical query processing scenario,s we will create a set
  * of weighting components from the collection statistics at the start of
  * query evaluation.  As each term in the query is processed, we will set
  * the document-level term statistics using the {@link #setTerm} method.
@@ -63,12 +64,20 @@ import java.util.logging.Logger;
  */
 public class WeightingComponents {
 
+    private static Logger logger = Logger.getLogger(WeightingComponents.class.
+            getName());
+
     /**
      * A set of collection statistics.  If this value is set by the
      * constructor or by the <code>setCollection</code> method, then the
      * weighting components can handle term statistics lookups on their own.
      */
     public CollectionStats cs;
+
+    /**
+     * The field that we've got components for.
+     */
+    FieldInfo field;
 
     /**
      * The statistics that we were given or that we retrieved for the last
@@ -161,10 +170,6 @@ public class WeightingComponents {
      */
     public float wt;
 
-    protected static Logger logger = Logger.getLogger(WeightingComponents.class.getName());
-
-    protected static String logTag = "WC";
-
     /**
      * Creates a set of weighting components.
      */
@@ -198,6 +203,14 @@ public class WeightingComponents {
         return this;
     }
 
+    public FieldInfo getField() {
+        return field;
+    }
+
+    public void setField(FieldInfo field) {
+        this.field = field;
+    }
+
     /**
      * Initializes any document-level statistics that can be determined
      * from a term.  This method requires a set of collection statistics to
@@ -214,7 +227,7 @@ public class WeightingComponents {
             logger.warning("No collection stats to get term stats for: " +
                     name);
         } else {
-            ts = cs.getTermStats(name);
+            ts = cs.getTermStats(name, field);
             if(ts == null) {
                 ts = new TermStatsImpl(name);
             }
@@ -242,7 +255,7 @@ public class WeightingComponents {
     }
 
     public TermStatsImpl getTermStats(String term) {
-        return cs.getTermStats(term);
+        return cs.getTermStats(term, field);
     }
 
     public WeightingComponents setDocument(QueryEntry key, DiskField field) {

@@ -26,7 +26,7 @@ package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.SearchEngine;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
+import com.sun.labs.minion.indexer.DiskField;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 
@@ -35,58 +35,34 @@ import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.LRACache;
 
 /**
- * An LRA cache of terms and their associated postings.
+ * A cache of document vectors.
  */
-public class DocCache extends LRACache<String,DocCacheElement> {
+public class DocCache implements CacheValueComputer<String, DocCacheElement> {
     
     protected SearchEngine engine;
     
     protected WeightingFunction wf;
     
     protected WeightingComponents wc;
+
+    protected DiskField df;
     
-    public DocCache(SearchEngine engine) {
-        this(200, engine, null , null);
+    public DocCache(DiskField df) {
+        this(200, df);
     }
     
-    public DocCache(int size, SearchEngine engine) {
-        this(size, engine, null , null);
-    }
-    
-    public DocCache(int size, SearchEngine engine, WeightingFunction wf, WeightingComponents wc) {
-        super(size);
-        this.engine = engine;
-        if(wf == null) {
-            QueryConfig qc = engine.getQueryConfig();
-            this.wf = qc.getWeightingFunction();
-            this.wc = qc.getWeightingComponents();
-        } else {
-            this.wf = wf;
-            this.wc = wc;
-        }
+    public DocCache(int size, DiskField df) {
+        this.df = df;
+        QueryConfig qc =
+                df.getPartition().getPartitionManager().getQueryConfig();
+        this.wf = qc.getWeightingFunction();
+        this.wc = qc.getWeightingComponents();
     } // TermCache constructor
-    
-    public DocCacheElement get(String key, String field, DiskPartition p) {
-        
-        String hk = p + key + field;
-        DocCacheElement e = get(hk);
-        if(e == null) {
-            e = new DocCacheElement((DocKeyEntry) p.getDocumentTerm(key), p, field, wf, wc);
-            put(hk, e);
-        }
-        return e;
+
+    public DocCacheElement compute(String key) {
+        return new DocCacheElement(key, df, wf, wc);
     }
-    
-    public DocCacheElement get(DocKeyEntry dke, String field, DiskPartition p) {
-        String hk = p + dke.getName().toString() + field;
-        DocCacheElement e = get(hk);
-        if(e == null) {
-            e = new DocCacheElement(dke, p, field, wf, wc);
-            put(hk, e);
-        }
-        return e;
-    }
-    
+
     public WeightingComponents getWeightingComponents() {
         return wc;
     }

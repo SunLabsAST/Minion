@@ -23,9 +23,8 @@
  */
 package com.sun.labs.minion.retrieval.cache;
 
-import com.sun.labs.minion.classification.WeightedFeature;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.WeightedFeature;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.retrieval.DocumentVectorImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
@@ -33,24 +32,26 @@ import java.util.logging.Logger;
 
 /**
  *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public class DocCacheElement {
 
-    protected DocumentVectorImpl dvi;
+    private static Logger logger = Logger.getLogger(DocCacheElement.class.
+            getName());
 
-    static Logger logger = Logger.getLogger(DocCacheElement.class.getName());
+    private DocumentVectorImpl dvi;
 
-    protected static String logTag = "DCE";
+    private DiskField df;
 
     /**
-     * Creates an element in a document term cache.
+     * Creates an element for a document vector
+     * @param key the key of the document whose vector we want
+     * @param df the field from which we're drawing the vector
+     * @param wf the weighting function to use for generating the vector
+     * @param wc the weighting components to use for generating the vector
      */
-    public DocCacheElement(DocKeyEntry key, DiskPartition part, String field,
+    public DocCacheElement(String key, DiskField df,
             WeightingFunction wf, WeightingComponents wc) {
-        dvi = new DocumentVectorImpl(part.getPartitionManager().getEngine(),
-                key,
-                field, wf, wc);
+        dvi = new DocumentVectorImpl(key, df, wf, wc);
     }
 
     public WeightedFeature[] getFeatures() {
