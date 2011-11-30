@@ -114,7 +114,7 @@ public class PositionPostingsTest implements PostingsTest {
             try {
                 logger.fine(String.format("randomAdd iteration %d/%d max %d", i + 1, nIter, n));
                 testData = new TestData(rand, zipf, rand.nextInt(n) + 1);
-                testData.paces(postOut, offsets, sizes, postIn, this, true);
+                testData.paces(postOut, offsets, sizes, postIn, this, true, true);
             } catch(AssertionError ex) {
                 File f = File.createTempFile("random", ".data");
                 PrintWriter out = new PrintWriter(new FileWriter(f));
@@ -251,7 +251,7 @@ public class PositionPostingsTest implements PostingsTest {
             append.write(postOut, ao, as);
             append = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, ao, as);
             checkPostingsEncoding(append, atd, ao, as);
-            atd.iteration(append, true);
+            atd.iteration(append, true, true);
             return append;
         } catch(AssertionError er) {
             if(dump) {
@@ -296,7 +296,7 @@ public class PositionPostingsTest implements PostingsTest {
                 new int[]{4, 3, 2, 1, 1, 2, 1},
                 new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36});
         PositionPostings p = (PositionPostings) simple.addData(this);
-        simple.iteration(p);
+        simple.iteration(p, true, true);
     }
 
     /**
@@ -309,7 +309,7 @@ public class PositionPostingsTest implements PostingsTest {
                 new int[]{4, 3, 2, 1, 1, 2, 1},
                 new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36});
         PositionPostings p = (PositionPostings) simple.addData(this);
-        simple.iteration(p);
+        simple.iteration(p, true, true);
         p.write(postOut, offsets, sizes);
         p.clear();
         simple = new TestData(new int[]{1, 4, 7, 10},
@@ -317,7 +317,7 @@ public class PositionPostingsTest implements PostingsTest {
                 new int[]{7, 3, 2, 4});
 
         simple.addData(p);
-        simple.iteration(p);
+        simple.iteration(p, true, true);
     }
 
     @Test
@@ -355,7 +355,7 @@ public class PositionPostingsTest implements PostingsTest {
             TestData[] testData = TestData.read(r);
             r.close();
             for(TestData td : testData) {
-                td.paces(postOut, offsets, sizes, postIn, this, true);
+                td.paces(postOut, offsets, sizes, postIn, this, true, true);
             }
         }
     }
@@ -389,7 +389,7 @@ public class PositionPostingsTest implements PostingsTest {
 
     @Test
     public void testStepUpAppend() throws java.io.IOException {
-        for(int i = 1; i < 1024; i += 2) {
+        for(int i = 1; i < 256; i += 2) {
             TestData td1 = new TestData(rand, zipf, i);
             for(int j = 1; j < 128; j++) {
                 logger.fine(String.format("Step up %d/%d", i, j));
@@ -401,7 +401,7 @@ public class PositionPostingsTest implements PostingsTest {
 
     @Test
     public void testMultiAppend() throws java.io.IOException {
-        for(int i = 0; i < 1024; i++) {
+        for(int i = 0; i < 128; i++) {
             for(int j = 3; j < 20; j++) {
                 logger.fine(String.format("multiAppend %d/%d iterations length %d", i + 1, 256, j));
                 TestData[] tds = new TestData[j];
@@ -435,7 +435,7 @@ public class PositionPostingsTest implements PostingsTest {
                         mlAppend.append(postings.get(k), starts[k]);
                     }
                     TestData mltd = new TestData(testData.toArray(new TestData[0]));
-                    mltd.paces(mlAppend, postOut, offsets, sizes, postIn, this, true);
+                    mltd.paces(mlAppend, postOut, offsets, sizes, postIn, this, true, true);
                     postings.clear();
                     testData.clear();
                     starts[0] = 1;

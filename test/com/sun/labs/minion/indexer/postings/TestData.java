@@ -1,5 +1,7 @@
 package com.sun.labs.minion.indexer.postings;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.io.PrintWriter;
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
@@ -16,7 +18,7 @@ import static org.junit.Assert.*;
  *
  */
 public class TestData {
-    
+
     private static final Logger logger = Logger.getLogger(TestData.class.getName());
 
     protected int[] ids;
@@ -28,9 +30,9 @@ public class TestData {
     protected int numPosns;
 
     protected int maxDocID;
-    
+
     Random rand;
-    
+
     Zipf zipf;
 
     public TestData(Random rand, Zipf zipf, int n) {
@@ -74,16 +76,45 @@ public class TestData {
         maxDocID = prev + rand.nextInt(256);
     }
 
+    public TestData(int[] ids) {
+        this(ids, null, null, 0, ids[ids.length - 1]);
+    }
+
+    public TestData(int[] ids, int[] freqs) {
+        this(ids, freqs, null, 0, ids[ids.length - 1]);
+    }
+
     public TestData(int[] ids, int[] freqs, int[] posns) {
         this(ids, freqs, posns, posns.length, ids[ids.length - 1]);
     }
 
     public TestData(int[] ids, int[] freqs, int[] posns, int numPosns, int maxDocID) {
-        this.ids = ids;
-        this.freqs = freqs;
-        this.posns = posns;
-        this.numPosns = numPosns;
-        this.maxDocID = maxDocID;
+        Set<Integer> unique = new HashSet<Integer>();
+        for(int id : ids) {
+            unique.add(id);
+        }
+        if(unique.size() != ids.length) {
+            int prev = -1;
+            int p = -1;
+            ids = new int[unique.size()];
+            freqs = new int[unique.size()];
+            for(int id : ids) {
+                if(id != prev) {
+                    p++;
+                    ids[p] = id;
+                    freqs[p] = 1;
+                } else {
+                    freqs[p]++;
+                }
+                prev = id;
+            }
+        } else {
+            this.ids = ids;
+            this.freqs = freqs;
+            this.posns = posns;
+            this.numPosns = numPosns;
+            this.maxDocID = maxDocID;
+        }
     }
 
     public TestData(BufferedReader r) throws java.io.IOException {
@@ -156,17 +187,18 @@ public class TestData {
     /**
      * Puts the data through its paces.
      */
-    public void paces(PostingsOutput[] postOut, long[] offsets, int[] sizes, PostingsInput[] postIn, PostingsTest test, boolean getPositions) throws java.io.IOException {
-        paces(addData(test), postOut, offsets, sizes, postIn, test, getPositions);
+    public void paces(PostingsOutput[] postOut, long[] offsets, int[] sizes, PostingsInput[] postIn, PostingsTest test, boolean getFrequencies, boolean getPositions) throws java.io.IOException {
+        paces(addData(test), postOut, offsets, sizes, postIn, test, getFrequencies, getPositions);
     }
+
     /**
      * Puts the data through its paces.
      */
-    public void paces(Postings p, PostingsOutput[] postOut, long[] offsets, int[] sizes, PostingsInput[] postIn, PostingsTest test, boolean getPositions) throws java.io.IOException {
+    public void paces(Postings p, PostingsOutput[] postOut, long[] offsets, int[] sizes, PostingsInput[] postIn, PostingsTest test, boolean getPositions, boolean getFrequencies) throws java.io.IOException {
         NanoWatch nw = new NanoWatch();
         logger.fine(String.format("Paces for %d postings", ids.length));
         nw.start();
-        iteration(p, getPositions);
+        iteration(p, getFrequencies, getPositions);
         nw.stop();
         logger.fine(String.format(" Uncompressed iteration %.3f", nw.getLastTimeMillis()));
         nw.start();
@@ -182,7 +214,7 @@ public class TestData {
         nw.stop();
         logger.fine(String.format(" Instantiation %.3f", nw.getLastTimeMillis()));
         nw.start();
-        iteration(p, getPositions);
+        iteration(p, getFrequencies, getPositions);
         nw.stop();
         logger.fine(String.format(" Compressed iteration %.3f", nw.getLastTimeMillis()));
     }
@@ -195,21 +227,40 @@ public class TestData {
         FieldOccurrenceImpl o = new FieldOccurrenceImpl();
         o.setCount(1);
         int pp = 0;
-        for(int i = 0; i < ids.length; i++) {
-            o.setID(ids[i]);
-            for(int j = 0; j < freqs[i]; j++, pp++) {
-                o.setPos(posns[pp]);
+        if(freqs == null) {
+            for(int i = 0; i < ids.length; i++) {
+                o.setID(ids[i]);
                 p.add(o);
+            }
+        } else {
+            if(posns == null) {
+                for(int i = 0; i < ids.length; i++) {
+                    o.setID(ids[i]);
+                    o.setCount(freqs[i]);
+                    p.add(o);
+                }
+            } else {
+                for(int i = 0; i < ids.length; i++) {
+                    o.setID(ids[i]);
+                    if(freqs != null) {
+                        for(int j = 0; j < freqs[i]; j++, pp++) {
+                            if(posns != null) {
+                                o.setPos(posns[pp]);
+                            }
+                            p.add(o);
+                        }
+                    }
+                }
             }
         }
         return p;
     }
-    
+
     public void iteration(Postings p) {
-        iteration(p, false);
+        iteration(p, false, false);
     }
-    
-    public void iteration(Postings p, boolean getPositions) {
+
+    public void iteration(Postings p, boolean getFreqs, boolean getPositions) {
 
         PostingsIteratorFeatures features = new PostingsIteratorFeatures();
         features.setPositions(getPositions);
@@ -225,7 +276,6 @@ public class TestData {
         int pp = 0;
         while(pi.next()) {
             int expectedID = ids[i];
-            int expectedFreq = freqs[i];
             if(expectedID != pi.getID()) {
                 assertTrue(String.format(
                         "Couldn't match %d id, %d, got %d",
@@ -234,33 +284,36 @@ public class TestData {
                         pi.getID()),
                         expectedID == pi.getID());
             }
-            if(expectedFreq != pi.getFreq()) {
-                assertTrue(String.format(
-                        "Incorrect %d freq %d, got %d",
-                        i,
-                        expectedFreq, pi.getFreq()), expectedFreq
-                        == pi.getFreq());
-            }
-            if(getPositions) {
-                int[] piPosn = ((PostingsIteratorWithPositions) pi).getPositions();
-                for(int j = 0; j < expectedFreq; j++, pp++) {
-                    if(posns[pp] != piPosn[j]) {
-                        assertTrue(String.format(
-                                "Incorrect position for id %d at %d, freq %d, freq # %d, expected %d, got %d",
-                                expectedID,
-                                i,
-                                expectedFreq,
-                                j,
-                                posns[pp], piPosn[j]),
-                                posns[pp] == piPosn[j]);
-                    }
+            if(getFreqs) {
+                int expectedFreq = freqs[i];
+                if(expectedFreq != pi.getFreq()) {
+                    assertTrue(String.format(
+                            "Incorrect %d freq %d, got %d",
+                            i,
+                            expectedFreq, pi.getFreq()), expectedFreq
+                            == pi.getFreq());
+                }
+                if(getPositions) {
+                    int[] piPosn = ((PostingsIteratorWithPositions) pi).getPositions();
+                    for(int j = 0; j < expectedFreq; j++, pp++) {
+                        if(posns[pp] != piPosn[j]) {
+                            assertTrue(String.format(
+                                    "Incorrect position for id %d at %d, freq %d, freq # %d, expected %d, got %d",
+                                    expectedID,
+                                    i,
+                                    expectedFreq,
+                                    j,
+                                    posns[pp], piPosn[j]),
+                                    posns[pp] == piPosn[j]);
+                        }
 
+                    }
                 }
             }
             i++;
         }
     }
-    
+
     protected void write(PrintWriter out) {
         for(int id : ids) {
             out.format("%d ", id);
@@ -276,7 +329,7 @@ public class TestData {
         }
         out.println("");
     }
-    
+
     public static void write(PrintWriter out, TestData... tds) throws java.io.IOException {
         out.println(tds.length);
         for(TestData td : tds) {
@@ -298,5 +351,4 @@ public class TestData {
         }
         return tds;
     }
-
 }
