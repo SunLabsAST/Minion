@@ -665,6 +665,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
             DiskDictionaryBundle[] bundles)
             throws java.io.IOException {
 
+        logger.fine(String.format("merging %s", mergeState.info.getName()));
+        
         DictionaryOutput fieldDictOut = mergeState.partOut.getPartitionDictionaryOutput();
         long headerPos = fieldDictOut.position();
         FieldHeader mergeHeader = new FieldHeader();
@@ -773,6 +775,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     DiskBiGramDictionary.merge(mergeState, bgDicts);
                     continue;
             }
+            
+            logger.fine(String.format(" Merging %s", type));
 
             entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                     encoder,
@@ -802,6 +806,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     "rw");
             FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(
                     dtvOffsetRAF, 1 << 16);
+            
+            logger.fine(String.format("Merging docs to values"));
             
             for(int i = 0; i < bundles.length; i++) {
                 
@@ -868,6 +874,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // Calculate document vector lengths.
         if(mergeState.info.hasAttribute(FieldInfo.Attribute.INDEXED) &&
                 !mergeState.partOut.isLongIndexingRun()) {
+            
+            logger.fine(String.format("Calculating document vector lengths"));
 
             //
             // Calculate document vector lengths.  We need an iterator for the 
@@ -891,8 +899,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 for(int i = 0; i < postOutFiles.length; i++) {
                     mPostRAF[i] = new RandomAccessFile(postOutFiles[i], "rw");
                 }
-                WriteableBuffer vlb =
-                        mergeState.partOut.getVectorLengthsBuffer();
+                WriteableBuffer vlb = mergeState.partOut.getVectorLengthsBuffer();
                 mergeHeader.vectorLengthOffset = vlb.position();
                 fieldDictOut.position(mdp);
                 DiskDictionary newMainDict =

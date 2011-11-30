@@ -304,6 +304,7 @@ public class QueryTest extends SEMain {
         shell.addGroup("Info", "Information about the index");
         shell.addGroup("Terms", "Information about specific terms");
         shell.addGroup("Maintenance", "Commands that maintain the index");
+        shell.addGroup("Other", "Commands for other things");
         
         shell.add("q", "Query", new CommandInterface() {
 
@@ -954,6 +955,28 @@ public class QueryTest extends SEMain {
 
             public String getHelp() {
                 return "field dockey - Show the document vector for a given field in a given document";
+            }
+        });
+        
+        shell.add("log", "Other", new CommandInterface() {
+
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 3) {
+                    return "Must specify class name an level";
+                }
+                try {
+                    Class cl = Class.forName(args[1]);
+                    Logger.getLogger(cl.getName()).setLevel(Level.parse(args[2].toUpperCase()));
+                } catch(ClassNotFoundException ex) {
+                    return "Unknown class: " + args[1];
+                } catch(IllegalArgumentException ex) {
+                    return "Unknown log level: " + args[2];
+                }
+                return args[1] + " " + Logger.getLogger(args[1]).getLevel();
+            }
+
+            public String getHelp() {
+                return "class logLevel - Set the log level for a given class";
             }
         });
     }

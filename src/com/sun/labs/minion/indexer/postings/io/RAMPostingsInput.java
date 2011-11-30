@@ -20,7 +20,7 @@ public class RAMPostingsInput implements PostingsInput {
     }
 
     public Postings read(Type type, long offset, int size) throws IOException {
-        return Type.getPostings(type, buff.slice((int) offset, size));
+        return Type.getPostings(type, buff.slice(offset, size));
     }
 
 }

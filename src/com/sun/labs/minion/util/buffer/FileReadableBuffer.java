@@ -96,9 +96,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * @param offset The offset in the file where the data for our buffer can be found.
      * @param limit The number of bytes of data in our buffer.
      */
-    public FileReadableBuffer(RandomAccessFile raf,
-            long offset,
-            long limit) {
+    public FileReadableBuffer(RandomAccessFile raf, long offset, long limit) {
         this(raf, offset, limit, DEFAULT_BUFF_SIZE);
     }
 
@@ -113,9 +111,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * @param limit The number of bytes of data in our buffer.
      * @param buffSize The size of the in-memory buffer to use.
      */
-    public FileReadableBuffer(RandomAccessFile raf,
-            long offset,
-            long limit,
+    public FileReadableBuffer(RandomAccessFile raf, long offset, long limit,
             int buffSize) {
         this.raf = raf;
         bs = offset;

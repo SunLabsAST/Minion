@@ -365,13 +365,13 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         }
 
         if(dh.idToPosnSize > 0) {
-            idToPosn = dictBuff.slice((int) dh.idToPosnPos, dh.idToPosnSize);
+            idToPosn = dictBuff.slice(dh.idToPosnPos, dh.idToPosnSize);
         }
 
-        names = dictBuff.slice((int) dh.namesPos, dh.namesSize);
-        nameOffsets = dictBuff.slice((int) dh.nameOffsetsPos, dh.nameOffsetsSize);
-        entryInfo = dictBuff.slice((int) dh.entryInfoPos, dh.entryInfoSize);
-        entryInfoOffsets = dictBuff.slice((int) dh.entryInfoOffsetsPos,
+        names = dictBuff.slice(dh.namesPos, dh.namesSize);
+        nameOffsets = dictBuff.slice(dh.nameOffsetsPos, dh.nameOffsetsSize);
+        entryInfo = dictBuff.slice(dh.entryInfoPos, dh.entryInfoSize);
+        entryInfoOffsets = dictBuff.slice(dh.entryInfoOffsetsPos,
                 dh.entryInfoOffsetsSize);
         bst = new BinarySearchTree(256);
     }

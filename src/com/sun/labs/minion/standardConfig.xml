@@ -53,7 +53,7 @@
     <!-- Which dumping mechanism to use for new partitions.  This is a global
     property because it's needed in a few places. -->
         <!-- A stage that will dump partitions asynchronously -->
-    <component name="dumper" type="com.sun.labs.minion.indexer.partition.Dumper">
+    <component name="dumper" type="com.sun.labs.minion.indexer.partition.Marshaller">
         <property name="partition_manager" value="${partition_manager_name}"/>
         <property name="dump_queue_length" value="${dump_queue_length}"/>
         <property name="pool_size" value="${partition_output_pool_size}"/>
