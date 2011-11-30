@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 /**
  * A class to hold the offsets of the per-field term stat dictionaries.
@@ -14,7 +15,7 @@ public class TermStatsHeader implements Iterable<Map.Entry<Integer, Long>> {
     private Map<Integer, Long> offsets;
 
     public TermStatsHeader() {
-        offsets = new HashMap<Integer, Long>();
+        offsets = new TreeMap<Integer, Long>();
     }
 
     public TermStatsHeader(RandomAccessFile raf) throws java.io.IOException {
@@ -52,4 +53,11 @@ public class TermStatsHeader implements Iterable<Map.Entry<Integer, Long>> {
     public int size() {
         return offsets.size();
     }
+
+    @Override
+    public String toString() {
+        return "TermStatsHeader{" + "offsets=" + offsets + '}';
+    }
+
+
 }

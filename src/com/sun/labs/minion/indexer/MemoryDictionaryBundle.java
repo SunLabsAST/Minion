@@ -253,20 +253,25 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         IndexEntry savedEntry = null;
 
-        if(info.getType() != FieldInfo.Type.STRING || field.cased) {
-            savedEntry = dicts[Type.RAW_SAVED.ordinal()].put(name);
-        }
-
-        if(info.getType() == FieldInfo.Type.STRING && field.uncased) {
-            IndexEntry uce = dicts[Type.UNCASED_SAVED.ordinal()].put(CharUtils.
-                    toLowerCase(
-                    name.toString()));
-
-            //
-            // If there was no cased version saved, we'll keep the uncased version.
-            if(savedEntry == null) {
-                savedEntry = uce;
+        if(info.getType() == FieldInfo.Type.STRING) {
+            if((!field.uncased && !field.cased) || field.cased) {
+                savedEntry = dicts[Type.RAW_SAVED.ordinal()].put(name);
             }
+
+            if(field.uncased) {
+                IndexEntry uce = dicts[Type.UNCASED_SAVED.ordinal()].put(CharUtils.
+                        toLowerCase(
+                        name.toString()));
+
+                //
+                // If there was no cased version saved, we'll keep the uncased version.
+                if(savedEntry == null) {
+                    savedEntry = uce;
+                }
+            }
+
+        } else {
+            savedEntry = dicts[Type.RAW_SAVED.ordinal()].put(name);
         }
 
         //
@@ -305,8 +310,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         long headerPos = fieldDictFile.getFilePointer();
         FieldHeader header = new FieldHeader();
         header.write(fieldDictFile);
-
-        logger.info(String.format("Dump dictionary bundle for %s", info.getName()));
 
         header.fieldID = info.getID();
         header.maxDocID = maxID;
@@ -450,13 +453,20 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         header.dtvPosOffset = fieldDictFile.getFilePointer();
         dtvPos.write(fieldDictFile);
 
-        //
-        // Write out our document vector lengths.
-        header.vectorLengthOffset = vectorLengthsFile.getFilePointer();
-        DocumentVectorLengths.calculate(field, termStatsDictFile,
-                                        vectorLengthsFile,
-                                        field.partition.getPartitionManager().
-                getTermStatsDict());
+        if(getTermDictionary(false) != null) {
+
+            logger.info(String.format("Dumping term stats"));
+
+            //
+            // Write out our document vector lengths.
+            header.vectorLengthOffset = vectorLengthsFile.getFilePointer();
+            DocumentVectorLengths.calculate(field, termStatsDictFile,
+                                            vectorLengthsFile,
+                                            field.partition.getPartitionManager().
+                    getTermStatsDict());
+        } else {
+            header.vectorLengthOffset = -1;
+        }
 
         //
         // Now zip back and write the header.

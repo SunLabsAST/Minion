@@ -26,6 +26,7 @@ package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.engine.SearchEngineImpl;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -50,6 +51,9 @@ import java.util.logging.Logger;
  */
 public class MetaFile {
 
+    protected static final Logger logger = Logger.getLogger(MetaFile.class.
+            getName());
+
     protected File metaFile;
 
     protected FileLock metaLock;
@@ -72,26 +76,22 @@ public class MetaFile {
 
     protected Map<Integer, FieldInfo> idToInfo;
 
-    protected static Logger logger = Logger.getLogger(MetaFile.class.getName());
-
-    protected static String logTag = "MetaFile";
-
     /**
      * Makes a meta file.  Needs to be read before it is useful.
      * @param f the file containing the meta information for the index
      */
-    public MetaFile(File f) {
-        this(null, f);
+    public MetaFile(SearchEngineImpl engine, File f) {
+        this(engine, f, null);
     }
 
     /**
      * Makes a meta file.  Needs to be read before it is useful.
      * @param lockDir a directory where to put a lock for the meta file
-     * @param f the file containing the meta information for the index
+     * @param metaFile the file containing the meta information for the index
      */
-    public MetaFile(File lockDir, File f) {
-        metaFile = f;
-        metaLock = new FileLock(lockDir, f, 60, TimeUnit.SECONDS);
+    public MetaFile(SearchEngineImpl engine, File metaFile, File lockDir) {
+        this.metaFile = metaFile;
+        metaLock = new FileLock(lockDir, metaFile, 60, TimeUnit.SECONDS);
         nameToInfo =
                 new HashMap<String, FieldInfo>();
         idToInfo =
@@ -532,7 +532,7 @@ public class MetaFile {
      */
     public FieldInfo addField(FieldInfo fi)
             throws SearchEngineException {
-        return addField(fi.getName(), fi.getAttributes(), fi.getType());
+        return addField(fi.getName(), fi.getAttributes(), fi.getType(), fi.getPipelineFactoryName());
     }
 
     /**
@@ -549,7 +549,8 @@ public class MetaFile {
      */
     public synchronized FieldInfo addField(String name,
                                            EnumSet<FieldInfo.Attribute> attributes,
-                                           FieldInfo.Type type)
+                                           FieldInfo.Type type,
+                                           String pipelineFactoryName)
             throws SearchEngineException {
         try {
 
@@ -561,13 +562,11 @@ public class MetaFile {
             if(fi != null) {
                 if(!attributes.equals(fi.getAttributes()) || type != fi.getType()) {
 
-                    throw new SearchEngineException("Attempt to redefine field: " +
-                                                    name + " old type: " +
-                                                    fi.getType() + " old attr: " +
-                                                    fi.getAttributes() +
-                                                    " new type: " + type +
-                                                    " new attr: " + attributes +
-                                                    ", ignoring");
+                    throw new SearchEngineException(String.format(
+                            "Attempt to redefine field: %s old type: %s "
+                            + "old attr: %s new type: %s new attr: %s ignoring redefinition",
+                                                                  name, fi.
+                            getType(), fi.getAttributes(), type, attributes));
                 }
                 return fi;
             }
@@ -583,8 +582,8 @@ public class MetaFile {
                 //
                 // We need to make a new field and put in in the maps and then
                 // write the file to disk.
-                fi =    new com.sun.labs.minion.FieldInfo(++nextID, name,
-                                                        attributes, type);
+                fi = new com.sun.labs.minion.FieldInfo(++nextID, name,
+                                                       attributes, type, pipelineFactoryName);
                 nameToInfo.put(name, fi);
                 idToInfo.put(fi.getID(), fi);
                 write();
@@ -602,11 +601,11 @@ public class MetaFile {
 
     @Override
     public String toString() {
-        StringBuffer temp = new StringBuffer();
-        temp.append(metaFile.toString() + ": " + partNumber + " " +
-                    currentTermStatsNumber + " " + nextTermStatsNumber);
+        StringBuilder temp = new StringBuilder();
+        temp.append(metaFile.toString()).append(": ").append(partNumber).
+                append(" ").append(currentTermStatsNumber).append(" ").append(nextTermStatsNumber);
         for(Iterator i = fieldIterator(); i.hasNext();) {
-            temp.append("\n" + i.next());
+            temp.append("\n").append(i.next());
         }
         return temp.toString();
     }
@@ -614,7 +613,7 @@ public class MetaFile {
     public static void main(String[] args)
             throws com.sun.labs.minion.util.FileLockException, java.io.IOException {
 
-        MetaFile mf = new MetaFile(new File(args[0]));
+        MetaFile mf = new MetaFile(null, new File(args[0]));
         mf.read();
         if(args.length > 1) {
             mf.setTermStatsNumber(Integer.parseInt(args[1]));

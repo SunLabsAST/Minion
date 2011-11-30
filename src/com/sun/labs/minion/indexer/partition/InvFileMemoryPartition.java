@@ -191,7 +191,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
             if(mf == null) {
                 continue;
             }
-            logger.info(String.format("Dumping %s", mf));
+            logger.info(String.format("Dumping %s", mf.getInfo().getName()));
             ph.addOffset(mf.getInfo().getID(), dictFile.getFilePointer());
             tsh.addOffset(mf.getInfo().getID(), tsRAF.getFilePointer());
             mf.dump(indexDir, dictFile, postOut, tsRAF, vlRAF, maxDocumentID);
@@ -202,8 +202,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
             // Finish off the term stats dictionary, especially writing the
             // header.
             if(tsRAF != null) {
-                tsRAF.seek(0);
+                long hpos = tsRAF.getFilePointer();
                 tsh.write(tsRAF);
+                tsRAF.seek(0);
+                tsRAF.writeLong(hpos);
                 tsRAF.close();
                 manager.getMetaFile().setTermStatsNumber(tsn);
                 manager.updateTermStats();
@@ -215,6 +217,4 @@ public class InvFileMemoryPartition extends MemoryPartition {
 
         vlRAF.close();
     }
-    
-    
 }

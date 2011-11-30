@@ -30,11 +30,9 @@ import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DictionaryWriter;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.MemoryDictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
-import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -154,7 +152,13 @@ public class DocumentVectorLengths {
                     new StringNameHandler(), 0,
                     MemoryDictionary.Renumber.RENUMBER);
         }
+        
+        boolean trace = f.getInfo().getName().equals("title");
 
+        if(trace) {
+            logger.info(String.format("%s: %s %s %s", f.getInfo().getName(), adjustStats, mdi, gti));
+        }
+        
         //
         // Get a set of postings features for running the postings.
         WeightingFunction wf = p.getPartitionManager().getQueryConfig().
@@ -174,9 +178,14 @@ public class DocumentVectorLengths {
         }
 
         TermStatsQueryEntry gte = null;
-        if(gti.hasNext()) {
+        if(gti != null && gti.hasNext()) {
             gte = (TermStatsQueryEntry) gti.next();
         }
+
+        if(trace) {
+            logger.info(String.format("mde: %s gte: %s", mde, gte));
+        }
+
 
         float[] vl = new float[f.getMaximumDocumentID() + 1];
 
@@ -191,6 +200,10 @@ public class DocumentVectorLengths {
                 cmp = -1;
             } else {
                 cmp = ((Comparable) mde.getName()).compareTo(gte.getName());
+            }
+
+            if(trace) {
+                logger.info(String.format("mde: %s gte: %s", mde, gte));
             }
 
             //

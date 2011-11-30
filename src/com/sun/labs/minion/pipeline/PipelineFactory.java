@@ -32,6 +32,7 @@ import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -55,6 +56,8 @@ public class PipelineFactory implements Configurable {
     public static final String PROP_HL_STAGES = "hl_stages";
 
     private List<Stage> hlStages;
+
+    private String name;
 
     /**
      * The manager that configured this factory.
@@ -113,7 +116,9 @@ public class PipelineFactory implements Configurable {
                 //
                 // Get a new instance of this stage and configure it.
                 Stage next = s.getClass().newInstance();
-                next.newProperties(cm.getPropertySheet(s.getName()));
+                if(cm != null && s.getName() != null) {
+                    next.newProperties(cm.getPropertySheet(s.getName()));
+                }
                 if(prev != null) {
                     prev.setDownstream(next);
                 }
@@ -131,7 +136,16 @@ public class PipelineFactory implements Configurable {
         return ret;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void newProperties(PropertySheet ps) throws PropertyException {
+        name = ps.getInstanceName();
         cm = ps.getConfigurationManager();
         stages = (List<Stage>) ps.getComponentList(PROP_STAGES);
         hlStages = (List<Stage>) ps.getComponentList(PROP_HL_STAGES);

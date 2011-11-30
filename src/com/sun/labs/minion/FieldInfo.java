@@ -23,8 +23,6 @@
  */
 package com.sun.labs.minion;
 
-import com.sun.labs.minion.pipeline.PipelineFactory;
-import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
@@ -33,6 +31,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import com.sun.labs.util.props.ConfigEnum;
 import com.sun.labs.util.props.ConfigEnumSet;
+import com.sun.labs.util.props.ConfigString;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.logging.Logger;
@@ -154,7 +153,7 @@ import java.util.logging.Logger;
  */
 public class FieldInfo implements Cloneable, Configurable {
 
-    protected static Logger logger = Logger.getLogger(FieldInfo.class.getName());
+    protected static final Logger logger = Logger.getLogger(FieldInfo.class.getName());
 
     /**
      * The various attributes that a field can have.  Any field may specify
@@ -233,11 +232,15 @@ public class FieldInfo implements Cloneable, Configurable {
     /**
      * A factory for pipelines.
      */
-    @ConfigComponent(type = com.sun.labs.minion.pipeline.PipelineFactory.class, mandatory =
-    false)
-    public static final String PROP_PIPELINE_FACTORY = "pipelineFactory";
+    @ConfigString(mandatory=false)
+    public static final String PROP_PIPELINE_FACTORY_NAME = "pipelineFactoryName";
 
-    private PipelineFactory pipelineFactory;
+    private String pipelineFactoryName;
+
+    /**
+     * The name of the configuration component containing the default pipeline.
+     */
+    public static final String DEFAULT_PIPELINE_FACTORY_NAME = "pipeline_factory";
 
     /**
      * The name of this field.
@@ -260,7 +263,7 @@ public class FieldInfo implements Cloneable, Configurable {
     private Type type;
 
     public FieldInfo() {
-        this(0, null, getDefaultAttributes(), Type.NONE);
+        this(0, null, getDefaultAttributes(), Type.NONE, null);
     }
 
     /**
@@ -270,7 +273,7 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param name The name of the field.
      */
     public FieldInfo(String name) {
-        this(0, name, getDefaultAttributes(), Type.NONE);
+        this(0, name, getDefaultAttributes(), Type.NONE, null);
     }
 
     /**
@@ -281,7 +284,7 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param name The name of the field.
      */
     public FieldInfo(int id, String name) {
-        this(id, name, getDefaultAttributes(), Type.NONE);
+        this(id, name, getDefaultAttributes(), Type.NONE, null);
     }
 
     /**
@@ -294,7 +297,7 @@ public class FieldInfo implements Cloneable, Configurable {
      *
      */
     public FieldInfo(String name, EnumSet<Attribute> attributes) {
-        this(0, name, attributes, Type.NONE);
+        this(0, name, attributes, Type.NONE, null);
     }
 
     /**
@@ -308,7 +311,21 @@ public class FieldInfo implements Cloneable, Configurable {
      * field is saved.
      */
     public FieldInfo(String name, EnumSet<Attribute> attributes, Type type) {
-        this(0, name, attributes, type);
+        this(0, name, attributes, type, null);
+    }
+
+    /**
+     * Constructs a <code>FieldInfo</code> object with the given attributes
+     * and type.
+     *
+     * @param name The name of the field.
+     * @param attributes A set of field attributes.  Note that we take a copy
+     * of this set, so it is safe to modify or reuse the attributes.
+     * @param type A type that will be used if the attributes indicate that the
+     * field is saved.
+     */
+    public FieldInfo(String name, EnumSet<Attribute> attributes, Type type, String pipelineFactoryName) {
+        this(0, name, attributes, type, pipelineFactoryName);
     }
 
     /**
@@ -327,7 +344,7 @@ public class FieldInfo implements Cloneable, Configurable {
      */
     public FieldInfo(int id, String name,
                      EnumSet<Attribute> attributes,
-                     Type type) {
+                     Type type, String pipelineFactoryName) {
         this.id = id;
         this.name = name == null ? null : name.toLowerCase();
         if(attributes != null) {
@@ -336,6 +353,7 @@ public class FieldInfo implements Cloneable, Configurable {
             this.attributes = getDefaultAttributes();
         }
         this.type = type;
+        this.pipelineFactoryName = pipelineFactoryName;
     }
 
     @Override
@@ -437,26 +455,18 @@ public class FieldInfo implements Cloneable, Configurable {
             case STRING:
                 return "";
             default:
-                logger.warning("Field: " + name + " "
-                        + "has unknown SAVED type: " + type + ", using STRING.");
+                logger.warning(String.format("Field: %s has unknown type %s, using STRING", name, type));
                 return "";
         }
 
     }
 
-    public void setPipelineFactory(PipelineFactory pipelineFactory) {
-        this.pipelineFactory = pipelineFactory;
+    public void setPipelineFactoryName(String piplineFactoryName) {
+        this.pipelineFactoryName = piplineFactoryName;
     }
 
-    public Pipeline getPipeline() {
-        if(pipelineFactory == null) {
-            return null;
-        }
-        return pipelineFactory.getPipeline();
-    }
-
-    public HLPipeline getHLPipeline() {
-        return pipelineFactory.getHLPipeline();
+    public String getPipelineFactoryName() {
+        return pipelineFactoryName;
     }
 
     /**
@@ -470,8 +480,8 @@ public class FieldInfo implements Cloneable, Configurable {
 
     @Override
     public String toString() {
-        return this.name + ": " + id + " type: " + type + " attributes: "
-                + attributes;
+        return String.format("%s: %d type: %s attributes: %s", this.name, id,
+                             type, attributes);
     }
 
     /**
@@ -493,8 +503,7 @@ public class FieldInfo implements Cloneable, Configurable {
         attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(
                 PROP_ATTRIBUTES);
         type = (Type) ps.getEnum(PROP_TYPE);
-        pipelineFactory = (PipelineFactory) ps.getComponent(
-                PROP_PIPELINE_FACTORY);
+        pipelineFactoryName = ps.getString(PROP_PIPELINE_FACTORY_NAME);
     }
 
     /**
@@ -528,6 +537,11 @@ public class FieldInfo implements Cloneable, Configurable {
         for(FieldInfo.Attribute a : attributes) {
             out.writeUTF(a.name());
         }
+        if(pipelineFactoryName == null) {
+            out.writeUTF("");
+        } else {
+            out.writeUTF(pipelineFactoryName);
+        }
     }
 
     /**
@@ -545,6 +559,10 @@ public class FieldInfo implements Cloneable, Configurable {
         attributes = EnumSet.noneOf(Attribute.class);
         for(int i = 0; i < na; i++) {
             attributes.add(Attribute.valueOf(in.readUTF()));
+        }
+        pipelineFactoryName = in.readUTF();
+        if(pipelineFactoryName.isEmpty()) {
+            pipelineFactoryName = null;
         }
     }
 
@@ -567,5 +585,6 @@ public class FieldInfo implements Cloneable, Configurable {
                           Attribute.UNCASED,
                           Attribute.TOKENIZED);
     }
+
 } // FieldInfo
 

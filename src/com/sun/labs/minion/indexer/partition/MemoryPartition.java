@@ -57,7 +57,7 @@ import java.util.logging.Logger;
  */
 public abstract class MemoryPartition extends Partition {
 
-    private static Logger logger = Logger.getLogger(MemoryPartition.class.
+    private static final Logger logger = Logger.getLogger(MemoryPartition.class.
             getName());
 
     /**

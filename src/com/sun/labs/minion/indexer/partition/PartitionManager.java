@@ -252,7 +252,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
             //
             // Make the meta file.  We'll write it if it doesn't exist.
-            metaFile = new MetaFile(lockDirFile, makeMetaFile());
+            metaFile = new MetaFile(engine, makeMetaFile(), lockDirFile);
             try {
                 metaFile.lock();
                 if(!metaFile.exists()) {

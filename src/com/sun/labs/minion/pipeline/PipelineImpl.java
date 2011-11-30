@@ -56,6 +56,12 @@ public class PipelineImpl implements Pipeline {
         if(stages == null) {
             stages = new ArrayList<Stage>();
         }
+
+        if(!stages.isEmpty()) {
+            Stage last = stages.get(stages.size() - 1);
+            last.setDownstream(s);
+        }
+
         stages.add(s);
         head = stages.get(0);
     }
