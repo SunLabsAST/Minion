@@ -1176,6 +1176,9 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return a buffered set of postings inputs for this dictionary
      */
     protected PostingsInput[] getBufferedInputs(int buffSize) {
+        if(postIn == null) {
+            return null;
+        }
         PostingsInput[] buffChans =
                 new PostingsInput[postIn.length];
         for(int i = 0; i < postFiles.length; i++) {
