@@ -97,7 +97,7 @@ public abstract class MemoryPartition extends Partition {
         StopWatch sw = new StopWatch();
         sw.start();
         
-        partOut.startPartition();
+        partOut.startPartition(this);
         partOut.setKeys(docDict.getKeys());
         
         PartitionHeader partHeader = partOut.getPartitionHeader();
@@ -149,7 +149,6 @@ public abstract class MemoryPartition extends Partition {
                 getPartitionName(),
                 partOut.getPartitionNumber(),
                 docDict.size(), sw.getTime()));
-
         return partOut;
 
     }
@@ -176,6 +175,11 @@ public abstract class MemoryPartition extends Partition {
 
     public int getUses() {
         return uses;
+    }
+    
+    @Override
+    public String toString() {
+        return "MP: " + getPartitionName();
     }
     
     

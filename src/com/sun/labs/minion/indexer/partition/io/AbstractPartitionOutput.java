@@ -26,6 +26,11 @@ import java.util.logging.Logger;
 public abstract class AbstractPartitionOutput implements PartitionOutput {
 
     private static final Logger logger = Logger.getLogger(AbstractPartitionOutput.class.getName());
+    
+    /**
+     * The partition being output.
+     */
+    protected MemoryPartition partition;
 
     /**
      * The partition manager for the partition that is being dumped.
@@ -117,11 +122,12 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         this.name = name;
     }
 
-    public int startPartition() throws IOException {
+    public int startPartition(MemoryPartition partition) throws IOException {
         if(started) {
             throw new IllegalStateException("Already outputting a partition, can't start another");
         }
         try {
+            this.partition = partition;
             partHeader = new PartitionHeader();
             partNumber = manager.getMetaFile().getNextPartitionNumber();
             File[] files = MemoryPartition.getMainFiles(manager, partNumber);
@@ -289,7 +295,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
 
     @Override
     public String toString() {
-        return "APO: " + name;
+        return "APO: " + name + ' ' + partition + " partition number: " + partNumber;
     }
     
     

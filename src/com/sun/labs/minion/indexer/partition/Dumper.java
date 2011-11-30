@@ -78,8 +78,8 @@ public class Dumper implements Configurable {
      * A pool of partition output objects.
      */
     protected BlockingQueue<PartitionOutput> poPool;
-    
-    private BlockingQueue<InvFileMemoryPartition>  mpPool;
+
+    private BlockingQueue<InvFileMemoryPartition> mpPool;
 
     /**
      * The poll interval for the queue, in milliseconds.
@@ -164,13 +164,13 @@ public class Dumper implements Configurable {
             } catch(InterruptedException ex) {
             }
         }
-        
+
         flushDone = true;
         try {
             flushThread.join();
         } catch(InterruptedException ex) {
         }
-        
+
         for(RAMPartitionOutput po : partOuts) {
             try {
                 po.close();
@@ -178,7 +178,7 @@ public class Dumper implements Configurable {
                 logger.log(Level.SEVERE, String.format("Error closing %s", po), ex);
             }
         }
-        
+
     }
 
     public void newProperties(PropertySheet ps)
@@ -197,7 +197,7 @@ public class Dumper implements Configurable {
             try {
                 partOuts[i] = new RAMPartitionOutput(partitionManager);
                 ((RAMPartitionOutput) partOuts[i]).setName("PO-" + i);
-                poPool.add(partOuts[i]);
+                poPool.put(partOuts[i]);
             } catch(Exception ex) {
                 throw new PropertyException(ex, ps.getInstanceName(), PROP_POOL_SIZE, "Error creating output pool");
             }
@@ -268,7 +268,7 @@ public class Dumper implements Configurable {
                     return;
                 }
             }
-            
+
             //
             // Drain the list of partitions to dump and then dump them.
             List<MPHolder> l = new ArrayList<MPHolder>();
@@ -276,13 +276,12 @@ public class Dumper implements Configurable {
             if(l.isEmpty()) {
                 return;
             }
-            
+
             try {
-                PartitionOutput partOut = poPool.take();
-                logger.info(String.format("%s polled %s from poPool at finish", Thread.currentThread().getName(), partOut));
                 for(MPHolder sh : l) {
                     if(sh.time.after(partitionManager.getLastPurgeTime())) {
                         try {
+                            PartitionOutput partOut = poPool.take();
                             dump(sh, partOut);
                         } catch(IOException ex) {
                             logger.log(Level.SEVERE, String.format(
@@ -294,7 +293,7 @@ public class Dumper implements Configurable {
                 logger.log(Level.SEVERE, String.format("Error flushing partitions at finish"), ex);
             }
         }
-        
+
         private void dump(MPHolder mph, PartitionOutput partOut) throws IOException, InterruptedException {
             if(partOut != null) {
                 PartitionOutput ret = mph.part.dump(partOut);
@@ -315,7 +314,12 @@ public class Dumper implements Configurable {
                     PartitionOutput partOut = toFlush.poll(pollInterval, TimeUnit.MILLISECONDS);
                     if(partOut != null) {
                         try {
-                            partOut.flush();
+                            try {
+                                partOut.flush();
+                            } catch(IllegalStateException ex) {
+                                logger.log(Level.SEVERE, String.format("Illegal state for %s", partOut), ex);
+                                throw(ex);
+                            }
                             poPool.put(partOut);
                         } catch(IOException ex) {
                             logger.log(Level.SEVERE, String.format("Error writing %d to disk", partOut.getPartitionNumber()), ex);
@@ -325,7 +329,7 @@ public class Dumper implements Configurable {
                     logger.log(Level.SEVERE, String.format("Interrupted getting partition output"), ex);
                 }
             }
-            
+
             List<PartitionOutput> l = new ArrayList<PartitionOutput>();
             toFlush.drainTo(l);
             if(l.isEmpty()) {

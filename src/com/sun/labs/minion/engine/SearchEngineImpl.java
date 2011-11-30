@@ -1468,7 +1468,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         mpPool = new ArrayBlockingQueue<InvFileMemoryPartition>(numIndexingThreads * 2);
         for(int i = 0; i < numIndexingThreads * 2; i++) {
             InvFileMemoryPartition mp = new InvFileMemoryPartition(invFilePartitionManager);
-            mp.setPartitionName("IFMP-" + i);
+            mp.setPartitionName("IF-" + i);
             mpPool.add(mp);
         }
         

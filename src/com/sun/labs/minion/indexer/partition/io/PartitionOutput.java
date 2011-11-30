@@ -3,6 +3,7 @@ package com.sun.labs.minion.indexer.partition.io;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionHeader;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
@@ -15,7 +16,7 @@ import java.util.Set;
  */
 public interface PartitionOutput {
     
-    public int startPartition() throws IOException;
+    public int startPartition(MemoryPartition partition) throws IOException;
     
     public void setKeys(Set<String> keys);
 

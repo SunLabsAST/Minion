@@ -2,15 +2,15 @@ package com.sun.labs.minion.indexer.partition.io;
 
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.dictionary.io.RAMDictionaryOutput;
+import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.RAMPostingsOutput;
-import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Set;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,19 +30,13 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
      */
     public RAMPartitionOutput(PartitionManager manager) throws IOException {
         super(manager);
-    }
-
-    @Override
-    public int startPartition() throws IOException {
-        int ret = super.startPartition();
         partDictOut = new RAMDictionaryOutput(manager.getIndexDir());
-        postOut = new PostingsOutput[postOutFiles.length];
+        postOut = new PostingsOutput[MemoryPartition.getMainFiles(manager, 0).length];
         for(int i = 0; i < postOut.length; i++) {
             postOut[i] = new RAMPostingsOutput();
         }
         vectorLengthsBuffer = new ArrayBuffer(1024);
         deletionsBuffer = new ArrayBuffer(1024);
-        return ret;
     }
 
     @Override
