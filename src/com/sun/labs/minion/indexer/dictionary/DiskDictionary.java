@@ -714,6 +714,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Bounds check.
         if(posn < 0 || posn >= dh.size) {
+            logger.info(String.format("posn: %d size: %d", posn, dh.size));
             return null;
         }
 
@@ -870,6 +871,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // First, get the matching entry IDs from the bigram dictionary.
         int[] entryIds = biDict.getMatching(pat);
+        
+        logger.info(String.format("candidates: %s", Arrays.toString(entryIds)));
 
         if(qtt.timedOut) {
             // Operation timed out
@@ -912,6 +915,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                     (!qtt.timedOut) &&
                     ((maxEntries <= 0) || (res.size() < maxEntries)); i++) {
                 QueryEntry curr = getByID(entryIds[i]);
+                logger.info(String.format("%d: %s", entryIds[i], curr));
                 if(Util.match(patArray, curr.toString().toCharArray(),
                               caseSensitive)) {
                     res.add(curr);

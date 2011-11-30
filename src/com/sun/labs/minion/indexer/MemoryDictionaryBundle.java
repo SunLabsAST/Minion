@@ -3,6 +3,7 @@ package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.DateNameHandler;
+import com.sun.labs.minion.indexer.dictionary.DictionaryWriter;
 import com.sun.labs.minion.indexer.dictionary.DoubleNameHandler;
 import com.sun.labs.minion.indexer.dictionary.LongNameHandler;
 import com.sun.labs.minion.indexer.dictionary.MemoryBiGramDictionary;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -116,7 +118,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
     /**
      * An array of the sets of entries saved per document at indexing time.
      */
-    private List[] dv = new List[128];
+    private List[] dv;
+    
+    private List[] ucdv;
 
     private EntryFactory vectorEntryFactory = new EntryFactory(Postings.Type.ID_FREQ);
 
@@ -152,10 +156,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
 
         if(field.saved) {
+            dv = new List[128];
             dicts[Type.RAW_SAVED.ordinal()] = new MemoryDictionary<N>(savedEntryFactory);
             if(field.uncased) {
                 dicts[Type.UNCASED_SAVED.ordinal()] = new MemoryDictionary<N>(
                         savedEntryFactory);
+                ucdv = new List[128];
             }
         }
 
@@ -260,40 +266,38 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             return;
         }
 
-        IndexEntry savedEntry = null;
-
-        if(info.getType() == FieldInfo.Type.STRING) {
-            if((!field.uncased && !field.cased) || field.cased) {
-                savedEntry = dicts[Type.RAW_SAVED.ordinal()].put(name);
+        //
+        // We'll just store the saved entries per-document, since we might be adding
+        // entries in non-document ID order (e.g., when doing classification.)
+        // We'll build the actual postings lists at dump time.
+        if (dicts[Type.RAW_SAVED.ordinal()] != null) {
+            IndexEntry rawSavedEntry = dicts[Type.RAW_SAVED.ordinal()].put(name);
+            if (docID >= dv.length) {
+                dv = Arrays.copyOf(dv, (docID + 1) * 2);
             }
 
-            if(field.uncased) {
-                IndexEntry uce = dicts[Type.UNCASED_SAVED.ordinal()].put(CharUtils.
-                        toLowerCase(
-                        name.toString()));
-
-                //
-                // If there was no cased version saved, we'll keep the uncased version.
-                if(savedEntry == null) {
-                    savedEntry = uce;
-                }
+            if (dv[docID] == null) {
+                dv[docID] = new ArrayList<IndexEntry>();
             }
-
-        } else {
-            savedEntry = dicts[Type.RAW_SAVED.ordinal()].put(name);
+            dv[docID].add(rawSavedEntry);
         }
 
         //
-        // We'll just store the entries per-document, since we might be adding
-        // entries in non-document ID order.  We'll build the actual postings
-        // lists at dump time.
-        if(docID >= dv.length) {
-            dv = Arrays.copyOf(dv, (docID+1) * 2);
+        // Handle the uncased values for string fields.
+        if (dicts[Type.UNCASED_SAVED.ordinal()] != null) {
+            IndexEntry uncasedSavedEntry = dicts[Type.UNCASED_SAVED.ordinal()].
+                    put(CharUtils.toLowerCase(
+                    name.toString()));
+            if (docID >= ucdv.length) {
+                ucdv = Arrays.copyOf(ucdv, (docID + 1) * 2);
+            }
+
+            if (ucdv[docID] == null) {
+                ucdv[docID] = new ArrayList<IndexEntry>();
+            }
+            ucdv[docID].add(uncasedSavedEntry);
         }
-        if(dv[docID] == null) {
-            dv[docID] = new ArrayList<IndexEntry>();
-        }
-        dv[docID].add(savedEntry);
+
     }
 
     /**
@@ -383,9 +387,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     // in document ID order.
                     Occurrence uo = new OccurrenceImpl();
                     for(int i = 0; i < dv.length; i++) {
-                        if(dv[i] != null) {
+                        if(ucdv[i] != null) {
                             uo.setID(i);
-                            for(IndexEntry e : (List<IndexEntry>) dv[i]) {
+                            for(IndexEntry e : (List<IndexEntry>) ucdv[i]) {
                                 e.add(uo);
                             }
                         }
@@ -424,18 +428,20 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 tbg.add(e.getName().toString(), e.getID());
             }
             header.tokenBGOffset = fieldDictFile.getFilePointer();
-            tbg.dump(path, new StringNameHandler(), fieldDictFile, postOut,
-                     MemoryDictionary.Renumber.RENUMBER,
-                     MemoryDictionary.IDMap.NONE,
-                     null);
+            tbg.dump(path, new StringNameHandler(),
+                    fieldDictFile, postOut,
+                    MemoryDictionary.Renumber.RENUMBER,
+                    MemoryDictionary.IDMap.NONE,
+                    null);
         } else {
             header.tokenBGOffset = -1;
         }
 
         if(field.info.getType() == FieldInfo.Type.STRING) {
             IndexEntry[] sortedSaved =
-                    sortedEntries[Type.UNCASED_SAVED.ordinal()] != null ? sortedEntries[Type.UNCASED_SAVED.
-                    ordinal()] : sortedEntries[Type.RAW_SAVED.ordinal()];
+                    sortedEntries[Type.UNCASED_SAVED.ordinal()] != null ? 
+                    sortedEntries[Type.UNCASED_SAVED.ordinal()] : 
+                    sortedEntries[Type.RAW_SAVED.ordinal()];
             if(sortedSaved != null) {
                 MemoryBiGramDictionary sbg = new MemoryBiGramDictionary(
                         new EntryFactory(Postings.Type.ID_FREQ));
@@ -443,10 +449,16 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     sbg.add(e.getName().toString(), e.getID());
                 }
                 header.savedBGOffset = fieldDictFile.getFilePointer();
+//                Logger dl = Logger.getLogger(MemoryDictionary.class.getName());
+//                Logger wl = Logger.getLogger(DictionaryWriter.class.getName());
+//                dl.setLevel(Level.FINE);
+//                wl.setLevel(Level.FINE);
                 sbg.dump(path, new StringNameHandler(), fieldDictFile, postOut,
                          MemoryDictionary.Renumber.NONE,
                          MemoryDictionary.IDMap.NONE,
                          null);
+//                dl.setLevel(Level.INFO);
+//                wl.setLevel(Level.INFO);
             } else {
                 header.savedBGOffset = -1;
             }

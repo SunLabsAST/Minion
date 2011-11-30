@@ -725,10 +725,11 @@ public class QueryTest extends SEMain {
                     for(DiskField df :
                             ((InvFileDiskPartition) p).getDiskFields()) {
                         output.format("Field: %s\n", df.getInfo().getName());
+                        output.flush();
                         List<QueryEntry> entries = df.getMatching(pat,
                                                                   wildCaseSensitive,
                                                                   -1, -1);
-                        if(entries.size() == 0) {
+                        if(entries.isEmpty()) {
                             output.println("No matches");
                         } else {
                             output.format("%d matches\n", entries.size());

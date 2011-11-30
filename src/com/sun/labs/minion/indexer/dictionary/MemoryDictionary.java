@@ -341,7 +341,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             IDMap idMapType,
             int[] postIDMap)
             throws java.io.IOException {
-        logger.fine("Dumping: " + map.size() + " entries");
+        logger.fine(String.format("Dumping %d entries", map.size()));
 
         //
         // Get a writer for the dictionary.  If we're not renumbering, it
@@ -373,7 +373,10 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             //
             // Write it out.
             if(entry.writePostings(postOut, postIDMap) == true) {
+                logger.fine(String.format("wrote postings for %s, %d entries in list", entry.getName(), entry.getN()));
                 dw.write(entry);
+            } else {
+                logger.fine(String.format("No postings for %s", entry.getName()));
             }
         }
 
@@ -387,6 +390,8 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Write the final dictionary.
         dw.finish(dictFile);
+        
+        logger.fine(String.format("header:\n%s", dw.dh));
 
         return sorted;
     }

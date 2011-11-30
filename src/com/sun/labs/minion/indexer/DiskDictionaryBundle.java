@@ -144,25 +144,35 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         if(header.tokenBGOffset > 0) {
             dictFile.seek(header.tokenBGOffset);
+            DiskDictionary tokenDict = 
+                    dicts[Type.UNCASED_TOKENS.ordinal()] != null ?
+                    dicts[Type.UNCASED_TOKENS.ordinal()] :
+                    dicts[Type.CASED_TOKENS.ordinal()];
             tokenBigrams = new DiskBiGramDictionary(dictFile, postIn[0],
                                                     DiskDictionary.PostingsInputType.FILE_PART_POST,
                                                     DiskDictionary.BufferType.FILEBUFFER,
                                                     256, 2048, 2048, 2048, 2048,
                                                     null,
-                                                    dicts[Type.UNCASED_TOKENS.
-                    ordinal()]);
+                                                    tokenDict);
             tokenBigrams.setPartition(field.partition);
         }
 
         if(header.savedBGOffset > 0) {
             dictFile.seek(header.savedBGOffset);
+            DiskDictionary savedValueDict = 
+                    dicts[Type.UNCASED_SAVED.ordinal()] != null ?
+                    dicts[Type.UNCASED_SAVED.ordinal()] :
+                    dicts[Type.RAW_SAVED.ordinal()];
+                    
             savedBigrams = new DiskBiGramDictionary(dictFile, postIn[0],
                                                     DiskDictionary.PostingsInputType.FILE_PART_POST,
                                                     DiskDictionary.BufferType.FILEBUFFER,
                                                     256, 2048, 2048, 2048, 2048,
                                                     null,
-                                                    dicts[Type.UNCASED_SAVED.
-                    ordinal()]);
+                                                    savedValueDict);
+            logger.info(String.format("field: %s", info.getName()));
+            logger.info(String.format("savedBG header: %s", savedBigrams.getHeader()));
+            logger.info(String.format("savedUN header: %s", savedValueDict.getHeader()));
             savedBigrams.setPartition(field.partition);
         }
 
@@ -415,23 +425,23 @@ public class DiskDictionaryBundle<N extends Comparable> {
             return null;
         }
         QueryEntry[] qes;
-        if(caseSensitive) {
+        if (caseSensitive) {
             qes = dicts[Type.RAW_SAVED.ordinal()].getMatching(savedBigrams, val,
-                                                              true,
-                                                              maxEntries,
-                                                              timeLimit);
+                    true,
+                    maxEntries,
+                    timeLimit);
         } else {
-            if(dicts[Type.UNCASED_SAVED.ordinal()] == null) {
+            if (dicts[Type.UNCASED_SAVED.ordinal()] == null) {
                 logger.warning(String.format(
                         "Can't get uncased matches for string field %s",
                         info.getName()));
                 return null;
             }
-            qes = dicts[Type.UNCASED_SAVED.ordinal()].getMatching(savedBigrams, val.
-                    toLowerCase(),
-                                                                  false,
-                                                                  maxEntries,
-                                                                  timeLimit);
+            qes = dicts[Type.UNCASED_SAVED.ordinal()].getMatching(savedBigrams,
+                    val.toLowerCase(),
+                    false,
+                    maxEntries,
+                    timeLimit);
         }
         return new ArrayDictionaryIterator(qes);
     }

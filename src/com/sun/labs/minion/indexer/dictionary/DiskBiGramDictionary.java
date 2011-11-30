@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ScoredGroup;

@@ -24,17 +24,13 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
-import com.sun.labs.minion.util.CharUtils;
 
-import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 
 import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
 
 public class MemoryBiGramDictionary extends MemoryDictionary {
-    
-    protected static String logTag = "MBG";
     
     /**
      * Creates a bigram dictionary.  Such a dictionary will be populated a
