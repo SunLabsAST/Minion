@@ -66,6 +66,7 @@ import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
+import com.sun.labs.minion.indexer.partition.io.AbstractPartitionOutput;
 import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
@@ -167,6 +168,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * Whether we're shutting down or not.
      */
     private boolean noMoreMerges;
+    
+    private boolean longIndexingRun;
 
     /**
      * Instantiates a <code>PartitionManager</code> with the given index
@@ -187,6 +190,17 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
     public void removeIndexListener(IndexListener il) {
         listeners.remove(il);
+    }
+
+    public boolean isLongIndexingRun() {
+        return longIndexingRun;
+    }
+
+    public void setLongIndexingRun(boolean longIndexingRun) {
+        this.longIndexingRun = longIndexingRun;
+        if(mergePartitionOutput != null) {
+            ((AbstractPartitionOutput) mergePartitionOutput).setLongIndexingRun(longIndexingRun);
+        }
     }
 
     /**

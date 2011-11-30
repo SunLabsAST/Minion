@@ -805,7 +805,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED)) {
 
             File id = mergeState.manager.getIndexDir();
-
+            
             //
             // File backed buffers for the offsets and encoded values
             File dtvFile = File.createTempFile("dtv", "buff", id);
@@ -881,7 +881,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         //
         // Calculate document vector lengths.
-        if(mergeState.info.hasAttribute(FieldInfo.Attribute.INDEXED)) {
+        if(mergeState.info.hasAttribute(FieldInfo.Attribute.INDEXED) &&
+                !mergeState.partOut.isLongIndexingRun()) {
 
             //
             // Calculate document vector lengths.  We need an iterator for the 

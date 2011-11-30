@@ -1282,6 +1282,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         if(longIndexingRun) {
             try {
                 logger.info(String.format("Optimizing after indexing run"));
+                invFilePartitionManager.setLongIndexingRun(false);
                 optimize();
             } catch(Exception ex) {
                 logger.log(Level.SEVERE, String.format("Error optimizing after long indexing run"), ex);
@@ -1537,6 +1538,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public void setLongIndexingRun(boolean longIndexingRun) {
         this.longIndexingRun = longIndexingRun;
         dumper.setLongIndexingRun(longIndexingRun);
+        invFilePartitionManager.setLongIndexingRun(longIndexingRun);
     }
     
     public void setDocsPerPartition(int docsPerPartition) {
