@@ -448,11 +448,15 @@ public class MetaFile {
     /**
      * Gets the information associated with a given field name.
      *
-     * @param name The name of the field.
+     * @param name The name of the field, or <code>null</code> for the no-field
+     * field.
      * @return The associated information, or <code>null</code> if the
      * named field doesn't exist.
      */
     public synchronized FieldInfo getFieldInfo(String name) {
+        if(name == null) {
+            return null;
+        }
         return nameToInfo.get(CharUtils.toLowerCase(name));
     }
     

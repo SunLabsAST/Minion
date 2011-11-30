@@ -26,12 +26,15 @@ package com.sun.labs.minion.indexer.partition;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.pipeline.Token;
 import java.io.File;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,6 +63,18 @@ public class InvFileMemoryPartition extends MemoryPartition {
         fields = new MemoryField[16];
     }
 
+    public void index(Indexable doc) {
+        startDocument(doc.getKey());
+        for(Map.Entry<String,Object> field : doc.getMap().entrySet()) {
+            FieldInfo fi = manager.getFieldInfo(field.getKey());
+            if(fi == null) {
+                logger.warning(String.format("Unknown field: %s in %s", field.getKey(), doc.getKey()));
+                continue;
+            }
+            addField(fi, field.getValue());
+        }
+    }
+
     /**
      * Starts a new document in this partition.
      *
@@ -79,11 +94,12 @@ public class InvFileMemoryPartition extends MemoryPartition {
         }
     }
 
-    /**
-     * Adds a field to this document.
-     */
-    public void addField(FieldInfo fi, Object val) {
+    public boolean isIndexed(String key) {
+        return docDict.get(key) != null;
+    }
 
+    private MemoryField getMF(FieldInfo fi) {
+        
         //
         // Non-field stuff goes into the 0th position.
         int fid = 0;
@@ -99,8 +115,37 @@ public class InvFileMemoryPartition extends MemoryPartition {
         if(fields[fid] == null) {
             fields[fid] = new MemoryField(fi, null);
         }
+        return fields[fid];
+    }
+    
+    public void addField(String field, Object val) {
+        FieldInfo fi = manager.getFieldInfo(field);
 
-        fields[fid].addData(dockey.getID(), val);
+        if(field != null && fi == null) {
+            logger.warning(String.format("Can't add term to undefined field %s",
+                                         field));
+        }
+        addField(fi, val);
+    }
+
+    /**
+     * Adds a field to this document.
+     */
+    public void addField(FieldInfo fi, Object val) {
+        MemoryField mf = getMF(fi);
+        mf.addData(dockey.getID(), val);
+    }
+
+    /**
+     * Adds a term to a single field in this document.
+     */
+    public void addTerm(String field, String term, int count) {
+        FieldInfo fi = manager.getFieldInfo(field);
+        if(field != null && fi == null) {
+            logger.warning(String.format("Can't add term to undefined field %s", field));
+        }
+        MemoryField mf = getMF(fi);
+        mf.token(new Token(term, count));
     }
 
     /**

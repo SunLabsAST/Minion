@@ -26,11 +26,13 @@ package com.sun.labs.minion.engine;
 import com.sun.labs.minion.Document;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldFrequency;
+import com.sun.labs.minion.IndexableString;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +47,6 @@ import com.sun.labs.minion.IndexListener;
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.MetaDataStore;
-import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryException;
 import com.sun.labs.minion.QueryStats;
@@ -56,9 +57,7 @@ import com.sun.labs.minion.Searcher;
 import com.sun.labs.minion.SimpleIndexer;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.WeightedField;
-import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.retrieval.CollectionStats;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
@@ -80,7 +79,6 @@ import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.ConfigurationManager;
 import java.io.File;
 import java.lang.management.MemoryMXBean;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.SortedSet;
@@ -88,8 +86,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
 import com.sun.labs.minion.indexer.partition.Dumper;
+import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
-import com.sun.labs.minion.pipeline.PipelineImpl;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.query.And;
 import com.sun.labs.minion.query.Element;
@@ -108,6 +106,7 @@ import com.sun.labs.minion.retrieval.parser.WebParser;
 import com.sun.labs.minion.util.CDateParser;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -194,9 +193,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     private Dumper dumper;
 
     @ConfigInteger(defaultValue = 1)
-    public static final String PROP_NUM_PIPELINES = "num_pipelines";
+    public static final String PROP_NUM_INDEXING_THREADS = "num_pipelines";
 
-    private int numPipelines;
+    private int numIndexingThreads;
 
     @ConfigInteger(defaultValue = 256)
     public static final String PROP_INDEXING_QUEUE_LENGTH =
@@ -255,17 +254,17 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     /**
      * A blocking queue upon which we can put indexable things.
      */
-    protected BlockingQueue indexingQueue;
+    protected BlockingQueue<Indexable> indexingQueue;
 
     /**
      * The pipelines to use for indexing.
      */
-    protected Pipeline[] pipes;
+    protected Indexer[] indexers;
 
     /**
      * Threads to hold run our pipelines.
      */
-    protected Thread[] pipeThreads;
+    protected Thread[] indexingThreads;
 
     /**
      * The configuration name for this search engine.
@@ -424,10 +423,10 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public void index(Indexable doc)
             throws SearchEngineException {
         try {
-            if(pipes.length > 1) {
+            if(indexers.length > 1) {
                 indexingQueue.put(doc);
             } else {
-                pipes[0].index(doc);
+                indexers[0].index(doc);
             }
 
             checkDump();
@@ -462,18 +461,17 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * Dumps any data currently held in memory to the disk via our configured
      * dumper.
      */
-    protected void dump()
-            throws SearchEngineException {
-        for(int i = 0; i < pipes.length;
-                i++) {
-            pipes[i].dump();
+    protected void dump() throws SearchEngineException {
+        for(int i = 0; i < indexers.length; i++) {
+            indexers[i].dump();
         }
     }
 
     /**
      * Flushes the indexed material currently held in memory to the disk,
      * making it available for searching.
-     * @throws com.sun.labs.minion.SearchEngineException If there is any error flushing the in-memory data.
+     * @throws com.sun.labs.minion.SearchEngineException If there is any error
+     * flushing the in-memory data.
      */
     public synchronized void flush()
             throws SearchEngineException {
@@ -482,8 +480,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             return;
         }
 
-        for(int i = 0; i < pipes.length; i++) {
-            pipes[i].flush();
+        //
+        // One indexer will drain the queue, so let's do that.
+        indexers[0].flush();
+        for(int i = 0; i < indexers.length; i++) {
+            indexers[i].dump();
         }
 
         if(metaDataStore != null) {
@@ -1086,9 +1087,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         //
         // Get the document key for the indexed document.
-        IndexEntry dke =
-                ((MemoryPartition) ((PipelineImpl) si).getIndexer()).
-                getDocumentDictionary().get(doc.getKey());
+//        IndexEntry dke =
+//                ((MemoryPartition) ((PipelineImpl) si).getIndexer()).
+//                getDocumentDictionary().get(doc.getKey());
 
         //
         // Figure out the ID of the field being asked for.
@@ -1126,9 +1127,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         //
         // Get the document key for the indexed document.
-        IndexEntry dke =
-                ((MemoryPartition) ((PipelineImpl) si).getIndexer()).
-                getDocumentDictionary().get(doc.getKey());
+//        IndexEntry dke =
+//                ((MemoryPartition) ((PipelineImpl) si).getIndexer()).
+//                getDocumentDictionary().get(doc.getKey());
 
         return null;
     }
@@ -1147,8 +1148,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         if(invFilePartitionManager != null) {
             invFilePartitionManager.purge();
-            for(int i = 0; i < pipes.length; i++) {
-                pipes[i].purge();
+            for(int i = 0; i < indexers.length; i++) {
+                indexers[i].purge();
             }
         }
         try {
@@ -1243,18 +1244,17 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         // Tell the partition managers that it's not OK to do any more merges.
         invFilePartitionManager.noMoreMerges();
 
-        if(pipes.length > 1) {
-            for(int i = 0; i < pipes.length;
-                    i++) {
-                pipes[i].shutdown();
+        if(indexers.length > 1) {
+            for(int i = 0; i < indexers.length; i++) {
+                indexers[i].finish();
                 try {
-                    pipeThreads[i].join();
+                    indexingThreads[i].join();
                 } catch(InterruptedException ex) {
                     logger.warning("Interrupted during join for pipeline " + i);
                 }
             }
         } else {
-            pipes[0].shutdown();
+            indexers[0].finish();
         }
 
         //
@@ -1321,7 +1321,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * engine.
      */
     public SimpleIndexer getSimpleIndexer() {
-        return (SimpleIndexer) pipelineFactory.getSynchronousPipeline(this);
+        return new Indexer();
     }
 
     /**
@@ -1330,13 +1330,14 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * documents returned by a search.
      */
     public HLPipeline getHLPipeline() {
-        return pipelineFactory.getHLPipeline(this);
+        return pipelineFactory.getHLPipeline();
     }
 
     /**
      * Gets a string description of the search engine.
      * @return a string description of the search engine.
      */
+    @Override
     public String toString() {
         return "indexDir: " + indexConfig.getIndexDirectory();
     }
@@ -1440,43 +1441,30 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         indexingQueueLength =
                 ps.getInt(PROP_INDEXING_QUEUE_LENGTH);
         indexingQueue =
-                new ArrayBlockingQueue(indexingQueueLength);
+                new ArrayBlockingQueue<Indexable>(indexingQueueLength);
 
         //
         // Make our indexing pipelines.
-        numPipelines =
-                ps.getInt(PROP_NUM_PIPELINES);
-        pipes = new PipelineImpl[numPipelines];
-        if(pipes.length == 1) {
-            pipes[0] = pipelineFactory.getSynchronousPipeline(this);
+        numIndexingThreads =
+                ps.getInt(PROP_NUM_INDEXING_THREADS);
+        indexers = new Indexer[numIndexingThreads];
+        if(indexers.length == 1) {
+            indexers[0] = new Indexer();
         } else {
-            for(int i = 0; i < pipes.length;
-                    i++) {
-                pipes[i] =
-                        pipelineFactory.getAsynchronousPipeline(this,
-                                                                indexingQueue);
-            }
-        }
-
-        //
-        // Start the threads for the pipelines.
-        if(pipes.length > 1) {
-            pipeThreads = new Thread[pipes.length];
-            for(int i = 0; i < pipeThreads.length;
-                    i++) {
-                pipeThreads[i] =
-                        new Thread((AsyncPipelineImpl) pipes[i], "pipeline-" + i);
-                pipeThreads[i].start();
+            //
+            // Start threads for the indexers.
+            indexingThreads = new Thread[indexers.length];
+            for(int i = 0; i < indexers.length; i++) {
+                indexers[i] = new Indexer();
+                indexingThreads[i] = new Thread(indexers[i]);
+                indexingThreads[i].start();
             }
         }
 
         //
         // Define all of our fields.
-        indexConfig =
-                (IndexConfig) ps.getComponent(PROP_INDEX_CONFIG);
-        for(Iterator i = indexConfig.getFieldInfo().values().iterator();
-                i.hasNext();) {
-            FieldInfo fi = (FieldInfo) i.next();
+        indexConfig = (IndexConfig) ps.getComponent(PROP_INDEX_CONFIG);
+        for(FieldInfo fi : indexConfig.getFieldInfo().values()) {
             try {
                 defineField(fi);
             } catch(SearchEngineException ex) {
@@ -1485,10 +1473,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             }
         }
 
-        buildClassifiers =
-                ps.getBoolean(PROP_BUILD_CLASSIFIERS);
-        minMemoryPercent =
-                ps.getDouble(PROP_MIN_MEMORY_PERCENT);
+        buildClassifiers = ps.getBoolean(PROP_BUILD_CLASSIFIERS);
+        minMemoryPercent = ps.getDouble(PROP_MIN_MEMORY_PERCENT);
         dumper = (Dumper) ps.getComponent(PROP_DUMPER);
         dumper.setSearchEngine(this);
     }
@@ -1518,5 +1504,196 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public void setQueryConfig(QueryConfig queryConfig) {
         this.queryConfig = queryConfig;
         queryConfig.setEngine(this);
+    }
+
+    /**
+     * A class to index documents, either as part of a thread or used directly.
+     */
+    private class Indexer implements Runnable, SimpleIndexer {
+
+        private InvFileMemoryPartition part = new InvFileMemoryPartition(
+                invFilePartitionManager);
+
+        private boolean finished;
+
+        private boolean runningInThread;
+
+        private String key;
+
+        public void run() {
+            runningInThread = true;
+            while(!finished) {
+                try {
+                    index(indexingQueue.poll(100,
+                                             TimeUnit.MILLISECONDS));
+                } catch(InterruptedException ex) {
+                    return;
+                }
+            }
+            flush();
+            dumper.dump(part);
+        }
+
+        public synchronized void index(Indexable doc) {
+            if(doc != null) {
+                part.index(doc);
+            }
+        }
+
+        public synchronized void flush() {
+            List<Indexable> l = new ArrayList<Indexable>();
+            indexingQueue.drainTo(l);
+            for(Indexable doc : l) {
+                index(doc);
+            }
+        }
+
+        public void purge() {
+            part = new InvFileMemoryPartition(invFilePartitionManager);
+        }
+
+        public void dump() {
+            InvFileMemoryPartition op = part;
+            synchronized(this) {
+                part = new InvFileMemoryPartition(invFilePartitionManager);
+            }
+            dumper.dump(op);
+        }
+
+        public void finish() {
+            finished = true;
+
+            //
+            // If we're being used as a simple indexer, then we need to dump
+            // our data.
+            if(!runningInThread) {
+                dumper.dump(part);
+            }
+        }
+
+        public void indexDocument(Indexable doc) throws SearchEngineException {
+            index(doc);
+        }
+
+        public void indexDocument(Document doc) throws SearchEngineException {
+        }
+
+        public void startDocument(String key) {
+            this.key = key;
+            part.startDocument(key);
+        }
+
+        public void addField(String name, String value) {
+            FieldInfo fi = getFieldInfo(name);
+            if(fi == null) {
+                logger.warning(String.format("Unknown field %s for %s", name,
+                                             key));
+                return;
+            }
+            part.addField(getFieldInfo(name), value);
+        }
+
+        public void addField(String name, IndexableString value) {
+            FieldInfo fi = getFieldInfo(name);
+            if(fi == null) {
+                logger.warning(String.format("Unknown field %s for %s", name,
+                                             key));
+                return;
+            }
+            part.addField(getFieldInfo(name), value);
+        }
+
+        public void addField(String name, Date value) {
+            FieldInfo fi = getFieldInfo(name);
+            if(fi == null) {
+                logger.warning(String.format("Unknown field %s for %s", name,
+                                             key));
+                return;
+            }
+            part.addField(getFieldInfo(name), value);
+        }
+
+        public void addField(String name, Long value) {
+            FieldInfo fi = getFieldInfo(name);
+            if(fi == null) {
+                logger.warning(String.format("Unknown field %s for %s", name,
+                                             key));
+                return;
+            }
+            part.addField(getFieldInfo(name), value);
+        }
+
+        public void addField(String name, Integer value) {
+            FieldInfo fi = getFieldInfo(name);
+            if(fi == null) {
+                logger.warning(String.format("Unknown field %s for %s", name,
+                                             key));
+                return;
+            }
+            part.addField(getFieldInfo(name), value);
+        }
+
+        public void addField(String name, Double value) {
+            FieldInfo fi = getFieldInfo(name);
+            if(fi == null) {
+                logger.warning(String.format("Unknown field %s for %s", name,
+                                             key));
+                return;
+            }
+            part.addField(getFieldInfo(name), value);
+        }
+
+        public void addField(String name, Float value) {
+            FieldInfo fi = getFieldInfo(name);
+            if(fi == null) {
+                logger.warning(String.format("Unknown field %s for %s", name,
+                                             key));
+                return;
+            }
+            part.addField(getFieldInfo(name), value);
+        }
+
+        public void addField(String name, Object[] values) {
+            FieldInfo fi = getFieldInfo(name);
+            if(fi == null) {
+                logger.warning(String.format("Unknown field %s for %s", name,
+                                             key));
+                return;
+            }
+            for(Object value : values) {
+                part.addField(getFieldInfo(name), value);
+            }
+        }
+
+        public void addField(String name,
+                             Collection<Object> values) {
+            FieldInfo fi = getFieldInfo(name);
+            if(fi == null) {
+                logger.warning(String.format("Unknown field %s for %s", name,
+                                             key));
+            }
+            for(Object value : values) {
+                part.addField(getFieldInfo(name), value);
+            }
+        }
+
+        public void addTerm(String term) {
+            addTerm(null, term, 1);
+        }
+
+        public void addTerm(String term, int count) {
+            addTerm(null, term, count);
+        }
+
+        public void addTerm(String field, String term, int count) {
+            part.addTerm(field, term, count);
+        }
+
+        public void endDocument() {
+        }
+
+        public boolean isIndexed(String key) {
+            return part.isIndexed(key) || invFilePartitionManager.isIndexed(key);
+        }
     }
 }

@@ -66,6 +66,7 @@ public class TokenCollectorStage extends StageAdapter {
     /**
      * Processes a token.
      */
+    @Override
     public void token(Token tok) {
 
         addPunct();
@@ -97,6 +98,7 @@ public class TokenCollectorStage extends StageAdapter {
      * Keeps track of the punctuation that we've been given, so that we
      * don't have multiple elements in the array of punctuation.
      */
+    @Override
     public void punctuation(Token punct) {
         this.punct.append(punct.getToken());
         if(pStart == -1) {
@@ -168,6 +170,7 @@ public class TokenCollectorStage extends StageAdapter {
         return ret;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for(int i = 0; i < ranges.length; i++) {
@@ -176,6 +179,7 @@ public class TokenCollectorStage extends StageAdapter {
         return sb.toString();
     }
 
+    @Override
     public boolean equals(Object o) {
         if(o instanceof TokenCollectorStage) {
             TokenCollectorStage ocs = (TokenCollectorStage) o;
