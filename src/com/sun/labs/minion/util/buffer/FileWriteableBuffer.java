@@ -218,21 +218,30 @@ public class FileWriteableBuffer implements WriteableBuffer {
 
         if(bPos + bytes.length >= buff.length) {
             flush();
-        } else {
-            if(bytes.length >= buff.length) {
-                try {
-                    raf.write(bytes, 0, bytes.length);
-                } catch(java.io.IOException ioe) {
-                    logger.log(Level.SEVERE, "Error writing file", ioe);
-                    buff = null;
-                }
-                return this;
-            } else {
-
-                System.arraycopy(bytes, 0, buff, bPos, bytes.length);
-                bPos += bytes.length;
-            }
         }
+        
+        //
+        // Given the above condition, we either have an empty buffer where
+        // everything's been written to disk, or the bytes will fit in the
+        // buffer.  
+        if(bytes.length >= buff.length) {
+            //
+            // If there's too many bytes for our buffer, just go ahead and 
+            // write them to the file.
+            try {
+                raf.write(bytes, 0, bytes.length);
+            } catch(java.io.IOException ioe) {
+                logger.log(Level.SEVERE, "Error writing file", ioe);
+                buff = null;
+            }
+            return this;
+        } else {
+            //
+            // Buffer them up.
+            System.arraycopy(bytes, 0, buff, bPos, bytes.length);
+            bPos += bytes.length;
+        }
+        pos += bytes.length;
         return this;
     }    
     
