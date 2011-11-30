@@ -810,9 +810,6 @@ public class PositionPostings implements Postings {
                     currPosns = new int[currFreq];
                 }
                 int prevPosn = 0;
-                if(currID == 6155) {
-                    logger.info(String.format("rPosn:%d", rPosn.position()));
-                }
                 for(int i = 0; i < currFreq; i++) {
                     prevPosn += rPosn.byteDecode();
                     currPosns[i] = prevPosn;
