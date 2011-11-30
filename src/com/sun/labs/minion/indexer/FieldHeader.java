@@ -44,7 +44,7 @@ class FieldHeader {
     /**
      * The offsets of the starts of the dictionaries that make up the fields.
      */
-    protected long[] dictOffsets = new long[Field.NUM_DICTS];
+    protected long[] dictOffsets = new long[MemoryDictionaryBundle.Type.values().length];
 
     /**
      * The offset of the start of the bigram dictionary for the tokens in the

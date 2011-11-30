@@ -89,7 +89,7 @@ public class InvFileDiskPartition extends DiskPartition {
             dictFile.seek(offset.getOffset());
             FieldInfo info = manager.getMetaFile().getFieldInfo(offset.getId());
             fields[offset.getId()] =
-                    new DiskField(info, dictFile, vectorLengths,
+                    new DiskField(this, info, dictFile, vectorLengths,
                     postFiles, new EntryFactory());
         }
     }

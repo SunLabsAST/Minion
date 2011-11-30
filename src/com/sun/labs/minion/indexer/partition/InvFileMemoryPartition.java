@@ -114,7 +114,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
             fields = Arrays.copyOf(fields, fid * 2);
         }
         if(fields[fid] == null) {
-            fields[fid] = new MemoryField(fi, null);
+            fields[fid] = new MemoryField(this, fi, null);
         }
         return fields[fid];
     }
@@ -188,9 +188,11 @@ public class InvFileMemoryPartition extends MemoryPartition {
         // offsets for the term statistics dictionaries for the fields.
         TermStatsHeader tsh = new TermStatsHeader();
         for(MemoryField mf : fields) {
-            if(mf != null) {
-                ph.addOffset(mf.getInfo().getID(), dictFile.getFilePointer());
+            if(mf == null) {
+                continue;
             }
+            logger.info(String.format("Dumping %s", mf));
+            ph.addOffset(mf.getInfo().getID(), dictFile.getFilePointer());
             tsh.addOffset(mf.getInfo().getID(), tsRAF.getFilePointer());
             mf.dump(indexDir, dictFile, postOut, tsRAF, vlRAF, maxDocumentID);
         }

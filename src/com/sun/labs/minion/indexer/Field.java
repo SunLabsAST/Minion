@@ -12,20 +12,6 @@ import java.util.logging.Logger;
 public abstract class Field {
     private static final Logger logger = Logger.getLogger(Field.class.getName());
     
-    public static int CASED_TOKENS = 0;
-
-    public static int UNCASED_TOKENS = 1;
-
-    public static int STEMMED_TOKENS = 2;
-
-    public static int RAW_SAVED = 3;
-
-    public static int UNCASED_SAVED = 4;
-
-    public static int VECTORS = 5;
-
-    public static int NUM_DICTS = 6;
-
     protected boolean cased;
 
     protected boolean saved;
@@ -49,7 +35,8 @@ public abstract class Field {
      */
     protected Stemmer stemmer;
 
-    public Field(FieldInfo info) {
+    public Field(Partition partition, FieldInfo info) {
+        this.partition = partition;
         this.info = info;
         tokenized = info.hasAttribute(FieldInfo.Attribute.TOKENIZED);
         stemmed = info.hasAttribute(FieldInfo.Attribute.STEMMED);

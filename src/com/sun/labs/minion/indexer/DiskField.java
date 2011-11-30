@@ -5,6 +5,7 @@ import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
@@ -22,12 +23,13 @@ public class DiskField extends Field {
 
     private DiskDictionaryBundle bundle;
 
-    public DiskField(FieldInfo info,
+    public DiskField(DiskPartition partition,
+            FieldInfo info,
                      RandomAccessFile dictFile,
                      RandomAccessFile vectorLengthsFile,
                      RandomAccessFile[] postIn,
                      EntryFactory factory) throws java.io.IOException {
-        super(info);
+        super(partition, info);
         bundle = new DiskDictionaryBundle(this, dictFile, vectorLengthsFile,
                                           postIn, factory);
     }

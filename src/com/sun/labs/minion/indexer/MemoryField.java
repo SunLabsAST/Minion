@@ -4,6 +4,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.pipeline.StageAdapter;
 import com.sun.labs.minion.pipeline.Token;
@@ -33,8 +34,8 @@ public class MemoryField extends Field {
      */
     private int maximumDocumentID;
 
-    public MemoryField(FieldInfo info, EntryFactory factory) {
-        super(info);
+    public MemoryField(MemoryPartition partition, FieldInfo info, EntryFactory factory) {
+        super(partition, info);
         logger.info(String.format("Making field for %s", info));
         dicts = new MemoryDictionaryBundle<Comparable>(this, factory);
         pipeline = info.getPipeline();
@@ -125,4 +126,11 @@ public class MemoryField extends Field {
         }
 
     }
+
+    @Override
+    public String toString() {
+        return String.format("MemoryField %s", info);
+    }
+
+
 }

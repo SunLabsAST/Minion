@@ -167,50 +167,44 @@ public class FieldInfo implements Cloneable, Configurable {
          * is used by default.
          */
         TOKENIZED,
-
         /**
          * Values in the field will be placed into the main dictionary, for use as
          * query terms.  This is useful in conjunction with the <code>TOKENIZED</code>
          * attribute.
          */
         INDEXED,
-
         /**
          * The values tokenized from this field will be stored in a document vector
          * for this field, which will allow document similarity computations to
          * be done using the data from this field.
          */
         VECTORED,
-
         /**
          * When things are added to the field, they will be stored with their
          * original case intact.
          */
         CASED,
-
         /**
          * When things are added to the field, they will be stored in an uncased
          * way so that they can be looked up using any case.
          */
         UNCASED,
-
         /**
          * When tokens are indexed into the field, the tokens will be stored
          * as stems.  At query time, search terms will be stemmed as well.
          */
         STEMMED,
-
         /**
          * When tokens are indexed into the field, the tokens will be stored
          * unstemmed.   At query time, search terms will be expanded.
          */
         UNSTEMMED,
-
         /**
          * The values for this field will be stored as-is in the index for use in
          * relational queries or for sorting search results.
          */
         SAVED;
+
     }
 
     /**
@@ -218,9 +212,10 @@ public class FieldInfo implements Cloneable, Configurable {
      * can be stored in the dictionary.
      */
     public enum Type {
+
         NONE, STRING, INTEGER, FLOAT, DATE;
+
     }
-    
     /**
      * The property name for the type.
      */
@@ -230,13 +225,16 @@ public class FieldInfo implements Cloneable, Configurable {
     /**
      * The set of attributes for the class.
      */
-    @ConfigEnumSet(type=FieldInfo.Attribute.class, defaultList={"INDEXED", "TOKENIZED", "VECTORED"})
+    @ConfigEnumSet(type = FieldInfo.Attribute.class, defaultList = {"INDEXED",
+                                                                    "TOKENIZED",
+                                                                    "VECTORED"})
     public static final String PROP_ATTRIBUTES = "attributes";
 
     /**
      * A factory for pipelines.
      */
-    @ConfigComponent(type=com.sun.labs.minion.pipeline.PipelineFactory.class, mandatory=false)
+    @ConfigComponent(type = com.sun.labs.minion.pipeline.PipelineFactory.class, mandatory =
+    false)
     public static final String PROP_PIPELINE_FACTORY = "pipelineFactory";
 
     private PipelineFactory pipelineFactory;
@@ -328,8 +326,8 @@ public class FieldInfo implements Cloneable, Configurable {
      * attributes do not contain the SAVED attribute.
      */
     public FieldInfo(int id, String name,
-            EnumSet<Attribute> attributes,
-            Type type) {
+                     EnumSet<Attribute> attributes,
+                     Type type) {
         this.id = id;
         this.name = name == null ? null : name.toLowerCase();
         if(attributes != null) {
@@ -439,9 +437,8 @@ public class FieldInfo implements Cloneable, Configurable {
             case STRING:
                 return "";
             default:
-                logger.warning("Field: " + name + " " +
-                        "has unknown SAVED type: " + type +
-                        ", using STRING.");
+                logger.warning("Field: " + name + " "
+                        + "has unknown SAVED type: " + type + ", using STRING.");
                 return "";
         }
 
@@ -473,8 +470,8 @@ public class FieldInfo implements Cloneable, Configurable {
 
     @Override
     public String toString() {
-        return this.name + ": " + id + " type: " + type + " attributes: " +
-                attributes;
+        return this.name + ": " + id + " type: " + type + " attributes: "
+                + attributes;
     }
 
     /**
@@ -493,9 +490,11 @@ public class FieldInfo implements Cloneable, Configurable {
         //
         // The name of the field will be the name of the configured component.
         name = ps.getInstanceName();
-        attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(PROP_ATTRIBUTES);
+        attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(
+                PROP_ATTRIBUTES);
         type = (Type) ps.getEnum(PROP_TYPE);
-        pipelineFactory = (PipelineFactory) ps.getComponent(PROP_PIPELINE_FACTORY);
+        pipelineFactory = (PipelineFactory) ps.getComponent(
+                PROP_PIPELINE_FACTORY);
     }
 
     /**
@@ -508,8 +507,9 @@ public class FieldInfo implements Cloneable, Configurable {
         try {
             type = Enum.valueOf(Type.class, typeString.toUpperCase());
         } catch(IllegalArgumentException iae) {
-            logger.severe(String.format("Unknown type for field %s: %s, defaulting to NONE",
-                    this.name, typeString));
+            logger.severe(String.format(
+                    "Unknown type for field %s: %s, defaulting to NONE",
+                                        this.name, typeString));
             type = Type.NONE;
         }
     }
@@ -555,12 +555,17 @@ public class FieldInfo implements Cloneable, Configurable {
      */
     public static EnumSet<Attribute> getIndexedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                Attribute.TOKENIZED,
-                Attribute.VECTORED);
+                          Attribute.TOKENIZED,
+                          Attribute.CASED,
+                          Attribute.UNCASED,
+                          Attribute.VECTORED);
     }
 
     public static EnumSet<Attribute> getDefaultAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                Attribute.TOKENIZED);
+                          Attribute.CASED,
+                          Attribute.UNCASED,
+                          Attribute.TOKENIZED);
     }
 } // FieldInfo
+

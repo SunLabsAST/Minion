@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.RandomAccessFile;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
@@ -273,9 +274,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         // entries in non-document ID order.  We'll build the actual postings
         // lists at dump time.
         if(docID >= dv.length) {
-            List[] temp = new List[(docID + 1) * 2];
-            System.arraycopy(dv, 0, temp, 0, dv.length);
-            dv = temp;
+            dv = Arrays.copyOf(dv, (docID+1) * 2);
         }
         if(dv[docID] == null) {
             dv[docID] = new ArrayList<IndexEntry>();
