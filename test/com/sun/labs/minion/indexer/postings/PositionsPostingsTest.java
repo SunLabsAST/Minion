@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.indexer.postings.io.RAMPostingsInput;
@@ -16,10 +12,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import org.junit.After;
@@ -30,25 +26,27 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Tests for the ID-only postings.
+ * Tests for position postings.
  */
-public class IDFreqPostingsTest {
+public class PositionsPostingsTest {
 
     private static final Logger logger = Logger.getLogger(
-            IDFreqPostingsTest.class.getName());
+            PositionsPostingsTest.class.getName());
 
-    private RAMPostingsOutput[] postOut = new RAMPostingsOutput[1];
+    private RAMPostingsOutput[] postOut = new RAMPostingsOutput[2];
 
-    private long[] offsets = new long[1];
+    private long[] offsets = new long[2];
 
-    private int[] sizes = new int[1];
+    private int[] sizes = new int[2];
 
     Random rand = new Random();
 
     private static String[] previousData = new String[]{};
 
-    public IDFreqPostingsTest() {
-        postOut[0] = new RAMPostingsOutput(2048);
+    public PositionsPostingsTest() {
+        for(int i = 0; i < postOut.length; i++) {
+            postOut[i] = new RAMPostingsOutput(2048);
+        }
     }
 
     @BeforeClass
@@ -61,7 +59,9 @@ public class IDFreqPostingsTest {
 
     @Before
     public void setUp() {
-        postOut[0].cleanUp();
+        for(RAMPostingsOutput po : postOut) {
+            po.cleanUp();
+        }
     }
 
     @After
@@ -76,8 +76,9 @@ public class IDFreqPostingsTest {
         for(int i = 0; i < nIter; i++) {
             TestData r = null;
             try {
+                logger.info(String.format("Iteration %d", i));
                 r = new TestData(rand.nextInt(n) + 1, 64000);
-                IDFreqPostings p = r.encode();
+                PositionPostings p = r.encode();
                 r.iteration(p);
                 testPostingsEncoding(p, r);
             } catch(AssertionError ex) {
@@ -97,7 +98,8 @@ public class IDFreqPostingsTest {
     @Test
     public void testSimpleAdd() throws Exception {
         TestData simple = new TestData(new int[]{1, 4, 7, 10},
-                                       new int[]{1, 1, 1, 1});
+                new int[]{1, 1, 1, 1},
+                new int[]{7,3,2,4});
         simple.encode();
     }
 
@@ -106,9 +108,12 @@ public class IDFreqPostingsTest {
      */
     @Test
     public void testSimpleMultipleAdd() throws Exception {
-        TestData simple = new TestData(new int[]{1, 4, 7, 8, 10, 11, 17},
-                new int[]{4, 3, 2, 1, 1, 2, 1});
-        IDFreqPostings p = simple.encode();
+        TestData simple = new TestData(
+                new int[]{1, 4, 7, 8, 10, 11, 17},
+                new int[]{4, 3, 2, 1, 1, 2, 1}, 
+                new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36}
+                );
+        PositionPostings p = simple.encode();
         simple.iteration(p);
     }
 
@@ -118,14 +123,18 @@ public class IDFreqPostingsTest {
     @Test
     public void testSimpleClear() throws Exception {
         RAMPostingsOutput po = new RAMPostingsOutput();
-        TestData simple = new TestData(new int[]{1, 4, 7, 8, 10, 11, 17},
-                new int[]{4, 3, 2, 1, 1, 2, 1});
-        IDFreqPostings p = simple.encode();
+        TestData simple = new TestData(
+                new int[]{1, 4, 7, 8, 10, 11, 17},
+                new int[]{4, 3, 2, 1, 1, 2, 1},
+                new int[]{1, 2, 3, 4, 6, 10, 12, 1, 14, 7, 8, 10, 22, 36});
+        PositionPostings p = simple.encode();
         simple.iteration(p);
-        p.write(new PostingsOutput[] {po}, new long[1], new int[1]);
+        p.write(new PostingsOutput[]{po}, new long[1], new int[1]);
         p.clear();
         simple = new TestData(new int[]{1, 4, 7, 10},
-                new int[]{1, 1, 1, 1});
+                new int[]{1, 1, 1, 1}, 
+                new int[]{7, 3, 2, 4});
+
         simple.encode(p);
         simple.iteration(p);
     }
@@ -135,21 +144,19 @@ public class IDFreqPostingsTest {
      * @param p the postings we want to test
      * @param data the data that we're testing
      */
-    private void testPostingsEncoding(IDFreqPostings idp, TestData data) throws IOException {
-        idp.write(postOut, offsets, sizes);
+    private void testPostingsEncoding(PositionPostings posnPostings, TestData data) throws IOException {
+        posnPostings.write(postOut, offsets, sizes);
 
         RAMPostingsInput postIn = postOut[0].asInput();
         ReadableBuffer postBuff = postIn.read(offsets[0], sizes[0]);
 
 
-        long bsize = sizes[0];
-        long nb = 8 * data.unique.size();
+        long bsize = postBuff.position();
+        long nb = 4 * data.unique.size();
 
-        if(logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("%d bytes in buffer for %d bytes of data."
-                    + " Compression: %.2f%%", bsize,
-                    nb, 100 - ((double) bsize / nb) * 100));
-        }
+        logger.info(String.format("%d bytes in buffer for %d bytes of ids."
+                + " Compression: %.2f%%", bsize,
+                nb, 100 - ((double) bsize / nb) * 100));
 
         int n = postBuff.byteDecode();
         assertTrue(String.format("Wrong number of IDs: %d", n),
@@ -178,11 +185,11 @@ public class IDFreqPostingsTest {
             assertTrue(String.format(
                     "Incorrect ID: %d should be %d, decoded: %d", curr,
                     data.ids[i], gap),
-                       curr == data.ids[i]);
+                    curr == data.ids[i]);
             assertTrue(String.format(
                     "Incorrect freq: %d should be %d", freq,
                     data.freqs[i]),
-                       freq == data.freqs[i]);
+                    freq == data.freqs[i]);
 
             prev = curr;
         }
@@ -225,7 +232,7 @@ public class IDFreqPostingsTest {
             GZIPInputStream gzis = new GZIPInputStream(pdis);
             TestData td = new TestData(gzis);
             gzis.close();
-            IDFreqPostings p = td.encode();
+            PositionPostings p = td.encode();
             td.iteration(p);
             testPostingsEncoding(p, td);
         }
@@ -237,23 +244,23 @@ public class IDFreqPostingsTest {
     @Test
     public void testWriteAndRead() throws java.io.IOException {
         TestData td = new TestData(8192, 64000);
-        IDFreqPostings p = td.encode();
+        PositionPostings p = td.encode();
         File of = File.createTempFile("single", ".post");
         of.deleteOnExit();
         p.write(postOut, offsets, sizes);
-        IDFreqPostings p2 = (IDFreqPostings) Postings.Type.getPostings(Postings.Type.ID,
-                new PostingsInput[] {postOut[0].asInput()}, offsets, sizes);
+        PositionPostings p2 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID,
+                new PostingsInput[]{postOut[0].asInput()}, offsets, sizes);
         td.iteration(p2);
     }
 
     /**
-     * Test of merge method, of class IDFreqPostings.
+     * Test of merge method, of class PositionPostings.
      */
     @Test
     public void testAppend() throws java.io.IOException {
         testRandomAppend(8192);
     }
-    
+
     private void testRandomAppend(int size) throws java.io.IOException {
         for(int i = 0; i < 128; i++) {
             TestData d1 = new TestData(rand.nextInt(size));
@@ -261,17 +268,18 @@ public class IDFreqPostingsTest {
             testAppend(d1, d2);
         }
     }
+
     private void testAppend(TestData d1, TestData d2) throws java.io.IOException {
 
 
-        IDFreqPostings p1 = d1.encode();
-        IDFreqPostings p2 = d2.encode();
+        PositionPostings p1 = d1.encode();
+        PositionPostings p2 = d2.encode();
         int lastID = p1.getLastID();
 
-        long o1[] = new long[1];
-        int s1[] = new int[1];
-        long o2[] = new long[1];
-        int s2[] = new int[1];
+        long o1[] = new long[2];
+        int s1[] = new int[2];
+        long o2[] = new long[2];
+        int s2[] = new int[2];
         p1.write(postOut, o1, s1);
         p2.write(postOut, o2, s2);
 
@@ -279,17 +287,17 @@ public class IDFreqPostingsTest {
         TestData atd = new TestData(d1, d2, lastID + 1);
 
         try {
-            IDFreqPostings append = new IDFreqPostings();
-            p1 = (IDFreqPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ, postIn, o1, s1);
+            PositionPostings append = new PositionPostings();
+            p1 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ, postIn, o1, s1);
             d1.iteration(p1);
             append.append(p1, 1);
-            p2 = (IDFreqPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ, postIn, o2, s2);
+            p2 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ, postIn, o2, s2);
             d2.iteration(p2);
             append.append(p2, lastID + 1);
-            long o3[] = new long[1];
-            int s3[] = new int[1];
+            long o3[] = new long[2];
+            int s3[] = new int[2];
             append.write(postOut, o3, s3);
-            append = (IDFreqPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ, postIn, o3, s3);
+            append = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ, postIn, o3, s3);
             atd.iteration(append);
         } catch(AssertionError er) {
             File f = File.createTempFile("randomappend", ".data");
@@ -309,6 +317,8 @@ public class IDFreqPostingsTest {
 
         int[] freqs;
 
+        int[] posns;
+
         Set<Integer> unique;
 
         public TestData(int n) {
@@ -318,6 +328,7 @@ public class IDFreqPostingsTest {
         public TestData(int n, int maxFreq) {
             ids = new int[n];
             freqs = new int[n];
+            posns = new int[n];
             unique = new LinkedHashSet<Integer>();
 
             //
@@ -326,6 +337,7 @@ public class IDFreqPostingsTest {
             Random r = new Random();
             Zipf z = new Zipf(maxFreq, r);
             int prev = 0;
+            int pp = 0;
             for(int i = 0; i < ids.length; i++) {
 
                 //
@@ -336,15 +348,27 @@ public class IDFreqPostingsTest {
                 //
                 // A zipf outcome for the frequency, which will skew towards low
                 // numbers, as we would see in practice.
-                freqs[i] = z.getOutcome();
+                int freq = z.getOutcome();
+                freqs[i] = freq;
+
+                //
+                // Position data, which is also Zipf distributed.
+                if(pp + freq >= posns.length) {
+                    posns = Arrays.copyOf(posns, (pp + freq) * 2);
+                }
+                int prevPos = 0;
+                for(int j = 0; j < freqs[i]; j++) {
+                    posns[pp++] = prevPos + z.getOutcome();
+                }
+                unique.add(ids[i]);
                 prev = ids[i];
-                unique.add(prev);
             }
         }
 
-        public TestData(int[] ids, int[] freqs) {
+        public TestData(int[] ids, int[] freqs, int[] posns) {
             this.ids = ids;
             this.freqs = freqs;
+            this.posns = posns;
             unique = new LinkedHashSet<Integer>();
             for(int x : ids) {
                 unique.add(x);
@@ -374,6 +398,14 @@ public class IDFreqPostingsTest {
             for(int i = 0; i < ids.length; i++) {
                 freqs[i] = Integer.parseInt(nums[i]);
             }
+
+            line = r.readLine();
+            nums = line.split("\\s");
+            posns = new int[nums.length];
+            for(int i = 0; i < ids.length; i++) {
+                posns[i] = Integer.parseInt(nums[i]);
+            }
+
         }
 
         public TestData(TestData d1, TestData d2, int start) {
@@ -394,37 +426,42 @@ public class IDFreqPostingsTest {
             }
         }
 
-        public IDFreqPostings encode() {
-            IDFreqPostings p = new IDFreqPostings();
+        public PositionPostings encode() {
+            PositionPostings p = new PositionPostings();
             return encode(p);
         }
-        
-        public IDFreqPostings encode(IDFreqPostings p) {
-            OccurrenceImpl o = new OccurrenceImpl();
+
+        public PositionPostings encode(PositionPostings p) {
+            FieldOccurrenceImpl o = new FieldOccurrenceImpl();
             o.setCount(1);
             logger.fine(String.format("Encoding %d ids (%d unique)",
-                                      ids.length,
-                                      unique.size()));
+                    ids.length,
+                    unique.size()));
+            int pp = 0;
             for(int i = 0; i < ids.length; i++) {
                 o.setID(ids[i]);
-                for(int j = 0; j < freqs[i]; j++) {
+                for(int j = 0; j < freqs[i]; j++, pp++) {
+                    o.setPos(posns[pp]);
                     p.add(o);
                 }
             }
             return p;
         }
 
-        public void iteration(IDFreqPostings p) {
-            PostingsIterator pi = p.iterator(null);
+        public void iteration(PositionPostings p) {
+            
+            PostingsIteratorFeatures features = new PostingsIteratorFeatures();
+            features.setPositions(true);
+            PostingsIteratorWithPositions pi = (PostingsIteratorWithPositions) p.iterator(features);
 
             assertNotNull("Null postings iterator", pi);
 
             if(ids.length != pi.getN()) {
-                fail(String.format("Expected %d ids got %d",
-                                   ids.length, pi.getN()));
+                fail(String.format("Expected %d ids got %d", ids.length, pi.getN()));
             }
 
             int i = 0;
+            int pp = 0;
             while(pi.next()) {
                 int expectedID = ids[i];
                 int expectedFreq = freqs[i];
@@ -435,6 +472,14 @@ public class IDFreqPostingsTest {
                         "Incorrect freq %d, got %d",
                         expectedFreq, pi.getFreq()), expectedFreq
                         == pi.getFreq());
+                int[] piPosn = pi.getPositions();
+                for(int j = 0; j < expectedFreq; j++, pp++) {
+                    assertTrue(String.format(
+                            "Incorrect position, expected %d, got %d",
+                            posns[pp], piPosn[j]), 
+                            posns[pp] == piPosn[j]);
+                    
+                }
                 i++;
             }
         }
@@ -444,8 +489,14 @@ public class IDFreqPostingsTest {
                 out.format("%d ", id);
             }
             out.println("");
+            int tf = 0;
             for(int freq : freqs) {
                 out.format("%d ", freq);
+                tf += freq;
+            }
+            out.println("");
+            for(int i = 0; i < tf; i++) {
+                out.format("%d ", posns[i]);
             }
             out.println("");
         }

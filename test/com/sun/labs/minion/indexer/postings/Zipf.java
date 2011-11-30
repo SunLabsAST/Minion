@@ -40,8 +40,6 @@ public class Zipf {
             esum += estimates[i];
             summedEstimates[i] = esum;
         }
-        
-        logger.info(String.format("esum: %.3f", esum));
     }
 
     public int getOutcome() {
