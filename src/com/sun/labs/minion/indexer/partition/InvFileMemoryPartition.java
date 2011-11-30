@@ -195,7 +195,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
             if(mf == null) {
                 continue;
             }
-            logger.info(String.format("Dumping %s", mf.getInfo().getName()));
+            logger.fine(String.format("Dumping %s", mf.getInfo().getName()));
             ph.addOffset(mf.getInfo().getID(), dictFile.getFilePointer());
             long termStatsOff = tsRAF.getFilePointer();
             mf.dump(indexDir, dictFile, postOut, tsRAF, vlRAF, maxDocumentID);

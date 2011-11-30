@@ -31,9 +31,7 @@ import java.util.logging.Logger;
  */
 public class TFIDF implements WeightingFunction {
 
-    protected static Logger logger = Logger.getLogger(TFIDF.class.getName());
-
-    protected static String logTag = "TFIDF";
+    protected static final Logger logger = Logger.getLogger(TFIDF.class.getName());
 
     /**
      * Initializes the TFIDF weighting function for the given term,

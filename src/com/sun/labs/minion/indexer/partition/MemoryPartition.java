@@ -34,6 +34,7 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
+import com.sun.labs.minion.util.StopWatch;
 import java.util.logging.Logger;
 
 /**
@@ -93,6 +94,9 @@ public abstract class MemoryPartition extends Partition {
         if(docDict.size() == 0) {
             return -1;
         }
+
+        StopWatch sw = new StopWatch();
+        sw.start();
 
         partNumber = manager.getNextPartitionNumber();
 
@@ -166,6 +170,9 @@ public abstract class MemoryPartition extends Partition {
             postOut[i].flush();
             postStream[i].close();
         }
+        sw.stop();
+        logger.info(String.format("Dump of %d docs took %dms",
+                                  docDict.size(), sw.getTime()));
         return partNumber;
     }
 

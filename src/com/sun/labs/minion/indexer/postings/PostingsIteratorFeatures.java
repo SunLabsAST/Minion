@@ -119,10 +119,10 @@ public class PostingsIteratorFeatures implements Cloneable {
                                     float mult,
                                     boolean positions) {
         
-        this.wf            = wf;
-        this.wc            = wc;
-        this.multiplier          = mult;
-        this.positions     = positions;
+        this.wf = wf;
+        this.wc = wc;
+        this.multiplier = mult;
+        this.positions = positions;
     }
 
     /**

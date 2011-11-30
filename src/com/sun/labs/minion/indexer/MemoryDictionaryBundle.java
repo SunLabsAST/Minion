@@ -464,8 +464,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         if(getTermDictionary(false) != null) {
 
-            logger.info(String.format("Dumping term stats"));
-
             //
             // Write out our document vector lengths.
             header.vectorLengthOffset = vectorLengthsFile.getFilePointer();

@@ -285,9 +285,9 @@ public class IDFreqPostings extends IDPostings {
         @Override
         public float getWeight() {
             if(wf == null) {
-                return freq;
+                return getFreq();
             }
-            wc.fdt = freq;
+            wc.fdt = getFreq();
             return wf.termWeight(wc);
         }
     }

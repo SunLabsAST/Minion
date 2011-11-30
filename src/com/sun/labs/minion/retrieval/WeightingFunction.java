@@ -24,9 +24,6 @@
 
 package com.sun.labs.minion.retrieval;
 
-import com.sun.labs.minion.indexer.partition.Partition;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
-
 /**
  * An interface for a term weighting function that can be used during
  * retrieval, classification, and profiling operations.  Classes that

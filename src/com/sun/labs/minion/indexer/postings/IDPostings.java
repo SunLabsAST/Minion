@@ -23,6 +23,8 @@
  */
 package com.sun.labs.minion.indexer.postings;
 
+import com.sun.labs.minion.retrieval.WeightingComponents;
+import com.sun.labs.minion.retrieval.WeightingFunction;
 import java.util.Arrays;
 
 
