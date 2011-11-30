@@ -218,21 +218,22 @@ public class FieldInfo implements Cloneable, Configurable {
     /**
      * The property name for the type.
      */
-    @ConfigEnum(type = FieldInfo.Type.class, defaultValue = "STRING")
+    @ConfigEnum(type = FieldInfo.Type.class, defaultValue = "NONE")
     public static final String PROP_TYPE = "type";
 
     /**
      * The set of attributes for the class.
      */
     @ConfigEnumSet(type = FieldInfo.Attribute.class, defaultList = {"INDEXED",
-                                                                    "TOKENIZED",
-                                                                    "VECTORED"})
+        "TOKENIZED",
+        "VECTORED",
+        "UNCASED", "CASED"})
     public static final String PROP_ATTRIBUTES = "attributes";
 
     /**
      * A factory for pipelines.
      */
-    @ConfigString(mandatory=false)
+    @ConfigString(defaultValue=FieldInfo.DEFAULT_PIPELINE_FACTORY_NAME)
     public static final String PROP_PIPELINE_FACTORY_NAME = "pipelineFactoryName";
 
     private String pipelineFactoryName;
@@ -494,14 +495,12 @@ public class FieldInfo implements Cloneable, Configurable {
      * @see com.sun.labs.util.props.Configurable#newProperties(com.sun.labs.util.props.PropertySheet)
      *
      */
-    public void newProperties(PropertySheet ps)
-            throws PropertyException {
+    public void newProperties(PropertySheet ps) throws PropertyException {
 
         //
         // The name of the field will be the name of the configured component.
         name = ps.getInstanceName();
-        attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(
-                PROP_ATTRIBUTES);
+        attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(PROP_ATTRIBUTES);
         type = (Type) ps.getEnum(PROP_TYPE);
         pipelineFactoryName = ps.getString(PROP_PIPELINE_FACTORY_NAME);
     }
