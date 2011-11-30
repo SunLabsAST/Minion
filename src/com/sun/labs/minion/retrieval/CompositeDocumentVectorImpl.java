@@ -34,6 +34,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.WeightedField;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -41,16 +42,13 @@ import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Set;
 import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.classification.WeightedFeature;
 import com.sun.labs.minion.indexer.MetaFile;
-import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
-import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
-import com.sun.labs.minion.indexer.postings.FieldedPostingsIterator;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.util.StopWatch;
 import java.util.logging.Logger;
@@ -73,7 +71,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
     /**
      * The document key for this entry.
      */
-    private transient DocKeyEntry key;
+    private transient QueryEntry key;
 
     /**
      * The name of the key, which will survive transport.
@@ -159,7 +157,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
      * <code>findSimilar<code> operation.
      */
     public CompositeDocumentVectorImpl(ResultImpl r, WeightedField[] fields) {
-        this(r.set.getEngine(), r.ag.part.getDocumentTerm(r.doc), fields);
+        this(r.set.getEngine(), r.ag.part.getDocumentDictionary().getByID(r.doc), fields);
     }
 
     /**
@@ -178,13 +176,13 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
      * proceed.
      */
     public CompositeDocumentVectorImpl(SearchEngine e,
-            DocKeyEntry key, WeightedField[] fields) {
+            QueryEntry key, WeightedField[] fields) {
         this(e, key, fields, e.getQueryConfig().getWeightingFunction(),
                 e.getQueryConfig().getWeightingComponents());
     }
 
     public CompositeDocumentVectorImpl(SearchEngine e,
-            DocKeyEntry key, WeightedField[] fields,
+            QueryEntry key, WeightedField[] fields,
             WeightingFunction wf,
             WeightingComponents wc) {
 
@@ -258,11 +256,13 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
             if(field == null) {
                 continue;
             }
-            int fid = getFieldID(field, mf);
+
+            DiskField df = ((InvFileDiskPartition) key.getPartition()).getDF(field.getFieldName());
+            int fid = df.getInfo().getID();
             this.fields[fid] = field;
             fieldIDs[fid] = 1;
             fieldWeights[fid] = field.getWeight();
-            fieldLengths[fid] = key.getDocumentVectorLength(fid);
+            fieldLengths[fid] = df.getDocumentVectorLength(key.getID());
         }
     }
 
@@ -316,7 +316,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
             fid = 0;
         } else {
             FieldInfo fi = mf.getFieldInfo(field.getFieldName());
-            if(!fi.isVectored()) {
+            if(!fi.hasAttribute(FieldInfo.Attribute.TOKENIZED)) {
                 logger.warning("Non vectored field: " + fi.getName() +
                         " for composite document vector");
             }
@@ -325,7 +325,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
         return fid;
     }
 
-    public DocKeyEntry getEntry() {
+    public QueryEntry getEntry() {
         return key;
     }
 
@@ -515,7 +515,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
                 continue;
             }
 
-            HE el = new HE(fields[i], i, vecs[i]);
+            HE el = new HE(fields[i], null, i, vecs[i]);
             if(el.next()) {
                 h.offer(el);
             }
@@ -728,11 +728,10 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
         if(key != null) {
             part = (DiskPartition) key.getPartition();
         }
-        PostingsIteratorFeatures feat =
-                new PostingsIteratorFeatures(wf, wc);
-        feat.setFields(fieldIDs);
-        for(DiskPartition curr : e.getManager().getActivePartitions()) {
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
+        for(DiskPartition dp : e.getManager().getActivePartitions()) {
 
+            InvFileDiskPartition curr = (InvFileDiskPartition) dp;
             if(curr.isClosed()) {
                 continue;
             }
@@ -751,22 +750,23 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
             for(int i = 0; i < fieldFeatures.length; i++) {
                 if(fieldFeatures[i] != null) {
                     scores[i] = new float[curr.getMaxDocumentID() + 1];
-                    HE el = new HE(fields[i], i, fieldFeatures[i]);
+                    HE el = new HE(fields[i], curr.getDF(fields[i].getFieldName()), i, fieldFeatures[i]);
                     if(el.next()) {
                         h.offer(el);
                     }
                 }
             }
 
+
             //
             // A set of weights that we can apply to the weights from the postings.
             // We're setting it to be long enough that we don't have to sort things
             // out too much.
             float[] fweights = new float[fieldFeatures.length];
+            
             //
             // OK, now process the heap.  We can ignore features that are not in
             // our set of feature names.
-
             while(h.size() > 0) {
                 HE top = h.peek();
                 WeightedFeature cf = top.cf;
@@ -789,36 +789,23 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
                 while(top != null && top.cf.getName().equals(cf.getName())) {
                     top = h.poll();
                     fweights[top.fieldID] = top.cf.getWeight();
-                    if(top.next()) {
-                        h.offer(top);
-                    }
-                    top = h.peek();
-                }
 
-                //
-                // Okey doke.  Now we have the weights for this features for 
-                // the fields.  Let's go ahead and process the postings.
-                //
-                // Do things by ID for the partition that the document vector
-                // was drawn from!
-                QueryEntry entry =
-                        part == curr ? cf.getEntry() : curr.getTerm(cf.getName());
-                if(entry != null) {
+                    //
+                    // Process the postings.
+                    QueryEntry entry = top.df.getTerm(top.cf.getName(), false);
                     wf.initTerm(wc.setTerm(cf.getName()));
                     PostingsIterator pi = entry.iterator(feat);
                     if(pi == null) {
                         continue;
                     }
+                    int cfid = top.df.getInfo().getID();
                     while(pi.next()) {
-                        float[] cweights =
-                                ((FieldedPostingsIterator) pi).getFieldWeights();
-                        for(int i = 0; i < fweights.length; i++) {
-                            if(fweights[i] > 0) {
-                                scores[i][pi.getID()] += fweights[i] *
-                                        cweights[i];
-                            }
-                        }
+                        scores[cfid][pi.getID()] += fweights[cfid] * pi.getWeight();
                     }
+                    if(top.next()) {
+                        h.offer(top);
+                    }
+                    top = h.peek();
                 }
             }
 
@@ -830,12 +817,13 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
             float[] comb = new float[curr.getMaxDocumentID() + 1];
             for(int i = 0; i < scores.length; i++) {
                 if(scores[i] != null) {
+                    DiskField df = curr.getDF(i);
                     float fw = fieldWeights[i];
                     float sq = fieldLengths[i];
                     float[] temp = scores[i];
                     for(int j = 0; j < temp.length; j++) {
                         if(temp[j] > 0) {
-                            float dvl = curr.getDocumentVectorLength(j, i);
+                            float dvl = df.getDocumentVectorLength(j);
                             if(dvl > 0) {
                                 comb[j] += (temp[j] / (dvl * sq)) * fw;
                             }
@@ -951,6 +939,8 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
 
         WeightedField field;
 
+        DiskField df;
+
         int fieldID;
 
         WeightedFeature[] wf;
@@ -959,8 +949,9 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
 
         int pos;
 
-        public HE(WeightedField field, int fieldID, WeightedFeature[] wf) {
+        public HE(WeightedField field, DiskField df, int fieldID, WeightedFeature[] wf) {
             this.field = field;
+            this.df = df;
             this.fieldID = fieldID;
             this.wf = wf;
             pos = -1;

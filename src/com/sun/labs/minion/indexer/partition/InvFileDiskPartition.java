@@ -36,8 +36,9 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import com.sun.labs.minion.lextax.DiskTaxonomy;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -91,6 +92,35 @@ public class InvFileDiskPartition extends DiskPartition {
                     new DiskField(info, dictFile, vectorLengths,
                                   postFiles, new EntryFactory());
         }
+    }
+
+    public QueryEntry get(String field, String term, boolean caseSensitive) {
+        DiskField df = getDF(field);
+        if(df == null) {
+            return null;
+        }
+        return df.getTerm(term, caseSensitive);
+    }
+
+    public QueryEntry get(String field, int termID, boolean caseSensitive) {
+        DiskField df = getDF(field);
+        if(df == null) {
+            return null;
+        }
+        return df.getTerm(termID, caseSensitive);
+    }
+
+    public Map<String,List> getSavedValues(int docID) {
+        Map<String,List> ret = new HashMap<String, List>();
+        for(DiskField df : fields) {
+            if(df != null) {
+                List l = df.getFetcher().fetch(docID);
+                if(l != null && l.size() > 0) {
+                    ret.put(df.getInfo().getName(), l);
+                }
+            }
+        }
+        return ret;
     }
 
     /**

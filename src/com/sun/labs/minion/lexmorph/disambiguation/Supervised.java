@@ -26,6 +26,7 @@ package com.sun.labs.minion.lexmorph.disambiguation;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultsCluster;
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.retrieval.ResultImpl;
@@ -200,7 +200,7 @@ public class Supervised implements Serializable {
      * @param dke the DocKeyEntry representing the context to disambiguate.
      * @return the most probable sense for the term in this result
      */
-    public Sense disambiguate(DocKeyEntry dke) {
+    public Sense disambiguate(QueryEntry dke) {
         PostingsIterator pi = dke.iterator(null);
         List<String> context = new ArrayList<String>();
         DiskPartition dp = (DiskPartition) dke.getPartition();
@@ -208,7 +208,7 @@ public class Supervised implements Serializable {
             return null;
         }
         while(pi.next()) {
-            String t = dp.getTerm(pi.getID()).getName().toString();
+            String t = dp.getDocumentDictionary().getByID(pi.getID()).getName().toString();
             if(t.equals(term)) {
 
                 //

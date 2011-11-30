@@ -102,7 +102,7 @@ public class DocumentImpl implements Document {
         this.e = e;
         this.p = p;
         this.id = id;
-        dke = p.getDocumentTerm(id);
+        dke = p.getDocumentDictionary().getByID(id);
         key = dke.getName().toString();
     }
 
@@ -136,7 +136,7 @@ public class DocumentImpl implements Document {
         if(p == null) {
             savedFields = new LinkedHashMap<String, List>();
         } else if(savedFields == null) {
-            savedFields = p.getSavedFields(id);
+            savedFields = p.getSavedValues(id);
         }
     }
 
@@ -208,7 +208,6 @@ public class DocumentImpl implements Document {
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures(null, null);
         int[] f = new int[fieldID + 1];
         f[fieldID] = 1;
-        feat.setFields(f);
         PostingsIterator pi = e.iterator(feat);
         if(pi == null) {
             //
@@ -217,7 +216,7 @@ public class DocumentImpl implements Document {
         }
 
         while(pi.next()) {
-            ret.add(new Posting(p.getTerm(pi.getID()).getName().toString(),
+            ret.add(new Posting(p.getDF(fieldID).getTerm(pi.getID(), false).getName().toString(),
                     pi.getFreq()));
         }
         return ret;

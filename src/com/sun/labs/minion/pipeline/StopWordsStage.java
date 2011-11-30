@@ -60,7 +60,7 @@ public class StopWordsStage extends StageAdapter implements
         if(downstream == null) {
             return;
         }
-        if(fi.isVectored()) {
+        if(fi.hasAttribute(FieldInfo.Attribute.VECTORED)) {
             inVectoredField = true;
         }
         downstream.startField(fi);

@@ -95,7 +95,7 @@ import java.util.SortedSet;
  * </ol>
  *
  */
-public interface SearchEngine extends Searcher, Classifier {
+public interface SearchEngine extends Searcher {
     
     /**
      * Sets the default field information to use when unknown fields are
@@ -545,34 +545,6 @@ public interface SearchEngine extends Searcher, Classifier {
             throws SearchEngineException;
 
     /**
-     * Gets the distance between two documents, based on the values stored in
-     * in a given feature vector saved field.
-     *
-     * @param k1 the first key
-     * @param k2 the second key
-     * @param name the name of the feature vector field for which we want the
-     * distance
-     * @return the euclidean distance between the two documents' feature vectors.
-     */
-    public double getDistance(String k1, String k2, String name);
-
-    /**
-     * Gets a set of results ordered by similarity to the given document, calculated
-     * by computing the euclidean distance based on the feature vector stored in the
-     * given field.
-     *
-     * @param key the key of the document to which we'll compute similarity.
-     * @param name the name of the field containing the feature vectors that
-     * we'll use in the similarity computation.
-     * @return a result set containing the distance between the given document
-     * and all of the documents.  The scores assigned to the documents are the
-     * distance scores, and so the returned set will be set to be sorted in increasing
-     * order of the document score.  It is up to the application to handle the
-     * scores in whatever way they deem appropriate.
-     */
-    public ResultSet getSimilar(String key, String name);
-
-    /**
      * Gets the combined query stats for any queries run by the engine.
      * @return the combined query statistics
      * @see #resetQueryStats
@@ -629,16 +601,6 @@ public interface SearchEngine extends Searcher, Classifier {
      */
     public void recover()
             throws SearchEngineException;
-
-    /**
-     * Outputs an XML representation of the search index including all saved and
-     * vectored fields.
-     *
-     * @param o a print writer to which the index will be exported.
-     * @throws java.io.IOException if there is any error writing the data
-     */
-    public void export(PrintWriter o)
-            throws java.io.IOException;
 
     /**
      * Gets an iterator for all of the non-deleted documents in the
@@ -710,15 +672,6 @@ public interface SearchEngine extends Searcher, Classifier {
      * @return The partition manager for this engine.
      */
     public PartitionManager getPM();
-
-    /**
-     * Flushes all the classifier data currently in memory to disk.
-     * 
-     * @throws com.sun.labs.minion.SearchEngineException if there is any error
-     * dumping the classifiers.
-     */
-    public void flushClassifiers()
-            throws SearchEngineException;
 
     /**
      * Gets the partition manager associated with this search engine.

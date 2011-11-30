@@ -290,7 +290,7 @@ public class SyncPipelineImpl extends AbstractPipelineImpl implements
 
             //
             // If this field isn't indexed, then throw an exception.
-            if(!currField.isIndexed()) {
+            if(!currField.hasAttribute(FieldInfo.Attribute.INDEXED)) {
                 throw new IllegalArgumentException("Trying to add terms to " +
                         field + " which is not an indexed field");
             }

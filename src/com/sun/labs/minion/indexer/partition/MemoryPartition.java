@@ -165,6 +165,10 @@ public abstract class MemoryPartition extends Partition {
         return partNumber;
     }
 
+    public MemoryDictionary getDocumentDictionary() {
+        return docDict;
+    }
+
     /**
      * Performs any custom data dump required in a subclass.  This method
      * exists to be overridden in a subclass and provides no functionality

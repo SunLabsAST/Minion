@@ -294,9 +294,9 @@ public abstract class AbstractPipelineImpl implements Pipeline {
         boolean tokenized = true;
         boolean saved = false;
         if(fi != null) {
-            indexed = fi.isIndexed();
-            tokenized = fi.isTokenized();
-            saved = fi.isSaved();
+            indexed = fi.hasAttribute(FieldInfo.Attribute.INDEXED);
+            tokenized = fi.hasAttribute(FieldInfo.Attribute.TOKENIZED);
+            saved = fi.hasAttribute(FieldInfo.Attribute.SAVED);
         }
 
         //
@@ -314,7 +314,7 @@ public abstract class AbstractPipelineImpl implements Pipeline {
             head.token(new Token(p.getTerm(),
                     p.getFreq()));
             if(fi != null) {
-                if(fi.isSaved()) {
+                if(saved) {
                     head.savedData(p.getTerm());
                 }
                 head.endField(fi);

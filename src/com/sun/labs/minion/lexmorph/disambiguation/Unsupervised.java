@@ -27,6 +27,7 @@ import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -34,7 +35,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Random;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.util.LogMath;
 import com.sun.labs.minion.util.StopWatch;
@@ -147,7 +147,7 @@ public class Unsupervised {
             //
             // We want all of the contexts.
             for(Result r : rs.getAllResults(false)) {
-                DocKeyEntry dke = ((ResultImpl) r).getKeyEntry();
+                QueryEntry dke = ((ResultImpl) r).getKeyEntry();
                 tc.add(new Context(term, field, dke, maxContextFeat));
             }
         } else {

@@ -25,9 +25,7 @@ package com.sun.labs.minion.lexmorph.disambiguation;
 
 import java.util.HashMap;
 import java.util.Map;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -35,12 +33,10 @@ import java.util.logging.Logger;
 
 /**
  * A context in which a word occurs, used for sense disambiguation.
- *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public class Context {
 
-    private DocKeyEntry key;
+    private QueryEntry key;
 
     /**
      * A map from terms in the context to the number of occurrences.
@@ -61,14 +57,13 @@ public class Context {
      * @param maxFeat the maximum number of features to keep from the context.
      * Currently the most frequent features are selected.
      */
-    public Context(String disTerm, String field, DocKeyEntry key, int maxFeat) {
+    public Context(String disTerm, String field, QueryEntry key, int maxFeat) {
         this.key = key;
-        DiskPartition part = (DiskPartition) key.getPartition();
+        InvFileDiskPartition part = (InvFileDiskPartition) key.getPartition();
         terms = new HashMap<String, TermFreq>();
         PostingsIteratorFeatures feat = null;
         if(field != null) {
             feat = new PostingsIteratorFeatures();
-            feat.setFields(new String[]{field}, (InvFileDiskPartition) part);
         }
         PostingsIterator pi = key.iterator(feat);
         if(pi == null) {
@@ -76,7 +71,7 @@ public class Context {
         }
 
         while(pi.next()) {
-            QueryEntry qe = part.getTerm(pi.getID());
+            QueryEntry qe = part.get(field, pi.getID(), false);
             String term = qe.getName().toString();
             if(term.equals(disTerm)) {
                 continue;

@@ -235,6 +235,30 @@ public class DiskField extends Field {
     }
 
     /**
+     * Gets a term from the "main" dictionary for this partition.
+     * @param name the name of the term to lookup
+     * @param matchCase whether we should lookup the term using the provided case.
+     * If <code>true</code>, then an entry will only be returned if there is a
+     * match for this term with the provided case.  If <code>false</code> then an
+     * entry will be returned if there is a match for this term in lower case.
+     * @return
+     */
+    public QueryEntry getTerm(int id, boolean matchCase) {
+        if(matchCase) {
+            if(cased) {
+                return casedTokens.getByID(id);
+            } else {
+                logger.warning(
+                        String.format(
+                        "Match case requested for term %s in field %s, "
+                        + "but this field only has case insensitive terms stored"));
+            }
+        }
+
+        return uncasedTokens.getByID(id);
+    }
+
+    /**
      * Gets an iterator for the saved values in a field.
      * @param caseSensitive for a string saved field, if this is <code>true</code>,
      * then case sensitive values will be returned.  Otherwise, case insensitive
