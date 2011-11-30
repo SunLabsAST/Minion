@@ -410,11 +410,13 @@ public class InvFileDiskPartition extends DiskPartition {
 
         //
         // Remove the deletion bitmap and the removed partition files.
-        if (!m.makeDeletedDocsFile(n).delete()) {
-            logger.severe(String.format("Failed to reap partition %d", n));
+        File delFile = m.makeDeletedDocsFile(n);
+        if (delFile.exists() && !delFile.delete()) {
+            logger.severe(String.format("Failed to remove del file for DP: %d", n));
         }
+        
         if (!m.makeRemovedPartitionFile(n).delete()) {
-            logger.severe(String.format("Failed to reap partition %d", n));
+            logger.severe(String.format("Failed to remove removed file for DP: %d", n));
         }
     }
 
