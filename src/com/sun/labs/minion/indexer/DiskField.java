@@ -635,7 +635,8 @@ public class DiskField extends Field {
 
         if (merger != null) {
             mergeHeader.dictOffsets[CASED_TOKENS] = mDict.getFilePointer();
-            tokenIDMap = merger.merge(indexDir, new StringNameHandler(), dicts,
+            tokenIDMap = merger.merge(indexDir,
+                    new StringNameHandler(), dicts,
                     null,
                     starts,
                     docIDMaps, mDict, mPostOut, true);

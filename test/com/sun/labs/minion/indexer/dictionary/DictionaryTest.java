@@ -8,23 +8,14 @@ import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.NanoWatch;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Random;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -197,7 +188,7 @@ public class DictionaryTest {
 
     @Test
     public void testShuffleWordsDump() throws Exception {
-        TestData td = new TestData(all.words.size());
+        TestData td = new TestData(all.words);
         td.close();
     }
 
@@ -264,7 +255,7 @@ public class DictionaryTest {
     @Test
     public void testRandomIteration() throws Exception {
 
-        TestData td = new TestData();
+        TestData td = new TestData((int) (all.words.size() * 0.001), all.words);
         DictionaryIterator di = td.dd.iterator();
         for(String w : td.uniq) {
             QueryEntry qe = (QueryEntry) di.next();
@@ -293,131 +284,11 @@ public class DictionaryTest {
         }
     }
 
-    //    @Test
-    public void testMerge() throws Exception {
-
-        int nw = Math.max((int) (all.words.size() * 0.5),
-                          1000);
-        TestData td1 = new TestData(nw);
-        TestData td2 = new TestData(nw);
-
-        File f = File.createTempFile("merge", ".dict");
-        f.deleteOnExit();
-
-        RandomAccessFile mf = new RandomAccessFile(f, "rw");
-
-        DiskDictionary.merge(tmpDir,
-                             new StringNameHandler(),
-                             new DiskDictionary[]{td1.dd, td2.dd},
-                             null, new int[2], new int[2][], mf,
-                             new PostingsOutput[0], true);
-
-        mf.close();
-        td1.close();
-        td2.close();
-    }
-
     private ReadableBuffer encodeDict(List<String> l) {
         ArrayBuffer b = new ArrayBuffer(l.size() * 4);
         for(String w : l) {
             b.encode(w);
         }
         return b;
-    }
-
-    private static class TestData {
-
-        private List<String> words = new ArrayList<String>();
-
-        private MemoryDictionary md;
-
-        private DiskDictionary dd;
-
-        private File dictFile;
-
-        private RandomAccessFile raf;
-
-        private SortedSet<String> uniq = new TreeSet<String>();
-
-        public TestData() throws Exception {
-            this(Math.max((int) (all.words.size() * 0.5),
-                          1000));
-        }
-
-        public TestData(int n) throws Exception {
-            Random r = new Random();
-            for(int i = 0; i < n; i++) {
-                words.add(all.words.get(r.nextInt(all.words.size())));
-            }
-            Collections.sort(words);
-            init();
-        }
-
-        public TestData(List<String> words) throws Exception {
-            this.words = words;
-            init();
-        }
-
-        public TestData(String resourceName) throws Exception {
-            InputStream is = DictionaryTest.class.getResourceAsStream(
-                    resourceName);
-            if(is == null) {
-                is = DictionaryTest.class.getResourceAsStream(
-                        "/com/sun/labs/minion/indexer/dictionary/resource/"
-                        + resourceName);
-            }
-            if(is == null) {
-                throw new java.io.IOException(String.format(
-                        "Couldn't find resource %s", resourceName));
-            }
-
-            BufferedReader r;
-
-            if(resourceName.endsWith(".gz")) {
-                r = new BufferedReader(new InputStreamReader(new GZIPInputStream(
-                        is), "utf-8"));
-            } else {
-                r = new BufferedReader(new InputStreamReader(is, "utf-8"));
-            }
-            String w;
-            while((w = r.readLine()) != null) {
-                words.add(w);
-            }
-            init();
-        }
-
-        private void init() throws Exception {
-            md = new MemoryDictionary<String>(new EntryFactory(
-                    Postings.Type.NONE));
-            for(String s : words) {
-                md.put(s);
-            }
-            dictFile = File.createTempFile("all", ".dict");
-            dictFile.deleteOnExit();
-            raf = new RandomAccessFile(dictFile, "rw");
-            md.dump(tmpDir, new StringNameHandler(), raf,
-                    new PostingsOutput[0], MemoryDictionary.Renumber.NONE,
-                    MemoryDictionary.IDMap.NONE, null);
-            raf.close();
-            raf = new RandomAccessFile(dictFile, "r");
-            dd = new DiskDictionary<String>(new EntryFactory<String>(
-                    Postings.Type.NONE), new StringNameHandler(), raf,
-                                            new RandomAccessFile[0]);
-        }
-
-        public File dump() throws Exception {
-            File f = File.createTempFile("words", "");
-            PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(
-                    f), "utf-8"));
-            for(String w : words) {
-                pw.println(w);
-            }
-            pw.close();
-            return f;
-        }
-
-        private void close() throws Exception {
-            raf.close();
-        }
     }
 }

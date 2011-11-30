@@ -209,7 +209,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             java.io.IOException {
         this(factory, decoder, dictFile, postFiles,
              PostingsInputType.FILE_FULL_POST,
-             BufferType.FILEBUFFER, 256,
+             BufferType.NIOFILEBUFFER,256,
              2048, 1024, 1024, 1024, null);
     }
 
@@ -230,7 +230,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                           Partition part) throws java.io.IOException {
         this(factory, decoder, dictFile, postFiles,
              PostingsInputType.CHANNEL_FULL_POST,
-             BufferType.FILEBUFFER, 256,
+             BufferType.NIOFILEBUFFER, 256,
              2048, 1024, 1024, 1024, part);
     }
 
@@ -251,7 +251,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                           PostingsInputType postingsInputType,
                           Partition part) throws java.io.IOException {
         this(factory, decoder, dictFile, postFiles, postingsInputType,
-             BufferType.FILEBUFFER,
+             BufferType.NIOFILEBUFFER,
              256, 2048, 1024, 1024, 1024, part);
     }
 
@@ -1657,14 +1657,14 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
          */
         protected int index;
 
-        public HE(DiskDictionary dd, int index,
-                  EntryMapper mapper) {
+        public HE(DiskDictionary dd, int index, EntryMapper mapper) {
             i = dd.iterator();
             this.index = index;
             this.mapper = mapper;
         }
 
         protected boolean next() {
+
             while(i.hasNext()) {
 
                 curr = (QueryEntry) i.next();
@@ -1948,6 +1948,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             // return true.
             if(returnCurr) {
                 return true;
+            }
+
+            if(pos >= stopPos) {
+                return false;
             }
 
             N name = decoder.decodeName(prevName, lus.localNames);
