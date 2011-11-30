@@ -17,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.zip.GZIPInputStream;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -34,21 +35,22 @@ public class IDPostingsTest {
 
     public IDPostingsTest() {
     }
-    private static int[][] randomData;
+    private static int[][] randomData = new int[32][];
 
-    private static Set[] sets;
+    private static Set[] sets = new Set[randomData.length];
+
+    private static String[] previousData = new String[]{
+        "/com/sun/labs/minion/indexer/postings/resource/1.data.gz",};
 
     @BeforeClass
     public static void setUpClass() throws Exception {
 
         //
         // Generate some random data.  We need to account for gaps of zero, so
-        // keep track of the unique numbers.
-        randomData = new int[10][];
-        sets = new Set[randomData.length];
+        // keep track of the unique numbers with some sets.
         Random r = new Random();
         for(int i = 0; i < randomData.length; i++) {
-            int s = r.nextInt(10240) + 1;
+            int s = r.nextInt(1024 * 8) + 1;
             int[] a = new int[s];
             LinkedHashSet<Integer> uniq = new LinkedHashSet<Integer>(a.length);
             int prev = 0;
@@ -59,6 +61,7 @@ public class IDPostingsTest {
             for(int j = 0; j < a.length; j++) {
                 a[j] = prev + r.nextInt(256);
                 prev = a[j];
+                uniq.add(prev);
             }
             randomData[i] = a;
             sets[i] = uniq;
@@ -139,7 +142,7 @@ public class IDPostingsTest {
         while(pi.next()) {
             assertTrue(String.format("Couldn't match id %d, got %d", ids[i], pi.
                     getID()),
-                       pi.getID() == ids[i]);
+                    pi.getID() == ids[i]);
             i++;
         }
     }
@@ -183,14 +186,14 @@ public class IDPostingsTest {
 
         WriteableBuffer[] buffs = idp.getBuffers();
         assertTrue(String.format("Wrong number of buffers: %d", buffs.length),
-                   buffs.length == 2);
+                buffs.length == 2);
         ReadableBuffer rb = buffs[0].getReadableBuffer();
 
         int n = rb.byteDecode();
         assertTrue(String.format("Wrong number of IDs: %d", n), n == ids.length);
         n = rb.byteDecode();
         assertTrue(String.format("Wrong last ID: %d", n), n == ids[ids.length
-                                                                   - 1]);
+                - 1]);
         rb = buffs[1].getReadableBuffer();
 
         int prev = 0;
@@ -200,34 +203,44 @@ public class IDPostingsTest {
             assertTrue(String.format(
                     "Incorrect ID at %d: %d should be %d, decoded: %d", i, curr,
                     ids[i], gap),
-                       curr == ids[i]);
+                    curr == ids[i]);
         }
     }
 
-    /**
-     * Tests encoding a lot of data, dumping the data to a file if a failure occurs.
-     * @throws Exception if there is an error
-     */
-    @Test
-    public void randomAddTest() throws Exception {
-        for(int i = 0; i < randomData.length; i++) {
+    private void testData(int[][] data, boolean dumpOnFailure) throws Exception {
+        for(int i = 0; i < data.length; i++) {
             IDPostings idp = new IDPostings();
             OccurrenceImpl o = new OccurrenceImpl();
-            int[] curr = randomData[i];
+            int[] curr = data[i];
             logger.info(String.format("Encoding %d ids", curr.length));
             for(int j = 0; j < curr.length; j++) {
                 try {
                     o.setID(curr[j]);
                     idp.add(o);
                 } catch(Exception ex) {
-                    fail(String.format("Failed to encode random data. See: %s",
-                                       dumpRandomData()));
+                    if(dumpOnFailure) {
+                        fail(String.format(
+                                "Failed to encode random data. Data row %d, item %d See: %s",
+                                i, j,
+                                dumpRandomData()));
+                    } else {
+                        fail(String.format(
+                                "Failed to encode random data. Data row %d, item %d",
+                                i, j));
+                    }
                 }
             }
-            
+
             if(sets[i].size() != idp.getN()) {
-                fail(String.format("Expected %d ids got %d, see: %s", sets[i].
-                        size(), idp.getN(), dumpRandomData()));
+                if(dumpOnFailure) {
+                    fail(String.format(
+                            "Expected %d ids got %d data row: %d, see: %s", sets[i].
+                            size(), idp.getN(), i, dumpRandomData()));
+                } else {
+                    fail(String.format("Expected %d ids got %d data row: %d", sets[i].
+                            size(), idp.getN(), i));
+
+                }
             }
 
             PostingsIterator pi = idp.iterator(null);
@@ -236,10 +249,47 @@ public class IDPostingsTest {
             while(pi.next()) {
                 int expected = ui.next();
                 if(pi.getID() != expected) {
-                    fail(String.format("Couldn't match id %d, got %d, see %s",
-                                       expected, pi.getID(), dumpRandomData()));
+                    if(dumpOnFailure) {
+                        fail(String.format(
+                                "Couldn't match id %d, got %d, data row %d see %s",
+                                expected, pi.getID(), i, dumpRandomData()));
+                    } else {
+                        fail(String.format(
+                                "Couldn't match id %d, got %d, data row %d",
+                                expected, pi.getID(), i));
+
+                    }
                 }
             }
+        }
+    }
+
+    /**
+     * Tests encoding our random data, dumping the data to a file if a failure occurs.
+     * @throws Exception if there is an error
+     */
+//    @Test
+//    public void randomAddTest() throws Exception {
+//        testData(randomData, true);
+//    }
+    /**
+     * Tests encoding data that has had problems before, ensuring that we
+     * don't re-introduce old problems.
+     */
+    @Test
+    public void previousDataTest() throws Exception {
+        for(String s : previousData) {
+
+            InputStream pdis = getClass().getResourceAsStream(s);
+            if(pdis == null) {
+                logger.info(String.format("Can't find resource: %s", s));
+                continue;
+            }
+            logger.info(String.format("Testing data %s", s));
+            GZIPInputStream gzis = new GZIPInputStream(pdis);
+            int[][] prd = readRandomData(gzis);
+            gzis.close();
+            testData(prd, false);
         }
     }
 

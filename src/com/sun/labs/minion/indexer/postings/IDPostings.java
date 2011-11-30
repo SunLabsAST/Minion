@@ -243,13 +243,13 @@ public class IDPostings implements Postings, MergeablePostings {
      * @param oThe occurrence.
      */
     public void add(Occurrence o) {
-
-        if(o.getID() != curr) {
+        int oid = o.getID();
+        if(oid != curr) {
             if(nIDs + 1 >= ids.length) {
                 ids = Util.expandInt(ids, ids.length * 2);
             }
-            ids[nIDs++] = o.getID();
-            curr = o.getID();
+            ids[nIDs++] = oid;
+            curr = oid;
             lastID = curr;
         }
     }
