@@ -1599,9 +1599,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
 
         //
-        // Do the merge and reap any deleted partitions.
-        Merger m;
-        m = getMerger((List<DiskPartition>) getActivePartitions());
+        // Do the merge and reap any deleted partitions.  We're willing to wait
+        // a while to get the merge lock, if necessary.
+        FileLock ourMergeLock = new FileLock(mergeLock, 200, TimeUnit.SECONDS);
+        Merger m = getMerger((List<DiskPartition>) getActivePartitions(), ourMergeLock);
+        if(m == null) {
+            return activeParts.peek();
+        }
         return m.merge();
     }
 
