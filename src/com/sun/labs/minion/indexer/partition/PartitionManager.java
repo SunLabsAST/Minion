@@ -2574,13 +2574,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
          * @param time the current time, in milliseconds since the epoch
          */
         protected void closeThings(long time) {
-            synchronized(thingsToClose) {
-                for(Iterator<Closeable> i = thingsToClose.iterator(); i.hasNext();) {
-                    Closeable clo = i.next();
-                    if(clo.close(time)) {
-                        clo.createRemoveFile();
-                        i.remove();
-                    }
+            for(Iterator<Closeable> i = thingsToClose.iterator(); i.hasNext();) {
+                Closeable clo = i.next();
+                if(clo.close(time)) {
+                    clo.createRemoveFile();
+                    i.remove();
                 }
             }
         }
@@ -2790,7 +2788,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             //
             // Set up to (eventually) close and delete the term stats dictionary, which might be in
             // use by someone else.
-            oldTSD.setCloseTime(System.currentTimeMillis() + partCloseDelay * 2);
+            oldTSD.setCloseTime(System.currentTimeMillis() + partCloseDelay);
             oldTSD.setClosed();
             thingsToClose.add(oldTSD);
         }
