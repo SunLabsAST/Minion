@@ -7,10 +7,9 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
-import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.indexer.partition.MergeState;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
-import java.io.File;
 import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.logging.Logger;
@@ -248,16 +247,7 @@ public class DiskField extends Field {
         bundle.normalize(docs, scores, n, qw);
     }
 
-    public void merge(File indexDir,
-                      DiskField[] fields,
-                      int[] starts,
-                      int[][] docIDMaps,
-                      int[] nUndel,
-                      RandomAccessFile mDict,
-                      File[] mPostFiles,
-                      PostingsOutput[] mPostOut,
-                      RandomAccessFile mTermStats,
-                      RandomAccessFile mVectorLengths)
+    public static void merge(MergeState mergeState, DiskField[] fields) 
             throws java.io.IOException {
 
 
@@ -265,9 +255,8 @@ public class DiskField extends Field {
         for(int i = 0; i < fields.length; i++) {
             bundles[i] = fields[i].bundle;
         }
-        logger.info(String.format("Merge %s", info.getName()));
-        bundle.merge(indexDir, bundles, starts, docIDMaps, nUndel, mDict,
-                     mPostFiles, mPostOut, mTermStats, mVectorLengths);
+        logger.info(String.format("Merge %s", mergeState.info.getName()));
+        DiskDictionaryBundle.merge(mergeState, bundles);
 
     }
 

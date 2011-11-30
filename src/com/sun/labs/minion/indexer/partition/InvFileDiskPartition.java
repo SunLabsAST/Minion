@@ -338,28 +338,20 @@ public class InvFileDiskPartition extends DiskPartition {
     }
 
     @Override
-    protected void mergeCustom(int newPartNumber,
-            PartitionHeader mHeader,
-            DiskPartition[] sortedParts,
-            int[][] idMaps,
-            int newMaxDocID, int[] docIDStart, int[] nUndel,
-            int[][] docIDMaps,
-            RandomAccessFile mDictFile,
-            File[] mPostFiles,
-            PostingsOutput[] mPostOut)
+    protected void mergeCustom(MergeState mergeState)
             throws Exception {
 
         File vlf = manager.makeVectorLengthFile(partNumber);
-        RandomAccessFile mVectorLengths = new RandomAccessFile(vlf, "rw");
+        mergeState.vectorLengthRAF = new RandomAccessFile(vlf, "rw");
         int newTSN = manager.getMetaFile().getTermStatsNumber();
         File mtsf = manager.makeTermStatsFile(newTSN);
-        RandomAccessFile mTermStats = new RandomAccessFile(mtsf, "rw");
+        mergeState.termStatsRAF = new RandomAccessFile(mtsf, "rw");
         
         for(FieldInfo fi : manager.getMetaFile()) {
-            DiskField[] mFields = new DiskField[sortedParts.length];
+            DiskField[] mFields = new DiskField[mergeState.partitions.length];
             DiskField merger = null;
-            for (int j = 0; j < sortedParts.length; j++) {
-                mFields[j] = ((InvFileDiskPartition) sortedParts[j]).getDF(fi);
+            for (int j = 0; j < mergeState.partitions.length; j++) {
+                mFields[j] = ((InvFileDiskPartition) mergeState.partitions[j]).getDF(fi);
                 if (mFields[j] != null) {
                     merger = mFields[j];
                 }
@@ -367,17 +359,13 @@ public class InvFileDiskPartition extends DiskPartition {
             if(merger == null) {
                 logger.info(String.format("No merger for %s", fi.getName()));
             } else {
-                merger.merge(manager.getIndexDir(),
-                             mFields, docIDStart, docIDMaps, nUndel, mDictFile,
-                             mPostFiles,
-                             mPostOut,
-                             mTermStats,
-                             mVectorLengths);
+                mergeState.info = fi;
+                DiskField.merge(mergeState, mFields);
             }
         }
 
-        mVectorLengths.close();
-        mTermStats.close();
+        mergeState.vectorLengthRAF.close();
+        mergeState.termStatsRAF.close();
     }
 
     /**
