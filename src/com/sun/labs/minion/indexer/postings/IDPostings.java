@@ -23,6 +23,8 @@
  */
 package com.sun.labs.minion.indexer.postings;
 
+import com.sun.labs.minion.indexer.postings.io.PostingsInput;
+import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import java.util.Arrays;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.Buffer;
@@ -144,8 +146,12 @@ public class IDPostings implements Postings, MergeablePostings {
      *
      * @param b the data read from a postings file.
      */
-    public IDPostings(ReadableBuffer b) {
-        this(b, 0, 0);
+    public IDPostings(PostingsInput in[], long[] offset, int[] size) throws java.io.IOException {
+        this(in[0].read(offset[0], size[0]), 0, 0);
+    }
+
+    public int getNumChannels() {
+        return 1;
     }
 
     /**
@@ -200,6 +206,12 @@ public class IDPostings implements Postings, MergeablePostings {
         } else {
             dataStart = (int) post.position();
         }
+    }
+
+    /**
+     * We don't have any secondary information.
+     */
+    public void readSecondaryInformation(ReadableBuffer[] buffs) {
     }
 
     @Override
@@ -281,18 +293,8 @@ public class IDPostings implements Postings, MergeablePostings {
     public int size() {
         return (int) post.position();
     }
-
-    /**
-     * Gets a number of <code>WriteableBuffer</code>s whose contents
-     * represent the postings.  These buffers can then be written out.
-     *
-     * The format is as follows:
-     * NumIDs:LastID:NumSkipEntries[:skipID:skipPos]*:<PostingsData>
-     *
-     * @return A <code>ByteBuffer</code> containing the encoded postings
-     * data.
-     */
-    public WriteableBuffer[] getBuffers() {
+    
+    public void write(PostingsOutput[] out, long[] offset, int[] size) throws java.io.IOException {
 
         //
         // We'll use an array backed buffer for the skips.
@@ -316,13 +318,14 @@ public class IDPostings implements Postings, MergeablePostings {
         }
 
         //
-        // Return the buffers.
-        return new WriteableBuffer[]{
+        // Write the buffers.
+        offset[0] = out[0].position();
+        size[0] = out[0].write(new WriteableBuffer[]{
                     temp,
                     post == null ? 
                     encodeIDs() : 
                     (WriteableBuffer) post,
-                };
+                });
     }
 
     protected WriteableBuffer encodeIDs() {

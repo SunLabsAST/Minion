@@ -95,11 +95,4 @@ public class ChannelPostingsInput implements PostingsInput {
         }
     }
 
-    @Override
-    public Postings read(Type type, long offset, int size) throws IOException {
-        return Postings.Type.getPostings(type, read(offset, size));
-    }
-
-
-
 } // PostingsInputChannel

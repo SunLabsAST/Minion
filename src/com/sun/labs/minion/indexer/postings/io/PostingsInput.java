@@ -24,7 +24,7 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
-import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
 
 /**
  * An interface for things that can be used to read postings.
@@ -42,6 +42,6 @@ public interface PostingsInput {
      * postings.
      * @return A readable buffer containing the postings.
      */
-    public Postings read(Postings.Type type, long offset, int size) throws java.io.IOException;
+    public ReadableBuffer read(long offset, int size) throws java.io.IOException;
     
 }// PostingsInput

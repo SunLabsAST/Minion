@@ -57,7 +57,8 @@ public abstract class Entry<N extends Comparable> implements Comparable<Entry>, 
     protected Dictionary dictionary;
 
     /**
-     * The postings associated with this entry.
+     * The postings associated with this entry.  A single entry may have
+     * several postings associated with it.
      */
     protected Postings post;
 
@@ -77,14 +78,14 @@ public abstract class Entry<N extends Comparable> implements Comparable<Entry>, 
     protected int maxFDT = 1;
     
     /**
-     * The size of the postings, in bytes.
+     * The sizes of the postings, in bytes.
      */
-    protected int size;
+    protected int[] size;
 
     /**
-     * The offset of the postings in a postings file.
+     * The offsets of the postings in a postings file.
      */
-    protected long offset;
+    protected long[] offset;
 
     /**
      * Gets the name of this entry

@@ -24,6 +24,7 @@
 package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.indexer.postings.Postings.Type;
+import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
@@ -31,8 +32,8 @@ import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -91,8 +92,8 @@ public class IDFreqPostings extends IDPostings {
      *
      * @param b the data read from a postings file.
      */
-    public IDFreqPostings(ReadableBuffer b) {
-        super(b);
+    public IDFreqPostings(PostingsInput[] in, long[] offset, int[] size) throws IOException {
+        super(in, offset, size);
     }
 
     /**

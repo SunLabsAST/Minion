@@ -21,10 +21,8 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.indexer.entry;
 
-import com.sun.labs.minion.indexer.postings.DocumentVectorPostings;
 import com.sun.labs.minion.indexer.postings.MergeablePostings;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 
@@ -42,9 +40,9 @@ import java.util.logging.Logger;
  * @param <N> the type of the name in this entry
  */
 public class IndexEntry<N extends Comparable> extends Entry<N> {
-    
+
     private static final Logger logger = Logger.getLogger(IndexEntry.class.getName());
-    
+
     private boolean used = false;
 
     /**
@@ -59,8 +57,12 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         this.post = post;
         if(post != null) {
             this.type = post.getType();
+            offset = new long[post.getNumChannels()];
+            size = new int[post.getNumChannels()];
         } else {
             this.type = Postings.Type.NONE;
+            size = new int[0];
+            offset = new long[0];
         }
     }
 
@@ -87,7 +89,7 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         if(!used) {
             return false;
         }
-        
+
         if(post == null || post.getType() == Postings.Type.NONE) {
             return true;
         }
@@ -101,8 +103,7 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         // be encoded later.
         n = post.getN();
         maxFDT = post.getMaxFDT();
-        offset = out[0].position();
-        size = (int) out[0].write(post);
+        post.write(out, offset, size);
         return true;
     }
 
@@ -117,8 +118,11 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         b.byteEncode(n);
         b.byteEncode(maxFDT);
         b.byteEncode(id);
-        b.byteEncode(size);
-        b.byteEncode(offset);
+        b.byteEncode(size.length);
+        for(int i = 0; i < size.length; i++) {
+            b.byteEncode(size[i]);
+            b.byteEncode(offset[i]);
+        }
     }
 
     @Override
@@ -148,7 +152,7 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
 
     public void merge(QueryEntry qe, int[] idMap) {
         ((MergeablePostings) post).merge((MergeablePostings) qe.post,
-                                      idMap);
+                idMap);
         used = true;
     }
 
@@ -167,7 +171,9 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
         used = false;
         id = 0;
         n = 0;
-        size = 0;
-        offset = 0;
+        for(int i = 0; i < size.length; i++) {
+            size[i] = 0;
+            offset[i] = 0;
+        }
     }
 }

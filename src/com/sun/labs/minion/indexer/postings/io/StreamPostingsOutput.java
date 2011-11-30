@@ -90,7 +90,7 @@ public class StreamPostingsOutput implements PostingsOutput {
      * postings.
      * @return The number of bytes written.
      */
-    public long write(WriteableBuffer [] b) throws java.io.IOException {
+    public int write(WriteableBuffer [] b) throws java.io.IOException {
         return write(b, 0, b.length);
     }
     
@@ -106,18 +106,13 @@ public class StreamPostingsOutput implements PostingsOutput {
      * postings.
      * @return The number of bytes written.
      */
-    public long write(WriteableBuffer[] b, int offset, int length)
+    public int write(WriteableBuffer[] b, int offset, int length)
         throws java.io.IOException {
-        long ret = 0;
+        int ret = 0;
         for(int i = offset; i < offset+length; i++) {
             ret += write(b[i]);
         }
         return ret;
-    }
-
-    @Override
-    public long write(Postings p) throws IOException {
-        return write(p.getBuffers());
     }
 
     /**

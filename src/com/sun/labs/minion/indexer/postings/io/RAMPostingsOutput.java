@@ -27,9 +27,9 @@ public class RAMPostingsOutput implements PostingsOutput {
         buff = new ArrayBuffer(initialSize);
     }
 
-    public long write(Postings p) throws IOException {
-        long n = 0;
-        for(WriteableBuffer b : p.getBuffers()) {
+    public int write(WriteableBuffer[] buffs) throws IOException {
+        int n = 0;
+        for(WriteableBuffer b : buffs) {
             n += b.position();
             b.write(buff);
         }

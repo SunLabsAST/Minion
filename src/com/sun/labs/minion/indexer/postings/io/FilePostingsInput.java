@@ -94,10 +94,4 @@ public class FilePostingsInput implements PostingsInput {
         }
     }
 
-    @Override
-    public Postings read(Type type, long offset, int size) throws IOException {
-        return Postings.Type.getPostings(type, read(offset, size));
-    }
-
-    
 } // FilePostingsInput

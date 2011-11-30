@@ -68,21 +68,27 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
         n = b.byteDecode();
         maxFDT = b.byteDecode();
         id = b.byteDecode();
-        size = b.byteDecode();
-        offset = b.byteDecodeLong();
+        int npi = b.byteDecode();
+        size = new int[npi];
+        offset = new long[npi];
+        for(int i = 0; i < size.length; i++) {
+            size[i] = b.byteDecode();
+            offset[i] = b.byteDecodeLong();
+        }
     }
 
     /**
-     * Reads the postings associated with this entry.
+     * Reads the main postings associated with this entry, which usually 
+     * consists of id and frequency information.
      *
      * @throws java.io.IOException if there is an error reading the postings.
      */
     public void readPostings() throws java.io.IOException {
         if (type != Postings.Type.NONE) {
-            post = postIn[0].read(type, offset, size);
+            post = Postings.Type.getPostings(type, postIn, offset, size);
         }
     }
-
+    
     public boolean hasPositionInformation() {
         return false;
     }
@@ -109,7 +115,7 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
             try {
                 if (qs != null) {
                     qs.postReadW.start();
-                    qs.postingsSize += size;
+                    qs.postingsSize += size[0];
                 }
                 readPostings();
             } catch (java.io.IOException ioe) {

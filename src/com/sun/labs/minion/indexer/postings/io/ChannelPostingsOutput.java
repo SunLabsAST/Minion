@@ -111,7 +111,7 @@ public class ChannelPostingsOutput implements PostingsOutput {
      * @throws java.io.IOException If there is any error writing the postings.
      * @return The number of bytes written.
      */
-    public long write(WriteableBuffer [] b) throws java.io.IOException {
+    public int write(WriteableBuffer [] b) throws java.io.IOException {
         return write(b, 0, b.length);
     }
     
@@ -126,19 +126,14 @@ public class ChannelPostingsOutput implements PostingsOutput {
      * @throws java.io.IOException If there is any error writing to the channel.
      * @return The number of bytes written.
      */
-    public long write(WriteableBuffer[] b, int offset, int length)
+    public int write(WriteableBuffer[] b, int offset, int length)
         throws java.io.IOException {
 
-        long written = 0;
+        int written = 0;
         for(int i = offset; i < offset + length; i++) {
             written += write(b[i]);
         }
         return written;
-    }
-
-    @Override
-    public long write(Postings p) throws IOException {
-        return write(p.getBuffers());
     }
 
     /**

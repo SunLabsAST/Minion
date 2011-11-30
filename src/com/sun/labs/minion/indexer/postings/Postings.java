@@ -25,8 +25,10 @@
 package com.sun.labs.minion.indexer.postings;
 
 
+import com.sun.labs.minion.indexer.postings.io.PostingsInput;
+import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.IOException;
 
 /**
  * An interface for the postings associated with a term in a dictionary.
@@ -42,7 +44,7 @@ public interface Postings {
         ID_FREQ_POS,
         DOC_VECTOR,
         NONE;
-
+        
         public static Postings getPostings(Type type) {
             switch(type) {
                 case ID:
@@ -58,16 +60,16 @@ public interface Postings {
             }
         }
 
-        public static Postings getPostings(Type type, ReadableBuffer b) {
+        public static Postings getPostings(Type type, PostingsInput[] in, long[] offset, int[] size) throws IOException {
             switch(type) {
                 case ID:
-                    return new IDPostings(b);
+                    return new IDPostings(in, offset, size);
                 case ID_FREQ:
-                    return new IDFreqPostings(b);
+                    return new IDFreqPostings(in, offset, size);
                 case ID_FREQ_POS:
-                    return new IDFreqPostings(b);
+                    return new IDFreqPostings(in, offset, size);
                 case DOC_VECTOR:
-                    return new DocumentVectorPostings(b);
+                    return new DocumentVectorPostings(in, offset, size);
                 default:
                     return null;
             }
@@ -80,6 +82,13 @@ public interface Postings {
      * @return the type of these postings.
      */
     public Type getType();
+    
+    /**
+     * Gets the number of channels needed for writing or reading these postings.
+     * @return the number of postings input or output needed for this postings 
+     * type.
+     */
+    public int getNumChannels();
 
     /**
      * Adds an occurrence to the postings list.
@@ -87,6 +96,13 @@ public interface Postings {
      * @param o The occurrence.
      */
     public void add(Occurrence o);
+    
+    /**
+     * Writes the postings to a set of postings output.  The sizes of the 
+     * postings and the offsets where they were written are recorded 
+     * as side-effects.
+     */
+    public void write(PostingsOutput[] out, long[] offset, int[] size) throws java.io.IOException;
 
     /**
      * Gets the number of IDs in the postings list.
@@ -118,23 +134,6 @@ public interface Postings {
      * this postings list.
      */
     public int getMaxFDT();
-
-    /**
-     * Gets a number of <code>Buffers</code> whose contents represent the
-     * postings.  These buffers can be written to disk.
-     *
-     * <p>
-     *
-     * This method must ensure that all of the data used by the entry is
-     * properly handled by the time that the method returns.  This method
-     * will be called by a dictionary when it is ready to dump the postings
-     * data to a stream.
-     *
-     * @return An array of <code>Buffer</code>s containing the postings
-     * data.  All of the data in these buffers must be written to the
-     * postings file!
-     */
-    public WriteableBuffer[] getBuffers();
 
     /**
      * Remaps the IDs in this postings list according to the given
@@ -186,6 +185,13 @@ public interface Postings {
      * warning should be logged and <code>null</code> will be returned.
      */
     public PostingsIterator iterator(PostingsIteratorFeatures features);
+    
+    /**
+     * Reads secondary postings information.  Useful when there is data in
+     * a separate postings input that we don't always want to read, like
+     * position information.
+     */
+    public void readSecondaryInformation(ReadableBuffer[] buffs);
     
     /**
      * Clears the data from this postings object, which will allow it to be

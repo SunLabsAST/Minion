@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.indexer.postings;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -37,12 +38,12 @@ import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 
-import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.logging.Logger;
 
@@ -80,8 +81,8 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
      *
      * @param b a buffer containing the encoded postings.
      */
-    public DocumentVectorPostings(ReadableBuffer b) {
-        super(b);
+    public DocumentVectorPostings(PostingsInput[] in, long[] offset, int[] size) throws IOException {
+        super(in, offset, size);
     } // ReMapPostings constructor
 
     /**

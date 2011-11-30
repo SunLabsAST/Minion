@@ -175,8 +175,4 @@ public class StreamPostingsInput implements PostingsInput {
         return ret;
     }
 
-    @Override
-    public Postings read(Type type, long offset, int size) throws IOException {
-        return Postings.Type.getPostings(type, read(offset, size));
-    }
 } // StreamPostingsInput

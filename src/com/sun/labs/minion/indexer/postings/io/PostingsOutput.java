@@ -24,7 +24,7 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
-import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
 /**
  * An interface to be implemented by things that write postings.
@@ -32,13 +32,13 @@ import com.sun.labs.minion.indexer.postings.Postings;
 public interface PostingsOutput {
 
     /**
-     * Writes out the given postings
+     * Writes out the buffers containing a set of postings information.
      * @param p the postings to write.
      * @return the number of bytes written.
      * @throws java.io.IOException if there are any errors writing the
      * postings.
      */
-    public long write(Postings p) throws java.io.IOException;
+    public int write(WriteableBuffer[] buffs) throws java.io.IOException;
 
     /**
      * Gets the position of the current output.
