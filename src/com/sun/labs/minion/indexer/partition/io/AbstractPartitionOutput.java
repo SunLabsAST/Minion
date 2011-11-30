@@ -35,7 +35,12 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      * A header for the partition being dumped.
      */
     protected PartitionHeader partHeader;
-
+    
+    /**
+     * The document keys for the partition that we're dumping.
+     */
+    protected Set<String> keys;
+    
     /**
      * The number of the partition that is being dumped.
      */
@@ -109,7 +114,12 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         } catch(FileLockException ex) {
             throw new IOException("Error getting partition number", ex);
         }
+        keys = null;
         return partNumber;
+    }
+
+    public void setKeys(Set<String> keys) {
+        this.keys = keys;
     }
 
     public WriteableBuffer getDeletionsBuffer() {
@@ -196,7 +206,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         return postingsIDMap;
     }
 
-    public void flush(Set<String> keys) throws IOException {
+    public void flush() throws IOException {
 
         //
         // Flush the main dictionary output to our dictionary file.
@@ -242,7 +252,8 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
             }
 
         }
-        if(keys != null) {
+        logger.info(String.format("flushed %d keys", keys != null ? keys.size() : 0));
+        if(keys != null && !keys.isEmpty()) {
             manager.addNewPartition(partNumber, keys);
         }
         started = false;

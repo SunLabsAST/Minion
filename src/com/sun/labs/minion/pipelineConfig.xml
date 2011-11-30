@@ -71,13 +71,6 @@
         <property name="print_tokens" value="true"/>
     </component>
     
-    <!-- A stage that will dump partitions asynchronously -->
-    <component name="async_dumper" type="com.sun.labs.minion.indexer.partition.AsyncDumper"/>
-    
-    <!-- A dumpber for dumping partitions synchronously -->
-    <component name="sync_dumper" type="com.sun.labs.minion.indexer.partition.SyncDumper"/>
-    
-    
     <!-- A pipeline factory for our "default" indexer. -->
     <component name="pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
         <!-- The stages in the main indexing pipeline -->

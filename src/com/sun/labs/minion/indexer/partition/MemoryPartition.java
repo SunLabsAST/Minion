@@ -85,7 +85,7 @@ public abstract class MemoryPartition extends Partition {
      * @throws java.io.IOException if there is any error writing the partition
      * data to disk
      */
-    protected PartitionOutput dump() throws java.io.IOException {
+    protected PartitionOutput dump(PartitionOutput partOut) throws java.io.IOException {
 
         //
         // Do nothing if we have no data.
@@ -96,16 +96,8 @@ public abstract class MemoryPartition extends Partition {
         StopWatch sw = new StopWatch();
         sw.start();
         
-        PartitionOutput partOut;
-        
-        try {
-            partOut = new RAMPartitionOutput(manager);
-        } catch (FileLockException ex) {
-            logger.log(Level.SEVERE, String.format("Error dumping partition"), ex);
-            return null;
-        }
-        
         partOut.startPartition();
+        partOut.setKeys(docDict.getKeys());
         
         PartitionHeader partHeader = partOut.getPartitionHeader();
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();

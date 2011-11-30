@@ -2,18 +2,15 @@ package com.sun.labs.minion.indexer.partition.io;
 
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
-import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
 import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

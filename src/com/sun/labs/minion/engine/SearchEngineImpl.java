@@ -1479,7 +1479,6 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         buildClassifiers = ps.getBoolean(PROP_BUILD_CLASSIFIERS);
         minMemoryPercent = ps.getDouble(PROP_MIN_MEMORY_PERCENT);
         dumper = (Dumper) ps.getComponent(PROP_DUMPER);
-        dumper.setSearchEngine(this);
     }
 
     /**

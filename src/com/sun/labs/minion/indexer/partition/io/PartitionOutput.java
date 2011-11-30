@@ -16,6 +16,8 @@ import java.util.Set;
 public interface PartitionOutput {
     
     public int startPartition() throws IOException;
+    
+    public void setKeys(Set<String> keys);
 
     public int getPartitionNumber();
     
@@ -59,7 +61,7 @@ public interface PartitionOutput {
 
     public WriteableBuffer getVectorLengthsBuffer();
     
-    public void flush(Set<String> docKeys) throws IOException;
+    public void flush() throws IOException;
 
     public void close() throws IOException;
 }

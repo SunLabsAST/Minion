@@ -711,7 +711,7 @@ public class DiskPartition extends Partition implements Closeable {
             fieldDictOut.byteEncode((long) phoffset, 8);
             fieldDictOut.position(pos);
             
-            mergeState.partOut.flush(null);
+            mergeState.partOut.flush();
             mergeState.partOut.close();
 
             

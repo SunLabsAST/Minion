@@ -28,7 +28,7 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
      * @param manager the manager responsible for the partition that we're dumping
      * @param files the files into which we'll write the partition data.
      */
-    public RAMPartitionOutput(PartitionManager manager) throws IOException, FileLockException {
+    public RAMPartitionOutput(PartitionManager manager) throws IOException {
         super(manager);
     }
 
@@ -59,12 +59,12 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
     }
 
     @Override
-    public void flush(Set<String> keys) throws IOException {
+    public void flush() throws IOException {
         for(int i = 0; i < postOutFiles.length; i++) {
             RandomAccessFile raf = new RandomAccessFile(postOutFiles[i], "rw");
             ((RAMPostingsOutput) postOut[i]).flush(raf);
             raf.close();
         }
-        super.flush(keys);
+        super.flush();
     }
 }
