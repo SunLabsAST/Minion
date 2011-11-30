@@ -59,9 +59,9 @@ public class Marshaller implements Configurable {
     protected String name;
 
     /**
-     * A queue onto which partitions will be placed for dumping.
+     * A queue onto which partitions will be placed for marshalling.
      */
-    protected BlockingQueue<MPHolder> toDump;
+    protected BlockingQueue<MPHolder> toMarshall;
 
     /**
      * A queue onto which outputs will be placed for flushing.
@@ -92,7 +92,7 @@ public class Marshaller implements Configurable {
     /**
      * Whether we are done dumping.
      */
-    protected boolean dumperDone;
+    protected boolean marshallerDone;
 
     /**
      * Are we done flushing?
@@ -102,7 +102,7 @@ public class Marshaller implements Configurable {
     /**
      * Threads to do the dumping.
      */
-    private Thread[] dumpThreads;
+    private Thread[] marshallThreads;
 
     /**
      * The partition outputs that we'll use for marshalling data.
@@ -123,7 +123,7 @@ public class Marshaller implements Configurable {
      * The queue length property for configuration.
      */
     @ConfigInteger(defaultValue = 1)
-    public static String PROP_DUMP_QUEUE_LENGTH = "dump_queue_length";
+    public static String PROP_MARSHALL_QUEUE_LENGTH = "marshall_queue_length";
 
     /**
      * The size of the pool of partition outputs.
@@ -132,7 +132,7 @@ public class Marshaller implements Configurable {
     public static final String PROP_POOL_SIZE = "pool_size";
 
     @ConfigInteger(defaultValue = 2)
-    public static final String PROP_DUMP_THREADS = "dump_threads";
+    public static final String PROP_MARSHALL_THREADS = "marshall_threads";
 
     /**
      * Default constructor used for configuration.
@@ -152,9 +152,9 @@ public class Marshaller implements Configurable {
 
     public void dump(InvFileMemoryPartition part) {
         try {
-            toDump.put(new MPHolder(part, new Date()));
+            toMarshall.put(new MPHolder(part, new Date()));
         } catch(InterruptedException ex) {
-            logger.warning("Dumper interrupted during put");
+            logger.warning("Marshaller interrupted during put");
         }
     }
 
@@ -163,10 +163,10 @@ public class Marshaller implements Configurable {
      * up.
      */
     public void finish() {
-        dumperDone = true;
-        for(int i = 0; i < dumpThreads.length; i++) {
+        marshallerDone = true;
+        for(int i = 0; i < marshallThreads.length; i++) {
             try {
-                dumpThreads[i].join();
+                marshallThreads[i].join();
             } catch(InterruptedException ex) {
             }
         }
@@ -193,11 +193,11 @@ public class Marshaller implements Configurable {
         partitionManager = (PartitionManager) ps.getComponent(PROP_PARTITION_MANAGER);
         boolean longIndexingRun = ((SearchEngineImpl) partitionManager.getEngine()).isLongIndexingRun();
 
-        int queueLength = ps.getInt(PROP_DUMP_QUEUE_LENGTH);
+        int queueLength = ps.getInt(PROP_MARSHALL_QUEUE_LENGTH);
         int poolSize = ps.getInt(PROP_POOL_SIZE);
-        int ndt = ps.getInt(PROP_DUMP_THREADS);
+        int ndt = ps.getInt(PROP_MARSHALL_THREADS);
 
-        toDump = new ArrayBlockingQueue<MPHolder>(queueLength);
+        toMarshall = new ArrayBlockingQueue<MPHolder>(queueLength);
         poPool = new ArrayBlockingQueue<PartitionOutput>(poolSize);
         partOuts = new RAMPartitionOutput[poolSize];
         for(int i = 0; i < partOuts.length; i++) {
@@ -212,11 +212,11 @@ public class Marshaller implements Configurable {
         }
 
         pollInterval = ps.getInt(PROP_POLL_INTERVAL);
-        dumpThreads = new Thread[ndt];
-        for(int i = 0; i < dumpThreads.length; i++) {
-            dumpThreads[i] = new Thread(new MarshallThread());
-            dumpThreads[i].setName("Dump-" + i);
-            dumpThreads[i].start();
+        marshallThreads = new Thread[ndt];
+        for(int i = 0; i < marshallThreads.length; i++) {
+            marshallThreads[i] = new Thread(new MarshallThread());
+            marshallThreads[i].setName("Dump-" + i);
+            marshallThreads[i].start();
         }
 
         toFlush = new ArrayBlockingQueue<PartitionOutput>(poolSize);
@@ -249,17 +249,18 @@ public class Marshaller implements Configurable {
     class MarshallThread implements Runnable {
 
         public void run() {
-            while(!dumperDone) {
+            while(!marshallerDone) {
                 try {
                     //
                     // We'll poll for a defined interval so that we can catch when
                     // we're finished.
-                    MPHolder mph = toDump.poll(pollInterval, TimeUnit.MILLISECONDS);
+                    MPHolder mph = toMarshall.poll(pollInterval, TimeUnit.MILLISECONDS);
+                    PartitionOutput partOut = null;
                     if(mph != null && mph.time.after(partitionManager.getLastPurgeTime())) {
                         try {
 
-                            PartitionOutput partOut = poPool.take();
-                            dump(mph, partOut);
+                            partOut = poPool.take();
+                            marshall(mph, partOut);
 
                             //
                             // Merges will happen synchronously in the thread
@@ -271,12 +272,13 @@ public class Marshaller implements Configurable {
                             }
                         } catch(Exception ex) {
                             logger.log(Level.SEVERE,
-                                    "Error dumping partition, continuing", ex);
+                                    "Error marshalling partition, continuing", ex);
+                            partOut.cleanUp();
                         }
                     }
                 } catch(InterruptedException ex) {
                     logger.log(Level.WARNING,
-                            String.format("Dumper interrupted during poll, exiting with %d partitions waiting", toDump.size()));
+                            String.format("Dumper interrupted during poll, exiting with %d partitions waiting", toMarshall.size()));
                     return;
                 }
             }
@@ -284,7 +286,7 @@ public class Marshaller implements Configurable {
             //
             // Drain the list of partitions to dump and then dump them.
             List<MPHolder> l = new ArrayList<MPHolder>();
-            toDump.drainTo(l);
+            toMarshall.drainTo(l);
             if(l.isEmpty()) {
                 return;
             }
@@ -294,10 +296,10 @@ public class Marshaller implements Configurable {
                     if(sh.time.after(partitionManager.getLastPurgeTime())) {
                         try {
                             PartitionOutput partOut = poPool.take();
-                            dump(sh, partOut);
+                            marshall(sh, partOut);
                         } catch(IOException ex) {
                             logger.log(Level.SEVERE, String.format(
-                                    "Error dumping partition"), ex);
+                                    "Error marshalling partition"), ex);
                         }
                     }
                 }
@@ -306,7 +308,7 @@ public class Marshaller implements Configurable {
             }
         }
 
-        private void dump(MPHolder mph, PartitionOutput partOut) throws IOException, InterruptedException {
+        private void marshall(MPHolder mph, PartitionOutput partOut) throws IOException, InterruptedException {
             if(partOut != null) {
                 PartitionOutput ret = mph.part.marshall(partOut);
                 if(ret != null) {

@@ -460,7 +460,18 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             }
 
             header.dictOffsets[ord] = partDictOut.position();
+            try {
             dicts[ord].marshall(partOut);
+            } catch (RuntimeException ex) {
+                //
+                // It's nice to log what field and dictionary caused the problem
+                logger.log(Level.SEVERE, String.format("Exception %s marshalling %s from %s", 
+                        ex.getMessage(), type, field.getInfo().getName()));
+                
+                //
+                // But we want the marshalling thread to ultimately catch the exception.
+                throw(ex);
+            }
         }
 
         if(field.isSaved()) {

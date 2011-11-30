@@ -329,6 +329,22 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         started = false;
     }
 
+    public void cleanUp() {
+        partDictOut.clear();
+        if(termStatsDictOut != null) {
+            termStatsDictOut.clear();
+        }
+        if(postOut != null) {
+            for(PostingsOutput po : postOut) {
+                po.cleanUp();
+            }
+        }
+        vectorLengthsBuffer.clear();
+        deletionsBuffer.clear();
+    }
+    
+    
+
     public void close() throws IOException {
         if(partDictOut != null) {
             partDictOut.close();

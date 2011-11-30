@@ -186,9 +186,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     private double minMemoryPercent;
 
     @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Marshaller.class)
-    public static final String PROP_DUMPER = "dumper";
+    public static final String PROP_MARSHALLER = "marshaller";
 
-    private Marshaller dumper;
+    private Marshaller marshaller;
     
     @ConfigInteger(defaultValue=-1)
     public static final String PROP_DOCS_PER_PARTITION = "docs_per_partition";
@@ -1274,7 +1274,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         //
         // Shutdown the dumper for our partitions.
-        dumper.finish();
+        marshaller.finish();
         
         //
         // If we didn't do it while we were indexing, then calculate the document
@@ -1513,8 +1513,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         buildClassifiers = ps.getBoolean(PROP_BUILD_CLASSIFIERS);
         minMemoryPercent = ps.getDouble(PROP_MIN_MEMORY_PERCENT);
-        dumper = (Marshaller) ps.getComponent(PROP_DUMPER);
-        dumper.setMemoryPartitionQueue(mpPool);
+        marshaller = (Marshaller) ps.getComponent(PROP_MARSHALLER);
+        marshaller.setMemoryPartitionQueue(mpPool);
     }
 
     /**
@@ -1537,7 +1537,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      */
     public void setLongIndexingRun(boolean longIndexingRun) {
         this.longIndexingRun = longIndexingRun;
-        dumper.setLongIndexingRun(longIndexingRun);
+        marshaller.setLongIndexingRun(longIndexingRun);
         invFilePartitionManager.setLongIndexingRun(longIndexingRun);
     }
     
@@ -1623,7 +1623,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             for(Indexable doc : l) {
                 index(doc);
             }
-            dumper.dump(part);
+            marshaller.dump(part);
         }
 
         public void purge() {
@@ -1631,7 +1631,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
 
         public void dump() {
-            dumper.dump(part);
+            marshaller.dump(part);
             try {
                 part = mpPool.take();
                 part.start();
@@ -1647,7 +1647,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             // If we're being used as a simple indexer, then we need to dump
             // our data.
             if(!runningInThread) {
-                dumper.dump(part);
+                marshaller.dump(part);
             }
         }
 

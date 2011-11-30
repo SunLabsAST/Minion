@@ -55,4 +55,9 @@ public interface PostingsOutput {
      */
     public void flush() throws java.io.IOException;
     
+    /**
+     * Cleans up postings output from a failed marshall or merge operation.
+     */
+    public void cleanUp();
+    
 }// PostingsOutput

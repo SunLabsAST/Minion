@@ -46,23 +46,18 @@
     <property name="num_indexing_threads" value="1"/>
     <property name="docs_per_partition" value="-1"/>
     <property name="partition_manager_name" value="partition_manager"/>
-    <property name="dump_queue_length" value="3"/>
+    <property name="marshall_queue_length" value="3"/>
     <property name="partition_output_pool_size" value="4"/>
-    <property name="dump_threads" value="2"/>
+    <property name="marshall_threads" value="2"/>
     
-    <!-- Which dumping mechanism to use for new partitions.  This is a global
-    property because it's needed in a few places. -->
-        <!-- A stage that will dump partitions asynchronously -->
-    <component name="dumper" type="com.sun.labs.minion.indexer.partition.Marshaller">
+    <!-- A marshaller for partitions -->
+    <component name="marshaller" type="com.sun.labs.minion.indexer.partition.Marshaller">
         <property name="partition_manager" value="${partition_manager_name}"/>
-        <property name="dump_queue_length" value="${dump_queue_length}"/>
+        <property name="marshall_queue_length" value="${marshall_queue_length}"/>
         <property name="pool_size" value="${partition_output_pool_size}"/>
-        <property name="dump_threads" value="${dump_threads}"/>
+        <property name="marshall_threads" value="${marshall_threads}"/>
     </component>
-    
 
-    <property name="dumper" value="async_dumper"/>
-    
     <!-- A search engine, which is what the factory method for search engines 
     will return -->
     <component name="search_engine" type="com.sun.labs.minion.engine.SearchEngineImpl">
@@ -73,7 +68,7 @@
         <property name="docs_per_partition" value="${docs_per_partition}"/>
         <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
         <property name="pipeline_factory" value="pipeline_factory"/>
-        <property name="dumper" value="dumper"/>
+        <property name="marshaller" value="marshaller"/>
     </component>
     
     <!-- The index configuration -->

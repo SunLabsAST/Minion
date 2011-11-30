@@ -280,7 +280,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         }
         
         if(idMapType != IDMap.NONE) {
-            if(idMap == null || idMap.length < getMaxID()) {
+            if(idMap == null || idMap.length <= getMaxID()) {
                 idMap = new int[getMaxID()+1];
             }
         }
@@ -313,7 +313,13 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
                     case OLD_TO_NEW:
                         for(int i = 0; i < nUsed; i++) {
                             Entry e = sortedEntries[i];
+                            try {
                             idMap[e.getID()] = newID;
+                            } catch (ArrayIndexOutOfBoundsException ex) {
+                                logger.log(Level.SEVERE, String.format("aiobe idMap: %d id: %d newID: %d maxID: %d",
+                                        idMap.length, e.getID(), newID, getMaxID()));
+                                throw ex;
+                            }
                             e.setID(newID++);
                         }
                         break;

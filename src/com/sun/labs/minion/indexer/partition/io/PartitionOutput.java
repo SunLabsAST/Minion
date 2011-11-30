@@ -77,6 +77,8 @@ public interface PartitionOutput {
     public void flushVectorLengths() throws IOException;
     
     public void flush() throws IOException;
+    
+    public void cleanUp();
 
     public void close() throws IOException;
 }

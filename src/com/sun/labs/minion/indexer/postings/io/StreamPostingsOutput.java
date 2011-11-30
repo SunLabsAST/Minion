@@ -139,6 +139,9 @@ public class StreamPostingsOutput implements PostingsOutput {
         stream.flush();
     }
 
+    public void cleanUp() {
+    }
+
     /** 
      * Closes the output stream
      *

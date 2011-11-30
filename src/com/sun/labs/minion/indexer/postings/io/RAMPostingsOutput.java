@@ -53,5 +53,8 @@ public class RAMPostingsOutput implements PostingsOutput {
     public RAMPostingsInput asInput() {
         return new RAMPostingsInput(buff);
     }
-    
+
+    public void cleanUp() {
+        buff.clear();
+    }
 }

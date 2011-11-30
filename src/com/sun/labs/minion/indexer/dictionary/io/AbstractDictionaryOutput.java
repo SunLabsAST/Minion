@@ -214,6 +214,16 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         finished = true;
     }
 
+    public void cleanUp() {
+        started = false;
+        finished = true;
+        names.clear();
+        nameOffsets.clear();
+        entryInfo.clear();
+        completed.clear();
+    }
+    
+
     public long position() {
         return completed.position();
     }

@@ -47,6 +47,12 @@ public interface DictionaryOutput extends WriteableBuffer {
     public void flush(RandomAccessFile file) throws java.io.IOException;
     
     /**
+     * Cleans up the result of a failed dictionary output operation, dropping
+     * whatever data 
+     */
+    public void cleanUp();
+    
+    /**
      * Writes a buffer to the data for this dictionary output. Buffers can only
      * be written to a dictionary output when a dictionary is <em>not</em> being
      * written to the output.

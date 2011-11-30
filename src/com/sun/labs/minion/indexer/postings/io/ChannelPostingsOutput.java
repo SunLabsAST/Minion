@@ -141,8 +141,6 @@ public class ChannelPostingsOutput implements PostingsOutput {
         return write(p.getBuffers());
     }
 
-
-
     /**
      * Gets the position of the the channel.
      * @throws java.io.IOException If there is any error getting the position.
@@ -163,4 +161,8 @@ public class ChannelPostingsOutput implements PostingsOutput {
         }
         buff.clear();
     }
+
+    public void cleanUp() {
+    }
+    
 } // PostingsOutputChannel
