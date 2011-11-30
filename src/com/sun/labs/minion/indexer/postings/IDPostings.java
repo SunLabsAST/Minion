@@ -150,8 +150,8 @@ public class IDPostings implements Postings, MergeablePostings {
         this(in[0].read(offset[0], size[0]), 0, 0);
     }
 
-    public int getNumChannels() {
-        return 1;
+    public String[] getChannelNames() {
+        return new String[] {"post"};
     }
 
     /**

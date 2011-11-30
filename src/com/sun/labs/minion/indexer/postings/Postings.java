@@ -84,12 +84,13 @@ public interface Postings {
     public Type getType();
     
     /**
-     * Gets the number of channels needed for writing or reading these postings.
-     * @return the number of postings input or output needed for this postings 
-     * type.
+     * Gets the names of the channels to which this postings type will want to
+     * write/read it's postings.  This lets us use useful names for the postings
+     * files, rather than numbers.  Note that the first element will be assumed
+     * to be "post", since that's our standard postings file.
      */
-    public int getNumChannels();
-
+    public String[] getChannelNames();
+    
     /**
      * Adds an occurrence to the postings list.
      *
