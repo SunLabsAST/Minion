@@ -297,11 +297,13 @@ public class DictionaryTest {
                     equals(qe.getName()));
         }
         nw.stop();
-        logger.info(String.format("Iterated through %d entries in %.3fms avg time: %.3fms", wordList.size(),
+        logger.info(String.format(
+                "Iterated through %d entries in %.3fms avg time: %.3fms", wordList.
+                size(),
                 nw.getTimeMillis(), nw.getTimeMillis() / wordList.size()));
     }
 
-//    @Test
+    @Test
     public void testMerge() throws Exception {
 
         List<String> d1w = new ArrayList<String>();
@@ -317,11 +319,13 @@ public class DictionaryTest {
         DiskDictionary dd2 = makeAndGet(d2w);
 
         File f = File.createTempFile("merge", ".dict");
+        f.deleteOnExit();
 
         RandomAccessFile mf = new RandomAccessFile(f, "rw");
 
-        dd1.merge(tmpDir,
-                new StringNameHandler(), new DiskDictionary[]{dd1, dd2},
+        DiskDictionary.merge(tmpDir,
+                new StringNameHandler(),
+                new DiskDictionary[]{dd1, dd2},
                 null, new int[2], new int[2][], mf,
                 new PostingsOutput[0], true);
 
