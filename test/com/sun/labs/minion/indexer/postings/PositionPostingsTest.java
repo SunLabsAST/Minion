@@ -207,21 +207,18 @@ public class PositionPostingsTest {
         p1.write(postOut, o1, s1);
         p2.write(postOut, o2, s2);
 
-        PostingsInput[] postIn = new PostingsInput[]{postOut[0].asInput()};
         TestData atd = new TestData(d1, d2, lastID + 1);
 
         try {
             PositionPostings append = new PositionPostings();
-            p1 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ, postIn, o1, s1);
-            d1.iteration(p1);
+            p1 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, o1, s1);
             append.append(p1, 1);
-            p2 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ, postIn, o2, s2);
-            d2.iteration(p2);
+            p2 = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, o2, s2);
             append.append(p2, lastID + 1);
             long o3[] = new long[2];
             int s3[] = new int[2];
             append.write(postOut, o3, s3);
-            append = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ, postIn, o3, s3);
+            append = (PositionPostings) Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, o3, s3);
             atd.iteration(append);
         } catch(AssertionError er) {
             File f = File.createTempFile("randomappend", ".data");
