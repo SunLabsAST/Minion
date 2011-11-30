@@ -7,7 +7,9 @@ package com.sun.labs.minion.indexer.dictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.minion.util.NanoWatch;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
@@ -47,7 +49,8 @@ public class DictionaryTest {
     public static void setUpClass() throws Exception {
         tmpDir = new File(System.getProperty("java.io.tmpdir"));
         wordList = new ArrayList<String>();
-        InputStream pdis = DictionaryTest.class.getResourceAsStream("/com/sun/labs/minion/indexer/dictionary/resource/words.gz");
+        InputStream pdis = DictionaryTest.class.getResourceAsStream(
+                "/com/sun/labs/minion/indexer/dictionary/resource/words.gz");
         if(pdis == null) {
             logger.severe(String.format("Couldn't find test data!"));
             return;
@@ -61,7 +64,8 @@ public class DictionaryTest {
 
         shuffleList = new ArrayList<String>(wordList);
         Collections.shuffle(shuffleList);
-        logger.info(String.format("list: %d shuffle: %d", wordList.size(), shuffleList.size()));
+        logger.info(String.format("list: %d shuffle: %d", wordList.size(), shuffleList.
+                size()));
     }
 
     @AfterClass
@@ -199,11 +203,10 @@ public class DictionaryTest {
         dictFile.close();
     }
 
-    @Test
-    public void testAllWordsDump() throws Exception {
+    private File makeAndDump(List<String> l) throws Exception {
         MemoryDictionary<String> sd = new MemoryDictionary<String>(new EntryFactory(
                 Postings.Type.NONE));
-        for(String s : wordList) {
+        for(String s : l) {
             sd.put(s);
         }
         File f = File.createTempFile("all", ".dict");
@@ -213,21 +216,37 @@ public class DictionaryTest {
                 new PostingsOutput[0], MemoryDictionary.Renumber.NONE,
                 MemoryDictionary.IDMap.NONE, null);
         dictFile.close();
+        return f;
+    }
+
+    @Test
+    public void testAllWordsDump() throws Exception {
+        makeAndDump(wordList);
     }
 
     @Test
     public void testShuffleWordsDump() throws Exception {
-        MemoryDictionary<String> sd = new MemoryDictionary<String>(new EntryFactory(
-                Postings.Type.NONE));
-        for(String s : shuffleList) {
-            sd.put(s);
+        makeAndDump(shuffleList);
+    }
+
+    @Test
+    public void testDiskDictionaryGet() throws Exception {
+        File f = makeAndDump(shuffleList);
+        RandomAccessFile dictFile = new RandomAccessFile(f, "r");
+        DiskDictionary<String> dd =
+                new DiskDictionary<String>(new EntryFactory<String>(
+                Postings.Type.NONE),
+                                           new StringNameHandler(),
+                                           dictFile,
+                                           new RandomAccessFile[0]);
+        NanoWatch nw = new NanoWatch();
+        nw.start();
+        for(String w : wordList) {
+            Entry e = dd.get(w);
+            assertEquals(String.format("Requested %s got %s", w, e.getName()), e.getName(), w);
         }
-        File f = File.createTempFile("all", ".dict");
-        f.deleteOnExit();
-        RandomAccessFile dictFile = new RandomAccessFile(f, "rw");
-        sd.dump(tmpDir, new StringNameHandler(), dictFile,
-                new PostingsOutput[0], MemoryDictionary.Renumber.NONE,
-                MemoryDictionary.IDMap.NONE, null);
-        dictFile.close();
+        nw.stop();
+        logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", wordList.size(),
+                nw.getTimeMillis(), nw.getTimeMillis() / wordList.size()));
     }
 }
