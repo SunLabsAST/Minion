@@ -74,7 +74,9 @@ import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
 import com.sun.labs.minion.util.DirCopier;
+import com.sun.labs.minion.util.Util;
 import com.sun.labs.util.NanoWatch;
+import com.sun.labs.util.props.ConfigDouble;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -177,6 +179,25 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public static final String PROP_ACTIVE_CHECK_INTERVAL = "active_check_interval";
 
     private int activeCheckInterval;
+    
+    @ConfigInteger(defaultValue=10000) 
+    public static final String PROP_TERM_STATS_CHECK_INTERVAL = "term_stats_check_interval";
+    
+    /**
+     * The interval between checks of the index to see whether the term stats
+     * need to be regenerated.
+     */
+    private int termStatsCheckInterval;
+    
+    @ConfigDouble(defaultValue=0.1)
+    public static final String PROP_TERM_STATS_REGENERATION_RATIO = "term_stats_regeneration_ratio";
+    
+    /**
+     * The ratio size change in the index (in terms of the number of documents) 
+     * that triggers a regeneration of the term statistics for the collection.  The default
+     * value is 0.1, i.e., when the index has grown or shrunk by 10%.
+     */
+    private double termStatsRegenerationRatio;
 
     @ConfigInteger(defaultValue = 15000)
     public static final String PROP_PART_CLOSE_DELAY = "part_close_delay";
@@ -543,8 +564,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 activeCheckInterval);
         if(!isLongIndexingRun()) {
             timer.scheduleAtFixedRate(new TermStatsKeeper(),
-                    10000,
-                    10000);
+                    termStatsCheckInterval,
+                    termStatsCheckInterval);
         }
     }
 
@@ -2678,13 +2699,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     
     protected class TermStatsKeeper extends TimerTask {
         
-        /**
-         * The number of documents in the collection the last time that we
-         * woke up.
-         */
         private int lastNumDocs;
-        
-        private AtomicBoolean running = new AtomicBoolean(false);
         
         public TermStatsKeeper() {
             lastNumDocs = getNDocs();
@@ -2696,25 +2711,22 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // We want to make sure that we won't be running more than one update
             // at a time, since some updates might take longer than the interval
             // between checks.
-            if(running.compareAndSet(false, true)) {
-                int numDocs = getNDocs();
-                float deltaRatio = Math.abs(((float) numDocs - lastNumDocs) / numDocs);
-                if(deltaRatio > 0.1) {
-                    logger.info(String.format("TermStatsKeeper: %d %d %.2f", lastNumDocs, numDocs, deltaRatio * 100));
-                    NanoWatch nw = new NanoWatch();
-                    nw.start();
-                    try {
-                        generateTermStats();
-                    } catch(FileLockException ex) {
-                        logger.log(Level.SEVERE, String.format("Error recalculating term stats"), ex);
-                    } catch(IOException ex) {
-                        logger.log(Level.SEVERE, String.format("Error recalculating term stats"), ex);
-                    }
-                    nw.stop();
-                    logger.info(String.format("Generated term stats in %.2fs", nw.getTimeMillis()));
+            int numDocs = getNDocs();
+            float changedRatio = Math.abs(((float) numDocs - lastNumDocs) / numDocs);
+            if(changedRatio > termStatsRegenerationRatio) {
+                logger.info(String.format("TermStatsKeeper: %d %d %.2f", lastNumDocs, numDocs, changedRatio * 100));
+                NanoWatch nw = new NanoWatch();
+                nw.start();
+                try {
+                    generateTermStats();
+                } catch(FileLockException ex) {
+                    logger.log(Level.SEVERE, String.format("Error recalculating term stats"), ex);
+                } catch(IOException ex) {
+                    logger.log(Level.SEVERE, String.format("Error recalculating term stats"), ex);
                 }
+                nw.stop();
+                logger.info(String.format("Generated term stats in %s", Util.millisToTimeString(nw.getTimeMillis())));
                 lastNumDocs = numDocs;
-                running.compareAndSet(true, false);
             }
         }
     }
@@ -2743,6 +2755,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         mergeRate = ps.getInt(PROP_MERGE_RATE);
         maxMergeSize = ps.getInt(PROP_MAX_MERGE_SIZE);
         activeCheckInterval = ps.getInt(PROP_ACTIVE_CHECK_INTERVAL);
+        termStatsCheckInterval = ps.getInt(PROP_TERM_STATS_CHECK_INTERVAL);
+        termStatsRegenerationRatio = ps.getDouble(PROP_TERM_STATS_REGENERATION_RATIO);
         partCloseDelay = ps.getInt(PROP_PART_CLOSE_DELAY);
         partReapDelay = ps.getInt(PROP_PART_REAP_DELAY);
         calculateDVL = ps.getBoolean(PROP_CALCULATE_DVL);

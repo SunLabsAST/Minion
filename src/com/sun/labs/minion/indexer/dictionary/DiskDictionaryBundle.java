@@ -1010,6 +1010,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
             } else if(bundles[0].dicts[Type.CASED_TOKENS.ordinal()] != null) {
                 di = bundles[0].dicts[Type.CASED_TOKENS.ordinal()].iterator();
             }
+            if(di == null) {
+                return false;
+            }
             while(di.hasNext()) {
                 QueryEntry qe = (QueryEntry) di.next();
                 //

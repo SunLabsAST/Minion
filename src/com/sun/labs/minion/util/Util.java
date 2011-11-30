@@ -39,10 +39,7 @@ import java.util.logging.Logger;
  */
 public class Util {
 
-    /**
-     * A log.
-     */
-    private static Logger logger = Logger.getLogger(Util.class.getName());
+    private static final Logger logger = Logger.getLogger(Util.class.getName());
 
     public static File getTempFile(String path, String prefix,
             String suffix) throws java.io.IOException {
