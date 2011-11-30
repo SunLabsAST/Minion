@@ -176,6 +176,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
             header.idToPosnPos = -1;
             header.idToPosnSize = -1;
         }
+        
         header.namesPos = completed.position();
         names.write(completed);
         names.clear();

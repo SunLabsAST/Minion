@@ -25,7 +25,6 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.logging.Logger;
 
@@ -215,6 +214,7 @@ public class DictionaryHeader {
         }
         magic = dictFile.readInt();
         if(magic != GOOD_MAGIC) {
+            logger.info(String.format("bad magic: %s", this));
             throw new java.io.IOException("Error reading magic number");
         }
         computeValues();
@@ -263,7 +263,7 @@ public class DictionaryHeader {
             b.byteEncode(postStart[i], 8);
             b.byteEncode(postEnd[i], 7);
         }
-        b.byteEncode(magic, 1);
+        b.byteEncode(magic, 4);
     }
 
     /**
@@ -285,6 +285,8 @@ public class DictionaryHeader {
                 + " entryInfoSize: " + entryInfoSize
                 + " entryInfoOffsetsPos: " + entryInfoOffsetsPos
                 + " entryInfoOffsetsSize: " + entryInfoOffsetsSize
-                + " id2p: " + idToPosnSize;
+                + " id2p: " + idToPosnSize 
+                + " magic: " + magic;
+                
     }
 } // DictionaryHeader

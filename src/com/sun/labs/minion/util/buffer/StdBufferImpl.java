@@ -75,16 +75,16 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
     // put/append/set are left for concrete subclasses.
 
     /**
-     * Encodes a positive long onto a writable in a given number of bytes.
+     * Encodes a positive long onto a writable in a given number of bytes.  This
+     * encoding is compatible with DataOutput's writeInt.
      * 
      * @return The buffer, to allow chained invocations.
      * @param n The number to encode.
      * @param nBytes The number of bytes to use in the encoding.
      */
     public WriteableBuffer byteEncode(long n, int nBytes) {
-        for(int i = 0; i < nBytes; i++) {
-            put((byte) (n & 0xFF));
-            n >>= 8;
+        for(int shift = 8 * (nBytes-1); shift >= 0; shift -= 8) {
+            put((byte) ((n >>> shift) & 0xFF));
         }
         return this;
     }
@@ -98,12 +98,9 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param n The number to encode.
      * @param nBytes The number of bytes to use in the encoding.
      */
-    public WriteableBuffer byteEncode(int pos,
-                                      long n,
-                                      int nBytes) {
-        for(int i = 0; i < nBytes; i++) {
-            put(pos++, (byte) (n & 0xFF));
-            n >>= 8;
+    public WriteableBuffer byteEncode(int pos, long n, int nBytes) {
+        for(int shift = 8 * (nBytes-1); shift >= 0; shift -= 8) {
+            put(pos++, (byte) ((n >>> shift) & 0xFF));
         }
         return this;
     }    
@@ -114,7 +111,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * byte to encode a number.  If the 8th bit is 0, then there are no
      * further bytes in this number.  If the 8th bit is one, then the next
      * byte continues the number.  Note that this means that a number that
-     * would completly fill an integer will take 5 bytes to encode.
+     * would completely fill an integer will take 5 bytes to encode.
      * 
      * @return the number of bytes used to encode the number.
      * @param n The number to encode.
@@ -276,7 +273,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
     }
 
     /**
-     * Decodes a postive integer that was coded using a specific number of
+     * Decodes an integer that was coded using a specific number of
      * bytes from a specific position in the buffer.
      *
      * @param pos The position to decode from.
@@ -288,7 +285,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
     }
 
     /**
-     * Decodes a postive long that was coded using a specific number of
+     * Decodes a long that was coded using a specific number of
      * bytes.
      * 
      * @return the decoded number.
@@ -296,29 +293,24 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      */
     public long byteDecodeLong(int nBytes) {
         long ret = 0;
-        int shift = 0;
-        for(int i = 0; i < nBytes; i++) {
+        for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
             ret |= (long) (get() & 0xFF) << shift;
-            shift += 8;
         }
         return ret;
     }
 
     /**
-     * Decodes a postive long that was coded using a specific number of
+     * Decodes a long that was coded using a specific number of
      * bytes from a given position.
      * 
      * @return the decoded number.
      * @param pos The position to decode from.
      * @param nBytes The number of bytes to use.
      */
-    public long byteDecodeLong(int pos,
-                               int nBytes) {
+    public long byteDecodeLong(int pos, int nBytes) {
         long ret = 0;
-        int shift = 0;
-        for(int i = 0; i < nBytes; i++) {
+        for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
             ret |= (long) (get(pos++) & 0xFF) << shift;
-            shift += 8;
         }
         return ret;
     }
@@ -478,9 +470,22 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
 
         b.append(countBits(start, end)).append(" bits set\n");
         long currDecode = 0;
+        int currDecodeInt = 0;
         long inCurr = 0;
         
         int shift = 0;
+        switch(decode) {
+            case BYTE_ENCODED:
+                shift = 0;
+                break;
+            case INTEGER:
+                shift = 24;
+                break;
+            case LONG:
+                shift = 56;
+                break;
+        }
+
         for (int i = start, j = 0; i < end; i++, j += 8) {
             byte curr = get(i);
             b.append(String.format("%s%7d%7d %s",
@@ -502,28 +507,27 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
                     }
                     break;
                 case INTEGER:
-                    currDecode |= ((long) (curr & 0xFF)) << shift;
+                    currDecodeInt |= ((int) (curr & 0xFF)) << shift;
                     inCurr++;
-                    shift += 8;
+                    shift -= 8;
                     if(inCurr % 4 == 0) {
-                        b.append(String.format(" %8d", currDecode));
-                        currDecode = 0;
-                        shift = 0;
+                        b.append(String.format(" %8d", currDecodeInt));
+                        currDecodeInt = 0;
+                        shift = 24;
                         inCurr = 0;
                     }
                     break;
                 case LONG:
                     currDecode |= ((long) (curr & 0xFF)) << shift;
                     inCurr++;
-                    shift += 8;
+                    shift -= 8;
                     if (inCurr % 8 == 0) {
                         b.append(String.format(" %8d", currDecode));
                         currDecode = 0;
-                        shift = 0;
+                        shift = 56;
                         inCurr = 0;
                     }
                     break;
-                    
             }
 
         }

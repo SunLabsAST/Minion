@@ -53,37 +53,18 @@ public abstract class StdReadableImpl implements ReadableBuffer {
         return (int) byteDecodeLong(pos, nBytes);
     }
     
-    /**
-     * Decodes a postive long that was coded using a specific number of
-     * bytes.
-     *
-     * @param nBytes The number of bytes to use.
-     * @return the decoded number.
-     */
     public long byteDecodeLong(int nBytes) {
         long ret = 0;
-        int shift = 0;
-        for(int i = 0; i < nBytes; i++) {
+        for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
             ret |= (long) (get() & 0xFF) << shift;
-            shift += 8;
         }
         return ret;
     }
 
-    /**
-     * Decodes a postive long that was coded using a specific number of
-     * bytes from a given position.
-     *
-     * @param pos The position to decode from.
-     * @param nBytes The number of bytes to use.
-     * @return the decoded number.
-     */
     public long byteDecodeLong(int pos, int nBytes) {
         long ret = 0;
-        int shift = 0;
-        for(int i = 0; i < nBytes; i++) {
+        for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
             ret |= (long) (get(pos++) & 0xFF) << shift;
-            shift += 8;
         }
         return ret;
     }

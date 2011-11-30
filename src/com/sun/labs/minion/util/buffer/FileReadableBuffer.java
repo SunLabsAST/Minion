@@ -42,6 +42,11 @@ import java.util.logging.Logger;
 public class FileReadableBuffer extends StdReadableImpl {
 
     /**
+     * A log.
+     */
+    protected static final Logger logger = Logger.getLogger(FileReadableBuffer.class.getName());
+
+    /**
      * The file containing the buffer.
      */
     protected RandomAccessFile raf;
@@ -76,16 +81,6 @@ public class FileReadableBuffer extends StdReadableImpl {
      * The in-memory buffer.
      */
     protected byte[] buff;
-
-    /**
-     * A log.
-     */
-    protected static final Logger logger = Logger.getLogger(FileReadableBuffer.class.getName());
-
-    /**
-     * A tag for our log entries.
-     */
-    protected static String logTag = "FRB";
 
     /**
      * The default buffer size, 1KB.

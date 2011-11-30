@@ -33,8 +33,10 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
 import com.sun.labs.minion.util.ChannelUtil;
+import com.sun.labs.util.LabsLogFormatter;
 import java.io.FileOutputStream;
 import java.util.Arrays;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -157,6 +159,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         flush();
         try {
             raf.seek(off + p);
+            pos = p;
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Error seeking", ioe);
         }
@@ -233,36 +236,18 @@ public class FileWriteableBuffer implements WriteableBuffer {
         return this;
     }
 
-    /**
-     * Encodes a positive long onto a writeable in a given number of bytes.
-     * 
-     * @return The buffer, to allow chained invocations.
-     * @param n The number to encode.
-     * @param nBytes The number of bytes to use in the encoding.
-     */
     public WriteableBuffer byteEncode(long n, int nBytes) {
-        for(int i = 0; i < nBytes; i++) {
-            put((byte) (n & 0xFF));
-            n >>= 8;
+        for(int shift = 8 * (nBytes - 1); shift >= 0; shift -= 8) {
+            put((byte) ((n >>> shift) & 0xFF));
         }
         return this;
     }
 
-    /**
-     * Encodes a positive long directly, using a given number of
-     * bytes, starting at the given position in the units.
-     * 
-     * @return The buffer, to allow chained invocations.
-     * @param pos The position to start encoding.
-     * @param n The number to encode.
-     * @param nBytes The number of bytes to use in the encoding.
-     */
-    public WriteableBuffer byteEncode(int pos,
-            long n,
-            int nBytes) {
-        for(int i = 0; i < nBytes; i++) {
-            put(pos++, (byte) (n & 0xFF));
-            n >>= 8;
+    public WriteableBuffer byteEncode(int pos, long n, int nBytes) {
+        for(int shift = 8 * (nBytes - 1); shift >= 0; shift -= 8) {
+            byte b = (byte) ((n >>> shift) & 0xFF);
+            logger.info(String.format("byte: %s", StdBufferImpl.byteToBinaryString(b)));
+            put(pos++, (byte) ((n >>> shift) & 0xFF));
         }
         return this;
     }
@@ -526,6 +511,8 @@ public class FileWriteableBuffer implements WriteableBuffer {
         // starts.
         int buffPos = pos - bPos;
         if(chan instanceof FileChannel) {
+            FileChannel mychan = raf.getChannel();
+            
             //
             // Transfer whatever bytes are already in the file.
             if(start < buffPos) {
@@ -539,7 +526,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
                 } else {
                     n = buffPos - start;
                 }
-                ChannelUtil.transferFully(raf.getChannel(), so, n, (FileChannel) chan);
+                ChannelUtil.transferFully(mychan, so, n, (FileChannel) chan);
             }
             
             //
@@ -551,8 +538,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
                 } else {
                     buffToWrite = ByteBuffer.wrap(buff, 0, end - buffPos);
                 }
-                logger.info(String.format("buffToWrite: pos: %d limit: %d", buffToWrite.position(), buffToWrite.limit()));
-                ChannelUtil.writeFully(raf.getChannel(), buffToWrite);
+                ChannelUtil.writeFully((FileChannel) chan, buffToWrite);
             }
         } else {
             ByteBuffer b = ByteBuffer.allocate(end - start);
@@ -637,9 +623,14 @@ public class FileWriteableBuffer implements WriteableBuffer {
 
     @Override
     public String toString() {
-        return "FileWriteableBuffer{" + "buff=" + buff + '}';
+        try {
+            return "FileWriteableBuffer{" + "off=" + off + ", pos=" + pos + ", bPos=" + bPos + ", len=" + raf.length() +'}';
+        } catch(IOException ex) {
+            return "FileWriteableBuffer{" + "off=" + off + ", pos=" + pos + ", bPos=" + bPos + '}';
+        }
     }
 
+    
     public int countBits() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
@@ -686,7 +677,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
 
         flush();
 
-        byte[] tb = new byte[end - start + 1];
+        byte[] tb = new byte[end - start];
         try {
             long initPos = raf.getFilePointer();
             raf.seek(off + start);
@@ -698,7 +689,42 @@ public class FileWriteableBuffer implements WriteableBuffer {
         }
 
         ArrayBuffer ab = new ArrayBuffer(tb);
-        return String.format("off: %d\n%s", off, ab.toString(start, end, decode));
+        return String.format("off: %d\n%s", off, ab.toString(Portion.ALL, decode));
+    }
+    
+    public static void main(String[] args) throws Exception {
+        Logger l = Logger.getLogger("");
+        for(Handler h : l.getHandlers()) {
+            h.setLevel(Level.ALL);
+            h.setFormatter(new LabsLogFormatter());
+        }
+        logger.info(String.format("Max int: %d", Integer.MAX_VALUE));
+        RandomAccessFile raf = new RandomAccessFile(args[0], "rw");
+        raf.writeInt(-1);
+        raf.writeInt(Integer.MAX_VALUE);
+        raf.seek(0);
+        for(int i = 0; i < 8; i++) {
+            byte b = raf.readByte();
+            logger.info(String.format("byte: %s", StdBufferImpl.byteToBinaryString(b)));
+        }
+        raf.seek(0);
+        int x = raf.readInt();
+        int y = raf.readInt();
+        logger.info(String.format("read: %d %d", x, y));
+        FileWriteableBuffer fwb = new FileWriteableBuffer(raf);
+        fwb.byteEncode(-1, 4);
+        fwb.byteEncode(Integer.MAX_VALUE, 4);
+        logger.info(String.format("fwb: %s", fwb.toString(Portion.BEGINNING_TO_POSITION, Buffer.DecodeMode.INTEGER)));
+        fwb.flush();
+        raf.seek(0);
+        x = raf.readInt();
+        y = raf.readInt();
+        logger.info(String.format("read: %d %d", x, y));
+        x = raf.readInt();
+        y = raf.readInt();
+        logger.info(String.format("read: %d %d", x, y));
+        
+        raf.close();
     }
 } // FileWriteableBuffer
 

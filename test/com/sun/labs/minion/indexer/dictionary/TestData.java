@@ -1,12 +1,10 @@
 package com.sun.labs.minion.indexer.dictionary;
 
-import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
-import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.DumpState;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
+import com.sun.labs.util.LabsLogFormatter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -21,6 +19,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
 public class TestData {
@@ -153,5 +154,14 @@ public class TestData {
 
     public void close() throws Exception {
         raf.close();
+    }
+    
+    public static void main(String[] args) throws Exception {
+        Logger l = Logger.getLogger("");
+        for(Handler h : l.getHandlers()) {
+            h.setLevel(Level.ALL);
+            h.setFormatter(new LabsLogFormatter());
+        }
+        TestData td = new TestData("words.gz");
     }
 }
