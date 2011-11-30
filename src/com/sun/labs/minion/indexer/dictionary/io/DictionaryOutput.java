@@ -57,12 +57,6 @@ public interface DictionaryOutput extends WriteableBuffer {
     public void write(ReadableBuffer b);
     
     /**
-     * Gives the current position in the buffer that we're writing.
-     * @return 
-     */
-    public int position();
-    
-    /**
      * Closes this dictionary output.
      */
     public void close() throws java.io.IOException;

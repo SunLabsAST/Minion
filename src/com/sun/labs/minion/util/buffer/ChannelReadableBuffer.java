@@ -36,6 +36,8 @@ import java.util.logging.Logger;
  */
 public class ChannelReadableBuffer extends StdReadableImpl {
 
+    private static final Logger logger = Logger.getLogger(ChannelReadableBuffer.class.getName());
+
     /**
      * The channel containing the buffer.
      */
@@ -73,19 +75,9 @@ public class ChannelReadableBuffer extends StdReadableImpl {
     protected ByteBuffer buff;
 
     /**
-     * A log.
+     * The default buffer size, 8KB.
      */
-    static Logger logger = Logger.getLogger(ChannelReadableBuffer.class.getName());
-
-    /**
-     * A tag for our log entries.
-     */
-    protected static String logTag = "CRB";
-
-    /**
-     * The default buffer size, 1KB.
-     */
-    protected static final int DEFAULT_BUFF_SIZE = 1024;
+    protected static final int DEFAULT_BUFF_SIZE = 8096;
 
     /**
      * Creates a buffer backed by a channel.
@@ -95,7 +87,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      */
     public ChannelReadableBuffer(RandomAccessFile raf,
             long offset,
-            int limit) {
+            long limit) {
         this(raf.getChannel(), offset, limit, DEFAULT_BUFF_SIZE);
     }
 
@@ -108,7 +100,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      */
     public ChannelReadableBuffer(RandomAccessFile raf,
             long offset,
-            int limit,
+            long limit,
             int buffSize) {
         this(raf.getChannel(), offset, limit, buffSize);
     }
@@ -122,7 +114,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      */
     public ChannelReadableBuffer(FileChannel chan,
             long offset,
-            int limit,
+            long limit,
             int buffSize) {
         this.chan = chan;
         bs = offset;
@@ -135,16 +127,14 @@ public class ChannelReadableBuffer extends StdReadableImpl {
         // Fill the buffer if the size of the data is smaller than the size
         // of the buffer.
         if(limit > 0 && limit <= buffSize) {
-            buff = ByteBuffer.allocateDirect(limit);
+            buff = ByteBuffer.allocateDirect((int) limit);
             int n = read(bs);
             ms = bs;
             me = bs + n;
         } else {
             buff = ByteBuffer.allocateDirect(buffSize);
         }
-
-
-    } // FileBackedBuffer constructor
+    }
 
     /**
      * Reads a given number of bytes from the channel.
@@ -186,8 +176,8 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * Gets the number of bytes remaining to be read.
      * @return The number of bytes remaining to be read.
      */
-    public int remaining() {
-        return (int) (be - pos);
+    public long remaining() {
+        return be - pos;
     }
 
     /**
@@ -198,8 +188,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * position are independent in the new buffer.
      */
     public ReadableBuffer duplicate() {
-        return new ChannelReadableBuffer(chan, bs,
-                (int) (be - bs), buff.capacity());
+        return new ChannelReadableBuffer(chan, bs, be - bs, buff.capacity());
     }
 
     /**
@@ -213,24 +202,23 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * will be the given position and the new buffer will contain the given number 
      * of bytes.
      */
-    public ReadableBuffer slice(int p, int s) {
-        return new ChannelReadableBuffer(chan, bs + p,
-                s, buff.capacity());
+    public ReadableBuffer slice(long p, long s) {
+        return new ChannelReadableBuffer(chan, bs + p, s, buff.capacity());
     }
 
     /**
      * Gets the limit of this buffer, i.e., the last readable position.
      * @return The last readable position in the buffer.
      */
-    public int limit() {
-        return (int) (be - bs);
+    public long limit() {
+        return be - bs;
     }
 
     /**
      * Sets the limit of this buffer, i.e., the last readable position.
      * @param l The limit to set.
      */
-    public void limit(int l) {
+    public void limit(long l) {
         be = bs + l;
     }
 
@@ -239,7 +227,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * @param i The position from which we want to get a byte.
      * @return The byte at the given position.
      */
-    public byte get(int i) {
+    public byte get(long i) {
         return buff.get(checkBounds(i + bs));
     }
 
@@ -255,15 +243,15 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * Gets the position of the buffer.
      * @return The current position of the buffer.
      */
-    public int position() {
-        return (int) (pos - bs);
+    public long position() {
+        return pos - bs;
     }
 
     /**
      * Positions the buffer.
      * @param i The position to which we want to set the buffer.
      */
-    public void position(int i) {
+    public void position(long i) {
         this.pos = bs + i;
     }
 
@@ -271,6 +259,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * Gets a string representation of the buffer.
      * @return A string representation of the buffer.
      */
+    @Override
     public String toString() {
         return "buff: (" + bs + "," + be + ")" +
                 " mem: (" + ms + "," + me + ") " + buff.capacity();

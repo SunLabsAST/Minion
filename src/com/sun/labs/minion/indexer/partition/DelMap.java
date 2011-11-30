@@ -155,7 +155,7 @@ public class DelMap implements Cloneable {
         if(delMap == null) {
             nDeleted = 0;
         } else {
-            nDeleted = ((ReadableBuffer) delMap).countBits();
+            nDeleted = (int) ((ReadableBuffer) delMap).countBits();
         }
         dirty = false;
     }
@@ -163,7 +163,7 @@ public class DelMap implements Cloneable {
     public static void write(File f, WriteableBuffer m)
             throws java.io.IOException {
         RandomAccessFile raf = new RandomAccessFile(f, "rw");
-        raf.writeInt(m.position());
+        raf.writeInt((int) m.position());
         m.write(raf);
         raf.close();
     }
@@ -287,7 +287,7 @@ public class DelMap implements Cloneable {
             if(fmap != null) {
                 ((WriteableBuffer) delMap).or((ReadableBuffer) fmap);
             }
-            nDeleted = ((ReadableBuffer) delMap).countBits();
+            nDeleted = (int) ((ReadableBuffer) delMap).countBits();
             write();
         } catch(Exception e) {
             logger.log(Level.SEVERE, "Error syncing delmap: " + delFile, e);

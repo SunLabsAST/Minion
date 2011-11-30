@@ -49,7 +49,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * @param nBytes The number of bytes to use.
      * @return the decoded number.
      */
-    public int byteDecode(int pos, int nBytes) {
+    public int byteDecode(long pos, int nBytes) {
         return (int) byteDecodeLong(pos, nBytes);
     }
     
@@ -61,7 +61,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
         return ret;
     }
 
-    public long byteDecodeLong(int pos, int nBytes) {
+    public long byteDecodeLong(long pos, int nBytes) {
         long ret = 0;
         for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
             ret |= (long) (get(pos++) & 0xFF) << shift;
@@ -105,9 +105,9 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * @return the number of bytes skipped.
      */
     public int skipByteEncoded() {
-        int init = position();
+        long init = position();
         while((get() & 0x80) != 0);
-        return position() - init;
+        return (int) (position() - init);
     }
 
     /**
@@ -125,10 +125,10 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * @param bitIndex the index of the bit to test.
      * @return true if the bit is 1, false if it is 0
      */
-    public boolean test(int bitIndex) {
-        int i = bitIndex >>> 3;
+    public boolean test(long bitIndex) {
+        long i = bitIndex >>> 3;
         return i > limit() ? false :
-            ((get(i) & StdBufferImpl.masks[bitIndex & 0x07]) != 0);
+            ((get(i) & StdBufferImpl.masks[(int) (bitIndex & 0x07L)]) != 0);
     }
     
     /**
@@ -175,17 +175,13 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * Counts the number of bits that are set in a buffer.
      * @return The number of 1 bits in the buffer.
      */
-    public int countBits() {
-        int n = 0;
-        for (int i = 0; i < limit(); i++) {
-            n += StdBufferImpl.nBits[(int) (get(i) & 0xff)];
-        }
-        return n;
+    public long countBits() {
+        return countBits(0, limit());
     }
 
-    public int countBits(int start, int end) {
-        int n = 0;
-        for (int i = start; i < end; i++) {
+    public long countBits(long start, long end) {
+        long n = 0;
+        for (long i = start; i < end; i++) {
             n += StdBufferImpl.nBits[(int) (get(i) & 0xff)];
         }
         return n;
@@ -193,8 +189,8 @@ public abstract class StdReadableImpl implements ReadableBuffer {
 
     public String toString(Portion portion, DecodeMode decode) {
 
-        int start;
-        int end;
+        long start;
+        long end;
 
         switch (portion) {
             case ALL:
@@ -217,9 +213,9 @@ public abstract class StdReadableImpl implements ReadableBuffer {
         return toString(start, end, decode);
     }
 
-    public String toString(int start, int end, DecodeMode decode) {
+    public String toString(long start, long end, DecodeMode decode) {
 
-        StringBuilder b = new StringBuilder((end - start + 1) * 8);
+        StringBuilder b = new StringBuilder((int) (end - start + 1) * 8);
         b.append(String.format("position: %d limit: %d\n", position(), limit()));
 
         if(start < 0 || end < 0) {
@@ -244,7 +240,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
                 break;
         }
 
-        for(int i = start, j = 0; i < end; i++, j += 8) {
+        for(long i = start, j = 0; i < end; i++, j += 8) {
             byte curr = get(i);
             b.append(String.format("%s%7d%7d %s",
                     i > start ? "\n" : "",

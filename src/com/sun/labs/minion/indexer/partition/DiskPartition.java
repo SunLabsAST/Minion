@@ -677,7 +677,7 @@ public class DiskPartition extends Partition implements Closeable {
             // Write a placeholder for the offset of the partition header.
             
             DictionaryOutput fieldDictOut = mergeState.partOut.getPartitionDictionaryOutput();
-            int phoffsetpos = fieldDictOut.position();
+            long phoffsetpos = fieldDictOut.position();
             fieldDictOut.byteEncode(0L, 8);
 
             //
@@ -706,10 +706,10 @@ public class DiskPartition extends Partition implements Closeable {
 
             mergeCustom(mergeState);
 
-            int phoffset = fieldDictOut.position();
+            long phoffset = fieldDictOut.position();
             
             mergeState.partOut.getPartitionHeader().write(fieldDictOut);
-            int pos = fieldDictOut.position();
+            long pos = fieldDictOut.position();
             fieldDictOut.position(phoffsetpos);
             fieldDictOut.byteEncode((long) phoffset, 8);
             fieldDictOut.position(pos);

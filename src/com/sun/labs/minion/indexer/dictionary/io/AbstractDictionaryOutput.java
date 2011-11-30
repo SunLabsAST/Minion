@@ -150,7 +150,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         //
         // Keep the ID to position map up to date, if necessary.
         if(renumber == MemoryDictionary.Renumber.NONE) {
-            idToPosn[e.getID()] = header.size;
+            idToPosn[e.getID()] = (int) header.size;
         }
 
         prevName = e.getName();
@@ -179,7 +179,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
 
         //
         // Copy everything to our completed buffer.
-        int headerPos = completed.position();
+        long headerPos = completed.position();
         header.write(completed);
         if(renumber == MemoryDictionary.Renumber.NONE) {
             header.idToPosnPos = completed.position();
@@ -205,7 +205,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         entryInfoOffsets.write(completed);
         entryInfoOffsets.clear();
         header.goodMagic();
-        int endPos = completed.position();
+        long endPos = completed.position();
         completed.position(headerPos);
         header.write(completed);
         completed.position(endPos);
@@ -214,7 +214,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         finished = true;
     }
 
-    public int position() {
+    public long position() {
         return completed.position();
     }
 
@@ -250,7 +250,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return this;
     }
 
-    public String toString(int start, int end, DecodeMode decode) {
+    public String toString(long start, long end, DecodeMode decode) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
@@ -264,42 +264,42 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.toString(portion, decode);
     }
 
-    public int remaining() {
+    public long remaining() {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
         return completed.remaining();
     }
 
-    public void position(int position) {
+    public void position(long position) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
         completed.position(position);
     }
 
-    public void limit(int l) {
+    public void limit(long l) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
         completed.limit(l);
     }
 
-    public int limit() {
+    public long limit() {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
         return completed.limit();
     }
 
-    public byte get(int i) {
+    public byte get(long i) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
         return completed.get(i);
     }
 
-    public int countBits() {
+    public long countBits() {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
@@ -327,7 +327,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.write(o);
     }
 
-    public void write(WritableByteChannel chan, int start, int end) throws IOException {
+    public void write(WritableByteChannel chan, long start, long end) throws IOException {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
@@ -355,14 +355,14 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.write(b);
     }
 
-    public WriteableBuffer set(int bitIndex) {
+    public WriteableBuffer set(long bitIndex) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
         return completed.set(bitIndex);
     }
 
-    public WriteableBuffer put(int p, byte b) {
+    public WriteableBuffer put(long p, byte b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
@@ -408,7 +408,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.clear();
     }
 
-    public WriteableBuffer capacity(int n) {
+    public WriteableBuffer capacity(long n) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
@@ -422,14 +422,14 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.byteEncode(n);
     }
 
-    public WriteableBuffer byteEncode(int pos, long n, int nBytes) {
+    public WriteableBuffer byteEncode(long pos, long n, int nBytes) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }
         return completed.byteEncode(pos, n, nBytes);
     }
 
-    public WriteableBuffer append(ReadableBuffer b, int n) {
+    public WriteableBuffer append(ReadableBuffer b, long n) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
         }

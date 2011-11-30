@@ -112,7 +112,7 @@ public abstract class MemoryPartition extends Partition {
 
         //
         // A spot for the partition header offset to be written.
-        int phoffsetpos = partDictOut.position();
+        long phoffsetpos = partDictOut.position();
         partDictOut.byteEncode(0, 8);
 
         //
@@ -144,9 +144,9 @@ public abstract class MemoryPartition extends Partition {
         //
         // Write the partition header, then return to the top of the file to
         // say where it is.
-        int phoffset = partDictOut.position();
+        long phoffset = partDictOut.position();
         partHeader.write(partDictOut);
-        int pos = partDictOut.position();
+        long pos = partDictOut.position();
         partDictOut.position(phoffsetpos);
         partDictOut.byteEncode(phoffset, 8);
         partDictOut.position(pos);

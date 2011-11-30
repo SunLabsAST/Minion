@@ -352,7 +352,7 @@ public class InvFileDiskPartition extends DiskPartition {
                 }
             }
             
-            int fieldOffset = mergeState.partOut.getPartitionDictionaryOutput().position();
+            long fieldOffset = mergeState.partOut.getPartitionDictionaryOutput().position();
             
             if(merger == null) {
                 logger.fine(String.format("No merger for %s", fi.getName()));
@@ -400,9 +400,9 @@ public class InvFileDiskPartition extends DiskPartition {
             tsh.addOffset(fi.getID(), termStatsDictOut.position());
             DiskField.regenerateTermStats(fields, partOut);
         }
-        int tshpos = termStatsDictOut.position();
+        long tshpos = termStatsDictOut.position();
         tsh.write(termStatsDictOut);
-        int end = termStatsDictOut.position();
+        long end = termStatsDictOut.position();
         termStatsDictOut.position(0);
         termStatsDictOut.byteEncode(tshpos, 8);
         termStatsDictOut.position(end);

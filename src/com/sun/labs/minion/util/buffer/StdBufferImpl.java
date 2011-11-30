@@ -102,7 +102,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param n The number to encode.
      * @param nBytes The number of bytes to use in the encoding.
      */
-    public WriteableBuffer byteEncode(int pos, long n, int nBytes) {
+    public WriteableBuffer byteEncode(long pos, long n, int nBytes) {
         for(int shift = 8 * (nBytes-1); shift >= 0; shift -= 8) {
             put(pos++, (byte) ((n >>> shift) & 0xFF));
         }
@@ -190,11 +190,11 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param b The buffer that we wish to append onto this buffer.
      * @param n The number of bytes from the given buffer to append onto this buffer.
      */
-    public WriteableBuffer append(ReadableBuffer b, int n) {
+    public WriteableBuffer append(ReadableBuffer b, long n) {
 
         //
         // This is probably very slow!
-        for(int i = 0; i < n; i++) {
+        for(long i = 0; i < n; i++) {
             put(b.get());
         }
         return this;
@@ -241,10 +241,10 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param bitIndex the index of the bit to set to 1.
      * @return This buffer, for chained invocations.
      */
-    public WriteableBuffer set(int bitIndex) {
-        int i = bitIndex >>> 3;
+    public WriteableBuffer set(long bitIndex) {
+        long i = bitIndex >>> 3;
         capacity(i+1);
-        put(i, (byte) (get(i) | masks[bitIndex & 0x07]));
+        put(i, (byte) (get(i) | masks[(int) (bitIndex & 0x07L)]));
         if(i >= position()) {
             position(i+1);
         }
@@ -284,7 +284,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param nBytes The number of bytes to use.
      * @return the decoded number.
      */
-    public int byteDecode(int pos, int nBytes) {
+    public int byteDecode(long pos, int nBytes) {
         return (int) byteDecodeLong(pos, nBytes);
     }
 
@@ -311,7 +311,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param pos The position to decode from.
      * @param nBytes The number of bytes to use.
      */
-    public long byteDecodeLong(int pos, int nBytes) {
+    public long byteDecodeLong(long pos, int nBytes) {
         long ret = 0;
         for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
             ret |= (long) (get(pos++) & 0xFF) << shift;
@@ -362,9 +362,9 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @return the number of bytes skipped.
      */
     public int skipByteEncoded() {
-        int init = position();
+        long init = position();
         while((get() & 0x80) != 0);
-        return position() - init;
+        return (int) (position() - init);
     }
 
     /**
@@ -373,10 +373,10 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param bitIndex the index of the bit to test.
      * @return true if the bit is 1, false if it is 0
      */
-    public boolean test(int bitIndex) {
-        int i = bitIndex >>> 3;
+    public boolean test(long bitIndex) {
+        long i = bitIndex >>> 3;
         return i >= limit() ? false :
-            ((get(i) & masks[bitIndex & 0x07]) != 0);
+            ((get(i) & masks[(int) (bitIndex & 0x07L)]) != 0);
     }
 
     /**
@@ -425,13 +425,13 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         return toString(0, position(), DecodeMode.BYTE_ENCODED);
     }
 
-    public int countBits() {
+    public long countBits() {
         return countBits(0, limit());
     }
 
-    public int countBits(int start, int end) {
+    public long countBits(long start, long end) {
         int n = 0;
-        for (int i = start; i < end; i++) {
+        for (long i = start; i < end; i++) {
             n += StdBufferImpl.nBits[(int) (get(i) & 0xff)];
         }
         return n;
@@ -439,8 +439,8 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
 
     public String toString(Portion portion, DecodeMode decode) {
 
-        int start;
-        int end;
+        long start;
+        long end;
 
         switch (portion) {
             case ALL:
@@ -463,9 +463,9 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         return toString(start, end, decode);
     }
 
-    public String toString(int start, int end, DecodeMode decode) {
+    public String toString(long start, long end, DecodeMode decode) {
 
-        StringBuilder b = new StringBuilder((end - start + 1) * 8);
+        StringBuilder b = new StringBuilder((int) (end - start + 1) * 8);
         b.append(String.format("position: %d limit: %d\n", position(), limit()));
 
         if (start < 0 || end < 0) {
@@ -490,7 +490,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
                 break;
         }
         
-        for (int i = start, j = 0; i < end; i++, j += 8) {
+        for (long i = start, j = 0; i < end; i++, j += 8) {
             byte curr = get(i);
             b.append(String.format("%s%7d%7d %s",
                     i > start ? "\n" : "",

@@ -98,7 +98,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      */
     public FileReadableBuffer(RandomAccessFile raf,
             long offset,
-            int limit) {
+            long limit) {
         this(raf, offset, limit, DEFAULT_BUFF_SIZE);
     }
 
@@ -115,7 +115,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      */
     public FileReadableBuffer(RandomAccessFile raf,
             long offset,
-            int limit,
+            long limit,
             int buffSize) {
         this.raf = raf;
         bs = offset;
@@ -127,7 +127,7 @@ public class FileReadableBuffer extends StdReadableImpl {
         // Fill the buffer if the size of the data is smaller than the size
         // of the buffer.
         if(limit > 0 && limit <= buffSize) {
-            buff = new byte[limit];
+            buff = new byte[(int) limit];
             int n = read(bs);
             ms = bs;
             me = bs + n;
@@ -180,8 +180,8 @@ public class FileReadableBuffer extends StdReadableImpl {
      * Returns the number of bytes remaining to be read in the buffer.
      * @return The number of bytes remaining in the buffer.
      */
-    public int remaining() {
-        return (int) (be - pos);
+    public long remaining() {
+        return be - pos;
     }
 
     /**
@@ -193,7 +193,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * different in-memory buffers and positions.
      */
     public ReadableBuffer duplicate() {
-        return new FileReadableBuffer(raf, bs, (int) (be - bs), buff.length);
+        return new FileReadableBuffer(raf, bs, be - bs, buff.length);
     }
 
     /**
@@ -208,7 +208,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * buffer.  The first position in the sliced buffer is the given
      * position, and the limit on the sliced buffer is the given size.
      */
-    public ReadableBuffer slice(int p, int s) {
+    public ReadableBuffer slice(long p, long s) {
         return new FileReadableBuffer(raf, bs + p, s, buff.length);
     }
 
@@ -216,15 +216,15 @@ public class FileReadableBuffer extends StdReadableImpl {
      * Gets the limit of this buffer, i.e., the last readable position.
      * @return The last readable position in this buffer.
      */
-    public int limit() {
-        return (int) (be - bs);
+    public long limit() {
+        return be - bs;
     }
 
     /**
      * Sets the limit of this buffer, i.e., the last readable position.
      * @param l The limit that we wish to set for the buffer.
      */
-    public void limit(int l) {
+    public void limit(long l) {
         be = bs + l;
     }
 
@@ -233,7 +233,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * @param i The position from which we wish to get a byte.
      * @return The byte at the given position.
      */
-    public byte get(int i) {
+    public byte get(long i) {
         return buff[checkBounds(i + bs)];
     }
 
@@ -250,16 +250,16 @@ public class FileReadableBuffer extends StdReadableImpl {
      * Gets the position of the buffer.
      * @return The current position in the buffer.
      */
-    public int position() {
-        return (int) (pos - bs);
+    public long position() {
+        return pos - bs;
     }
 
     /**
      * Positions the buffer.
-     * @param i The position to which we should set the buffer.
+     * @param position The position to which we should set the buffer.
      */
-    public void position(int i) {
-        this.pos = bs + i;
+    public void position(long position) {
+        this.pos = bs + position;
     }
 
     /**

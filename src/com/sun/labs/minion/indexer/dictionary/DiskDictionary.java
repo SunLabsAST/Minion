@@ -436,7 +436,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return the maximum ID in the dictionary
      */
     public int getMaxID() {
-        return dh.maxEntryID;
+        return (int) dh.maxEntryID;
     }
 
     /**
@@ -702,7 +702,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // If we reached the end, return nEntries.  Otherwise, the entry
         // would come before the next uncompressed entry
         if(((mid * 4) + 4) >= dh.size) {
-            return dh.size;
+            return (int) dh.size;
         } else {
             return (0 - ((mid * 4) + 4)) - 1;
         }
@@ -1170,7 +1170,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return the number of entries in the dictionary.
      */
     public int size() {
-        return dh.size;
+        return (int) dh.size;
     }
 
     /**
@@ -1357,7 +1357,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             if(dd.idToPosn != null) {
                 keepIDToPosn = true;
             }
-            idMaps[i] = new int[dd.dh.maxEntryID + 1];
+            idMaps[i] = new int[dd.dh.getMaxID() + 1];
 
             //
             // Make an entry in the heap for this dictionary.
@@ -1397,7 +1397,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             // If we have entry mappers, then get the ID from the entry at
             // the top of the heap, which will have been remapped.
             // Otherwise, just set the number in order.
-            int newid = mappers != null ? top.curr.getID() : (dictOut.getHeader().size + 1);
+            int newid = mappers != null ? top.curr.getID() : ((int) dictOut.getHeader().size + 1);
 
             //
             // Make a new entry for the merged data.
@@ -1505,7 +1505,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             dictOut.getHeader().postEnd[i] = postOut[i].position();
         }
 
-        idMaps[0][0] = dictOut.getHeader().maxEntryID;
+        idMaps[0][0] = dictOut.getHeader().getMaxID();
 
         //
         // Finish of the writing of the entries to the merged dictionary.
@@ -1865,7 +1865,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             lus = new LookupState(DiskDictionary.this);
             pos = 0;
             startPos = 0;
-            stopPos = dh.size;
+            stopPos = (int) dh.size;
 
             if(startEntry != null) {
                 startPos = findPos(startEntry, lus);
@@ -1936,7 +1936,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             lus = new LookupState(DiskDictionary.this);
             pos = 0;
             startPos = Math.max(0, begin);
-            stopPos = Math.min(end, dh.size);
+            stopPos = Math.min(end, (int) dh.size);
 
             lus.localNames.position(0);
             pos = startPos;
@@ -2124,7 +2124,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             depth = (int) (Math.log(capacity) / Math.log(2)) - 1;
             LookupState lus = new LookupState(DiskDictionary.this);
             if(size() > 0) {
-                root = new Node(lus, 0, dh.nOffsets - 1);
+                root = new Node(lus, 0, (int) dh.nOffsets - 1);
                 root.fill(lus, depth);
             }
         }

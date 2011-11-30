@@ -312,7 +312,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         MemoryField.DumpResult ret = MemoryField.DumpResult.DICTS_DUMPED;
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 
-        int headerPos = partDictOut.position();
+        long headerPos = partDictOut.position();
         FieldHeader header = new FieldHeader();
         header.write(partDictOut);
 
@@ -522,7 +522,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         //
         // Now zip back and write the header.
-        int endPos = partDictOut.position();
+        long endPos = partDictOut.position();
         partDictOut.position(headerPos);
         header.write(partDictOut);
         partDictOut.position(endPos);

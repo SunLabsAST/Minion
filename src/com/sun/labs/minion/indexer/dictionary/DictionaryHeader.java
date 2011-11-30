@@ -43,13 +43,13 @@ public class DictionaryHeader {
     /**
      * The number of entries in the dictionary.
      */
-    public int size;
+    public long size;
 
     /**
      * The maximum ID assigned to an entry, which may be different than the
      * size.
      */
-    public int maxEntryID;
+    public long maxEntryID;
 
     /**
      * The offset of the ID to position map in the file.
@@ -59,7 +59,7 @@ public class DictionaryHeader {
     /**
      * The size of the map from ID to position in the dictionary.
      */
-    public int idToPosnSize;
+    public long idToPosnSize;
 
     /**
      * The position of the names offset buffer.
@@ -69,7 +69,7 @@ public class DictionaryHeader {
     /**
      * The size of the names offset buffer.
      */
-    public int nameOffsetsSize;
+    public long nameOffsetsSize;
 
     /**
      * The position of the names buffer.
@@ -79,12 +79,12 @@ public class DictionaryHeader {
     /**
      * The size of the names buffer.
      */
-    public int namesSize;
+    public long namesSize;
 
     /**
      * The number of name offsets.
      */
-    public int nOffsets;
+    public long nOffsets;
 
     /**
      * The position of the entry info offsets buffer.
@@ -94,7 +94,7 @@ public class DictionaryHeader {
     /**
      * The size of the entry info offsets buffer.
      */
-    public int entryInfoOffsetsSize;
+    public long entryInfoOffsetsSize;
 
     /**
      * The position of the entry info buffer.
@@ -104,7 +104,7 @@ public class DictionaryHeader {
     /**
      * The size of the entry info buffer.
      */
-    public int entryInfoSize;
+    public long entryInfoSize;
 
     /**
      * The starting offsets for postings associated with this dictionary.
@@ -144,18 +144,18 @@ public class DictionaryHeader {
     }
     
     public DictionaryHeader(ReadableBuffer b) throws java.io.IOException {
-        size = b.byteDecode(4);
-        maxEntryID = b.byteDecode(4);
+        size = b.byteDecode(8);
+        maxEntryID = b.byteDecode(8);
         idToPosnPos = b.byteDecode(8);
-        idToPosnSize = b.byteDecode(4);
+        idToPosnSize = b.byteDecode(8);
         nameOffsetsPos = b.byteDecode(8);
-        nameOffsetsSize = b.byteDecode(4);
+        nameOffsetsSize = b.byteDecode(8);
         namesPos = b.byteDecode(8);
-        namesSize = b.byteDecode(4);
+        namesSize = b.byteDecode(8);
         entryInfoOffsetsPos = b.byteDecode(8);
-        entryInfoOffsetsSize = b.byteDecode(4);
+        entryInfoOffsetsSize = b.byteDecode(8);
         entryInfoPos = b.byteDecode(8);
-        entryInfoSize = b.byteDecode(4);
+        entryInfoSize = b.byteDecode(8);
         int n = b.byteDecode(4);
         postStart = new long[n];
         postEnd = new long[n];
@@ -193,18 +193,18 @@ public class DictionaryHeader {
     public void read(RandomAccessFile dictFile)
             throws java.io.IOException {
 
-        size = dictFile.readInt();
-        maxEntryID = dictFile.readInt();
+        size = dictFile.readLong();
+        maxEntryID = dictFile.readLong();
         idToPosnPos = dictFile.readLong();
-        idToPosnSize = dictFile.readInt();
+        idToPosnSize = dictFile.readLong();
         nameOffsetsPos = dictFile.readLong();
-        nameOffsetsSize = dictFile.readInt();
+        nameOffsetsSize = dictFile.readLong();
         namesPos = dictFile.readLong();
-        namesSize = dictFile.readInt();
+        namesSize = dictFile.readLong();
         entryInfoOffsetsPos = dictFile.readLong();
-        entryInfoOffsetsSize = dictFile.readInt();
+        entryInfoOffsetsSize = dictFile.readLong();
         entryInfoPos = dictFile.readLong();
-        entryInfoSize = dictFile.readInt();
+        entryInfoSize = dictFile.readLong();
         int n = dictFile.readInt();
         postStart = new long[n];
         postEnd = new long[n];
@@ -225,18 +225,18 @@ public class DictionaryHeader {
      */
     public void write(RandomAccessFile dictFile)
             throws java.io.IOException {
-        dictFile.writeInt(size);
-        dictFile.writeInt(maxEntryID);
+        dictFile.writeLong(size);
+        dictFile.writeLong(maxEntryID);
         dictFile.writeLong(idToPosnPos);
-        dictFile.writeInt(idToPosnSize);
+        dictFile.writeLong(idToPosnSize);
         dictFile.writeLong(nameOffsetsPos);
-        dictFile.writeInt(nameOffsetsSize);
+        dictFile.writeLong(nameOffsetsSize);
         dictFile.writeLong(namesPos);
-        dictFile.writeInt(namesSize);
+        dictFile.writeLong(namesSize);
         dictFile.writeLong(entryInfoOffsetsPos);
-        dictFile.writeInt(entryInfoOffsetsSize);
+        dictFile.writeLong(entryInfoOffsetsSize);
         dictFile.writeLong(entryInfoPos);
-        dictFile.writeInt(entryInfoSize);
+        dictFile.writeLong(entryInfoSize);
         dictFile.writeInt(postStart.length);
         for(int i = 0; i < postStart.length; i++) {
             dictFile.writeLong(postStart[i]);
@@ -246,18 +246,18 @@ public class DictionaryHeader {
     }
 
     public void write(WriteableBuffer b) {
-        b.byteEncode(size, 4);
-        b.byteEncode(maxEntryID, 4);
+        b.byteEncode(size, 8);
+        b.byteEncode(maxEntryID, 8);
         b.byteEncode(idToPosnPos, 8);
-        b.byteEncode(idToPosnSize, 4);
+        b.byteEncode(idToPosnSize, 8);
         b.byteEncode(nameOffsetsPos, 8);
-        b.byteEncode(nameOffsetsSize, 4);
+        b.byteEncode(nameOffsetsSize, 8);
         b.byteEncode(namesPos, 8);
-        b.byteEncode(namesSize, 4);
+        b.byteEncode(namesSize, 8);
         b.byteEncode(entryInfoOffsetsPos, 8);
-        b.byteEncode(entryInfoOffsetsSize, 4);
+        b.byteEncode(entryInfoOffsetsSize, 8);
         b.byteEncode(entryInfoPos, 8);
-        b.byteEncode(entryInfoSize, 4);
+        b.byteEncode(entryInfoSize, 8);
         b.byteEncode(postStart.length, 4);
         for(int i = 0; i < postStart.length; i++) {
             b.byteEncode(postStart[i], 8);
@@ -270,7 +270,7 @@ public class DictionaryHeader {
      * Gets the maximum ID in the dictionary.
      */
     public int getMaxID() {
-        return maxEntryID;
+        return (int) maxEntryID;
     }
 
     @Override

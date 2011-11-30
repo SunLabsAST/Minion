@@ -162,7 +162,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
 
             nIDs++;
             if(nIDs % skipSize == 0) {
-                addSkip(id, temp.position());
+                addSkip(id, (int) temp.position());
             }
 
             //

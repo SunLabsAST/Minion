@@ -25,7 +25,7 @@ package com.sun.labs.minion.util.buffer;
 
 /**
  * An interface for the buffers used by the search engine.  Buffers have a
- * postition that indicates where the next byte will be written or read, a
+ * position that indicates where the next byte will be written or read, a
  * limit that indicates the last byte that may be written or read, and a
  * way to determine how much space is remaining in a buffer.
  *
@@ -95,7 +95,7 @@ public interface Buffer {
      *
      * @return The position in the buffer.
      */
-    public int position();
+    public long position();
 
     /**
      * Sets the position in the buffer.
@@ -103,28 +103,28 @@ public interface Buffer {
      * @param position The point to which the buffer's position should be
      * set.
      */
-    public void position(int position);
+    public void position(long position);
 
     /**
      * Gets the limit of this buffer, i.e., the last readable position.
      */
-    public int limit();
+    public long limit();
 
     /**
      * Sets the limit of this buffer, i.e., the last readable position.
      */
-    public void limit(int l);
+    public void limit(long l);
 
     /**
      * Gets the amount of space remaining in the buffer.
      */
-    public int remaining();
+    public long remaining();
 
     /**
      * Counts the number of bits that are on in the buffer.
      * @return The number of 1 bits in the buffer.
      */
-    int countBits();
+    long countBits();
 
     /**
      * Gets a byte from this buffer at the given position.
@@ -132,14 +132,13 @@ public interface Buffer {
      *
      * @return The byte at the given position.
      */
-    byte get(int i);
+    byte get(long i);
 
     /**
      * Generates a string representation of a portion of the buffer indicated
      * by the mode.
      */
-    String toString(ReadableBuffer.Portion portion,
-            ReadableBuffer.DecodeMode decode);
+    String toString(ReadableBuffer.Portion portion, ReadableBuffer.DecodeMode decode);
 
     /**
      * Generates a string representation of a portion of the buffer.
@@ -148,6 +147,6 @@ public interface Buffer {
      * @param end the exclusive ending offset in the buffer
      * @return a string with a representation of the bits.
      */
-    String toString(int start, int end, ReadableBuffer.DecodeMode decode);
+    String toString(long start, long end, ReadableBuffer.DecodeMode decode);
 
 }// Buffer

@@ -60,7 +60,7 @@ public interface WriteableBuffer extends Buffer {
      * @param n The number of bytes that the buffer must be able to store.
      * @return The buffer, for chained invocations.
      */
-    public WriteableBuffer capacity(int n);
+    public WriteableBuffer capacity(long n);
 
     /**
      * Puts a single byte onto this buffer.
@@ -75,7 +75,7 @@ public interface WriteableBuffer extends Buffer {
      * @param b The byte to put on the buffer
      * @return This buffer, for chained invocations.
      */
-    public WriteableBuffer put(int p, byte b);
+    public WriteableBuffer put(long p, byte b);
 
     /**
      * Encodes a long directly, using a given number of
@@ -99,7 +99,7 @@ public interface WriteableBuffer extends Buffer {
      * @return The buffer, to allow chained invocations.
      * @throws ArithmeticException if the integer to encode is less than 0.
      */
-    public WriteableBuffer byteEncode(int pos, long n, int nBytes);
+    public WriteableBuffer byteEncode(long pos, long n, int nBytes);
 
     /**
      * Encodes an integer in a byte-aligned fashion, using the minimal
@@ -137,7 +137,7 @@ public interface WriteableBuffer extends Buffer {
      * @param b The buffer that we wish to append onto this buffer.
      * @param n The number of bytes to append onto this buffer.
      */
-    public WriteableBuffer append(ReadableBuffer b, int n);
+    public WriteableBuffer append(ReadableBuffer b, long n);
 
     /**
      * Computes the logical OR of this buffer and another.
@@ -170,7 +170,7 @@ public interface WriteableBuffer extends Buffer {
      * @param bitIndex the index of the bit to set to 1.
      * @return This buffer, for chained invocations.
      */
-    public WriteableBuffer set(int bitIndex);
+    public WriteableBuffer set(long bitIndex);
 
     /**
      * Clears out the buffer.
@@ -213,7 +213,7 @@ public interface WriteableBuffer extends Buffer {
      * @param start the inclusive starting position in the buffer
      * @param end  the exclusive ending position in the buffer.
      */
-    public void write(WritableByteChannel chan, int start, int end) throws java.io.IOException;
+    public void write(WritableByteChannel chan, long start, long end) throws java.io.IOException;
 
     /**
      * Write the buffer to a data output.

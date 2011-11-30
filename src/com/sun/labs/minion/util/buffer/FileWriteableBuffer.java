@@ -79,7 +79,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
     /**
      * The position in the buffer we're writing.
      */
-    protected int pos;
+    protected long pos;
 
     /**
      * The position in our in-memory buffer.
@@ -130,22 +130,22 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @return <CODE>Integer.MAX_VALUE</CODE>, since the underlying
      * representation is a file. 
      */
-    public int limit() {
-        return Integer.MAX_VALUE;
+    public long limit() {
+        return Long.MAX_VALUE;
     }
 
     /**
      * Sets the limit of this buffer, i.e., the last readable position.
      * @param l The limit to set.  This has no effect on this buffer.
      */
-    public void limit(int l) {
+    public void limit(long l) {
     }
 
     /**
      * Gets the current position.
      * @return The current position.
      */
-    public int position() {
+    public long position() {
         return pos;
     }
 
@@ -153,13 +153,13 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * Sets the current position.  This will flush the buffer to disk and
      * reposition the file relative to the initial offset at which the buffer
      * was started.
-     * @param p The position.
+     * @param position The position.
      */
-    public void position(int p) {
+    public void position(long position) {
         flush();
         try {
-            raf.seek(off + p);
-            pos = p;
+            raf.seek(off + position);
+            pos = position;
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Error seeking", ioe);
         }
@@ -169,8 +169,8 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * Returns the number of bytes remaining in the buffer, which is nonsense.
      * @return <CODE>Integer.MAX_VALUE</CODE>, since the file may contain that much data.
      */
-    public int remaining() {
-        return Integer.MAX_VALUE;
+    public long remaining() {
+        return Long.MAX_VALUE - pos;
     }
 
     /**
@@ -195,7 +195,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param n The capacity that we want.
      * @return This buffer, for chained invocations.
      */
-    public WriteableBuffer capacity(int n) {
+    public WriteableBuffer capacity(long n) {
         return this;
     }
 
@@ -223,7 +223,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param b The byte to put on the buffer
      * @return This buffer, allowing chained invocations.
      */
-    public WriteableBuffer put(int p, byte b) {
+    public WriteableBuffer put(long p, byte b) {
         flush();
         try {
             long x = raf.getFilePointer();
@@ -243,10 +243,9 @@ public class FileWriteableBuffer implements WriteableBuffer {
         return this;
     }
 
-    public WriteableBuffer byteEncode(int pos, long n, int nBytes) {
+    public WriteableBuffer byteEncode(long pos, long n, int nBytes) {
         for(int shift = 8 * (nBytes - 1); shift >= 0; shift -= 8) {
             byte b = (byte) ((n >>> shift) & 0xFF);
-            logger.info(String.format("byte: %s", StdBufferImpl.byteToBinaryString(b)));
             put(pos++, (byte) ((n >>> shift) & 0xFF));
         }
         return this;
@@ -312,8 +311,8 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param b The buffer that we wish to append onto this buffer.
      * @param n The number of bytes to append onto this buffer.
      */
-    public WriteableBuffer append(ReadableBuffer b, int n) {
-        for(int i = 0; i < n; i++) {
+    public WriteableBuffer append(ReadableBuffer b, long n) {
+        for(long i = 0; i < n; i++) {
             put(b.get());
         }
         return this;
@@ -378,7 +377,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param bitIndex the index of the bit to set to 1.
      * @return This buffer, allowing chained invocations.
      */
-    public WriteableBuffer set(int bitIndex) {
+    public WriteableBuffer set(long bitIndex) {
         return this;
     }
 
@@ -440,11 +439,11 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param start the offset from which we should start writing.
      * @param end the exclusive end offset where we should stop writing.
      */
-    public void write(ByteBuffer b, int start, int end) {
+    public void write(ByteBuffer b, long start, long end) {
         if(start >= pos || end > pos || start >= end) {
             throw new IllegalArgumentException(String.format("arguments out of range: start: %d end: %d pos: %d", start, end, pos));
         }
-        int buffPos = pos - bPos;
+        long buffPos = pos - bPos;
         if(start < buffPos) {
             long so = off + start;
             int n;
@@ -452,9 +451,9 @@ public class FileWriteableBuffer implements WriteableBuffer {
             //
             // The entire region might be in the file.
             if(end < buffPos) {
-                n = end - start;
+                n = (int) (end - start);
             } else {
-                n = buffPos - start;
+                n = (int) (buffPos - start);
             }
             try {
                 ChannelUtil.readFully(raf.getChannel(), so, n, b);
@@ -467,9 +466,9 @@ public class FileWriteableBuffer implements WriteableBuffer {
         // See if we need to add bytes from our memory buffer too.
         if(end > buffPos) {
             if(start >= buffPos) {
-                b.put(buff, start - buffPos, end - start);
+                b.put(buff, (int) (start - buffPos), (int) (end - start));
             } else {
-                b.put(buff, 0, end-buffPos);
+                b.put(buff, 0, (int) (end-buffPos));
             }
         }
     }
@@ -500,7 +499,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         write(chan, 0, pos);
     }
 
-    public void write(WritableByteChannel chan, int start, int end) throws java.io.IOException {
+    public void write(WritableByteChannel chan, long start, long end) throws java.io.IOException {
 
         if(start >= pos || end > pos || start >= end) {
             throw new IllegalArgumentException(String.format("arguments out of range: start: %d end: %d pos: %d", start, end, pos));
@@ -509,7 +508,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         //
         // The position in the buffer we represent where the in-memory buffer
         // starts.
-        int buffPos = pos - bPos;
+        long buffPos = pos - bPos;
         if(chan instanceof FileChannel) {
             FileChannel mychan = raf.getChannel();
             
@@ -517,7 +516,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
             // Transfer whatever bytes are already in the file.
             if(start < buffPos) {
                 long so = off + start;
-                int n;
+                long n;
                 
                 //
                 // The entire region might be in the file.
@@ -534,32 +533,45 @@ public class FileWriteableBuffer implements WriteableBuffer {
             if(end > buffPos) {
                 ByteBuffer buffToWrite;
                 if(start >= buffPos) {
-                    buffToWrite = ByteBuffer.wrap(buff, start - buffPos, end - start);
+                    buffToWrite = ByteBuffer.wrap(buff, (int) (start - buffPos), (int) (end - start));
                 } else {
-                    buffToWrite = ByteBuffer.wrap(buff, 0, end - buffPos);
+                    buffToWrite = ByteBuffer.wrap(buff, 0, (int) (end - buffPos));
                 }
                 ChannelUtil.writeFully((FileChannel) chan, buffToWrite);
             }
         } else {
-            ByteBuffer b = ByteBuffer.allocate(end - start);
+            
+            //
+            // Allocate a buffer for writing.
+            ByteBuffer b = ByteBuffer.allocateDirect(buff.length);
+            FileChannel fchan = raf.getChannel();
             
             //
             // Read bytes from the file.
             if(start < buffPos) {
                 long so = off + start;
-                int n;
+                long n;
                 if(end < buffPos) {
                     n = end - start;
                 } else {
                     n = buffPos - start;
                 }
-                ChannelUtil.readFully(raf.getChannel(), so, n, b);
+                while(n > 0) {
+                    int r = fchan.read(b, so);
+                    n -= r;
+                    so =+ r;
+                    b.flip();
+                    ChannelUtil.writeFully(chan, b);
+                    b.clear();
+                }
             }
             if(end > buffPos) {
                 if(start >= buffPos) {
-                    b.put(buff, start - buffPos, end - start);
+                    b.put(buff, (int) (start - buffPos), (int) (end - start));
+                } else {
+                    b.put(buff, 0, (int) (end - buffPos));
                 }
-                b.put(buff, 0, end - buffPos);
+                ChannelUtil.writeFully(chan, b);
             }
         }
     }
@@ -631,11 +643,11 @@ public class FileWriteableBuffer implements WriteableBuffer {
     }
 
     
-    public int countBits() {
+    public long countBits() {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public byte get(int i) {
+    public byte get(long i) {
         synchronized(raf) {
             try {
                 raf.seek(off + i);
@@ -649,8 +661,8 @@ public class FileWriteableBuffer implements WriteableBuffer {
     }
 
     public String toString(Portion portion, DecodeMode decode) {
-        int start;
-        int end;
+        long start;
+        long end;
 
         switch(portion) {
             case ALL:
@@ -673,11 +685,11 @@ public class FileWriteableBuffer implements WriteableBuffer {
         return toString(start, end, decode);
     }
 
-    public String toString(int start, int end, DecodeMode decode) {
+    public String toString(long start, long end, DecodeMode decode) {
 
         flush();
 
-        byte[] tb = new byte[end - start];
+        byte[] tb = new byte[(int) (end - start)];
         try {
             long initPos = raf.getFilePointer();
             raf.seek(off + start);

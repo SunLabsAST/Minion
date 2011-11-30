@@ -83,7 +83,7 @@ public class ChannelPostingsOutput implements PostingsOutput {
      */
     public int write(WriteableBuffer b) throws java.io.IOException {
 
-        int size = b.position();
+        long size = b.position();
 
         //
         // If there's not enough room in the buffer, then flush the
@@ -101,7 +101,7 @@ public class ChannelPostingsOutput implements PostingsOutput {
             b.write(buff);
         }
 
-        return size;
+        return (int) size;
     }
 
     /**

@@ -666,7 +666,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             throws java.io.IOException {
 
         DictionaryOutput fieldDictOut = mergeState.partOut.getPartitionDictionaryOutput();
-        int headerPos = fieldDictOut.position();
+        long headerPos = fieldDictOut.position();
         FieldHeader mergeHeader = new FieldHeader();
         mergeHeader.fieldID = mergeState.info.getID();
         mergeHeader.maxDocID = mergeState.maxDocID;
@@ -883,7 +883,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 // We need a disk dictionary for calculating the lengths, so we'll
                 // open the one that we just wrote.  We'll start by remembering where 
                 // we were in the file!
-                int mdsp = fieldDictOut.position();
+                long mdsp = fieldDictOut.position();
 
                 File[] postOutFiles = mergeState.partOut.getPostingsFiles();
                 RandomAccessFile[] mPostRAF =
@@ -920,7 +920,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         //
         // Now zip back and write the header.
-        int endPos = fieldDictOut.position();
+        long endPos = fieldDictOut.position();
         fieldDictOut.position(headerPos);
         mergeHeader.write(fieldDictOut);
         fieldDictOut.position(endPos);

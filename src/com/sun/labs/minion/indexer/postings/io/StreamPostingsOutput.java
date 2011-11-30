@@ -77,7 +77,7 @@ public class StreamPostingsOutput implements PostingsOutput {
      * @return The number of bytes written.
      */
     public int write(WriteableBuffer b) throws java.io.IOException {
-        int size = b.position();
+        int size = (int) b.position();
         b.write(stream);
         offset += size;
         return size;

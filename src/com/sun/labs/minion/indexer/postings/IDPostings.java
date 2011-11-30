@@ -193,12 +193,12 @@ public class IDPostings implements Postings, MergeablePostings {
             // from the beginning of the buffer so that we can use
             // jump directly to them.  So we need to figure out
             // how much to add.
-            dataStart = post.position();
+            dataStart = (int) post.position();
             for(int i = 0; i <= nSkips; i++) {
                 skipPos[i] += dataStart;
             }
         } else {
-            dataStart = post.position();
+            dataStart = (int) post.position();
         }
     }
 
@@ -279,7 +279,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * Gets the size of the postings, in bytes.
      */
     public int size() {
-        return post.position();
+        return (int) post.position();
     }
 
     /**
@@ -378,12 +378,12 @@ public class IDPostings implements Postings, MergeablePostings {
         }
 
         if(post == null) {
-            post = new ArrayBuffer(other.post.limit());
+            post = new ArrayBuffer((int) other.post.limit());
         }
 
         //
         // We'll need to know where we started this entry.
-        int index = post.position();
+        int index = (int) post.position();
 
         //
         // This is tricky, so pay attention: The skip positions for the
@@ -395,9 +395,9 @@ public class IDPostings implements Postings, MergeablePostings {
         // it will be a delta between two larger numbers).  So, we need to
         // figure out the difference between the old number of bytes and
         // the new number of bytes.  This is the adj variable.
-        int adj = other.post.position();
+        int adj = (int) other.post.position();
         int firstID = ((ReadableBuffer) other.post).byteDecode();
-        adj = other.post.position() - adj;
+        adj = (int) (other.post.position() - adj);
 
         //
         // Get the first document sequence number off the entry we're
@@ -517,7 +517,7 @@ public class IDPostings implements Postings, MergeablePostings {
             // Increment our ID count, and see if we need to add a skip.
             nIDs++;
             if(nIDs % skipSize == 0) {
-                addSkip(cID, post.position());
+                addSkip(cID, (int) post.position());
             }
 
             recodeID(cID, lastID, pi);

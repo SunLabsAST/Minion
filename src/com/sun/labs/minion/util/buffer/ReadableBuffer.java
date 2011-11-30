@@ -60,7 +60,7 @@ public interface ReadableBuffer extends Buffer {
      * the data, but data will be read starting from the given offset and
      * the new buffer will be limited to the given size.
      */
-    public ReadableBuffer slice(int p, int s);
+    public ReadableBuffer slice(long p, long s);
 
     /**
      * Gets a byte from this buffer.
@@ -86,7 +86,7 @@ public interface ReadableBuffer extends Buffer {
      * @param nBytes The number of bytes to use.
      * @return the decoded number.
      */
-    public int byteDecode(int pos, int nBytes);
+    public int byteDecode(long pos, int nBytes);
 
     /**
      * Decodes a positive long that was coded using a specific number of
@@ -105,7 +105,7 @@ public interface ReadableBuffer extends Buffer {
      * @param nBytes The number of bytes to use.
      * @return the decoded number.
      */
-    public long byteDecodeLong(int pos, int nBytes);
+    public long byteDecodeLong(long pos, int nBytes);
     
     /**
      * Decodes an integer stored using our 7 bit encoding scheme.
@@ -149,6 +149,6 @@ public interface ReadableBuffer extends Buffer {
      * @param bitIndex the index of the bit to test.
      * @return true if the bit is 1, false if it is 0
      */
-    public boolean test(int bitIndex);
+    public boolean test(long bitIndex);
         
 }// ReadableBuffer

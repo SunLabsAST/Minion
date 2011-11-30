@@ -137,11 +137,11 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
                 nameBufferSize, offsetsBufferSize, infoBufferSize,
                 infoOffsetsBufferSize, part);
 
-        entries = new QueryEntry[dh.maxEntryID];
-        entriesByName = new LinkedHashMap<N, QueryEntry>(dh.maxEntryID);
+        entries = new QueryEntry[dh.getMaxID()];
+        entriesByName = new LinkedHashMap<N, QueryEntry>(dh.getMaxID());
 
         if(idToPosn != null) {
-            dictOrderEntries = new QueryEntry[dh.maxEntryID];
+            dictOrderEntries = new QueryEntry[dh.getMaxID()];
         }
 
         //
