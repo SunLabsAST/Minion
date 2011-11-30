@@ -2,6 +2,7 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.NanoWatch;
@@ -49,16 +50,17 @@ public class DictionaryTest {
         wordList = new ArrayList<String>();
         InputStream pdis = DictionaryTest.class.getResourceAsStream(
                 "/com/sun/labs/minion/indexer/dictionary/resource/words.gz");
-        if(pdis == null) {
+        if (pdis == null) {
             logger.severe(String.format("Couldn't find test data!"));
             return;
         }
         BufferedReader r = new BufferedReader(new InputStreamReader(new GZIPInputStream(
                 pdis)));
         String w;
-        while((w = r.readLine()) != null) {
+        while ((w = r.readLine()) != null) {
             wordList.add(w);
         }
+        Collections.sort(wordList);
 
         shuffleList = new ArrayList<String>(wordList);
         Collections.shuffle(shuffleList);
@@ -204,7 +206,7 @@ public class DictionaryTest {
     private File makeAndDump(List<String> l) throws Exception {
         MemoryDictionary<String> sd = new MemoryDictionary<String>(new EntryFactory(
                 Postings.Type.NONE));
-        for(String s : l) {
+        for (String s : l) {
             sd.put(s);
         }
         File f = File.createTempFile("all", ".dict");
@@ -223,9 +225,9 @@ public class DictionaryTest {
         DiskDictionary<String> dd =
                 new DiskDictionary<String>(new EntryFactory<String>(
                 Postings.Type.NONE),
-                                           new StringNameHandler(),
-                                           dictFile,
-                                           new RandomAccessFile[0]);
+                new StringNameHandler(),
+                dictFile,
+                new RandomAccessFile[0]);
         return dd;
     }
 
@@ -238,13 +240,14 @@ public class DictionaryTest {
     public void testShuffleWordsDump() throws Exception {
         makeAndDump(shuffleList);
     }
-    
+
     @Test
     public void testDiskDictionarySize() throws Exception {
         DiskDictionary dd = makeAndGet(shuffleList);
         ReadableBuffer rb = encodeDict(wordList);
         logger.info(String.format("Uncompressed: %d compressed: %d ratio: %.3f",
-                rb.position(), dd.dh.namesSize, (double) dd.dh.namesSize / rb.position()));
+                rb.position(), dd.dh.namesSize, (double) dd.dh.namesSize / rb.
+                position()));
     }
 
     @Test
@@ -252,12 +255,14 @@ public class DictionaryTest {
         DiskDictionary dd = makeAndGet(shuffleList);
         NanoWatch nw = new NanoWatch();
         nw.start();
-        for(String w : wordList) {
+        for (String w : wordList) {
             Entry e = dd.get(w);
-            assertEquals(String.format("Requested %s got %s", w, e.getName()), e.getName(), w);
+            assertEquals(String.format("Requested %s got %s", w, e.getName()), e.
+                    getName(), w);
         }
         nw.stop();
-        logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", wordList.size(),
+        logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", wordList.
+                size(),
                 nw.getTimeMillis(), nw.getTimeMillis() / wordList.size()));
         dd.dictFile.close();
     }
@@ -266,20 +271,37 @@ public class DictionaryTest {
     public void testDiskDictionaryGetFailure() throws Exception {
         int nbad = Math.max((int) (shuffleList.size() * 0.25),
                 1000);
-        DiskDictionary dd = makeAndGet(shuffleList.subList(nbad, shuffleList.size()));
+        DiskDictionary dd = makeAndGet(shuffleList.subList(nbad, shuffleList.
+                size()));
         NanoWatch nw = new NanoWatch();
         nw.start();
-        for(String b : shuffleList.subList(0, nbad)) {
+        for (String b : shuffleList.subList(0, nbad)) {
             Entry e = dd.get(b);
             assertNull(String.format("Requested %s, got %s", b, e), e);
         }
         nw.stop();
         logger.info(String.format("%d lookups took %.3fms, %.3fms/lookup", nbad,
-                                  nw.getTimeMillis(), nw.getTimeMillis() / nbad));
+                nw.getTimeMillis(), nw.getTimeMillis() / nbad));
         dd.dictFile.close();
     }
 
     @Test
+    public void testDiskIteration() throws Exception {
+        DiskDictionary dd = makeAndGet(shuffleList);
+        DictionaryIterator di = dd.iterator();
+        NanoWatch nw = new NanoWatch();
+        nw.start();
+        for (String w : wordList) {
+            QueryEntry qe = (QueryEntry) di.next();
+            assertTrue(String.format("Expected %s, got %s", w, qe.getName()), w.
+                    equals(qe.getName()));
+        }
+        nw.stop();
+        logger.info(String.format("Iterated through %d entries in %.3fms avg time: %.3fms", wordList.size(),
+                nw.getTimeMillis(), nw.getTimeMillis() / wordList.size()));
+    }
+
+//    @Test
     public void testMerge() throws Exception {
 
         List<String> d1w = new ArrayList<String>();
@@ -287,7 +309,7 @@ public class DictionaryTest {
         int nw = Math.max((int) (shuffleList.size() * 0.5),
                 1000);
         Random r = new Random();
-        for(int i = 0; i < nw; i++) {
+        for (int i = 0; i < nw; i++) {
             d1w.add(wordList.get(r.nextInt(wordList.size())));
             d2w.add(wordList.get(r.nextInt(wordList.size())));
         }
@@ -299,9 +321,9 @@ public class DictionaryTest {
         RandomAccessFile mf = new RandomAccessFile(f, "rw");
 
         dd1.merge(tmpDir,
-                new StringNameHandler(), new DiskDictionary[] {dd1, dd2},
+                new StringNameHandler(), new DiskDictionary[]{dd1, dd2},
                 null, new int[2], new int[2][], mf,
-                new PostingsOutput[0],true);
+                new PostingsOutput[0], true);
 
         mf.close();
         dd1.dictFile.close();
@@ -309,8 +331,8 @@ public class DictionaryTest {
     }
 
     private ReadableBuffer encodeDict(List<String> l) {
-        ArrayBuffer b = new ArrayBuffer(l.size() *4);
-        for(String w : l) {
+        ArrayBuffer b = new ArrayBuffer(l.size() * 4);
+        for (String w : l) {
             b.encode(w);
         }
         return b;
