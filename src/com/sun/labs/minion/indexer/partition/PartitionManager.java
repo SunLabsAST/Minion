@@ -2071,14 +2071,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public void recalculateTermStats() throws java.io.IOException,
             FileLockException {
         
-        PartitionOutput partOut = new DiskPartitionOutput(this);
-        InvFileDiskPartition.regenerateTermStats(getActivePartitions().toArray(new DiskPartition[0]), partOut);
+        InvFileDiskPartition.regenerateTermStats(getActivePartitions().toArray(new DiskPartition[0]), mergePartitionOutput);
         int tsn = metaFile.getNextTermStatsNumber();
         File newTSF = makeTermStatsFile(tsn);
         RandomAccessFile raf = new RandomAccessFile(newTSF, "rw");
-        partOut.getTermStatsDictionaryOutput().flush(raf);
+        mergePartitionOutput.getTermStatsDictionaryOutput().flush(raf);
         raf.close();
-        partOut.close();
         metaFile.setTermStatsNumber(tsn);
         updateTermStats();
     }
@@ -2620,13 +2618,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             startingDataDir = new File(startingData);
         }
         
+        init();
+        
         try {
             mergePartitionOutput = new DiskPartitionOutput(this);
         } catch(IOException ex) {
             throw new PropertyException(ex, ps.getInstanceName(), null, "Error making partition output for merges");
         }
 
-        init();
     }
 
     int getNumPostingsChannels() {
