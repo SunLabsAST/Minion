@@ -151,7 +151,7 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
         di.setUnbufferedPostings(true);
 
         while(di.hasNext()) {
-            QueryEntry<N> e = (QueryEntry) i.next();
+            QueryEntry<N> e = (QueryEntry) di.next();
             entries[e.getID() - 1] = e;
             entriesByName.put(e.getName(), e);
             if(dictOrderEntries != null) {

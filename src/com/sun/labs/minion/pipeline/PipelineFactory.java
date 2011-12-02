@@ -26,6 +26,7 @@ package com.sun.labs.minion.pipeline;
 import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.QueryPipeline;
+import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.util.props.ConfigComponentList;
 import com.sun.labs.util.props.Configurable;
@@ -34,7 +35,6 @@ import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.LinkedList;
 import java.util.logging.Logger;
 

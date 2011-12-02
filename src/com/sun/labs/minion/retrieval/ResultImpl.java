@@ -258,7 +258,6 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         this.qs = qs;
     }
 
-    @Override
     public int getDocID() {
         return doc;
     }

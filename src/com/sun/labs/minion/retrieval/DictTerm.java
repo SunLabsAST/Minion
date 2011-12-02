@@ -435,11 +435,7 @@ public class DictTerm extends QueryTerm implements Comparator {
 
         //
         // Features for the iterators we'll create.
-        PostingsIteratorFeatures feat =
-                new PostingsIteratorFeatures(wf, wc, searchFields,
-                fieldMultipliers,
-                loadPositions,
-                matchCase);
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
         feat.setQueryStats(qs);
 
         //
@@ -551,11 +547,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         if(pis == null) {
             //
             // Features for the iterators we'll create.
-            PostingsIteratorFeatures feat =
-                    new PostingsIteratorFeatures(wf, wc, searchFields,
-                    fieldMultipliers,
-                    loadPositions,
-                    matchCase);
+            PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
             feat.setQueryStats(qs);
 
             pis = new PostingsIteratorWithPositions[dictEntries.length];

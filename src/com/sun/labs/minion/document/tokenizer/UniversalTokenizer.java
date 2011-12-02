@@ -23,13 +23,17 @@
  */
 package com.sun.labs.minion.document.tokenizer;
 
+import com.sun.labs.minion.pipeline.PrintStage;
 import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.pipeline.Token;
 
-import com.sun.labs.minion.util.Util;
+import com.sun.labs.util.props.ConfigString;
 import java.util.Arrays;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.util.logging.Logger;
 
 /**
@@ -1498,8 +1502,8 @@ public class UniversalTokenizer extends Tokenizer {
     
     static public void main(String[] args) throws java.io.IOException {
 
-        PrintTokenStage pts = new PrintTokenStage();
-        UniversalTokenizer tok = new UniversalTokenizer(pts);
+        PrintStage ps = new PrintStage(null, true);
+        UniversalTokenizer tok = new UniversalTokenizer(ps);
         BufferedReader fr = new BufferedReader(new FileReader(args[0]));
         String f;
         char[] buff = new char[32 * 1024];
@@ -1510,7 +1514,6 @@ public class UniversalTokenizer extends Tokenizer {
             while(true) {
                 int n = lr.read(buff);
                 if(n == -1) {
-                    tok.endDocument(lf.length());
                     lr.close();
                     break;
                 }

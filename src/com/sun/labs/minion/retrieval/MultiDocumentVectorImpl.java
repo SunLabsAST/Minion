@@ -31,9 +31,6 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.PriorityQueue;
-import com.sun.labs.minion.classification.WeightedFeature;
-import com.sun.labs.minion.indexer.entry.DocKeyEntry;
-import com.sun.labs.minion.indexer.entry.FieldedDocKeyEntry;
 import java.util.Collection;
 
 /**

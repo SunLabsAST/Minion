@@ -247,21 +247,6 @@ public class HighlightStage extends StageAdapter {
     }
 
     /**
-     * Starts a field.  This simply puts it in the set of fields that we're
-     * handling.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is starting.
-     */
-    @Override
-    public void startField(FieldInfo fi) {
-
-        //
-        // Add this to the set of fields we're currently processing.
-        fields.add(fi.getName());
-    }
-
-    /**
      * Processes a token from further up the pipeline.
      *
      * @param t The token to process.
@@ -304,37 +289,4 @@ public class HighlightStage extends StageAdapter {
         token(p);
     }
 
-    /**
-     * Removes the field from our set of fields.
-     *
-     * @param fi The {@link com.sun.labs.minion.FieldInfo} object that describes
-     * the field that is ending.
-     */
-    @Override
-    public void endField(FieldInfo fi) {
-
-        //
-        // Tell the fields that we're watching that they're done.
-        List added = new ArrayList();
-        List l = (List) hPass.get(fi.getName());
-        if(l != null) {
-
-            //
-            // Iterate through the list, telling the passages that they're
-            // done, collecting any new ones offered.
-            for(Iterator i = l.iterator(); i.hasNext();) {
-                PassageImpl np =
-                        ((PassageImpl) i.next()).endField();
-                if(np != null) {
-                    added.add(np);
-                }
-            }
-
-            //
-            // Put any newly added passages here.
-            l.addAll(added);
-        }
-
-        fields.remove(fi.getName());
-    }
 } // HighlightStage

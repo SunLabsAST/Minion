@@ -35,6 +35,10 @@ public class ActiveFile {
             activeLock.acquireLock();
         }
     }
+    
+    public boolean isLocked() {
+        return activeLock.hasLock();
+    }
 
     public void unlock() throws FileLockException {
         activeLock.releaseLock();

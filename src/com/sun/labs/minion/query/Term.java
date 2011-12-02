@@ -143,15 +143,7 @@ public class Term extends Element implements Serializable {
         // feed through a pipeline to process the term.  This will apply
         // any further changes (such as stemming) that might be defined
         // in the query configuration.
-        IndexableMap docMap = new IndexableMap("query");
-        docMap.put(null, term);
-        try {
-            pipeline.index(docMap);
-        } catch (SearchEngineException ex) {
-            Logger.getLogger(Term.class.getName()).log(
-                    Level.INFO, "Exception in QueryPipeline", ex);
-        }
-        pipeline.flush();
+        pipeline.process(term);
         String[] tokens = pipeline.getTokens();
 
         //

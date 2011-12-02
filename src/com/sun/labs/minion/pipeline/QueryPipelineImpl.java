@@ -33,14 +33,13 @@ import java.util.List;
  * stemming to all terms that are part of a query if the index is stemmed.
  * The last stage of this pipeline must always be a TokenCollectorStage.
  */
-public class QueryPipelineImpl extends SyncPipelineImpl
-                                 implements QueryPipeline {
+public class QueryPipelineImpl extends PipelineImpl implements QueryPipeline {
 
     private TokenCollectorStage tcs;
     
     public QueryPipelineImpl(PipelineFactory factory, SearchEngine engine,
             List<Stage> pipeline) {
-        super(factory, engine, pipeline, null);
+        super(pipeline);
         Stage s = pipeline.get(pipeline.size() - 1);
         if (!(s instanceof TokenCollectorStage)) {
             throw new PropertyException("", "",

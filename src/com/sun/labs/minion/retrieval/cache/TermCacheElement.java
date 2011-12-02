@@ -85,9 +85,9 @@ public class TermCacheElement {
         this.feat = feat;
         this.df = df;
         if(feat == null) {
-            this.feat = new PostingsIteratorFeatures(part.getManager().
+            this.feat = new PostingsIteratorFeatures(df.getPartition().getPartitionManager().
                     getQueryConfig().getWeightingFunction(),
-                                                     part.getManager().
+                                                     df.getPartition().getPartitionManager().
                     getQueryConfig().getWeightingComponents());
         }
         wf = this.feat.getWeightingFunction();

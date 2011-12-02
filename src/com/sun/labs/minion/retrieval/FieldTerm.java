@@ -192,8 +192,8 @@ public class FieldTerm extends QueryTerm {
             return;
         }
 
-        matchCase = sfi.getType() == FieldInfo.Type.STRING && 
-                (sfi.isCaseSensitive() ||  qc.caseSensitive(val));
+        matchCase = qc.caseSensitive(val);
+        
         // We may need a date.
         Date d = null;
         long time = 0;

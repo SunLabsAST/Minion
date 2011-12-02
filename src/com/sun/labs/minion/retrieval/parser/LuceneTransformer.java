@@ -521,16 +521,7 @@ public class LuceneTransformer extends Transformer
                 //
                 // Start by throwing the term into a dummy document that we'll
                 // feed through a pipeline to process the text
-                IndexableMap docMap = new IndexableMap("query");
-                docMap.put(null, curr.value);
-                try {
-                    pipeline.index(docMap);
-                } catch (SearchEngineException ex) {
-                    logger.log(Level.INFO, "Exception in QueryPipeline", ex);
-                    throw new ParseException("Failed to tokenize query text",
-                            -1);
-                }
-                pipeline.flush();
+                pipeline.process(curr.value);
                 String[] tokens = pipeline.getTokens();
                 if (tokens.length > 1) {
                     // We split the string, so put each token
