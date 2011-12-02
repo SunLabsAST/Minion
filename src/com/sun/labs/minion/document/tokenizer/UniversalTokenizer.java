@@ -28,6 +28,8 @@ import com.sun.labs.minion.pipeline.Token;
 
 import com.sun.labs.minion.util.Util;
 import java.util.Arrays;
+import com.sun.labs.util.props.PropertyException;
+import com.sun.labs.util.props.PropertySheet;
 import java.util.logging.Logger;
 
 /**
@@ -232,6 +234,9 @@ public class UniversalTokenizer extends Tokenizer {
      */
     public String noBreakCharacters = "";
 
+    @ConfigString(defaultValue = "")
+    public static final String PROP_NO_BREAK_CHARACTERS = "noBreakChars";
+    
     /**
      * Causes each break char to generate its own punctuation event, rather
      * than generating a single punctuation event for a sequence of
@@ -352,8 +357,10 @@ public class UniversalTokenizer extends Tokenizer {
         }
 
         //
-        // Break words at the maximum token length.
-        if(tokLen >= maxTokLen) {
+        // Break words at the maximum token length, not including any
+        // accumulated whitespace (which won't be part of the token)
+        int noWhiteLen = tokLen - whiteCount;
+        if(noWhiteLen >= maxTokLen) {
             if(state == ASIAN) {
                 continueAsianFlag = true;
                 if(ngramLength > 0) {
@@ -1480,6 +1487,38 @@ public class UniversalTokenizer extends Tokenizer {
         return output;
     }
 
+    /**
+     * Gather any properties specific to the UniversalTokenizer
+     */
+    @Override
+    public void newProperties(PropertySheet ps) throws PropertyException {
+        noBreakCharacters = ps.getString(PROP_NO_BREAK_CHARACTERS);
+        super.newProperties(ps);
+    }
+    
+    static public void main(String[] args) throws java.io.IOException {
+
+        PrintTokenStage pts = new PrintTokenStage();
+        UniversalTokenizer tok = new UniversalTokenizer(pts);
+        BufferedReader fr = new BufferedReader(new FileReader(args[0]));
+        String f;
+        char[] buff = new char[32 * 1024];
+        while((f = fr.readLine()) != null) {
+            File lf = new File(f);
+            FileReader lr = new FileReader(lf);
+            int p = 0;
+            while(true) {
+                int n = lr.read(buff);
+                if(n == -1) {
+                    tok.endDocument(lf.length());
+                    lr.close();
+                    break;
+                }
+                tok.text(buff, 0, n);
+                p += n;
+            }
+        }
+    }
     static final int INITIAL = 0;
 
     static final int COLLECTING = 1;

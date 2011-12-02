@@ -46,6 +46,10 @@
         <property name="send_white" value="true"/>
     </component>
 
+    <component name="query_tokenizer" type="com.sun.labs.minion.document.tokenizer.UniversalTokenizer">
+        <property name="noBreakChars" value="*?"/>
+    </component>
+
     <!-- The JavaCC-based tokenizer, with and without punctuation. -->
     <component name="jcc_tokenizer" type="com.sun.labs.minion.document.tokenizer.JCCTokenizer"/>
     <component name="jcc_tokenizer_with_punct" type="com.sun.labs.minion.document.tokenizer.JCCTokenizer">
@@ -54,16 +58,30 @@
 
     <!-- A stage used when highlighting documents. -->
     <component name="highlight_stage" type="com.sun.labs.minion.retrieval.HighlightStage"/>
+
+    <!-- A stage that collects processed query terms -->
+    <component name="query_collector_stage" type="com.sun.labs.minion.pipeline.TokenCollectorStage"/>
     
     <!-- A stage to lowercase terms as they come in. -->
     <component name="lower_case" type="com.sun.labs.minion.pipeline.LowerCaseStage"/>
     
+    <!--     A stage to remove stop words. -->
+    <component name="stopper" type="com.sun.labs.minion.pipeline.StopWordsStage">
+        <property name="stopwords" value="stopwords"/>
+    </component>
+    
+    <component name="stopwords" type="com.sun.labs.minion.pipeline.StopWords">
+        <propertylist name="stopwords_files">
+        <item>stopwords</item>    
+        </propertylist>
+    </component>
+
     <!-- A stage to drop things on the floor. -->
     <component name="dropper" type="com.sun.labs.minion.pipeline.Dropper"/>
     
     <!-- A stage to stem terms as they come in. -->
     <component name="stemmer" type="com.sun.labs.minion.pipeline.StemStage"/>
-    
+
     <!-- Stages to be used during debugging to print what's coming down the 
     pipeline.  One that won't print tokens, and one that will. -->
     <component name="printer" type="com.sun.labs.minion.pipeline.PrintStage"/>
@@ -84,6 +102,12 @@
             <item>highlight_stage</item>
         </propertylist>
         
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+        
     </component>
     
     <!-- A pipeline factory that lowercases things.  This requires a memory
@@ -100,20 +124,12 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
-        
-    </component>
 
-    <component name="dff_pipeline_factory" type="com.sun.labs.minion.pipeline.PipelineFactory">
-        <!-- The stages in the main indexing pipeline -->
-        <propertylist name="stages">
-            <item>universal_tokenizer</item>
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
             <item>lower_case</item>
-        </propertylist>
-
-        <!-- The stages in the highlighting pipeline -->
-        <propertylist name="hl_stages">
-            <item>universal_tokenizer_with_punct_and_white</item>
-            <item>highlight_stage</item>
+            <item>query_collector_stage</item>
         </propertylist>
 
     </component>
@@ -134,6 +150,14 @@
             <item>highlight_stage</item>
         </propertylist>
         
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>stopper</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+
     </component>
 
     <!-- A pipeline factory that lowercases things.  This indexes into a partition
@@ -151,6 +175,13 @@
         <propertylist name="hl_stages">
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
+        </propertylist>
+        
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>query_collector_stage</item>
         </propertylist>
         
     </component>
@@ -172,6 +203,15 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
+
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>stemmer</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+
     </component>
     
     <component name="dropper_pipeline" type="com.sun.labs.minion.pipeline.PipelineFactory">
@@ -186,6 +226,13 @@
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
         </propertylist>
+
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>query_collector_stage</item>
+        </propertylist>
+
     </component>
 
     <!-- A pipeline factory that lowercases things, removes stop words and stems 
@@ -205,6 +252,15 @@
         <propertylist name="hl_stages">
             <item>universal_tokenizer_with_punct_and_white</item>
             <item>highlight_stage</item>
+        </propertylist>
+
+        <!-- The stages in the query processing pipeline -->
+        <propertylist name="query_stages">
+            <item>query_tokenizer</item>
+            <item>lower_case</item>
+            <item>stopper</item>
+            <item>stemmer</item>
+            <item>query_collector_stage</item>
         </propertylist>
     </component>
 </config>

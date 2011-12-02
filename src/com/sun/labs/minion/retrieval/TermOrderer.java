@@ -42,6 +42,7 @@ public class TermOrderer implements Comparator {
      * @param object an <code>Object</code> value
      * @return a <code>boolean</code> value
      */
+    @Override
     public boolean equals(Object object) {
         return this.getClass() == object.getClass();
     }
@@ -50,6 +51,7 @@ public class TermOrderer implements Comparator {
      * Compares two instances of <code>DictTerm</code> by their query
      * order.
      */
+    @Override
     public int compare(Object o, Object o1) {
         return ((DictTerm) o).order - ((DictTerm) o1).order;
     }

@@ -32,7 +32,7 @@ import java.io.Serializable;
  *
  * @see Relation
  */
-public class StringRelation extends Relation  implements Serializable {
+public class StringRelation extends Relation implements Serializable {
 
     /**
      * Creates a relation for a string field.

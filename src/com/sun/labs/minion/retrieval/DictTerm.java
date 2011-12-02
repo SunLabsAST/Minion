@@ -88,8 +88,13 @@ public class DictTerm extends QueryTerm implements Comparator {
      * given out when anyone asks for positions.
      */
     protected int[][] posns;
-
-    private static final Logger logger = Logger.getLogger(DictTerm.class.getName());
+    
+    /**
+     * A weight associated with the query term, which can be used during the
+     * similarity computation.  If this is not specified by the user, then we'll
+     * compute a weight by assuming that the query term has a freqeuncy of 1.
+     */
+    private float termWeight;
 
     /**
      * Creates a dictionary term for a given query term.  This query term
@@ -101,6 +106,14 @@ public class DictTerm extends QueryTerm implements Comparator {
     public DictTerm(String val) {
         this.val = val;
     } // DictTerm constructor
+
+    public float getTermWeight() {
+        return termWeight;
+    }
+
+    public void setTermWeight(float termWeight) {
+        this.termWeight = termWeight;
+    }
 
     /**
      * Sets the partition that this term will be operating on.  Does any
@@ -232,6 +245,7 @@ public class DictTerm extends QueryTerm implements Comparator {
     /**
      * Returns the already calculated estimated size.
      */
+    @Override
     protected int calculateEstimatedSize() {
         return estSize;
     }
@@ -248,6 +262,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      * evaluating the term against the given group.  The static type of the
      * returned group depends on the query status parameter.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
 
         if(ag == null) {
@@ -260,7 +275,13 @@ public class DictTerm extends QueryTerm implements Comparator {
             for(QueryEntry qe : dictEntries) {
                 wc.setField(qe.getField());
                 wc.setTerm((String) qe.getName());
-                or.add(qe.iterator(feat), wf.initTerm(wc));
+                float qw;
+                if(termWeight == 0) {
+                    qw = wf.initTerm(wc);
+                } else {
+                    qw = termWeight;
+                }
+                or.add(qe.iterator(feat), qw);
             }
             return or.getGroup();
         }
@@ -412,6 +433,13 @@ public class DictTerm extends QueryTerm implements Comparator {
         boolean[] used = new boolean[ag.size];
         float[] scores = new float[ag.size];
 
+        //
+        // Features for the iterators we'll create.
+        PostingsIteratorFeatures feat =
+                new PostingsIteratorFeatures(wf, wc, searchFields,
+                fieldMultipliers,
+                loadPositions,
+                matchCase);
         feat.setQueryStats(qs);
 
         //
@@ -521,6 +549,13 @@ public class DictTerm extends QueryTerm implements Comparator {
         //
         // If we don't have iterators, then generate them now.
         if(pis == null) {
+            //
+            // Features for the iterators we'll create.
+            PostingsIteratorFeatures feat =
+                    new PostingsIteratorFeatures(wf, wc, searchFields,
+                    fieldMultipliers,
+                    loadPositions,
+                    matchCase);
             feat.setQueryStats(qs);
 
             pis = new PostingsIteratorWithPositions[dictEntries.length];

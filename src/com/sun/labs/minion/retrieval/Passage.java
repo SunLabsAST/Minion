@@ -21,10 +21,10 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion.retrieval;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -38,7 +38,7 @@ public class Passage extends Proximity {
      */
     public Passage(List operands) {
         super(operands);
-        
+
         //
         // The maximum window size is related to the number of query
         // terms.
@@ -54,10 +54,11 @@ public class Passage extends Proximity {
      * sum of the sizes of the terms and the minimum size of any operators
      * that are operands, since these will be anded with the set.
      */
+    @Override
     protected int calculateEstimatedSize() {
         int tsz = 0;
         int osz = Integer.MAX_VALUE;
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
+        for(Iterator i = operands.iterator(); i.hasNext();) {
             QueryElement qe = (QueryElement) i.next();
             if(qe instanceof DictTerm) {
                 tsz += qe.estimateSize();
@@ -71,13 +72,14 @@ public class Passage extends Proximity {
     /**
      * Evaluates this passage operator, returning the results.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
 
         //
         // We'll do an or of the terms, and then restrict that with any
         // non-terms in the operands.
         ScoredGroup candidates = null;
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
+        for(Iterator i = operands.iterator(); i.hasNext();) {
             QueryElement qe = (QueryElement) i.next();
             if(qe instanceof DictTerm) {
                 if(candidates == null) {
@@ -98,7 +100,7 @@ public class Passage extends Proximity {
         //
         // Now, we'll run back through the operands again, intersecting
         // any non-terms that we find with our candidate set.
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
+        for(Iterator i = operands.iterator(); i.hasNext();) {
             QueryElement qe = (QueryElement) i.next();
             if(!(qe instanceof DictTerm)) {
                 candidates = (ScoredGroup) qe.eval(candidates);
@@ -108,12 +110,9 @@ public class Passage extends Proximity {
         //
         // Now make a list of the terms and pass it through.
         List tl = new ArrayList();
-        for(int i = 0; i < terms.length; i++) {
-            tl.add(terms[i]);
-        }
+        tl.addAll(Arrays.asList(terms));
         return evalTerms(candidates, tl);
     }
-
 
     /**
      * Evaluates this passage operator for a particular document, returning
@@ -125,14 +124,11 @@ public class Passage extends Proximity {
     public ArrayGroup eval(int doc) {
         ScoredGroup candidates = new ScoredGroup(1);
         candidates.docs[candidates.size++] = doc;
+
         //
         // Now make a list of the terms and pass it through.
         List tl = new ArrayList();
-        for(int i = 0; i < terms.length; i++) {
-            tl.add(terms[i]);
-        }
+        tl.addAll(Arrays.asList(terms));
         return evalTerms(candidates, tl);
     }
-    
-    
 }

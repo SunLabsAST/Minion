@@ -47,6 +47,7 @@ import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.MetaDataStore;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryException;
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
@@ -542,16 +543,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 Searcher.Operator.AND, Searcher.Grammar.STRICT);
     }
 
-    /**
-     * Runs a query against the index, returning a set of results.
-     * @param query The query to run, in our query syntax.
-     * @param sortOrder How the results should be sorted.  This is a set of
-     * comma-separated field names, each preceeded by a <code>+</code> (for
-     * increasing order) or by a <code>-</code> (for decreasing order).
-     * @throws com.sun.labs.minion.SearchEngineException If there is any error during the search.
-     * @return An instance of <CODE>ResultSet</CODE> containing the results of the query.
-     * @see ResultSet
-     */
+    @Override
     public ResultSet search(String query, String sortOrder)
             throws SearchEngineException {
         return search(query, sortOrder,
@@ -567,12 +559,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     }
 
 
-
-    @Override
-    public ResultSet search(String query, String sortOrder,
-            Searcher.Operator defaultOperator, Searcher.Grammar grammar)
+    public static QueryElement parseQuery(String query, 
+            Searcher.Operator defaultOperator, 
+            Searcher.Grammar grammar, 
+            QueryPipeline queryPipeline)
             throws SearchEngineException {
-
         QueryElement qe = null;
         SimpleNode parseTree = null;
 
@@ -592,8 +583,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 xer = new LuceneTransformer();
                 break;
             default:
-                throw new SearchEngineException("Unknown grammar specified: " +
-                        grammar);
+                throw new SearchEngineException("Unknown grammar specified: "
+                        + grammar);
         }
 
         try {
@@ -603,10 +594,10 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
             com.sun.labs.minion.retrieval.parser.Token badToken =
                     ex.currentToken;
-            while (badToken.next != null) {
+            while(badToken.next != null) {
                 badToken = badToken.next;
             }
-            
+
             throw new com.sun.labs.minion.ParseException(
                     badToken.image,
                     badToken.beginColumn);
@@ -616,7 +607,10 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
 
         try {
-            qe = xer.transformTree(parseTree, defaultOperator);
+            qe = xer.transformTree(parseTree, defaultOperator, queryPipeline);
+            if(logger.isLoggable(Level.FINEST)) {
+                logger.finest(String.format("Processing Query\n %s", qe.toString()));
+            }
         } catch(java.text.ParseException ex) {
             logger.log(Level.SEVERE, "Error transforming query", ex);
             throw new SearchEngineException("Error transforming query", ex);
@@ -632,14 +626,20 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         //
         // Try to optimize the query some.
         QueryOptimizer opti = new QueryOptimizer();
-        qe = opti.optimize(qe);
+        return opti.optimize(qe);
+    }
 
+    @Override
+    public ResultSet search(String query, String sortOrder,
+            Searcher.Operator defaultOperator, Searcher.Grammar grammar)
+            throws SearchEngineException {
+
+        QueryElement qe = parseQuery(query, defaultOperator, grammar, pipelineFactory.getQueryPipeline(this));
         return search(qe, sortOrder);
     }
 
     private ResultSet search(QueryElement qe, String sortOrder) throws
             SearchEngineException {
-
         try {
             CollectionStats cs =
                     new CollectionStats(invFilePartitionManager);
@@ -671,7 +671,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public ResultSet search(Element el, String sortOrder) throws
             SearchEngineException {
         checkQuery(null, el);
-        return search(el.getQueryElement(), sortOrder);
+        return search(el.getQueryElement(pipelineFactory.getQueryPipeline(this)), sortOrder);
     }
 
     /**
@@ -766,7 +766,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 break;
         }
     }
-
+    
     public QueryStats getQueryStats() {
         return qs;
     }
@@ -1348,6 +1348,17 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return pipelineFactory.getHLPipeline();
     }
 
+    /**
+     * Gets a pipeline that is used for processing query terms, as defined
+     * in the configuration file.  The last stage in this pipeline must be
+     * a TokenCollectorStage
+     * 
+     * @return a query pipeline or null if no pipeline was supplied
+     */
+    public QueryPipeline getQueryPipeline() {
+        return pipelineFactory.getQueryPipeline(this);
+    }
+    
     /**
      * Gets a string description of the search engine.
      * @return a string description of the search engine.

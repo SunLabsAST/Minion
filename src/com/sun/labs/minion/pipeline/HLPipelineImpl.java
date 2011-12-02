@@ -50,15 +50,18 @@ public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
     /**
      * Sets up for processing a new document.
      */
+    @Override
     public void reset(ArrayGroup ag, int doc, String[] qt) {
         hlStage.reset(ag, doc, qt);
     }
 
+    @Override
     public void addPassageField(String fieldName) {
         addPassageField(fieldName, com.sun.labs.minion.Passage.Type.JOIN,
                 -1, -1, false);
     }
 
+    @Override
     public void addPassageField(String fieldName,
             com.sun.labs.minion.Passage.Type type,
             int context, int maxSize,
@@ -81,6 +84,7 @@ public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
      * @see com.sun.labs.minion.SearchEngine#index
      * @see #addPassageField
      */
+    @Override
     public Map getPassages(Map document) {
         return getPassages(document, false, -1, -1, false);
     }
@@ -107,6 +111,7 @@ public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
      * @see com.sun.labs.minion.SearchEngine#index
      * @see #addPassageField
      */
+    @Override
     public Map getPassages(Map document,
             int context, int maxSize, boolean doSort) {
         return getPassages(document, true, context, maxSize, doSort);
@@ -168,6 +173,7 @@ public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
      *
      * @return a list of <code>Passage</code>s.
      */
+    @Override
     public List getPassages(Map document,
             int context, int maxSize) {
         hlStage.resetPassages();

@@ -396,6 +396,27 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
     }
 
     /**
+     * Gets the number of distinct terms in this document vector (the
+     * cardinality, rather than the length)
+     * @return the number of distinct terms
+     */
+    public int getNumDistinct() {
+        return v.length;
+    }
+    
+    /**
+     * Gets the total number of occurrences of terms in this vector
+     * @return the total number of term occurrences
+     */
+    public int getTotalOccurrences() {
+        int n = 0;
+        for (WeightedFeature f : v) {
+            n += f.getFreq();
+        }
+        return n;
+    }
+    
+    /**
      * Gets a map of term names to weights, where the weights
      * represent the amount the term contributed to the similarity
      * of the two documents.  Only terms that occur in both documents
@@ -513,10 +534,10 @@ public class DocumentVectorImpl implements DocumentVector, Serializable {
         return ret;
     }
 
-    public SortedSet getWeightOrderedSet() {
+    public SortedSet<WeightedFeature> getWeightOrderedSet() {
         getFeatures();
-        SortedSet ret =
-                new TreeSet(WeightedFeature.getInverseWeightComparator());
+        SortedSet<WeightedFeature> ret =
+                new TreeSet<WeightedFeature>(WeightedFeature.getInverseWeightComparator());
         for(int i = 0; i < v.length; i++) {
             if(v[i].getWeight() != 0) {
                 ret.add(v[i]);

@@ -118,15 +118,32 @@
         <property name="cluster_memory_partition" value="cluster_memory_partition"/>
     </component>
     
+    <!-- A simple search engine that will store uncased id and frequency main
+         dictionary entries.  It drops stop words and performs stemming. -->
+    <component name="stop_stem_search_engine" inherit="search_engine">
+        <property name="inv_file_partition_manager" value="simple_partition_manager"/>
+        <property name="num_pipelines" value="${num_pipelines}"/>
+        <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
+        <property name="pipeline_factory" value="lc_stop_stem_pipeline_factory"/>
+    </component>
+
     <!-- A simple search engine that will store uncased id and frequency main dictionary entries. -->
     <component name="simple_search_engine" inherit="search_engine">
         <property name="inv_file_partition_manager" value="simple_partition_manager"/>
         <property name="num_pipelines" value="${num_pipelines}"/>
         <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
-        <property name="pipeline_factory" value="lc_pipeline_factory"/>
+        <property name="pipeline_factory" value="lc_stem_pipeline_factory"/>
     </component>
     
-    <!-- A simple search engine that will store uncased id and frequency main dictionary entries. -->
+    <!-- A search engine that does analysis similar to Lucene's standard analyzer -->
+    <component name="standard_search_engine" inherit="search_engine">
+        <property name="inv_file_partition_manager" value="simple_partition_manager"/>
+        <property name="num_pipelines" value="${num_pipelines}"/>
+        <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
+        <property name="pipeline_factory" value="lc_stop_pipeline_factory"/>
+    </component>
+    
+    <!-- A test search engine that drops all tokens at the end of the pipeline. -->
     <component name="dropping_search_engine" inherit="search_engine">
         <property name="inv_file_partition_manager" value="simple_partition_manager"/>
         <property name="num_pipelines" value="${num_pipelines}"/>
@@ -138,5 +155,9 @@
         <property name="stop_words" value="stopwords"/>
     </component>
     
-    <component name="stopwords" type="com.sun.labs.minion.pipeline.StopWords"/>
+    <component name="stopwords" type="com.sun.labs.minion.pipeline.StopWords">
+        <propertylist name="stopwords_files">
+            <item>/com/sun/labs/minion/pipeline/stopwords</item>
+        </propertylist>
+    </component>
 </config>

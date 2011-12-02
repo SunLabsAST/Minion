@@ -89,7 +89,6 @@ public class PassageStore {
         passStartPosns = new int[ag.docs.length];
         passEndPosns = new int[ag.docs.length];
         penalties = new float[ag.docs.length];
-
         for(int i = 0; i < passStartPosns.length; i++) {
             passStartPosns[i] = -1;
         }
@@ -122,7 +121,7 @@ public class PassageStore {
         // Store the penalty.
         if(nPass + 1 >= penalties.length) {
             penalties = Arrays.copyOf(penalties,
-                                         penalties.length*2);
+                    penalties.length * 2);
         }
         penalties[nPass++] = penalty;
     }
@@ -191,8 +190,8 @@ public class PassageStore {
             return "{}";
         }
             
-        StringBuffer b = new StringBuffer();
-        b.append("{");
+        StringBuilder b = new StringBuilder();
+        b.append('{');
         if(passStartPosns[pos] >= 0) {
             for(int i = passStartPosns[pos];
                 i < passEndPosns[pos]; i+= width) {

@@ -25,6 +25,8 @@ package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.Pipeline;
+import com.sun.labs.minion.QueryPipeline;
+import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.util.props.ConfigComponentList;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.ConfigurationManager;
@@ -33,6 +35,7 @@ import com.sun.labs.util.props.PropertySheet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.LinkedList;
 import java.util.logging.Logger;
 
 /**
@@ -100,7 +103,25 @@ public class PipelineFactory implements Configurable {
         }
         stages.add(s);
     }
-
+    
+    public QueryPipeline getQueryPipeline(SearchEngine engine) {
+        if (queryStages == null || queryStages.isEmpty()) {
+            logger.info("No QueryPipeline defined, using default") ;
+            // Legacy config files won't have a query pipeline, so if we
+            // don't get one, make a simple one that would do what the old
+            // code used to do.
+            LinkedList<Stage> stages = new LinkedList<Stage>();
+            TokenCollectorStage tcs = new TokenCollectorStage();
+            stages.push(tcs);
+            
+            UniversalTokenizer tokStage = new UniversalTokenizer(stages.peek());
+            tokStage.noBreakCharacters = "*?";
+            stages.push(tokStage);
+            return new QueryPipelineImpl(this, engine, stages);
+        }
+        return new QueryPipelineImpl(this, engine, getPipeline(queryStages));
+    }
+    
     /**
      * Gets a set of new instances for the configured stages.  The stages will
      * be connected together into a pipeline.
@@ -149,6 +170,12 @@ public class PipelineFactory implements Configurable {
         cm = ps.getConfigurationManager();
         stages = (List<Stage>) ps.getComponentList(PROP_STAGES);
         hlStages = (List<Stage>) ps.getComponentList(PROP_HL_STAGES);
+        queryStages = ps.getComponentList(PROP_QUERY_STAGES);
     }
+    @ConfigComponentList(type = com.sun.labs.minion.pipeline.Stage.class)
+    public static final String PROP_QUERY_STAGES = "query_stages";
+    
+    private List queryStages;
+    
 
 }

@@ -147,7 +147,10 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
         //
         // Read everything into the cache now.
         int p = 0;
-        for(DictionaryIterator i = super.iterator(); i.hasNext();) {
+        DictionaryIterator di = super.iterator();
+        di.setUnbufferedPostings(true);
+
+        while(di.hasNext()) {
             QueryEntry<N> e = (QueryEntry) i.next();
             entries[e.getID() - 1] = e;
             entriesByName.put(e.getName(), e);

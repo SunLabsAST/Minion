@@ -33,9 +33,13 @@
 -->
 
 <config>
+
+    <property name="threshold_delta" value="0"/>
+    
     <!-- A manager for classifier partitions -->
     <component name="class_manager" type="com.sun.labs.minion.classification.ClassifierManager">
         <property name="lock_dir" value="${lock_directory}"/>
+        <property name="classification_threshold_delta" value="${threshold_delta}"/>
         <property name="classes_field" value="class"/>
         <property name="index_config" value="index_config"/>
         <property name="partition_factory" value="classifier_partition_factory"/>

@@ -263,6 +263,20 @@ public class WeightingComponents {
         dvl = field.getDocumentVectorLength(key.getID());
         return this;
     }
+    
+    /**
+     * Initializes any document-level statistics that can be determined
+     * based on the terms in the document vector passed in
+     * 
+     * @param dv a representation of the document to be used for weighting
+     * @return weighting components representing the document
+     */
+    public WeightingComponents setDocument(DocumentVectorImpl dv) {
+        nd = dv.getNumDistinct();
+        ld = dv.getTotalOccurrences();
+        dvl = dv.length();
+        return this;
+    }
 
     /**
      * Initalizes any per-document statistics that can be gotten from a

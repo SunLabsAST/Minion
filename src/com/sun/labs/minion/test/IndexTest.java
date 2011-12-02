@@ -226,6 +226,10 @@ public class IndexTest extends SEMain {
                 engine = SearchEngineFactory.getSearchEngine(indexDir,
                         engineType, cmFile);
             }
+
+            //
+            // Define the fields we know about
+            defineFields(engine);
         } catch(SearchEngineException se) {
             logger.log(Level.SEVERE, "Error opening collection", se);
             return;
@@ -252,16 +256,7 @@ public class IndexTest extends SEMain {
 
                     try {
                         long len = f.length();
-                        boolean longFile = len > 400000;
-//                        if(longFile) {
-//                        logger.info("Long: " + f.length());
-//                            engine.flush();
-//                        }
                         engine.index(document);
-//                        if(longFile) {
-//                            engine.flush();
-//                        }
-
                         nDocs++;
                         totalLen += len;
 

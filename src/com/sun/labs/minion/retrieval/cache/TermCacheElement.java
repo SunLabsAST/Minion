@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  */
 public class TermCacheElement {
 
-    private static Logger logger = Logger.getLogger(TermCacheElement.class.
+    private static final Logger logger = Logger.getLogger(TermCacheElement.class.
             getName());
 
     protected List<String> terms;
@@ -84,8 +84,14 @@ public class TermCacheElement {
         this.terms = new ArrayList<String>(terms);
         this.feat = feat;
         this.df = df;
-        wf = feat.getWeightingFunction();
-        wc = feat.getWeightingComponents();
+        if(feat == null) {
+            this.feat = new PostingsIteratorFeatures(part.getManager().
+                    getQueryConfig().getWeightingFunction(),
+                                                     part.getManager().
+                    getQueryConfig().getWeightingComponents());
+        }
+        wf = this.feat.getWeightingFunction();
+        wc = this.feat.getWeightingComponents();
         for(String term : terms) {
             add(df.getTerm(term, feat.isCaseSensitive()));
         }

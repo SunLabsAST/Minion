@@ -125,6 +125,7 @@ public class CDateParser {
 	    "y-M-d",
 	    "M d y",
 	    "y M d",
+            "MMM y",
 	};
 
     public CDateParser() {

@@ -1,64 +1,64 @@
 /*
- * Copyright 2007-2009 Sun Microsystems, Inc. All Rights Reserved.
+ * Copyright 2011 Oracle and/or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
- *
+ * 
  * This code is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2
  * only, as published by the Free Software Foundation.
- *
+ * 
  * This code is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License version 2 for more details (a copy is
  * included in the LICENSE file that accompanied this code).
- *
+ * 
  * You should have received a copy of the GNU General Public License
  * version 2 along with this work; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA
- *
- * Please contact Sun Microsystems, Inc., 16 Network Circle, Menlo
- * Park, CA 94025 or visit www.sun.com if you need additional
- * information or have any questions.
+ * 
  */
 package com.sun.labs.minion.query;
 
 import com.sun.labs.minion.QueryPipeline;
-import com.sun.labs.minion.retrieval.NameTerm;
 import com.sun.labs.minion.retrieval.QueryElement;
 import java.io.Serializable;
 
 /**
- * An operator that will return documents that have no value for a given field.
+ * Adjusts the weight of part of a query element by the given adjustment
+ * factor.  The adjustment is multiplicative, so an adjustment of 1.0
+ * is equivalent to not using the Weight operator.
  */
-public class Undefined extends Operator implements Serializable {
-
-    private String field;
-
+public class Weight extends Unary implements Serializable {
+        
+    protected float factor;
+    
     /**
-     * Creates an undefined operator for the given field.  This operator will
-     * return documents that have no defined value for the given field.
-     *
-     * @param field the field for which we want to find documents that have no
-     * value.  This field must be a <code>SAVED</code> field.
+     * Adjust the weight of a query element
+     * 
+     * @param element the subelement to modify
+     * @param factor the adjustment factor, with 1.0 being neutral
      */
-    public Undefined(String field) {
-        this.field = field;
+    public Weight(Element element, float factor) {
+        super(element);
+        this.factor = factor;
     }
 
     @Override
     public QueryElement getQueryElement(QueryPipeline pipeline) {
-        return new com.sun.labs.minion.retrieval.Undefined(new NameTerm(field));
+        return new com.sun.labs.minion.retrieval.Weight(
+                element.getQueryElement(pipeline), factor);
     }
 
     @Override
     public String toQueryString() {
-        return String.format("<undefined> %s", field);
+        return String.format("<weight> %f %s", factor, element.toQueryString());
     }
-
+    
+    
+    
     @Override
     public String toString() {
-        return String.format("(<undefined> %s)", field);
+        return "(Weight " + (elements.size() > 0 ? elements.get(0).toString() : "") + ")";
     }
-
 }

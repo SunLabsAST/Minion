@@ -23,11 +23,18 @@
  */
 package com.sun.labs.minion.query;
 
+import com.sun.labs.minion.IndexableMap;
+import com.sun.labs.minion.QueryPipeline;
+import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.retrieval.DictTerm;
+import com.sun.labs.minion.retrieval.Phrase;
 import com.sun.labs.minion.retrieval.QueryElement;
 import com.sun.labs.minion.util.CharUtils;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A class for a search term.  Various modifiers can be applied to a term to
@@ -44,44 +51,70 @@ public class Term extends Element implements Serializable {
          * Indicates that only terms with the exact case provided should be
          * returned.
          */
-        CASE,
+        CASE("<case>"),
 
         /**
          * Indicates that terms that are morphological variations may be returned.
          */
-        MORPH,
+        MORPH("<morph>"),
 
         /**
          * Indicates that semantic or other term variations may be returned.
          */
-        EXPAND,
+        EXPAND("<expand>"),
 
         /**
          * Indicates that stem matches may be returned.
          */
-        STEM,
+        STEM("<stem>"),
 
         /**
          * Indicates that wildcard matches may be returned.
          */
-        WILDCARD,
+        WILDCARD("<wild>");
+        
+        private String rep;
+        
+        Modifier() {
+        }
+        
+        Modifier(String rep) {
+            this.rep = rep;
+        }
+        
+        public String getRep() {
+            return rep;
+        }
     }
 
     private String term;
 
     private EnumSet<Modifier> modifiers;
+    
+    private float termWeight;
 
     public Term(String term) {
-        this(term, EnumSet.of(Modifier.MORPH));
+        this(term, EnumSet.of(Modifier.MORPH), 0);
     }
 
     public Term(String term, EnumSet<Modifier> mods) {
+        this(term, mods, 0);
+    }
+    
+    /**
+     * Creates a term with a given set of modifiers and a given term weight.
+     * @param term the name of the term
+     * @param mods modifiers for how the term should be handled at query time
+     * @param termWeight a weight to be used for the term when computing similarity
+     */
+    public Term(String term, EnumSet<Modifier> mods, float termWeight) {
         this.term = term;
         if(mods != null) {
             this.modifiers = EnumSet.copyOf(mods);
         } else {
             this.modifiers = EnumSet.noneOf(Modifier.class);
         }
+        this.termWeight = termWeight;
     }
 
     public void addModifier(Modifier modifier) {
@@ -96,24 +129,83 @@ public class Term extends Element implements Serializable {
         return modifiers;
     }
 
-    public QueryElement getQueryElement() {
+    @Override
+    public QueryElement getQueryElement(QueryPipeline pipeline) {
         //
         // If we don't want to match case, then downcase the string, so that 
         // dict term will do the right thing by default.
         if(!modifiers.contains(Modifier.CASE)) {
             term = CharUtils.toLowerCase(term);
         }
-        DictTerm ret = new DictTerm(term);
-        ret.setMatchCase(modifiers.contains(Modifier.CASE));
-        ret.setDoExpand(modifiers.contains(Modifier.EXPAND));
-        ret.setDoMorph(modifiers.contains(Modifier.MORPH));
-        ret.setDoStem(modifiers.contains(Modifier.STEM));
-        ret.setDoWild(modifiers.contains(Modifier.WILDCARD));
-        ret.setSearchFields(fields);
-        ret.strictEval = strict;
+        
+        //
+        // Start by throwing the term into a dummy document that we'll
+        // feed through a pipeline to process the term.  This will apply
+        // any further changes (such as stemming) that might be defined
+        // in the query configuration.
+        IndexableMap docMap = new IndexableMap("query");
+        docMap.put(null, term);
+        try {
+            pipeline.index(docMap);
+        } catch (SearchEngineException ex) {
+            Logger.getLogger(Term.class.getName()).log(
+                    Level.INFO, "Exception in QueryPipeline", ex);
+        }
+        pipeline.flush();
+        String[] tokens = pipeline.getTokens();
+
+        //
+        // See what we got out.  If we broke into multiple tokens, make a
+        // phrase out of what was entered.
+        QueryElement ret = null;
+        if (tokens.length > 1) {
+            ArrayList<QueryElement> qes = new ArrayList<QueryElement>();
+            for (String t : tokens) {
+                DictTerm dt = new DictTerm(t);
+                setModifiers(dt);
+                dt.setTermWeight(termWeight);
+                qes.add(dt);
+            }
+            ret = new Phrase(qes);
+        } else if (tokens.length == 1) {
+            DictTerm dt = new DictTerm(tokens[0]);
+            setModifiers(dt);
+            ret = dt;
+        } else {
+            // The whole thing was tokenized away
+            DictTerm dt = new DictTerm("");
+            setModifiers(dt);
+            ret = dt;
+        }
         return ret;
     }
+    
+    protected void setModifiers(DictTerm term) {
+        term.setMatchCase(modifiers.contains(Modifier.CASE));
+        term.setDoExpand(modifiers.contains(Modifier.EXPAND));
+        term.setDoMorph(modifiers.contains(Modifier.MORPH));
+        term.setDoStem(modifiers.contains(Modifier.STEM));
+        term.setDoWild(modifiers.contains(Modifier.WILDCARD));
+        term.setSearchFields(fields);
+        term.strictEval = strict;
+    }
 
+    @Override
+    public String toQueryString() {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for(Modifier modifier : modifiers) {
+            if(!first) {
+                sb.append(' ');
+            }
+            sb.append(modifier.getRep());
+            first = false;
+        }
+        sb.append(term);
+        return sb.toString();
+    }
+
+    @Override
     public String toString() {
         return "Term: " + term + " mods: " + modifiers;
     }

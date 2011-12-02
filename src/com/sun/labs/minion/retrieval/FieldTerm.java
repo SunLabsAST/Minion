@@ -166,6 +166,7 @@ public class FieldTerm extends QueryTerm {
         return val;
     }
 
+    @Override
     public void setPartition(DiskPartition part) {
 
         InvFileDiskPartition ifpart = (InvFileDiskPartition) part;
@@ -191,9 +192,8 @@ public class FieldTerm extends QueryTerm {
             return;
         }
 
-        matchCase = qc.caseSensitive(val);
-
-        //
+        matchCase = sfi.getType() == FieldInfo.Type.STRING && 
+                (sfi.isCaseSensitive() ||  qc.caseSensitive(val));
         // We may need a date.
         Date d = null;
         long time = 0;
@@ -221,8 +221,8 @@ public class FieldTerm extends QueryTerm {
                 dayResolution = isDayResolution(d);
                 o = new Date(time);
             } catch(java.text.ParseException pe) {
-                logger.warning("Invalid date format: \"" + val
-                        + "\" for date field: " + name);
+                logger.warning(String.format("Invalid date format: \"%s\" for date field %s", 
+                        val, name));
                 return;
             }
         }

@@ -24,16 +24,14 @@
 
 package com.sun.labs.minion.query;
 
+import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.retrieval.QueryElement;
 import java.io.Serializable;
-import java.util.ArrayList;
 
 /**
  * A boolean not operator.  Note that boolean not is a unary operator.
  */
-public class Not extends Operator implements Serializable {
-
-    private Element element;
+public class Not extends Unary implements Serializable {
 
     /**
      * Creates an empty boolean negation.  This will return all documents.
@@ -55,15 +53,20 @@ public class Not extends Operator implements Serializable {
      * @param element
      */
     public Not(Element element) {
-        this.element = element;
-        elements = new ArrayList<Element>();
-        elements.add(element);
+        super(element);
     }
 
-    public QueryElement getQueryElement() {
-        return new com.sun.labs.minion.retrieval.Not(element.getQueryElement());
+    @Override
+    public QueryElement getQueryElement(QueryPipeline pipeline) {
+        return new com.sun.labs.minion.retrieval.Not(element.getQueryElement(pipeline));
+    }
+    
+    @Override
+    public String toQueryString() {
+        return String.format("<not> (%s)", element.toQueryString());
     }
 
+    @Override
     public String toString() {
         return "(Not " + (elements.size() > 0 ? elements.get(0).toString() : "") + ")";
     }

@@ -838,6 +838,7 @@ public class ArrayGroup implements Cloneable {
      * @return <code>true</code> if the groups contain the same documents,
      * <code>false</code> otherwise.
      */
+    @Override
     public boolean equals(Object o) {
         if(!(o instanceof ArrayGroup)) {
             return false;
@@ -859,7 +860,7 @@ public class ArrayGroup implements Cloneable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(size * 3);
-        sb.append("[");
+        sb.append('[');
         for(int i = 0; i < size; i++) {
             sb.append(i == 0 ? "" : ", ").append(docs[i]);
         }

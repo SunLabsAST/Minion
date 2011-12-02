@@ -212,9 +212,7 @@ public class MailIndexer {
                 //
                 // Match against the header, and save the two parts.
                 Matcher m = header.matcher(l);
-                if(!m.matches()) {
-                    logger.severe("Bad header: \"" + l + "\" in " + key);
-                } else {
+                if(m.matches()) {
                     String h = m.group(1);
                     String val = m.group(2);
 

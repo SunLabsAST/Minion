@@ -318,7 +318,7 @@ public class Mutator extends SEMain implements Runnable {
 
         SearchEngine engine = SearchEngineFactory.getSearchEngine(indexDir,
                 cmFile);
-
+        defineFields(engine);
         try {
             for(int i = 0; i < nThreads; i++) {
                 muts[i] = new Mutator(engine, il, i + 1);
