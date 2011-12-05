@@ -36,7 +36,6 @@ import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.Util;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.logging.Level;
 
@@ -273,9 +272,10 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * renumbered in order of the names
      * @param idMapType what kind of map (if any) should be kept between the
      * old and new IDs
-     * @return The entries, in sorted order.
+     * @return <code>true</code> if there were entries that were sorted, 
+     * <code>false</code> otherwise.
      */
-    protected IndexEntry[] sort(Renumber renumber, IDMap idMapType) {
+    protected boolean sort(Renumber renumber, IDMap idMapType) {
         
         //
         // Figure out how many used elements there were in the map.
@@ -284,6 +284,10 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             if(e.isUsed()) {
                 nUsed++;
             }
+        }
+        
+        if(nUsed == 0) {
+            return false;
         }
         
         //
@@ -345,7 +349,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
                         break;
                 }
         }
-        return sortedEntries;
+        return true;
     }
 
     /**
@@ -376,9 +380,21 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * multiple dictionaries and postings types to the same channel.
      *
      *  @param partOut the output where the dictionary should be marshalled.
+     * @return <code>true</code> if some entries were marshalled, <code>false</code> otherwise.
      */
-    public IndexEntry[] marshall(PartitionOutput partOut) throws java.io.IOException {
-        logger.fine(String.format("Marshalling %d entries", map.size()));
+    public boolean marshall(PartitionOutput partOut) throws java.io.IOException {
+        
+        //
+        // Sort the entries in preparation for writing them out.  This will
+        // generate an old-to-new ID mapping if we're renumbering.  If this
+        // method returns false, then there weren't any entries sorted, since 
+        // there weren't any used in this dictionary (even if the map has 
+        // entries), so we should just quit now.
+        if(!sort(partOut.getDictionaryRenumber(), partOut.getDictionaryIDMap())) {
+            return false;
+        }
+
+        logger.fine(String.format("Marshalling %d entries", nUsed));
 
         DictionaryOutput dictOut = partOut.getPartitionDictionaryOutput();
         PostingsOutput[] postOut = partOut.getPostingsOutput();
@@ -398,11 +414,6 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         for(int i = 0; i < postOut.length; i++) {
             dh.postStart[i] = postOut[i].position();
         }
-
-        //
-        // Sort the entries in preparation for writing them out.  This will
-        // generate an old-to-new ID mapping if we're renumbering.
-        sort(partOut.getDictionaryRenumber(), partOut.getDictionaryIDMap());
 
         int[] postingsIDMap = partOut.getPostingsIDMap();
 
@@ -426,7 +437,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         // We're done dumping this dictionary.
         dictOut.finish();
 
-        return sortedEntries;
+        return true;
     }
 
     /**
