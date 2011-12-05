@@ -288,14 +288,18 @@ public class DictionaryHeader {
                 + " entryInfoPos: " + entryInfoPos
                 + " entryInfoSize: " + entryInfoSize);
 
+        b.append(" nPost: ").append(postStart.length);
         for(int i = 0; i < postStart.length; i++) {
+            if(i == 0) {
+                b.append(' ');
+            }
             if(i > 0) {
                 b.append(", ");
             }
             b.append('[').append(postStart[i]);
-            b.append(postEnd[i]).append(']');
+            b.append(' ').append(postEnd[i]).append(']');
         }
-        b.append("magic: ").append(magic);
+        b.append(" magic: ").append(magic);
         return b.toString();
     }
 } // DictionaryHeader
