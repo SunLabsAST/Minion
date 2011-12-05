@@ -8,7 +8,6 @@ import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
-import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.DocOccurrence;
 import com.sun.labs.minion.indexer.postings.Occurrence;
@@ -19,7 +18,6 @@ import com.sun.labs.minion.util.CDateParser;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
-import com.sun.labs.util.NanoWatch;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -341,7 +339,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         long headerPos = partDictOut.position();
         FieldHeader header = new FieldHeader();
         header.write(partDictOut);
-
+        
         header.fieldID = info.getID();
         header.maxDocID = partOut.getMaxDocID();
 
@@ -357,10 +355,16 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         // are pretty much the same.
         for(Type type : Type.values()) {
             int ord = type.ordinal();
-            if(dicts[ord] == null && type != Type.TOKEN_BIGRAMS && type != Type.SAVED_VALUE_BIGRAMS) {
-                header.dictOffsets[ord] = -1;
-                continue;
-            }
+            if(dicts[ord] == null) {
+                //
+                // If we didn't have a dictionary for this type, and it's not
+                // one of the bigram dictionaries that we might build below, then
+                // just skip it.
+                if(type != Type.TOKEN_BIGRAMS && type != Type.SAVED_VALUE_BIGRAMS) {
+                    header.dictOffsets[ord] = -1;
+                    continue;
+                }
+            } 
 
             //
             // Figure out the encoder for the type of dictionary.
@@ -517,10 +521,20 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     partOut.setDictionaryEncoder(new StringNameHandler());
             }
 
-            header.dictOffsets[ord] = partDictOut.position();
+            
+            //
+            // The offset where we're about to marshall this dictionary.
+            long dictPos = partDictOut.position();
+            
             try {
-                dicts[ord].marshall(partOut);
-                entryIDMaps[ord] = dicts[ord].getIdMap();
+                logger.info(String.format("marshall %s %s", field.getInfo().getName(), type));
+                if(dicts[ord].marshall(partOut)) {
+                    header.dictOffsets[ord] = dictPos;
+                    entryIDMaps[ord] = dicts[ord].getIdMap();
+                } else {
+                    header.dictOffsets[ord] = -1;
+                    entryIDMaps[ord] = null;
+                }
             } catch(RuntimeException ex) {
                 //
                 // It's nice to log what field and dictionary caused the problem
