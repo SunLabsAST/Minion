@@ -28,6 +28,7 @@ import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -163,8 +164,17 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 default:
             }
 
-            dicts[ord] = new DiskDictionary(entryFactory, decoder, dictFile, postIn);
-            dicts[ord].setPartition(field.getPartition());
+            try {
+                dicts[ord] = new DiskDictionary(entryFactory, decoder, dictFile, postIn);
+                dicts[ord].setPartition(field.getPartition());
+            } catch(IOException ex) {
+                logger.log(Level.SEVERE,
+                        String.format("Error opening %s %s for %d", 
+                        field.getInfo().getName(),
+                        type, 
+                        field.getPartition().getPartitionNumber()));
+                throw (ex);
+            }
         }
 
 
@@ -255,19 +265,32 @@ public class DiskDictionaryBundle<N extends Comparable> {
      */
     public QueryEntry getTerm(String name, boolean caseSensitive) {
         QueryEntry ret = null;
+        DiskDictionary ct = dicts[Type.CASED_TOKENS.ordinal()];
+        DiskDictionary ut = dicts[Type.UNCASED_TOKENS.ordinal()];
         if(caseSensitive) {
             if(field.isCased()) {
-                ret = dicts[Type.CASED_TOKENS.ordinal()].get(name);
+                if(ct != null) {
+                    ret = ct.get(name);
+                }
             } else {
                 logger.warning(
                         String.format(
-                        "Match case requested for term %s in field %s, "
+                        "Match case requested for term %s in %s, "
                         + "but this field only has case insensitive terms stored",
                         name, info.getName()));
             }
-        } else if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-            ret =
-                    dicts[Type.UNCASED_TOKENS.ordinal()].get(CharUtils.toLowerCase(name));
+        } else {
+            if(field.isUncased()) {
+                if(ut != null) {
+                    ret = ut.get(CharUtils.toLowerCase(name));
+                }
+            } else {
+                logger.warning(
+                        String.format(
+                        "Case insenstive get requested for term %s in %s, "
+                        + "but this field only has case sensitive terms stored",
+                        name, info.getName()));
+            }
         }
 
         if(ret != null) {
@@ -388,28 +411,51 @@ public class DiskDictionaryBundle<N extends Comparable> {
             return null;
         }
 
-        Comparable val =
-                MemoryDictionaryBundle.getEntryName(stringVal, info, dateParser);
+        DiskDictionary rs = dicts[Type.RAW_SAVED.ordinal()];
+        DiskDictionary us = dicts[Type.UNCASED_SAVED.ordinal()];
 
-        if(field.getInfo().getType() != FieldInfo.Type.STRING) {
-            return dicts[Type.RAW_SAVED.ordinal()].get(val);
-        } else {
+        //
+        // Handle string fields and their casedness separately.
+        if(field.getInfo().getType() == FieldInfo.Type.STRING) {
 
+            //
+            // Case sensitive requests go to the raw dictionary.  We'll warn
+            // on case sensitive requests on case insensitive fields.
             if(caseSensitive) {
-                return dicts[Type.RAW_SAVED.ordinal()].get(val);
-            } else {
-                if(dicts[Type.UNCASED_SAVED.ordinal()] != null) {
-                    return dicts[Type.UNCASED_SAVED.ordinal()].get(val);
-                } else {
-                    logger.warning(
-                            String.format(
-                            "Case insensitive request for field value %s in field %s, "
-                            + "but this field only has case sensitive values.",
-                            val, field.getInfo().getName()));
+                //
+                // No raw dictionary means no result, but that might be OK if there
+                // were no values in this partition.
+                if(rs == null) {
+                    if(!field.isCased()) {
+                        logger.warning(
+                                String.format(
+                                "Case sensitive request for field value %s in field %s, "
+                                + "but this field only has case insensitive values.",
+                                stringVal, field.getInfo().getName()));
+                    }
                     return null;
                 }
+                return rs.get(stringVal);
+            } else {
+                if(us == null) {
+                    if(!field.isUncased()) {
+                        logger.warning(
+                                String.format(
+                                "Case insensitive request for field value %s in field %s, "
+                                + "but this field only has case sensitive values.",
+                                stringVal, field.getInfo().getName()));
+                    }
+                    return null;
+                }
+                return us.get(stringVal);
             }
         }
+        
+        if(rs == null) {
+            return null;
+        }
+        
+        return rs.get(MemoryDictionaryBundle.getEntryName(stringVal, info, dateParser));
     }
 
     /**
@@ -1061,6 +1107,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
             PriorityQueue<HE> h = new PriorityQueue<HE>();
             for(DiskDictionaryBundle bundle : bundles) {
+                if(bundle == null) {
+                    continue;
+                }
                 HE el = null;
                 if(bundle.dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
                     el = new HE(bundle.dicts[Type.UNCASED_TOKENS.ordinal()].iterator());
