@@ -527,7 +527,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             long dictPos = partDictOut.position();
             
             try {
-                logger.info(String.format("marshall %s %s", field.getInfo().getName(), type));
                 if(dicts[ord].marshall(partOut)) {
                     header.dictOffsets[ord] = dictPos;
                     entryIDMaps[ord] = dicts[ord].getIdMap();

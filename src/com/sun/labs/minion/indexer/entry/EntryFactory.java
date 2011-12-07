@@ -43,6 +43,24 @@ public class EntryFactory<N extends Comparable> implements Configurable {
     }
     
     /**
+     * Make a query entry by re-using a previous one.  Useful when we want to 
+     * avoid a lot of object instantiations
+     * @param e the entry to re-use.  If this is null, a new entry will be generated.
+     * @param newName the new name to give the entry
+     * @param b the buffer from when we can read the entry's data
+     * @return the same entry that was passed in.
+     */
+    public QueryEntry fillQueryEntry(QueryEntry e, N newName, ReadableBuffer b) {
+        if(e == null) {
+            e = getQueryEntry(newName, b);
+        } else {
+            e.setName(newName);
+            e.decode(b);
+        }
+        return e;
+    }
+    
+    /**
      * Gets the names of the postings channels that this entry is going to need
      * for reading or writing it's postings.
      */

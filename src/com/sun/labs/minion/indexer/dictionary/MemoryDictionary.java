@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
@@ -448,6 +449,8 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         protected boolean actualOnly;
 
         int pos = 0;
+        
+        Entry currEntry = null;
 
         public MemoryDictionaryIterator() {
             if(sortedEntries == null) {
@@ -455,18 +458,31 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             }
         }
 
+        @Override
         public boolean hasNext() {
             return pos < nUsed;
         }
 
+        @Override
         public Entry next() {
-            return sortedEntries[pos++];
+            currEntry = sortedEntries[pos++];
+            return currEntry;
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("Dictionary is read only");
         }
 
+        @Override
+        public Comparable getName() {
+            if(currEntry == null) {
+                return null;
+            }
+            return currEntry.getName();
+        }
+
+        @Override
         public int estimateSize() {
             int est = 0;
             for(int i = 0; i < nUsed; i++) {
@@ -475,6 +491,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             return est;
         }
 
+        @Override
         public int getNEntries() {
             return nUsed;
         }
@@ -482,6 +499,10 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         @Override
         public void setUnbufferedPostings(boolean unbufferedPostings) {
         }
+
+        @Override
+        public int compareTo(DictionaryIterator o) {
+            return sortedEntries[pos].getName().compareTo(o.getName());
+        }
     }
-    
 }

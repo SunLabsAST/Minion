@@ -24,13 +24,13 @@
 
 package com.sun.labs.minion.indexer.entry;
 
-import java.io.IOException;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.io.IOException;
 
 /**
  * An entry for the global term statistics dictionary.
@@ -38,20 +38,37 @@ import com.sun.labs.minion.util.buffer.ReadableBuffer;
  */
 public class TermStatsQueryEntry extends QueryEntry<String> {
     
-    private TermStatsImpl ts;
+    protected TermStatsImpl ts;
 
     public TermStatsQueryEntry(String name) {
-        super(name, null, null);
+        this.name = name;
         ts = new TermStatsImpl(name);
     }
     
     public TermStatsQueryEntry(String name, ReadableBuffer b) {
-        super(name, null, b);
-        ts = new TermStatsImpl(name, b);
+        this.name = name;
+        ts = new TermStatsImpl(name);
+        decode(b);
+    }
+
+    @Override
+    public void decode(ReadableBuffer b) {
+        super.decode(b);
+        ts.decode(b);
+    }
+
+    @Override
+    public void setName(String name) {
+        super.setName(name);
+        ts.setName(name);
     }
     
     public void setTermStats(TermStatsImpl ts) {
         this.ts = ts;
+    }
+    
+    public void setTermStats(ReadableBuffer b) {
+        this.ts.decode(b);
     }
     
     public TermStatsImpl getTermStats() {

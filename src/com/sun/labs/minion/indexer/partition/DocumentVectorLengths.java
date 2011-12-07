@@ -27,6 +27,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.Field;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
+import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
@@ -135,9 +136,9 @@ public class DocumentVectorLengths {
         
         //
         // Get iterators for our two dictionaries and a place to write the new term stats.
-        DictionaryIterator gti = null;
+        LightIterator gti = null;
         if(gts != null) {
-            gti = gts.iterator(fi);
+            gti = gts.literator(fi);
         }
         
         //
@@ -156,10 +157,11 @@ public class DocumentVectorLengths {
         }
 
         TermStatsQueryEntry gte = null;
-        if(gti != null && gti.hasNext()) {
-            gte = (TermStatsQueryEntry) gti.next();
+        if(gti != null && gti.next()) {
+            gte = (TermStatsQueryEntry) gti.getEntry(gte);
         }
-
+        TermStatsQueryEntry pgte = gte;
+        
         float[] vl = new float[maxDocID + 1];
         
         //
@@ -180,43 +182,45 @@ public class DocumentVectorLengths {
             TermStatsIndexEntry we = null;
             
             try {
-            if(cmp == 0) {
-                //
-                // Both iterators have the term.  Combine stats!
-                we = new TermStatsIndexEntry(gte);
-                TermStatsImpl ts = gte.getTermStats();
-                
-                PostingsIterator pi = mde.iterator(feat);
-                wf.initTerm(wc.setTerm(ts));
-                addPostings(pi, vl);
-                gte = null;
-                mde = null;
-            } else if(cmp < 0) {
+                if(cmp == 0) {
+                    //
+                    // Both iterators have the term.  Combine stats!
+                    we = new TermStatsIndexEntry(gte);
+                    TermStatsImpl ts = gte.getTermStats();
 
-                //
-                // Only the new partition has the term.  Create the stats.
-                we = new TermStatsIndexEntry(mde.getName().toString(), 0);
-                TermStatsImpl ts = we.getTermStats();
-                PostingsIterator pi = mde.iterator(feat);
-                ts.add(mde);
-                wf.initTerm(wc.setTerm(ts));
-                addPostings(pi, vl);
-                mde = null;
-            } else {
-                //
-                // Only the global file has the stats.  Keep them.
-                we = new TermStatsIndexEntry(gte);
-                gte = null;
-            }
-            } catch (RuntimeException ex) {
-                logger.log(Level.SEVERE, String.format("Error on entry %s", we == null ? null : we.getName()));
-                throw(ex);
+                    PostingsIterator pi = mde.iterator(feat);
+                    wf.initTerm(wc.setTerm(ts));
+                    addPostings(pi, vl);
+                    gte = null;
+                    mde = null;
+                } else if(cmp < 0) {
+
+                    //
+                    // Only the new partition has the term.  Create the stats.
+                    we = new TermStatsIndexEntry(mde.getName().toString(), 0);
+                    TermStatsImpl ts = we.getTermStats();
+                    PostingsIterator pi = mde.iterator(feat);
+                    ts.add(mde);
+                    wf.initTerm(wc.setTerm(ts));
+                    addPostings(pi, vl);
+                    mde = null;
+                } else {
+                    //
+                    // Only the global file has the stats.  Keep them.
+                    we = new TermStatsIndexEntry(gte);
+                    gte = null;
+                }
+            } catch(RuntimeException ex) {
+                logger.log(Level.SEVERE, String.format("Error generating vector lengths for %s at term %s", 
+                        fi.getName(),
+                        we == null ? null : we.getName()));
+                throw (ex);
             }
 
             //
             // Advance whichever iterators are necessary.
-            if(gte == null && gti != null && gti.hasNext()) {
-                gte = (TermStatsQueryEntry) gti.next();
+            if(gte == null && gti != null && gti.next()) {
+                gte = (TermStatsQueryEntry) gti.getEntry(pgte);
             }
 
             if(mde == null && mdi.hasNext()) {

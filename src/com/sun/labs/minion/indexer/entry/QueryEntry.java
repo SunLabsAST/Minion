@@ -26,12 +26,9 @@ package com.sun.labs.minion.indexer.entry;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
-
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
-
-
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,6 +52,10 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
      * The field from which this term was drawn.
      */
     private FieldInfo field;
+    
+    protected QueryEntry() {
+        
+    }
 
     /**
      * Creates an entry.
@@ -65,6 +66,10 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
     public QueryEntry(N name, Postings.Type type, ReadableBuffer b) {
         this.name = name;
         this.type = type;
+        decode(b);
+    }
+    
+    public void decode(ReadableBuffer b) {
         n = b.byteDecode();
         maxFDT = b.byteDecode();
         id = b.byteDecode();

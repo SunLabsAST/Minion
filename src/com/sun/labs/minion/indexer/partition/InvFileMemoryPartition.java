@@ -28,14 +28,12 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.MemoryField;
-import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.pipeline.Token;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -99,6 +97,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
 
         IndexEntry old = docDict.remove(key);
         if(old != null) {
+            if(deletions == null) {
+                deletions = new DelMap();
+            }
+            logger.info(String.format("%s already occurred", key));
             deletions.delete(old.getID());
         }
         dockey = docDict.put(key);

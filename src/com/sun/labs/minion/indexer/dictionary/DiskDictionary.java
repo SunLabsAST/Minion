@@ -40,7 +40,6 @@ import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.partition.Partition;
-import com.sun.labs.minion.indexer.postings.IDFreqPostings;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -295,7 +294,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         
         //
         // Read the header.
-        
         dh = new DictionaryHeader(dictFile);
 
         if(postFiles != null) {
@@ -1793,8 +1791,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * A class that can be used as an iterator for this block.
      */
-    public class DiskDictionaryIterator implements DictionaryIterator,
-            Comparable {
+    public class DiskDictionaryIterator implements DictionaryIterator {
 
         /**
          * The estimated size of the results set for this iterator.
@@ -1984,10 +1981,12 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
          * @param unbufferedPostings if <code>true</code> then the entries will
          * use unbuffered postings.
          */
+        @Override
         public void setUnbufferedPostings(boolean unbufferedPostings) {
             this.unbufferedPostings = unbufferedPostings;
         }
 
+        @Override
         public boolean hasNext() {
 
             //
@@ -2013,6 +2012,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             return true;
         }
 
+        @Override
         public QueryEntry next() throws java.util.NoSuchElementException {
 
             //
@@ -2031,12 +2031,19 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             }
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException("Dictionary is read only");
         }
 
-        public int compareTo(Object o) {
-            return curr.compareTo(((DiskDictionaryIterator) o).curr);
+        @Override
+        public int compareTo(DictionaryIterator o) {
+            return prevName.compareTo(o.getName());
+        }
+
+        @Override
+        public Comparable getName() {
+            return prevName;
         }
 
         /**
@@ -2044,6 +2051,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
          * returned for all the entries that this iterator would
          * produce.  This is a gross hack!
          */
+        @Override
         public int estimateSize() {
 
             if(estSize >= 0) {
@@ -2084,6 +2092,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             lus = new LookupState(DiskDictionary.this);
             posn = -1;
             lus.localNames.position(0);
+            lus.localInfo.position(0);
         }
 
         public boolean next() {
@@ -2095,27 +2104,31 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             return true;
         }
 
-        public Object getName() {
+        @Override
+        public Comparable getName() {
             return prevName;
         }
-
-        public int getN() {
-            lus.localInfoOffsets.position(posn * 4);
-            lus.localInfo.position(lus.localInfoOffsets.byteDecode(4));
-            return lus.localInfo.byteDecode();
+ 
+        @Override
+        public QueryEntry getEntry(QueryEntry qe) {
+            qe = factory.fillQueryEntry(qe, prevName, lus.localInfo);
+            qe.setDictionary(DiskDictionary.this);
+            qe.setPostingsInput(postIn);
+            return qe;
         }
 
-        public QueryEntry getEntry() {
-            return newEntry(prevName, posn, lus, postIn);
-        }
-
-        public int getID() {
-            if(lus.localIDToPosn != null) {
-                return getEntry().getID();
+        @Override
+        public int compareTo(Object o) {
+            if(o instanceof LightIterator) {
+                return prevName.compareTo(((LightIterator) o).getName());
+            } else if(o instanceof DictionaryIterator) {
+                return prevName.compareTo(((DictionaryIterator) o).getName());
             } else {
-                return posn + 1;
+                throw new IllegalArgumentException(String.format("Can't compare %s to a light iterator", o.getClass()));
             }
         }
+        
+        
     }
 
     /**

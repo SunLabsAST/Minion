@@ -70,6 +70,7 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
      * Describe <code>remove</code> method here.
      *
      */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("Cannot remove term");
     }
@@ -81,6 +82,7 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
      * @throws java.util.NoSuchElementException if there are no more elements on
      * the iterator.
      */
+    @Override
     public QueryEntry next() {
 
         //
@@ -104,6 +106,7 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
      *
      * @return <code>true</code> if there is another element on the iterator.
      */
+    @Override
     public boolean hasNext() {
 
         //
@@ -121,6 +124,11 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
         return nextEntry != null;
     }
 
+    @Override
+    public Comparable getName() {
+        return entries[curr].getName();
+    }
+
     /**
      * Estimates the number of documents in the postings for the entries 
      * represented by this iterator
@@ -129,6 +137,7 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
      * the entries represented by this iterator.  Note that this is likely an
      * overestimate.
      */
+    @Override
     public int estimateSize() {
         int sz = 0;
         for(int i = begin; i < end; i++) {
@@ -137,6 +146,7 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
         return sz;
     }
 
+    @Override
     public int getNEntries() {
         return entries.length;
     }
@@ -148,5 +158,9 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
     public void setUnbufferedPostings(boolean unbufferedPostings) {
     }
 
+    @Override
+    public int compareTo(DictionaryIterator o) {
+        return entries[curr].getName().compareTo(o.getName());
+    }
 } // ArrayDictionaryIterator
 

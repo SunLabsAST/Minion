@@ -147,6 +147,11 @@ public class TermStatsDiskDictionary implements Closeable {
         DiskDictionary dd = getDict(field);
         return dd == null ? null : dd.iterator();
     }
+    
+    public LightIterator literator(String field) {
+        DiskDictionary dd = getDict(field);
+        return dd == null ? null : dd.literator();
+    }
 
     /**
      * Gets an for this dictionary.
@@ -159,6 +164,14 @@ public class TermStatsDiskDictionary implements Closeable {
         }
         DiskDictionary dd = fieldDicts[field.getID()];
         return dd == null ? null : dd.iterator();
+    }
+
+    public LightIterator literator(FieldInfo field) {
+        if(field.getID() >= fieldDicts.length) {
+            return null;
+        }
+        DiskDictionary dd = fieldDicts[field.getID()];
+        return dd == null ? null : dd.literator();
     }
 
     private DiskDictionary getDict(String field) {

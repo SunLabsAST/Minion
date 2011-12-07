@@ -25,9 +25,7 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.TermStats;
-
 import com.sun.labs.minion.indexer.entry.Entry;
-
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
@@ -110,6 +108,10 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
      */
     public String getName() {
         return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
     
     /**

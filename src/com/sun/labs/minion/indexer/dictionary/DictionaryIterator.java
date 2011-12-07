@@ -30,7 +30,16 @@ import java.util.Iterator;
 /**
  * An interface for iterators for a dictionary.
  */
-public interface DictionaryIterator extends Iterator<Entry> {
+public interface DictionaryIterator extends Iterator<Entry>, Comparable<DictionaryIterator> {
+    
+    /**
+     * Gets the name of the entry at the head of the iterator.  This method is 
+     * mostly used when we want to heap entries.
+     * 
+     * @return the name of the entry at the head of the iterator, or <code>null</code>
+     * if the iterator has not been advanced yet.
+     */
+    public Comparable getName();
 
     /**
      * Estimates the total number of IDs held in the postings for

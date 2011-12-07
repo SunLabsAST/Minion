@@ -30,9 +30,8 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
  * An interface for a lightweight iterator for a dictionary.  The idea here is
  * similar to the idea for the postings iterator:  don't return an object from
  * the <code>next</code> method, but provide accessors for the data that we want.
- * 
  */
-public interface LightIterator {
+public interface LightIterator extends Comparable {
 
     /**
      * Advances the iterator to the next entry in the dictionary.
@@ -42,30 +41,20 @@ public interface LightIterator {
      */
     public boolean next();
     
-    /**
-     * Gets the ID of the current entry.
-     */
-    public int getID();
     
     /**
-     * Gets the name of the entry that the iterator is currently pointing at.
-     * 
-     * @return the name of the current entry.
+     * Gets the name of the entry at the head of the iterator.  This can be
+     * used for comparisons.
      */
-    public Object getName();
+    public Comparable getName();
     
     /**
-     * Gets the number of postings associated with the entry that the iterator
-     * is currently pointing at.
-     * 
-     * @return the number of postings associated with the current entry.
-     */
-    public int getN();
-    
-    /**
-     * Gets the entire current entry.
+     * Gets the entire current entry, re-using an existing entry rather than 
+     * creating a new one.
      * 
      * @return the current entry.
      */
-    public QueryEntry getEntry();
+    public QueryEntry getEntry(QueryEntry qe);
+    
+    
 }

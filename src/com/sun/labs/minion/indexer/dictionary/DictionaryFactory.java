@@ -114,6 +114,7 @@ public class DictionaryFactory implements Configurable {
     public DictionaryFactory() {
     }
 
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
 
         factory = (EntryFactory) ps.getComponent(PROP_ENTRY_FACTORY);

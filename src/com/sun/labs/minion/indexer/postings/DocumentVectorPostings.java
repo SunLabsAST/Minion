@@ -244,10 +244,11 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
                 // If we have a substantial portion of the entries in the dictionary,
                 // then just iterate through the dictionary and pick out the names.
                 LightIterator di = df.getTermDictionary(false).literator();
+                QueryEntry qe = null;
                 while(pi.next()) {
                     while(di.next()) {
-                        if(pi.getID() == di.getID()) {
-                            QueryEntry qe = di.getEntry();
+                        qe = di.getEntry(qe);
+                        if(pi.getID() == qe.getID()) {
                             String name = qe.getName().toString();
                             wc.setTerm(name).setDocument(pi);
                             wf.initTerm(wc);
