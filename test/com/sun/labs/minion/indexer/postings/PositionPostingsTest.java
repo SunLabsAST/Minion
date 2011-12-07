@@ -125,10 +125,12 @@ public class PositionPostingsTest implements PostingsTest {
         }
     }
 
+    @Override
     public Postings getPostings() {
         return new PositionPostings();
     }
 
+    @Override
     public Postings getPostings(PostingsInput[] postIn, long[] offsets, int[] sizes) throws java.io.IOException {
         return Postings.Type.getPostings(Postings.Type.ID_FREQ_POS, postIn, offsets, sizes);
     }
@@ -138,6 +140,7 @@ public class PositionPostingsTest implements PostingsTest {
      * @param p the postings we want to test
      * @param data the data that we're testing
      */
+    @Override
     public void checkPostingsEncoding(Postings p, TestData data, long[] offsets, int[] sizes) throws IOException {
 
         PositionPostings posnPostings = (PositionPostings) p;

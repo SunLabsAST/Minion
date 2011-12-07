@@ -416,12 +416,16 @@ public class DelMap implements Cloneable {
         return null;
     }
 
+    @Override
     public String toString() {
-        StringBuffer b = new StringBuffer();
-        b.append(nDeleted + " deleted docs: ");
-        for(int i = 1; i < delMap.limit() * 8; i++) {
-            if(((ReadableBuffer) delMap).test(i)) {
-                b.append(i + " ");
+        StringBuilder b = new StringBuilder();
+        b.append(nDeleted).append(" deleted docs");
+        if(nDeleted > 0) {
+            b.append(": ");
+            for(int i = 1; i < delMap.limit() * 8; i++) {
+                if(((ReadableBuffer) delMap).test(i)) {
+                    b.append(i).append(" ");
+                }
             }
         }
         return b.toString();

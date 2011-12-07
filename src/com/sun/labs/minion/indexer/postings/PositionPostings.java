@@ -456,6 +456,7 @@ public class PositionPostings implements Postings {
         }
     }
 
+    @Override
     public void append(Postings p, int start, int[] idMap) {
         
         //
@@ -470,31 +471,35 @@ public class PositionPostings implements Postings {
             return;
         }
         
-        ((PositionPostings) p).readPositions();
-        
         //
         // We'll iterate through the postings.
-        PostingsIteratorWithPositions pi = (PostingsIteratorWithPositions) p.iterator(null);
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
+        feat.setPositions(true);
+        PostingsIteratorWithPositions pi = (PostingsIteratorWithPositions) p.iterator(feat);
         WriteableBuffer wIDBuff = (WriteableBuffer) idBuff;
         WriteableBuffer wPosnBuff = (WriteableBuffer) posnBuff;
         while(pi.next()) {
             int origID = pi.getID();
             int mapID = idMap[origID];
-
+            
             //
             // Skip deleted documents.
             if(mapID < 0) {
                 continue;
             }
+            
+            //
+            // The ID for this mapped ID in the new partition.
+            int cID = mapID + start - 1;
 
             //
             // Increment our ID count, and see if we need to add a skip.
             nIDs++;
             if(nIDs % skipSize == 0) {
-                addSkip(mapID, (int) idBuff.position(), (int) posnBuff.position());
+                addSkip(cID, (int) idBuff.position(), (int) posnBuff.position());
             }
 
-            wIDBuff.byteEncode(mapID - lastID);
+            wIDBuff.byteEncode(cID - lastID);
             wIDBuff.byteEncode(pi.getFreq());
             wIDBuff.byteEncode(wPosnBuff.position() - lastPosnOffset);
             lastPosnOffset = (int) wPosnBuff.position();
@@ -506,7 +511,7 @@ public class PositionPostings implements Postings {
 
             //
             // Set the new last document for our entry.
-            lastID = mapID;
+            lastID = cID;
         }
     }
     
@@ -520,6 +525,7 @@ public class PositionPostings implements Postings {
         }
     }
 
+    @Override
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
         if(pos >= 0) {
             return new UncompressedIterator(features);
@@ -531,6 +537,7 @@ public class PositionPostings implements Postings {
         }
     }
 
+    @Override
     public void clear() {
         if(ids == null) {
             return;
@@ -709,6 +716,9 @@ public class PositionPostings implements Postings {
          */
         protected int currOffset;
         
+        /**
+         * The positions for this entry in the current ID.
+         */
         protected int[] currPosns;
 
         /**
@@ -752,10 +762,12 @@ public class PositionPostings implements Postings {
         /**
          * Gets the number of IDs in this postings list.
          */
+        @Override
         public int getN() {
             return nIDs;
         }
 
+        @Override
         public PostingsIteratorFeatures getFeatures() {
             return features;
         }
@@ -771,6 +783,7 @@ public class PositionPostings implements Postings {
          *
          * @return true if there is a next ID, false otherwise.
          */
+        @Override
         public boolean next() {
             return next(-1, -1, -1);
         }
@@ -820,6 +833,7 @@ public class PositionPostings implements Postings {
             return true;
         }
 
+        @Override
         public int[] getPositions() {
             if(rPosn != null) {
                 rPosn.position(currOffset);
@@ -834,21 +848,8 @@ public class PositionPostings implements Postings {
             }
             return currPosns;
         }
-        
-        
 
-        /**
-         * Finds the given ID in the entry we're iterating through, if it
-         * exists.  If the ID occurs in this entry, the iterator is left in
-         * a state where the data for that ID has been decoded.  If the ID
-         * does not occur in this entry, the iterator is left in a state
-         * where the data for the next-highest ID in this entry has been
-         * decoded.
-         *
-         * @param id The ID that we want to find.
-         * @return <code>true</code> if the ID occurs in this entry,
-         * <code>false</code> otherwise.
-         */
+        @Override
         public boolean findID(int id) {
 
             if(nIDs == 0) {
@@ -921,6 +922,7 @@ public class PositionPostings implements Postings {
          * Resets the iterator to the beginning of the entry.  Data will not be
          * decoded until the <code>next</code> method is called.
          */
+        @Override
         public void reset() {
             ridf.position(dataStart);
             currID = 0;
@@ -934,6 +936,7 @@ public class PositionPostings implements Postings {
          * @return The ID that the iterator is pointing at, or 0 if the
          * iterator has not been advanced yet, or has been exhausted.
          */
+        @Override
         public int getID() {
             return currID;
         }
@@ -942,6 +945,7 @@ public class PositionPostings implements Postings {
          * Gets the weight associated with the current ID, as generated by
          * some weighting function.
          */
+        @Override
         public float getWeight() {
             if(wf == null) {
                 return currFreq;
@@ -953,6 +957,7 @@ public class PositionPostings implements Postings {
         /**
          * Gets the frequency associated with the current ID.
          */
+        @Override
         public int getFreq() {
             return currFreq;
         }
@@ -966,6 +971,7 @@ public class PositionPostings implements Postings {
          * greater than the ID at the head of this postings iterator,
          * respectively.
          */
+        @Override
         public int compareTo(PostingsIterator other) {
             return getID() - ((PostingsIterator) other).getID();
         }

@@ -739,8 +739,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         dvl.normalize(docs, scores, n, qw);
     }
 
-    public static void merge(MergeState mergeState,
-            DiskDictionaryBundle[] bundles)
+    public static void merge(MergeState mergeState, DiskDictionaryBundle[] bundles)
             throws java.io.IOException {
 
         DictionaryOutput fieldDictOut = mergeState.partOut.getPartitionDictionaryOutput();
@@ -750,8 +749,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
         mergeHeader.maxDocID = mergeState.maxDocID;
         mergeHeader.write(fieldDictOut);
         DiskDictionaryBundle exemplar = null;
-
-        boolean debug = mergeState.info.getName().equalsIgnoreCase("references");
 
         //
         // Find a non-null bundle for when we need an actual bundle.
@@ -767,7 +764,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // even though we'll only use a few.  Later merges will need maps from
         // earlier merges.
         int[][][] entryIDMaps = new int[Type.values().length][][];
-
+        
         //
         // Merge the types of dictionaries.  This loop is a bit gross, but 
         // most of the merge is the same across the dictionaries.
@@ -778,7 +775,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             int ord = type.ordinal();
             DiskDictionary[] mDicts = new DiskDictionary[bundles.length];
             DiskBiGramDictionary[] bgDicts = new DiskBiGramDictionary[bundles.length];
-
+            
             boolean foundDict = false;
 
             for(int i = 0; i < bundles.length; i++) {
@@ -802,6 +799,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
             NameEncoder encoder = null;
             mergeHeader.dictOffsets[ord] = fieldDictOut.position();
+            
+            //
+            // Starting IDs for the new merged dictionaries.
+            int[] idStarts = mergeState.docIDStarts;
 
             switch(type) {
                 case CASED_TOKENS:
@@ -834,6 +835,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     } else {
                         mergeState.postIDMaps = entryIDMaps[Type.CASED_TOKENS.ordinal()];
                     }
+                    idStarts = mergeState.fakeStarts;
                     break;
                 case STEMMED_VECTOR:
                     //
@@ -841,6 +843,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     // map for the stemmed tokens.
                     encoder = new StringNameHandler();
                     mergeState.postIDMaps = entryIDMaps[Type.STEMMED_TOKENS.ordinal()];
+                    idStarts = mergeState.fakeStarts;
                     break;
 
                 case TOKEN_BIGRAMS:
@@ -871,7 +874,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         encoder,
                         mDicts,
                         null,
-                        mergeState.docIDStarts,
+                        idStarts,
                         mergeState.postIDMaps,
                         fieldDictOut,
                         mergeState.partOut.getPostingsOutput(),

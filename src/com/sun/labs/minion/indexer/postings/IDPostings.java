@@ -131,7 +131,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * The number of documents in a skip.
      */
     protected int skipSize = 256;
-    
+
     /**
      * Makes a postings entry that is useful during indexing.
      *
@@ -293,7 +293,7 @@ public class IDPostings implements Postings, MergeablePostings {
     public int size() {
         return (int) idBuff.position();
     }
-    
+
     public void write(PostingsOutput[] out, long[] offset, int[] size) throws java.io.IOException {
 
         //
@@ -303,11 +303,11 @@ public class IDPostings implements Postings, MergeablePostings {
         WriteableBuffer headerBuff = out[0].getTempBuffer();
         encodeHeaderData(headerBuff);
         size[0] = out[0].write(
-                 new WriteableBuffer[]{
-                     headerBuff,
+                new WriteableBuffer[]{
+                    headerBuff,
                     (WriteableBuffer) idBuff});
     }
-    
+
     protected void encodeHeaderData(WriteableBuffer headerBuff) {
 
         //
@@ -329,7 +329,7 @@ public class IDPostings implements Postings, MergeablePostings {
     }
 
     protected WriteableBuffer encodeIDs() {
-        
+
         if(idBuff == null) {
             idBuff = new ArrayBuffer(nIDs * 2);
         }
@@ -355,7 +355,6 @@ public class IDPostings implements Postings, MergeablePostings {
     }
 
     protected void encodeOtherData(WriteableBuffer b, int i) {
-        
     }
 
     /**
@@ -384,7 +383,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * that the entry was drawn from.
      */
     public void append(Postings p, int start) {
-        
+
         IDPostings other = (IDPostings) p;
 
         //
@@ -451,9 +450,9 @@ public class IDPostings implements Postings, MergeablePostings {
             // this data.
             if(skipID != null) {
                 skipID = Arrays.copyOf(skipID,
-                                        skipID.length + other.nSkips + 1);
+                        skipID.length + other.nSkips + 1);
                 skipPos = Arrays.copyOf(skipPos,
-                                         skipPos.length + other.nSkips + 1);
+                        skipPos.length + other.nSkips + 1);
             } else {
                 skipID = new int[other.nSkips + 1];
                 skipPos = new int[other.nSkips + 1];
@@ -476,7 +475,7 @@ public class IDPostings implements Postings, MergeablePostings {
     }
 
     public void append(Postings p, int start, int[] idMap) {
-        
+
         if(idBuff == null) {
             idBuff = new ArrayBuffer(p.getN() * 2);
         }
@@ -501,19 +500,21 @@ public class IDPostings implements Postings, MergeablePostings {
             if(mapID < 0) {
                 continue;
             }
-            
+
+            int cID = mapID + start - 1;
+
             //
             // Increment our ID count, and see if we need to add a skip.
             nIDs++;
             if(nIDs % skipSize == 0) {
-                addSkip(mapID, (int) idBuff.position());
+                addSkip(cID, (int) idBuff.position());
             }
 
-            wpost.byteEncode(mapID - lastID);
+            wpost.byteEncode(cID - lastID);
 
             //
             // Set the new last document for our entry.
-            lastID = mapID;
+            lastID = cID;
         }
     }
 
@@ -553,7 +554,7 @@ public class IDPostings implements Postings, MergeablePostings {
             int toadd = (nIDs - p2);
             if(np + toadd >= temp.length) {
                 temp = Arrays.copyOf(temp,
-                                      Math.max(np + toadd, temp.length * 2));
+                        Math.max(np + toadd, temp.length * 2));
             }
             System.arraycopy(ids, p2, temp, np, toadd);
             np += toadd;
@@ -622,7 +623,7 @@ public class IDPostings implements Postings, MergeablePostings {
                 return true;
             }
             currPos = -currPos;
-            return  false;
+            return false;
         }
 
         public void reset() {
@@ -875,7 +876,5 @@ public class IDPostings implements Postings, MergeablePostings {
         public int compareTo(PostingsIterator other) {
             return getID() - ((PostingsIterator) other).getID();
         }
-
     }
 }
-

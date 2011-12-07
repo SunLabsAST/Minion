@@ -629,12 +629,11 @@ public class DiskPartition extends Partition implements Closeable {
             //
             // The new starting document IDs for the merged partition.
             mergeState.docIDStarts = new int[dicts.length];
-            mergeState.fakeStarts = new int[dicts.length];
             mergeState.docIDStarts[0] = 1;
 
             //
             // The faked starts for merging things other than document IDs.
-            int[] fakeStart = new int[dicts.length];
+            mergeState.fakeStarts = new int[dicts.length];
 
             //
             // We need a set of maps from the document IDs in the separate
@@ -670,7 +669,7 @@ public class DiskPartition extends Partition implements Closeable {
                 mergeState.nUndel[i] =
                         mergeState.docIDMaps[i] == null ? d.header.getnDocs()
                         : mergeState.docIDMaps[i][0];
-                fakeStart[i] = 1;
+                mergeState.fakeStarts[i] = 1;
 
                 mergeState.partOut.setNDocs(mergeState.partOut.getNDocs() + mergeState.nUndel[i]);
 
@@ -707,7 +706,7 @@ public class DiskPartition extends Partition implements Closeable {
                     new StringNameHandler(),
                            dicts,
                            mappers,
-                           fakeStart, 
+                           mergeState.fakeStarts, 
                            docDictIDMaps,
                            fieldDictOut, 
                            mergeState.partOut.getPostingsOutput(), true);

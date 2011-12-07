@@ -1432,7 +1432,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 if(appendPostings) {
                     if(logger.isLoggable(Level.FINE)) {
                         logger.fine(String.format("me: %s top.index: %d top.origID: %d mapID: %d", me.getName(), top.index, top.origID, me.getID()));
-                    }
+                        }
                     me.append(top.curr, starts[top.index], postIDMaps[top.index]);
                 } else {
                     me.merge(top.curr, postIDMaps[top.index]);

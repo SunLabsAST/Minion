@@ -168,21 +168,23 @@ public class IDFreqPostings extends IDPostings {
                 continue;
             }
 
+            int cID = mapID + start - 1;
+
             //
             // Increment our ID count, and see if we need to add a skip.
             nIDs++;
             if(nIDs % skipSize == 0) {
-                addSkip(mapID, (int) idBuff.position());
+                addSkip(cID, (int) idBuff.position());
             }
             
-            wpost.byteEncode(mapID - lastID);
+            wpost.byteEncode(cID - lastID);
             to += pi.getFreq();
             maxfdt = Math.max(pi.getFreq(), maxfdt);
             wpost.byteEncode(pi.getFreq());
 
             //
             // Set the new last document for our entry.
-            lastID = mapID;
+            lastID = cID;
         }
     }
     
