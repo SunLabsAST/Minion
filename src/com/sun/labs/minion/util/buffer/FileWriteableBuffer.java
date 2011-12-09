@@ -33,6 +33,7 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
 import com.sun.labs.minion.util.ChannelUtil;
+import com.sun.labs.minion.util.Util;
 import com.sun.labs.util.LabsLogFormatter;
 import java.io.FileOutputStream;
 import java.nio.charset.Charset;
@@ -63,6 +64,11 @@ import java.util.logging.Logger;
 public class FileWriteableBuffer implements WriteableBuffer {
 
     /**
+     * A log.
+     */
+    private static final Logger logger = Logger.getLogger(FileWriteableBuffer.class.getName());
+
+    /**
      * The file to which we'll write our data.
      */
     protected RandomAccessFile raf;
@@ -91,16 +97,6 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * Our default buffer size.
      */
     protected static int DEFAULT_BUFF_SIZE = 1024;
-
-    /**
-     * A log.
-     */
-    static final Logger logger = Logger.getLogger(FileWriteableBuffer.class.getName());
-
-    /**
-     * A tag for our log entries.
-     */
-    protected static String logTag = "FWB";
 
     /**
      * Creates a buffer that will write to the underlying file.
@@ -256,6 +252,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param b The byte to put on the buffer
      * @return This buffer, allowing chained invocations.
      */
+    @Override
     public WriteableBuffer put(long p, byte b) {
         flush();
         try {
@@ -269,6 +266,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         return this;
     }
 
+    @Override
     public WriteableBuffer byteEncode(long n, int nBytes) {
         for(int shift = 8 * (nBytes - 1); shift >= 0; shift -= 8) {
             put((byte) ((n >>> shift) & 0xFF));
@@ -276,6 +274,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         return this;
     }
 
+    @Override
     public WriteableBuffer byteEncode(long pos, long n, int nBytes) {
         for(int shift = 8 * (nBytes - 1); shift >= 0; shift -= 8) {
             byte b = (byte) ((n >>> shift) & 0xFF);
@@ -405,6 +404,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         return this;
     }
 
+    @Override
     public WriteableBuffer encodeAsBytes(String s, Charset cs) {
         byte[] bytes = s.getBytes(cs);
         byteEncode(bytes.length, 4);
@@ -417,7 +417,29 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param bitIndex the index of the bit to set to 1.
      * @return This buffer, allowing chained invocations.
      */
+    @Override
     public WriteableBuffer set(long bitIndex) {
+        long byteIndex = bitIndex >>> 3;
+        try {
+            synchronized(raf) {
+                long x = raf.getFilePointer();
+                long bp = off+byteIndex;
+                raf.seek(bp);
+                byte initial  = 0;
+                if(bp < raf.length()) {
+                    initial = raf.readByte();
+                }
+                byte b = (byte) (initial | masks[(int) (bitIndex & 0x07L)]);
+                raf.seek(bp);
+                raf.writeByte(b);
+                if(byteIndex+1 > pos) {
+                    pos = byteIndex+1;
+                }
+                raf.seek(x);
+            }
+        } catch(IOException ex) {
+            logger.log(Level.SEVERE, String.format("Error setting bit %d", bitIndex), ex);
+        }
         return this;
     }
 
@@ -427,6 +449,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      *
      * @return This buffer, allowing chained invocations.
      */
+    @Override
     public WriteableBuffer clear() {
         try {
             raf.seek(off);
@@ -445,6 +468,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @return An instance of <CODE>FileReadableBuffer</CODE> that is backed by the same file.
      * @see FileReadableBuffer
      */
+    @Override
     public ReadableBuffer getReadableBuffer() {
         flush();
         FileReadableBuffer ret = new FileReadableBuffer(raf, off, pos, 1024);
@@ -457,6 +481,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * Write the buffer to a new IO buffer.
      * @param b The buffer to which we'll write our data.
      */
+    @Override
     public void write(ByteBuffer b) {
         try {
             //
@@ -513,6 +538,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         }
     }
 
+    @Override
     public void write(WriteableBuffer b) {
         if(b instanceof FileWriteableBuffer) {
             FileWriteableBuffer fwb = (FileWriteableBuffer) b;
@@ -534,11 +560,13 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param chan The channel to which the buffer should be written.
      * @throws java.io.IOException If there is an error writing the data.
      */
+    @Override
     public void write(WritableByteChannel chan)
             throws java.io.IOException {
         write(chan, 0, pos);
     }
 
+    @Override
     public void write(WritableByteChannel chan, long start, long end) throws java.io.IOException {
 
         if(start >= pos || end > pos || start >= end) {
@@ -650,6 +678,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param os The stream to which the buffer should be written.
      * @throws java.io.IOException If there is any error writing the data.
      */
+    @Override
     public void write(OutputStream os)
             throws java.io.IOException {
         if(os instanceof FileOutputStream) {
@@ -683,10 +712,37 @@ public class FileWriteableBuffer implements WriteableBuffer {
     }
 
     
+    @Override
     public long countBits() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        long cp = pos;
+        long count = 0;
+        byte[] temp = new byte[1024];
+        int start = 0;
+        int n = 0;
+        while(cp > 0) {
+            try {
+                synchronized(raf) {
+                    raf.seek(off + start);
+                    n = raf.read(temp);
+                }
+            } catch(IOException ex) {
+                logger.log(Level.SEVERE, String.format("Error counting bits"), ex);
+                return count;
+            }
+            if(n < 0) {
+                break;
+            }
+            for(int j = 0; j < n; j++) {
+                count += StdBufferImpl.nBits[(int) (temp[j] & 0xff)];
+            }
+            start += n;
+            cp -= n;
+        }
+        
+        return count;
     }
 
+    @Override
     public byte get(long i) {
         synchronized(raf) {
             try {
@@ -700,6 +756,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         }
     }
 
+    @Override
     public String toString(Portion portion, DecodeMode decode) {
         long start;
         long end;
@@ -707,24 +764,25 @@ public class FileWriteableBuffer implements WriteableBuffer {
         switch(portion) {
             case ALL:
                 start = 0;
-                end = limit();
+                end = pos;
                 break;
             case BEGINNING_TO_POSITION:
                 start = 0;
-                end = position();
+                end = pos;
                 break;
             case FROM_POSITION_TO_END:
-                start = position();
-                end = limit();
+                start = 0;
+                end = pos;
                 break;
             default:
                 start = 0;
-                end = limit();
+                end = pos;
         }
 
         return toString(start, end, decode);
     }
 
+    @Override
     public String toString(long start, long end, DecodeMode decode) {
 
         flush();

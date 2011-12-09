@@ -29,6 +29,7 @@ import com.sun.labs.minion.indexer.entry.TermStatsEntryFactory;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
+import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -83,9 +84,10 @@ public class TermStatsDiskDictionary implements Closeable {
             for(Map.Entry<Integer, Long> e : header) {
                 if(e.getValue() >= 0) {
                     raf.seek(e.getValue());
-                    fieldDicts[e.getKey()] = new DiskDictionary(
-                            new TermStatsEntryFactory(),
-                            new StringNameHandler(), raf, null);
+                    fieldDicts[e.getKey()] = new DiskDictionary(new TermStatsEntryFactory(), new StringNameHandler(), raf, 
+                            null, DiskDictionary.PostingsInputType.CHANNEL_FULL_POST, 
+                            DiskDictionary.BufferType.NIOFILEBUFFER, 1024, 
+                            16 * 1024, 16 * 1024, 16*1024, 16*1024, null);
                     size = Math.max(fieldDicts[e.getKey()].size(), size);
                 }
             }

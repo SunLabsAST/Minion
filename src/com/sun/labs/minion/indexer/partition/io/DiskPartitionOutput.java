@@ -1,17 +1,19 @@
 package com.sun.labs.minion.indexer.partition.io;
 
-import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.indexer.postings.io.StreamPostingsOutput;
+import com.sun.labs.minion.util.Util;
+import com.sun.labs.minion.util.buffer.ArrayBuffer;
+import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.logging.Level;
+import java.io.RandomAccessFile;
 import java.util.logging.Logger;
 
 /**
@@ -21,6 +23,26 @@ import java.util.logging.Logger;
 public class DiskPartitionOutput extends AbstractPartitionOutput {
 
     private static final Logger logger = Logger.getLogger(DiskPartitionOutput.class.getName());
+    
+    /**
+     * The file that will hold our on-disk vector lengths as we build them.
+     */
+    private File vecLenFile;
+    
+    /**
+     * The random access file that will contain the vector lengths.
+     */
+    private RandomAccessFile vecLenRAF;
+    
+    /**
+     * The file for the deletion buffer.
+     */
+    private File delFile;
+    
+    /**
+     * The file that will contain the vector lengths.
+     */
+    private RandomAccessFile delRAF;
 
     /**
      * Streams for the postings output.
@@ -36,7 +58,15 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
     public DiskPartitionOutput(PartitionManager manager) throws IOException {
         super(manager);
         partDictOut = new DiskDictionaryOutput(manager.getIndexDir());
-    }
+        
+        vecLenFile = Util.getTempFile(manager.getIndexDir(), "veclens", ".vl");
+        vecLenRAF = new RandomAccessFile(vecLenFile, "rw");
+        vectorLengthsBuffer = new FileWriteableBuffer(vecLenRAF, 64 * 1024);
+        
+        delFile = Util.getTempFile(manager.getIndexDir(), "temp", ".del");
+        delRAF = new RandomAccessFile(delFile, "rw");
+        deletionsBuffer = new FileWriteableBuffer(delRAF, 64 * 1024);
+}
     
     public DiskPartitionOutput(File outputDir) throws IOException {
         super(outputDir);
@@ -76,5 +106,9 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
                 postStream[i].close();
             }
         }
+        vecLenRAF.close();
+        vecLenFile.delete();
+        delRAF.close();
+        delFile.delete();
     }
 }

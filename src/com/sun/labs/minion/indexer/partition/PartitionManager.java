@@ -1522,6 +1522,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         thingsToClose.clear();
         
         mergePartitionOutput.close();
+        
+        termStatsDictionaryOutput.close();
 
         logger.fine(String.format("Shutdown %s %d", indexDir, randID));
     }

@@ -106,26 +106,28 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
 
     public AbstractPartitionOutput(PartitionManager manager) throws IOException {
         this.partitionManager = manager;
-        vectorLengthsBuffer = new ArrayBuffer(8 * 1024);
-        deletionsBuffer = new ArrayBuffer(8 * 1024);
     }
     
     public AbstractPartitionOutput(File outputDir) throws IOException {
         partitionManager = new PartitionManager(outputDir);
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public PartitionManager getPartitionManager() {
         return partitionManager;
     }
     
+    @Override
     public int startPartition(MemoryPartition partition) throws IOException {
         if(started) {
             throw new IllegalStateException("Already outputting a partition, can't start another");
@@ -249,10 +251,12 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         this.postingsIDMap = postingsIDMap;
     }
 
+    @Override
     public int[] getPostingsIDMap() {
         return postingsIDMap;
     }
 
+    @Override
     public boolean isLongIndexingRun() {
         return longIndexingRun;
     }
@@ -261,6 +265,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         this.longIndexingRun = longIndexingRun;
     }
     
+    @Override
     public void flushVectorLengths() throws IOException {
         if(vectorLengthsBuffer.position() > 0) {
             //
@@ -272,6 +277,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         }
     }
 
+    @Override
     public void flush() throws IOException {
 
         //
@@ -310,6 +316,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         started = false;
     }
 
+    @Override
     public void cleanUp() {
         partDictOut.cleanUp();
         if(postOut != null) {

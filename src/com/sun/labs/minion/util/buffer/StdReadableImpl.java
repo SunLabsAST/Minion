@@ -31,12 +31,13 @@ package com.sun.labs.minion.util.buffer;
 public abstract class StdReadableImpl implements ReadableBuffer {
 
     /**
-     * Decodes a postive integer that was coded using a specific number of
+     * Decodes a positive integer that was coded using a specific number of
      * bytes.
      *
      * @param nBytes The number of bytes to use.
      * @return the decoded number.
      */
+    @Override
     public int byteDecode(int nBytes) {
         return (int) byteDecodeLong(nBytes);
     }
@@ -49,10 +50,12 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * @param nBytes The number of bytes to use.
      * @return the decoded number.
      */
+    @Override
     public int byteDecode(long pos, int nBytes) {
         return (int) byteDecodeLong(pos, nBytes);
     }
     
+    @Override
     public long byteDecodeLong(int nBytes) {
         long ret = 0;
         for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
@@ -61,6 +64,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
         return ret;
     }
 
+    @Override
     public long byteDecodeLong(long pos, int nBytes) {
         long ret = 0;
         for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
@@ -75,6 +79,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * @return the decoded integer.
      * @see WriteableBuffer#byteEncode
      */
+    @Override
     public int byteDecode() {
         return (int) byteDecodeLong();
     }
@@ -85,6 +90,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * @return the decoded long.
      * @see WriteableBuffer#byteEncode
      */
+    @Override
     public long byteDecodeLong() {
 
         byte 	curr  = (byte) 0x80;
@@ -104,6 +110,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      *
      * @return the number of bytes skipped.
      */
+    @Override
     public int skipByteEncoded() {
         long init = position();
         while((get() & 0x80) != 0);
@@ -115,6 +122,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      *
      * @return the decoded float.
      */
+    @Override
     public float decodeFloat() {
         return Float.intBitsToFloat(byteDecode(4));
     }
@@ -125,6 +133,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * @param bitIndex the index of the bit to test.
      * @return true if the bit is 1, false if it is 0
      */
+    @Override
     public boolean test(long bitIndex) {
         long i = bitIndex >>> 3;
         return i > limit() ? false :
@@ -135,6 +144,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * Gets a string from this buffer.
      * @return A string representation of this buffer.
      */
+    @Override
     public String getString() {
         int len = byteDecode();
         char[] ret = new char[len];
@@ -175,6 +185,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
      * Counts the number of bits that are set in a buffer.
      * @return The number of 1 bits in the buffer.
      */
+    @Override
     public long countBits() {
         return countBits(0, limit());
     }
@@ -187,6 +198,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
         return n;
     }
 
+    @Override
     public String toString(Portion portion, DecodeMode decode) {
 
         long start;
@@ -213,6 +225,7 @@ public abstract class StdReadableImpl implements ReadableBuffer {
         return toString(start, end, decode);
     }
 
+    @Override
     public String toString(long start, long end, DecodeMode decode) {
 
         StringBuilder b = new StringBuilder((int) (end - start + 1) * 8);
