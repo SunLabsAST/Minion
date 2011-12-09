@@ -68,6 +68,8 @@
     nbproject/build-impl.xml file. 
 
     -->
+    
+    <property name="javacc_home" value="lib/JavaCC/"/>
 
     <!-- A bunch of stuff to see if we need to regenerate the JavaCC parsers. -->
     <target name="parser-check">
@@ -78,20 +80,20 @@
 
     <target name="web-parser" unless="web-parser.notReq">
         <!-- Invoke JJTree and JavaCC to make the parser .java files -->
-        <jjtree outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-web.jjt" javacchome="javalib/javacc" />
-        <javacc outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-web.jj" debugparser="false" javacchome="javalib/javacc" />
+        <jjtree outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-web.jjt" javacchome="${javacc_home}" />
+        <javacc outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-web.jj" debugparser="false" javacchome="${javacc_home}" />
     </target>
     
     <target name="strict-parser" unless="strict-parser.notReq">
         <!-- Invoke JJTree and JavaCC to make the parser .java files -->
-        <jjtree outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-strict.jjt" javacchome="javalib/javacc" />
-        <javacc outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-strict.jj" debugparser="false" javacchome="javalib/javacc" />
+        <jjtree outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-strict.jjt" javacchome="${javacc_home}" />
+        <javacc outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-strict.jj" debugparser="false" javacchome="${javacc_home}" />
     </target>
     
     <target name="lucene-parser" unless="lucene-parser.notReq">
         <!-- Invoke JJTree and JavaCC to make the parser .java files -->
-        <jjtree outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-lucene.jjt" javacchome="javalib/javacc" />
-        <javacc outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-lucene.jj" debugparser="false" javacchome="javalib/javacc" />
+        <jjtree outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-lucene.jjt" javacchome="${javacc_home}" />
+        <javacc outputdirectory="${src.dir}/com/sun/labs/minion/retrieval/parser" target="${src.dir}/com/sun/labs/minion/retrieval/parser/grammar-lucene.jj" debugparser="false" javacchome="${javacc_home}" />
     </target>
     
     
@@ -99,7 +101,7 @@
     </target>
     
     <target name="tokenizers">
-        <javacc outputdirectory="${src.dir}/com/sun/labs/minion/document/tokenizer" target="${src.dir}/com/sun/labs/minion/document/tokenizer/JCCTokenizer.jj" debugparser="false" javacchome="javalib/javacc" />
+        <javacc outputdirectory="${src.dir}/com/sun/labs/minion/document/tokenizer" target="${src.dir}/com/sun/labs/minion/document/tokenizer/JCCTokenizer.jj" debugparser="false" javacchome="${javacc_home}" />
     </target>
 
     <target name="-pre-compile" depends="tokenizers,parser-check,generate-parsers"/>
