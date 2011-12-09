@@ -18,6 +18,7 @@ import com.sun.labs.minion.util.CDateParser;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import com.sun.labs.util.NanoWatch;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -343,6 +344,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         header.fieldID = info.getID();
         header.maxDocID = partOut.getMaxDocID();
 
+        NanoWatch nw = new NanoWatch();
+        NanoWatch dw = new NanoWatch();
+        
+        nw.start();
 
         //
         // The ID maps from each of the dictionaries.
@@ -366,6 +371,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 }
             } 
 
+            dw.start();
+            
             //
             // Figure out the encoder for the type of dictionary.
             partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
@@ -544,6 +551,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 // But we want the marshalling thread to ultimately catch the exception.
                 throw (ex);
             }
+            dw.stop();
+            if(logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("%s in %s took %.2fms", type, field.getInfo().getName(), dw.getLastTimeMillis()));
+            }
         }
 
         //
@@ -555,6 +566,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             // Dump the map from document IDs to the values saved for that document
             // ID, and collect the positions in the buffer where the data for each
             // document is recorded.
+            dw.start();
             WriteableBuffer dtv = new ArrayBuffer(partOut.getMaxDocID() * 4);
             WriteableBuffer dtvOffsets = new ArrayBuffer(partOut.getMaxDocID() * 4);
             for(int i = 1; i <= partOut.getMaxDocID(); i++) {
@@ -583,6 +595,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             dtv.write(partDictOut);
             header.dtvPosOffset = partDictOut.position();
             dtvOffsets.write(partDictOut);
+            dw.stop();
+            if(logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("D2V for %s took %.2fms", field.getInfo().getName(), dw.getLastTimeMillis()));
+            }
         } else {
             header.dtvOffset = -1;
             header.dtvPosOffset = -1;
@@ -590,6 +606,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         if(getTermDictionary(false) != null && !partOut.isLongIndexingRun()) {
             
+            dw.start();
             //
             // Write out our document vector lengths.
             WriteableBuffer vlb = partOut.getVectorLengthsBuffer();
@@ -604,6 +621,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 logger.log(Level.SEVERE, String.format("Exception calculating document vector lengths for %s", info.getName()));
                 throw(ex);
             }
+            dw.stop();
+            if(logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("Vector lengths for %s took %.2fms", field.getInfo().getName(), dw.getLastTimeMillis()));
+            }
         } else {
             header.vectorLengthOffset = -1;
         }
@@ -614,6 +635,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         partDictOut.position(headerPos);
         header.write(partDictOut);
         partDictOut.position(endPos);
+        
+        nw.stop();
+        if(logger.isLoggable(Level.FINER)) {
+            logger.finer(String.format("Marshalling %s took %.2fms (dw: %.2fs)", field.getInfo().getName(), nw.getTimeMillis(), dw.getTimeMillis()));
+        }
         return ret;
     }
 

@@ -70,24 +70,29 @@ public class StageAdapter implements Stage {
         downstream = d;
     }
 
+    @Override
     public void setDownstream(Stage s) {
         downstream = s;
     }
 
+    @Override
     public Stage getDownstream() {
         return downstream;
     }
 
+    @Override
     public void token(Token t) {
         if(downstream == null) return;
         downstream.token(t);
     }
 
+    @Override
     public void punctuation(Token p) {
         if(downstream == null) return;
         downstream.punctuation(p);
     }
 
+    @Override
     public void process(String text) {
         if (downstream == null) {
             return;
@@ -95,12 +100,14 @@ public class StageAdapter implements Stage {
         downstream.process(text);
     }
     
+    @Override
     public void reset() {
         if(downstream != null) {
             downstream.reset();
         }
     }
 
+    @Override
     public int getLastWordPosition() {
         if(downstream != null) {
             return downstream.getLastWordPosition();
@@ -108,32 +115,39 @@ public class StageAdapter implements Stage {
         return 0;
     }
 
+    @Override
     public void setNextWordPosition(int wordPosition) {
         if(downstream != null) {
             downstream.setNextWordPosition(wordPosition);
         }
     }
 
+    @Override
     public Pipeline getPipeline() {
         return pipeline;
     }
 
+    @Override
     public void setPipeline(Pipeline pipeline) {
         this.pipeline = pipeline;
     }
 
+    @Override
     public void addField(String field, Object value) {
         ((InvFileMemoryPartition) pipeline.getField().getPartition()).addField(field, value);
     }
 
+    @Override
     public void addField(FieldInfo field, Object value) {
         ((InvFileMemoryPartition) pipeline.getField().getPartition()).addField(field, value);
     }
 
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         name = ps.getInstanceName();
     }
 
+    @Override
     public String getName() {
         return name;
     }

@@ -30,9 +30,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A Stage that tries to identify the questions within a field, sending any
@@ -69,18 +69,20 @@ public class QuestioningStage extends StageAdapter {
     private static final Set<String> questionStarters = new HashSet<String>();
 
     private boolean upperCaseStart = false;
+    
+    private Pattern endPunctPattern = Pattern.compile("([\\.\\?\\!])");
 
     static {
-        questionStarters.add("what");
-        questionStarters.add("who");
-        questionStarters.add("how");
-        questionStarters.add("when");
-        questionStarters.add("why");
-        questionStarters.add("which");
-        questionStarters.add("does");
-        questionStarters.add("will");
-        questionStarters.add("can");
-        questionStarters.add("is");
+        questionStarters.add("What");
+        questionStarters.add("Who");
+        questionStarters.add("How");
+        questionStarters.add("When");
+        questionStarters.add("Why");
+        questionStarters.add("Which");
+        questionStarters.add("Does");
+        questionStarters.add("Will");
+        questionStarters.add("Can");
+        questionStarters.add("Is");
     }
 
     @Override
@@ -93,7 +95,7 @@ public class QuestioningStage extends StageAdapter {
         if(inQuestion) {
             tokenBuffer.add(t);
             if(tokenBuffer.size() > MAX_BUFFER_SIZE) {
-                brokenQuestion();
+                flushTokens();
             }
         } else {
             super.token(t);
@@ -110,9 +112,10 @@ public class QuestioningStage extends StageAdapter {
     private boolean isQuestionStart(String s) {
         //
         //If it's not a starter token return false
-        if(!questionStarters.contains(s.toLowerCase())) {
+        if(!questionStarters.contains(s)) {
             return false;
         }
+        
         //
         //It's a starter token
         //
@@ -120,63 +123,22 @@ public class QuestioningStage extends StageAdapter {
         if(!inQuestion) {
             return true;
         }
-        //
-        //I'm in an existing question
-        //
-        //If the starter token begins with an upper case char return true
-        if(Character.isUpperCase(s.charAt(0))) {
-            return true;
-        }
-        //
-        //The starter token doesn't begin with an upper case char
-        //
-        //If the existing question began with an upper case, return false, otherwise true
-
-        return !upperCaseStart;
+        
+        return false;
     }
 
     @Override
     public void punctuation(Token p) {
         if(inQuestion) {
             tokenBuffer.add(p);
-            String s = p.getToken();
-            if(s.length() == 1) {
-                switch(s.charAt(0)) {
-                    case '?':
-                        endQuestion();
-                        break;
-
-                    case '.':
-                        brokenQuestion();
-                        break;
-
-                    default:
-                        break;
+            Matcher m = endPunctPattern.matcher(p.getToken());
+            if(m.find()) {
+                flushTokens();
+            } else {
+                if(tokenBuffer.size() >= MAX_BUFFER_SIZE) {
+                    flushTokens();
                 }
             }
-            if(tokenBuffer.size() > MAX_BUFFER_SIZE) {
-                brokenQuestion();
-            }
-        } else {
-            super.punctuation(p);
-        }
-    }
-
-    private void brokenQuestion() {
-        inQuestion = false;
-        flushTokens();
-    }
-
-    private void endQuestion() {
-        if(inQuestion) {
-            sendTokens();
-        }
-        inQuestion = false;
-    }
-
-    private void sendTokens() {
-        if(!tokenBuffer.isEmpty()) {
-            flushTokens();
         }
     }
 
@@ -197,11 +159,12 @@ public class QuestioningStage extends StageAdapter {
         if(!tokenBuffer.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for(Token t : tokenBuffer) {
-                sb.append(t.getToken());
+                sb.append(t.getToken().replace('\n', ' '));
             }
             addField(questionFieldName, sb.toString());
             tokenBuffer.clear();
         }
+        inQuestion = false;
     }
 
     @Override
