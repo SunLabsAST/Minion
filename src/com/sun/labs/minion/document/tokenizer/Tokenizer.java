@@ -162,7 +162,7 @@ public abstract class Tokenizer extends StageAdapter implements
      */
     @Override
     public void reset() {
-        this.reset(false);
+        this.reset(sendPunct);
     }
 
     /**
