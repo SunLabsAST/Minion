@@ -34,11 +34,11 @@ public class EntryFactory<N extends Comparable> implements Configurable {
         post = Postings.Type.getPostings(type);
     }
 
-    public IndexEntry getIndexEntry(N name, int id) {
+    public IndexEntry<N> getIndexEntry(N name, int id) {
         return new IndexEntry(name, id, Type.getPostings(type));
     }
 
-    public QueryEntry getQueryEntry(N name, ReadableBuffer b) {
+    public QueryEntry<N> getQueryEntry(N name, ReadableBuffer b) {
         return new QueryEntry(name, type, b);
     }
     
@@ -50,7 +50,7 @@ public class EntryFactory<N extends Comparable> implements Configurable {
      * @param b the buffer from when we can read the entry's data
      * @return the same entry that was passed in.
      */
-    public QueryEntry fillQueryEntry(QueryEntry e, N newName, ReadableBuffer b) {
+    public QueryEntry<N> fillQueryEntry(QueryEntry<N> e, N newName, ReadableBuffer b) {
         if(e == null) {
             e = getQueryEntry(newName, b);
         } else {

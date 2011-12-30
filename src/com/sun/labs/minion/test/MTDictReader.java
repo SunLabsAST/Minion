@@ -28,7 +28,6 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
-import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -39,6 +38,7 @@ import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -215,7 +215,7 @@ public class MTDictReader implements Runnable {
 
         int curr = 0;
         List<String> terms = new ArrayList<String>();
-        DictionaryIterator dit = selectedDict.iterator();
+        Iterator dit = selectedDict.iterator();
         while (dit.hasNext() && terms.size() < maxTerms) {
             QueryEntry e = (QueryEntry) dit.next();
             if (curr++ % mod == 0) {

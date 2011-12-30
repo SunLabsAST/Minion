@@ -277,11 +277,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             new ConcurrentLinkedQueue<DiskPartition>();
 
     /**
-     * A thread to be used during merge operations.
-     */
-    protected Thread mergeThread;
-
-    /**
      * A house keeper class.
      */
     protected HouseKeeper keeper;
@@ -1491,17 +1486,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     public synchronized void close() throws java.io.IOException {
 
-        //
-        // If there is a thread merging, then wait for it to finish.
-        while(mergeThread != null) {
-
-            logger.info("Waiting for merge thread to finish");
-            try {
-                mergeThread.join(250);
-            } catch(InterruptedException ie) {
-            }
-        }
-
         timer.cancel();
 
         //
@@ -1520,9 +1504,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             c.createRemoveFile();
         }
         thingsToClose.clear();
-        
         mergePartitionOutput.close();
-        
         termStatsDictionaryOutput.close();
 
         logger.fine(String.format("Shutdown %s %d", indexDir, randID));
@@ -2259,6 +2241,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         if(l == null) {
             return null;
         }
+        
+        if(noMoreMerges) {
+            return null;
+        }
 
         try {
             localMergeLock.acquireLock();
@@ -2370,13 +2356,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         /**
          * Does the merge of the partitions.
          */
+        @Override
         public void run() {
-
+            
             try {
                 localMergeLock.tradeLock(parent, Thread.currentThread());
             } catch(FileLockException fle) {
                 logger.severe("Failed to trade merge lock");
-                mergeThread = null;
                 return;
             }
 
@@ -2514,7 +2500,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 //                        }
 //                    }
                 } catch(FileLockException fle) {
-                    mergeThread = null;
                     logger.log(Level.SEVERE, "Error locking active file after merge: "
                             + activeFile, fle);
                     try {
@@ -2540,9 +2525,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     }
                 }
             }
-
-
-            mergeThread = null;
         }
 
         public String toString() {
@@ -2624,6 +2606,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         /**
          * Performs the housekeeping duties.
          */
+        @Override
         public void run() {
 
             //

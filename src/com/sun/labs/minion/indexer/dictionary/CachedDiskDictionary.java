@@ -147,7 +147,7 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
         //
         // Read everything into the cache now.
         int p = 0;
-        DictionaryIterator di = super.iterator();
+        DictionaryIterator di = (DictionaryIterator) super.iterator();
         di.setUnbufferedPostings(true);
 
         while(di.hasNext()) {

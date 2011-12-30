@@ -1235,8 +1235,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * use the constructor to get a new engine!
      * @throws com.sun.labs.minion.SearchEngineException If there is any error closing the engine.
      */
+    @Override
     public synchronized void close()
             throws SearchEngineException {
+        
+        logger.info(String.format("Closing"));
 
         //
         // Tell the partition managers that it's not OK to do any more merges.

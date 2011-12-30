@@ -234,7 +234,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     }
 
     @Override
-    public Iterator<Entry> iterator() {
+    public Iterator<Entry<N>> iterator() {
         return new MemoryDictionaryIterator();
     }
 
@@ -444,13 +444,13 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * A class that implements a dictionary iterator for this dictionary.
      */
-    public class MemoryDictionaryIterator implements DictionaryIterator {
+    public class MemoryDictionaryIterator implements DictionaryIterator<N> {
 
         protected boolean actualOnly;
 
         int pos = 0;
         
-        Entry currEntry = null;
+        Entry<N> currEntry = null;
 
         public MemoryDictionaryIterator() {
             if(sortedEntries == null) {
@@ -475,7 +475,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         }
 
         @Override
-        public Comparable getName() {
+        public N getName() {
             if(currEntry == null) {
                 return null;
             }

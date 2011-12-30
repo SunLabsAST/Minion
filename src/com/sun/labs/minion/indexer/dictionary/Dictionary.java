@@ -40,10 +40,10 @@ import com.sun.labs.minion.indexer.partition.Partition;
  *
  * <p>
  *
- * @param <N> the type of the names in the dictionary.
+ * @param <N> the type of the names in the dictionary, which must be comparable.
  * @see com.sun.labs.minion.indexer.entry.Entry
  */
-public interface Dictionary<N extends Comparable> extends Iterable<Entry> {
+public interface Dictionary<N extends Comparable> extends Iterable<Entry<N>> {
     
     /**
      * Gets the names of the channels needed to read or write the postings

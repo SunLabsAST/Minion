@@ -30,7 +30,7 @@ import java.util.Iterator;
 /**
  * An interface for iterators for a dictionary.
  */
-public interface DictionaryIterator extends Iterator<Entry>, Comparable<DictionaryIterator> {
+public interface DictionaryIterator<N extends Comparable> extends Iterator<Entry<N>>, Comparable<DictionaryIterator<N>> {
     
     /**
      * Gets the name of the entry at the head of the iterator.  This method is 
@@ -39,7 +39,7 @@ public interface DictionaryIterator extends Iterator<Entry>, Comparable<Dictiona
      * @return the name of the entry at the head of the iterator, or <code>null</code>
      * if the iterator has not been advanced yet.
      */
-    public Comparable getName();
+    public N getName();
 
     /**
      * Estimates the total number of IDs held in the postings for

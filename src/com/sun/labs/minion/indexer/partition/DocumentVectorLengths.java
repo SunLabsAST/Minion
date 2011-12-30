@@ -129,14 +129,14 @@ public class DocumentVectorLengths {
                                  int nDocs,
                                  int maxDocID,
                                  PartitionManager manager,
-                                 Iterator<Entry> mdi,
+                                 Iterator<Entry<String>> mdi,
                                  WriteableBuffer vectorLengthsBuffer,
                                  TermStatsDiskDictionary gts)
             throws java.io.IOException {
         
         //
         // Get iterators for our two dictionaries and a place to write the new term stats.
-        LightIterator gti = null;
+        LightIterator<String> gti = null;
         if(gts != null) {
             gti = gts.literator(fi);
         }
@@ -150,81 +150,39 @@ public class DocumentVectorLengths {
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
 
         //
-        // Get the first entries from the dictionaries.
-        Entry mde = null;
-        if(mdi.hasNext()) {
-            mde = mdi.next();
-        }
-
-        TermStatsQueryEntry gte = null;
-        if(gti != null && gti.next()) {
-            gte = (TermStatsQueryEntry) gti.getEntry(gte);
-        }
-        TermStatsQueryEntry pgte = gte;
-        
+        // We'll try to quickly advance through the dictionary to get the
+        // terms from this dictionary.
         float[] vl = new float[maxDocID + 1];
-        
-        //
-        // Iterate until there are no more entries in either of the dictionaries.
-        while(mde != null || gte != null) {
-
-            int cmp;
-            if(mde == null) {
-                cmp = 1;
-            } else if(gte == null) {
-                cmp = -1;
-            } else {
-                cmp = ((Comparable) mde.getName()).compareTo(gte.getName());
-            }
+        TermStatsQueryEntry pgte = null;
+        TermStatsQueryEntry gte = null;
+        while(mdi.hasNext()) {
             
-            //
-            // The entry to use for the merged global term stats dictionary.
-            TermStatsIndexEntry we = null;
-            
+            Entry<String> mde = mdi.next();
             try {
-                if(cmp == 0) {
+                if(gti != null) {
+                    gte = (TermStatsQueryEntry) gti.advanceTo(mde.getName(), pgte);
+                }
+
+                if(gte != null) {
+
                     //
-                    // Both iterators have the term.  Combine stats!
-                    we = new TermStatsIndexEntry(gte);
+                    // We found the term in the global stats.
                     TermStatsImpl ts = gte.getTermStats();
-
-                    PostingsIterator pi = mde.iterator(feat);
                     wf.initTerm(wc.setTerm(ts));
-                    addPostings(pi, vl);
-                    gte = null;
-                    mde = null;
-                } else if(cmp < 0) {
-
-                    //
-                    // Only the new partition has the term.  Create the stats.
-                    we = new TermStatsIndexEntry(mde.getName().toString(), 0);
-                    TermStatsImpl ts = we.getTermStats();
-                    PostingsIterator pi = mde.iterator(feat);
-                    ts.add(mde);
-                    wf.initTerm(wc.setTerm(ts));
-                    addPostings(pi, vl);
-                    mde = null;
+                    pgte = gte;
                 } else {
                     //
-                    // Only the global file has the stats.  Keep them.
-                    we = new TermStatsIndexEntry(gte);
-                    gte = null;
+                    // The term is only in this dictionary.
+                    wc.Ft = mde.getTotalOccurrences();
+                    wc.ft = mde.getN();
+                    wf.initTerm(wc);
                 }
+                PostingsIterator pi = mde.iterator(feat);
+                addPostings(pi, vl);
             } catch(RuntimeException ex) {
-                logger.log(Level.SEVERE, String.format("Error generating vector lengths for %s at term %s", 
-                        fi.getName(),
-                        we == null ? null : we.getName()));
+                logger.log(Level.SEVERE, String.format("Error generating vector lengths for %s at term %s",
+                        fi.getName(), mde.getName()));
                 throw (ex);
-            }
-
-            //
-            // Advance whichever iterators are necessary.
-            if(gte == null && gti != null && gti.next()) {
-                gte = (TermStatsQueryEntry) gti.getEntry(pgte);
-            }
-
-            if(mde == null && mdi.hasNext()) {
-                mde = mdi.next();
             }
         }
 

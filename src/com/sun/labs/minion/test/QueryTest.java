@@ -418,11 +418,11 @@ public class QueryTest extends SEMain {
                 TermStatsDiskDictionary tsd = manager.getTermStatsDict();
                 if(args.length == 1) {
                     for(FieldInfo fi : manager.getMetaFile()) {
-                        DictionaryIterator di = tsd.iterator(fi);
+                        DictionaryIterator<String> di = tsd.iterator(fi);
                         if(di != null) {
                             shell.out.format("Term stats for %s\n", fi.getName());
                             while(di.hasNext()) {
-                                Entry e = di.next();
+                                Entry<String> e = di.next();
                                 shell.out.format("  %s: %d\n", e.getName(), e.getN());
                             }
                         }

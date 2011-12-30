@@ -107,7 +107,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     private BinarySearchTree bst;
 
     private String name;
-
+    
     /**
      * A lookup state local to each thread
      */
@@ -450,11 +450,11 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         return null;
     }
 
-    private LookupState getLookupState() {
+    public LookupState getLookupState() {
         WeakHashMap<DiskDictionary, LookupState> map = threadLookupStates.get();
         LookupState lus = map.get(this);
         if(lus == null) {
-            lus = new LookupState(this);
+            lus = new LookupState<N>(this);
             map.put(this, lus);
         }
         return lus;
@@ -467,7 +467,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return The entry associated with the name, or <code>null</code> if
      * the name doesn't appear in the dictionary.
      */
-    public QueryEntry get(N name) {
+    public QueryEntry<N> get(N name) {
         //
         // Perform the get using an existing lookup state for this thread (or
         // create a lookup state if there isn't one).
@@ -484,18 +484,16 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return The entry associated with the name, or <code>null</code> if
      * the name doesn't appear in the dictionary.
      */
-    protected QueryEntry get(N name, LookupState lus) {
+    protected QueryEntry<N> get(N name, LookupState lus) {
 
         if(lus == null) {
-            lus = new LookupState(this);
+            lus = new LookupState<N>(this);
         }
 
         lus.qs.dictLookups++;
         lus.qs.dictLookupW.start();
 
-        //
-        // Check our cache first.
-        QueryEntry ret = null;
+        QueryEntry<N> ret = null;
 
         //
         // Finding a entry by name is a two-step process.  First, the
@@ -524,7 +522,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return The block, or <code>null</code> if the ID doesn't occur in
      * our dictionary.
      */
-    public QueryEntry getByID(int id) {
+    public QueryEntry<N> getByID(int id) {
         return get(id, getLookupState());
     }
 
@@ -536,7 +534,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return The block, or <code>null</code> if the ID doesn't occur in
      * our dictionary.
      */
-    protected QueryEntry get(int id, LookupState lus) {
+    protected QueryEntry<N> get(int id, LookupState lus) {
 
         //
         // We need to map from the given ID to a position in the
@@ -574,7 +572,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     }
 
     /**
-     * Determines the position within this block at which a entry falls.
+     * Determines the position at which a entry falls.
      * If the entry is not found, a number representing the position at
      * which the entry would have been found is returned, as described
      * below.
@@ -605,33 +603,36 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         if(n == null) {
             return -1;
         }
-        int l = n.lower;
-        int u = n.upper;
+        
+        return binarySearch(key, lus, partial, n.lower, n.upper);
+    }
+    
+    protected int binarySearch(N key, LookupState<N> lus, boolean partial, int lower, int upper) {
         int cmp = 0;
         int mid = 0;
-        while(l <= u) {
+        while(lower <= upper) {
 
-            mid = (l + u) / 2;
-            N compare = getUncompressedName(mid, lus);
+            mid = (lower + upper) / 2;
+            lus.decodedName = getUncompressedName(mid, lus);
 
 
             //
             // If we're looking for partial matches, check
             // startsWith for the current entry before deciding
             // to keep looking
-            if(partial && decoder.startsWith(key, compare)) {
+            if(partial && decoder.startsWith(key, lus.decodedName)) {
 
                 // This is good enough, although it may not
                 // be the first that starts with the key
                 return mid * 4;
             }
 
-            cmp = ((Comparable) key).compareTo(compare);
+            cmp = ((Comparable) key).compareTo(lus.decodedName);
 
             if(cmp < 0) {
-                u = mid - 1;
+                upper = mid - 1;
             } else if(cmp > 0) {
-                l = mid + 1;
+                lower = mid + 1;
             } else {
 
                 //
@@ -672,19 +673,19 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         N prev = null;
         for(int i = 0, index = mid * 4 + i; i < 4 && index < dh.size; i++, index++) {
 
-            N compare = decoder.decodeName(prev, lus.localNames);
+            lus.decodedName = decoder.decodeName(prev, lus.localNames);
 
             //
             // If we're looking for partial matches, check
             // startsWith for the current entry before deciding
             // to keep looking
-            if(partial && decoder.startsWith(key, compare)) {
+            if(partial && decoder.startsWith(key, lus.decodedName)) {
                 // This is good enough, although it may not
                 // be the first that starts with the key
                 return index;
             }
 
-            cmp = ((Comparable) key).compareTo(compare);
+            cmp = ((Comparable) key).compareTo(lus.decodedName);
 
             if(cmp == 0) {
                 //
@@ -696,7 +697,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 // done.
                 return (0 - index) - 1;
             }
-            prev = compare;
+            prev = lus.decodedName;
         }
 
         //
@@ -712,14 +713,16 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * Gets an uncompressed name from the dictionary.  Used during binary
      * searches.
-     * @param pos the position of the uncompressed name to get.
+     * @param pos the position of the uncompressed name to get.  Note that this
+     * is the index of the uncompressed name.  If you're going to pass in a 
+     * dictionary ID for this, then you need to divide it by 4 first!
      * @param lus the state to use to do the decoding
      * @return the name at the given position.
      */
     private N getUncompressedName(int pos, LookupState lus) {
+        
         //
         // Get the offset of the uncompressed entry.
-        
         int offset = lus.localNameOffsets.byteDecode(4 * pos, 4);
 
         //
@@ -734,7 +737,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * there is no entry at that position in this block.
      * @param lus the current state of the lookup
      */
-    protected QueryEntry find(int posn, LookupState lus) {
+    protected QueryEntry<N> find(int posn, LookupState lus) {
 
         //
         // Bounds check.
@@ -769,14 +772,14 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @param postIn The postings channels to use for reading postings.
      * @return The filled entry.
      */
-    protected QueryEntry newEntry(N name, int posn,
-                                  LookupState lus,
-                                  PostingsInput[] postIn) {
+    protected QueryEntry<N> newEntry(N name, int posn,
+            LookupState lus,
+            PostingsInput[] postIn) {
 
         //
         // Position the info buffer for decoding the info for this entry.
         lus.localInfo.position(lus.localInfoOffsets.byteDecode(posn * 4, 4));
-        QueryEntry ret = factory.getQueryEntry(name, lus.localInfo);
+        QueryEntry<N> ret = factory.getQueryEntry(name, lus.localInfo);
         ret.setDictionary(this);
         ret.setPostingsInput(postIn);
 
@@ -1235,14 +1238,15 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return an iterator for the dictionary.  The elements of the iterator implement the
      * <CODE>Map.Entry</CODE> interface
      */
-    public DictionaryIterator iterator() {
+    @Override
+    public Iterator<Entry<N>> iterator() {
         return iterator(null, false, null, false);
     }
 
-    public LightIterator literator() {
+    public LightIterator<N> literator() {
         return new LightDiskDictionaryIterator();
     }
-
+    
     /**
      * Creates an iterator that starts iterating at
      * the specified entry, or, if the entry does not exist in the
@@ -1740,11 +1744,13 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             return false;
         }
 
+        @Override
         public int compareTo(HE e) {
             int cmp = curr.compareTo(e.curr);
             return cmp == 0 ? index - e.index : cmp;
         }
 
+        @Override
         public String toString() {
             return curr.getName() + " " + curr.getID() + " " + index;
         }
@@ -1754,7 +1760,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * A class that can be used to encapsulate the dictionary state when doing
      * multiple lookups during querying.
      */
-    public static class LookupState {
+    public static class LookupState<N extends Comparable> {
 
         ReadableBuffer localNames;
 
@@ -1765,7 +1771,15 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         ReadableBuffer localInfoOffsets;
 
         ReadableBuffer localIDToPosn;
+        
+        /**
+         * A place to keep names decoded while searching dictionaries.
+         */
+        N decodedName;
 
+        /**
+         * Stats for queries run with this lookup state.
+         */
         QueryStats qs;
 
         public LookupState(DiskDictionary target) {
@@ -1791,7 +1805,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * A class that can be used as an iterator for this block.
      */
-    public class DiskDictionaryIterator implements DictionaryIterator {
+    public class DiskDictionaryIterator implements DictionaryIterator<N> {
 
         /**
          * The estimated size of the results set for this iterator.
@@ -1806,12 +1820,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         /**
          * Our lookup state.
          */
-        protected LookupState lus;
-
-        /**
-         * The name of the previous entry.
-         */
-        protected N prevName;
+        protected LookupState<N> lus;
 
         /**
          * The current entry.
@@ -1872,7 +1881,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         public DiskDictionaryIterator(N startEntry, boolean includeStart,
                                       N stopEntry, boolean includeStop) {
 
-            lus = new LookupState(DiskDictionary.this);
+            lus = new LookupState<N>(DiskDictionary.this);
             pos = 0;
             startPos = 0;
             stopPos = (int) dh.size;
@@ -1919,7 +1928,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             if(startPos != 0) {
                 // Reposition to the start
                 QueryEntry<N> temp = find(startPos - 1, lus);
-                prevName = temp.getName();
+                lus.decodedName = temp.getName();
             } else {
                 lus.localNames.position(0);
             }
@@ -1943,7 +1952,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
          * it will be limited to that number.
          */
         public DiskDictionaryIterator(int begin, int end) {
-            lus = new LookupState(DiskDictionary.this);
+            lus = new LookupState<N>(DiskDictionary.this);
             pos = 0;
             startPos = Math.max(0, begin);
             stopPos = Math.min(end, (int) dh.size);
@@ -2000,10 +2009,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 return false;
             }
 
-            N name = decoder.decodeName(prevName, lus.localNames);
-            curr = newEntry(name, pos, lus, 
-                        unbufferedPostings ? postIn : bufferedPostings);
-            prevName = name;
+            lus.decodedName = decoder.decodeName(lus.decodedName, lus.localNames);
+            curr = newEntry(lus.decodedName, pos, lus, unbufferedPostings ? postIn : bufferedPostings);
             pos++;
             
             //
@@ -2037,13 +2044,13 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         }
 
         @Override
-        public int compareTo(DictionaryIterator o) {
-            return prevName.compareTo(o.getName());
+        public int compareTo(DictionaryIterator<N> o) {
+            return lus.decodedName.compareTo(o.getName());
         }
 
         @Override
-        public Comparable getName() {
-            return prevName;
+        public N getName() {
+            return lus.decodedName;
         }
 
         /**
@@ -2066,6 +2073,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             return estSize;
         }
 
+        @Override
         public int getNEntries() {
             return stopPos - startPos;
         }
@@ -2074,27 +2082,49 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     /**
      * A lightweight iterator for this dictionary.
      */
-    public class LightDiskDictionaryIterator implements LightIterator {
+    public class LightDiskDictionaryIterator implements LightIterator<N> {
 
         /**
-         * The position in the dictionary.
+         * The current position in the dictionary.
          */
         protected int posn;
 
-        protected LookupState lus;
+        /**
+         * A lookup state for doing our won decoding.
+         */
+        protected LookupState<N> lus;
 
         /**
-         * The name of the previous entry.
+         * The name of the previous entry that we decoded.
          */
         protected N prevName;
+        
+        /**
+         * The name at the head of the block that's the next step when 
+         * we're advancing to a given term.
+         */
+        protected N nextBlockName;
+        
+        /**
+         * The position of the next block name, so that we can binary search.
+         */
+        protected int nextBlockPosn;
+        
+        /**
+         * The step size when we're advancing to look for a given name in the
+         * dictionary.  The actual step taken may be up to 3 terms larger,
+         * since we want to end on an uncompressed term.
+         */
+        protected int stepSize = 256;
 
         public LightDiskDictionaryIterator() {
-            lus = new LookupState(DiskDictionary.this);
+            lus = new LookupState<N>(DiskDictionary.this);
             posn = -1;
             lus.localNames.position(0);
             lus.localInfo.position(0);
         }
 
+        @Override
         public boolean next() {
             posn++;
             if(posn >= dh.size) {
@@ -2105,12 +2135,65 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         }
 
         @Override
-        public Comparable getName() {
+        public QueryEntry<N> advanceTo(N name, QueryEntry<N> qe) {
+            
+            //
+            // Get started by looking up the first next block name.
+            if(nextBlockName == null) {
+                nextBlockPosn = posn + stepSize;
+                nextBlockPosn += (4  - (nextBlockPosn % 4));
+                nextBlockName = getUncompressedName(nextBlockPosn/4, lus);
+            }
+            
+            //
+            // Take steps until we find a next block name that's greater than
+            // the name that we're looking for.  We already may have such a name.
+            while(nextBlockName.compareTo(name) < 0) {
+                
+                //
+                // After we started, we will always move by a multiple of 4, so
+                // we don't need to ensure that the position is 0 mod 4.
+                posn = nextBlockPosn;
+                nextBlockPosn += stepSize;
+                nextBlockName = getUncompressedName(nextBlockPosn/4, lus);
+            }
+            
+            int lower = (posn - (posn % 4)) / 4;
+            int upper = nextBlockPosn/4;
+            
+            //
+            // OK, now we know that somewhere between posn and nextBlockPosn 
+            // there might be a name that's equal to the name that we're looking
+            // for.  Let's binary search for that.
+            int bspos = binarySearch(name, lus, false, lower, upper);
+
+            if(bspos < 0) {
+                //
+                // We didn't find it.  Position at the point of the next higher
+                // name.
+                posn = -bspos -1;
+                prevName = lus.decodedName;
+                return null;
+            } else {
+                posn = bspos;
+                lus.localInfoOffsets.position(posn * 4);
+                lus.localInfo.position(lus.localInfoOffsets.byteDecode(4));
+                qe = factory.fillQueryEntry(qe, name, lus.localInfo);
+                qe.setDictionary(DiskDictionary.this);
+                qe.setPostingsInput(postIn);
+                return qe;
+            }
+        }
+
+        @Override
+        public N getName() {
             return prevName;
         }
  
         @Override
         public QueryEntry getEntry(QueryEntry qe) {
+            lus.localInfoOffsets.position(posn * 4);
+            lus.localInfo.position(lus.localInfoOffsets.byteDecode(4));
             qe = factory.fillQueryEntry(qe, prevName, lus.localInfo);
             qe.setDictionary(DiskDictionary.this);
             qe.setPostingsInput(postIn);
@@ -2200,7 +2283,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
          */
         protected class Node {
 
-            Object name;
+            N name;
 
             int lower;
 

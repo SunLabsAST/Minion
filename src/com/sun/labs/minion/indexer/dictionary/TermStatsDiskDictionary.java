@@ -29,7 +29,6 @@ import com.sun.labs.minion.indexer.entry.TermStatsEntryFactory;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
-import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -103,7 +102,7 @@ public class TermStatsDiskDictionary implements Closeable {
      * if that term does not occur in the index
      */
     public TermStatsQueryEntry getTermStats(String term, String field) {
-        DiskDictionary dd = getDict(field);
+        DiskDictionary dd = getDictionary(field);
         return dd == null ? null : (TermStatsQueryEntry) dd.get(term);
     }
 
@@ -136,7 +135,7 @@ public class TermStatsDiskDictionary implements Closeable {
      * if that term does not occur in the index
      */
     public TermStatsQueryEntry getTermStats(String term, FieldInfo fi) {
-        DiskDictionary dd = getDict(fi);
+        DiskDictionary dd = getDictionary(fi);
         return dd == null ? null : (TermStatsQueryEntry) dd.get(term);
     }
 
@@ -145,27 +144,27 @@ public class TermStatsDiskDictionary implements Closeable {
      * @param field the field for which we want the iterator
      * @return an iterator for the term stats.
      */
-    public DictionaryIterator iterator(String field) {
-        DiskDictionary dd = getDict(field);
-        return dd == null ? null : dd.iterator();
+    public DictionaryIterator<String> iterator(String field) {
+        DiskDictionary<String> dd = getDictionary(field);
+        return dd == null ? null : (DictionaryIterator<String>) dd.iterator();
     }
     
-    public LightIterator literator(String field) {
-        DiskDictionary dd = getDict(field);
+    public LightIterator<String> literator(String field) {
+        DiskDictionary<String> dd = getDictionary(field);
         return dd == null ? null : dd.literator();
     }
-
+    
     /**
      * Gets an for this dictionary.
      * @param field the field for which we want the iterator
      * @return an iterator for the term stats.
      */
-    public DictionaryIterator iterator(FieldInfo field) {
+    public DictionaryIterator<String> iterator(FieldInfo field) {
         if(field.getID() >= fieldDicts.length) {
             return null;
         }
         DiskDictionary dd = fieldDicts[field.getID()];
-        return dd == null ? null : dd.iterator();
+        return dd == null ? null : (DictionaryIterator<String>) dd.iterator();
     }
 
     public LightIterator literator(FieldInfo field) {
@@ -176,12 +175,12 @@ public class TermStatsDiskDictionary implements Closeable {
         return dd == null ? null : dd.literator();
     }
 
-    private DiskDictionary getDict(String field) {
+    public DiskDictionary<String> getDictionary(String field) {
         FieldInfo fi = manager.getMetaFile().getFieldInfo(field);
-        return getDict(fi);
+        return getDictionary(fi);
     }
 
-    private DiskDictionary getDict(FieldInfo fi) {
+    public DiskDictionary<String> getDictionary(FieldInfo fi) {
         if(fi == null) {
             return null;
         }

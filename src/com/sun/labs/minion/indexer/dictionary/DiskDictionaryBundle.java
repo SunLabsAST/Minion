@@ -560,7 +560,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // of the appropriate length.
         if(pattern.matches("\\*+")) {
             for(DictionaryIterator di =
-                    dicts[Type.RAW_SAVED.ordinal()].iterator(); di.hasNext();) {
+                    (DictionaryIterator) dicts[Type.RAW_SAVED.ordinal()].iterator(); di.hasNext();) {
                 ret.add((QueryEntry) di.next());
             }
         } else {
@@ -999,8 +999,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     WriteableBuffer vlb = mergeState.partOut.getVectorLengthsBuffer();
                     mergeHeader.vectorLengthOffset = vlb.position();
                     fieldDictOut.position(mdp);
-                    DiskDictionary newMainDict =
-                            new DiskDictionary(new EntryFactory(exemplar.getTokenPostingsType()),
+                    DiskDictionary<String> newMainDict =
+                            new DiskDictionary<String>(new EntryFactory(exemplar.getTokenPostingsType()),
                             new StringNameHandler(),
                             fieldDictOut,
                             mPostRAF);
@@ -1055,9 +1055,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
         if(bundles.length == 1) {
             DictionaryIterator di = null;
             if(bundles[0].dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-                di = bundles[0].dicts[Type.UNCASED_TOKENS.ordinal()].iterator();
+                di = (DictionaryIterator) bundles[0].dicts[Type.UNCASED_TOKENS.ordinal()].iterator();
             } else if(bundles[0].dicts[Type.CASED_TOKENS.ordinal()] != null) {
-                di = bundles[0].dicts[Type.CASED_TOKENS.ordinal()].iterator();
+                di = (DictionaryIterator) bundles[0].dicts[Type.CASED_TOKENS.ordinal()].iterator();
             }
             if(di == null) {
                 return false;
@@ -1115,9 +1115,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 }
                 HE el = null;
                 if(bundle.dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-                    el = new HE(bundle.dicts[Type.UNCASED_TOKENS.ordinal()].iterator());
+                    el = new HE((DictionaryIterator) bundle.dicts[Type.UNCASED_TOKENS.ordinal()].iterator());
                 } else if(bundle.dicts[Type.CASED_TOKENS.ordinal()] != null) {
-                    el = new HE(bundle.dicts[Type.CASED_TOKENS.ordinal()].iterator());
+                    el = new HE((DictionaryIterator) bundle.dicts[Type.CASED_TOKENS.ordinal()].iterator());
                 }
                 if(el != null && el.next()) {
                     h.offer(el);

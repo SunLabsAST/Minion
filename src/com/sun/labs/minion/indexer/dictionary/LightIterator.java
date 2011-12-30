@@ -31,7 +31,7 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
  * similar to the idea for the postings iterator:  don't return an object from
  * the <code>next</code> method, but provide accessors for the data that we want.
  */
-public interface LightIterator extends Comparable {
+public interface LightIterator<N extends Comparable> extends Comparable {
 
     /**
      * Advances the iterator to the next entry in the dictionary.
@@ -40,13 +40,23 @@ public interface LightIterator extends Comparable {
      * otherwise.
      */
     public boolean next();
-    
+
+    /**
+     * Advances the iterator to a named entry.
+     * 
+     * @param name the name to advance to
+     * @param qe an entry to fill with the details of the entry.
+     * @return the entry with the given name, or <code>null</code> if the
+     * entry does not occur in the dictionary.  The iterator will be left at
+     * the next higher-named entry.
+     */
+    public QueryEntry<N> advanceTo(N name, QueryEntry<N> qe);
     
     /**
      * Gets the name of the entry at the head of the iterator.  This can be
      * used for comparisons.
      */
-    public Comparable getName();
+    public N getName();
     
     /**
      * Gets the entire current entry, re-using an existing entry rather than 
@@ -54,7 +64,7 @@ public interface LightIterator extends Comparable {
      * 
      * @return the current entry.
      */
-    public QueryEntry getEntry(QueryEntry qe);
+    public QueryEntry<N> getEntry(QueryEntry<N> qe);
     
     
 }

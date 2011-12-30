@@ -29,13 +29,13 @@ import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 /**
  * A dictionary iterator for an array of terms.
  */
-public class ArrayDictionaryIterator implements DictionaryIterator {
+public class ArrayDictionaryIterator<N extends Comparable> implements DictionaryIterator<N> {
 
     private QueryEntry[] entries;
 
     private int curr;
 
-    private QueryEntry nextEntry;
+    private QueryEntry<N> nextEntry;
 
     private int begin;
 
@@ -125,8 +125,8 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
     }
 
     @Override
-    public Comparable getName() {
-        return entries[curr].getName();
+    public N getName() {
+        return (N) entries[curr].getName();
     }
 
     /**
