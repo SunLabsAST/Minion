@@ -87,7 +87,7 @@ public class Util {
      * @return The unicode escaped string containing this character.
      */
     public static String escape(char c) {
-        return String.format("\\u%04d", (int) c);
+        return String.format("\\u%04x", (int) c);
     }
 
     /**

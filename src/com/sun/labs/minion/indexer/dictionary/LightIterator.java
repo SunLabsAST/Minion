@@ -53,6 +53,11 @@ public interface LightIterator<N extends Comparable> extends Comparable {
     public QueryEntry<N> advanceTo(N name, QueryEntry<N> qe);
     
     /**
+     * Advances the iterator to a given ID in the dictionary.
+     */
+    public void advanceTo(int id);
+    
+    /**
      * Gets the name of the entry at the head of the iterator.  This can be
      * used for comparisons.
      */

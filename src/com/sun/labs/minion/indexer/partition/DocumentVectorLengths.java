@@ -25,15 +25,12 @@ package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.Field;
-import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
+import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
-import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
-import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.Entry;
-import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -41,10 +38,11 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
+import com.sun.labs.minion.util.CharUtils;
+import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -121,7 +119,7 @@ public class DocumentVectorLengths {
                   p.getNDocs(), 
                   p.maxDocumentID,
                   p.getPartitionManager(),
-                  f.getTermDictionary(false).iterator(),
+                  (DictionaryIterator<String>) f.getTermDictionary(false).iterator(),
                   partOut.getVectorLengthsBuffer(), gts);
     }
 
@@ -129,18 +127,14 @@ public class DocumentVectorLengths {
                                  int nDocs,
                                  int maxDocID,
                                  PartitionManager manager,
-                                 Iterator<Entry<String>> mdi,
+                                 DictionaryIterator<String> mdi,
                                  WriteableBuffer vectorLengthsBuffer,
                                  TermStatsDiskDictionary gts)
+
             throws java.io.IOException {
-        
-        //
-        // Get iterators for our two dictionaries and a place to write the new term stats.
-        LightIterator<String> gti = null;
-        if(gts != null) {
-            gti = gts.literator(fi);
-        }
-        
+
+        float[] vl = new float[maxDocID + 1];
+
         //
         // Get a set of postings features for running the postings.
         WeightingFunction wf = manager.getQueryConfig().
@@ -150,18 +144,88 @@ public class DocumentVectorLengths {
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
 
         //
-        // We'll try to quickly advance through the dictionary to get the
-        // terms from this dictionary.
-        float[] vl = new float[maxDocID + 1];
-        TermStatsQueryEntry pgte = null;
-        TermStatsQueryEntry gte = null;
+        // There are three possibilities here:
+        // 1. There are no global term stats yet.  In this case we only process
+        //    the new main dictionary.
+        // 2. The number of entries in the main dictionary is within a factor
+        //    of five of the number of entries in the term stats dictionary.
+        //    In this case, we'll iterate through both dictionaries.
+        // 3. The number of entries in the main dictionary is small in comparison
+        //    to the number of entries in the term stats dictionary.  In this case,
+        //    we'll use a jumping strategy for finding the term stats corresponding
+        //    to particular tokens.
+        if(gts == null) {
+            calculateWithNoTermStats(fi, mdi, vl, feat);
+        }
+        
+        //
+        // Get an iterator for the term stats.
+        DiskDictionary<String> tsd = gts.getDictionary(fi);
+        LightIterator<String> gti = tsd.literator();
+        
+        logger.info(String.format("field: %s md: %d gts: %d", 
+                fi.getName(),
+                mdi.getNEntries(), 
+                tsd.size()));
+        
+        if(mdi.getNEntries() * 10 >= tsd.size()) {
+            calculateWithIteration(fi, mdi, gti, vl, feat);
+        } else {
+            calculateWithAdvance(fi, mdi, gti, vl, feat);
+        }
+
+        //
+        // Write the document vectors.
+        vectorLengthsBuffer.byteEncode(maxDocID, 4);
+        for(int i = 1; i < vl.length; i++) {
+            vectorLengthsBuffer.encode((float) Math.sqrt(vl[i]));
+        }
+    }
+
+    private static void calculateWithNoTermStats(
+            FieldInfo fi,
+            DictionaryIterator<String> mdi, float[] vl, 
+            PostingsIteratorFeatures feat) {
+        logger.info(String.format("%s: vl with no term stats", fi.getName()));
+        WeightingFunction wf = feat.getWeightingFunction();
+        WeightingComponents wc = feat.getWeightingComponents();
+               
         while(mdi.hasNext()) {
-            
+
             Entry<String> mde = mdi.next();
             try {
-                if(gti != null) {
-                    gte = (TermStatsQueryEntry) gti.advanceTo(mde.getName(), pgte);
-                }
+                wc.Ft = mde.getTotalOccurrences();
+                wc.ft = mde.getN();
+                wf.initTerm(wc);
+                PostingsIterator pi = mde.iterator(feat);
+                addPostings(pi, vl);
+            } catch(RuntimeException ex) {
+                logger.log(Level.SEVERE, String.format("Error generating vector lengths for %s at term %s",
+                        fi.getName(), mde.getName()));
+                throw (ex);
+            }
+        }
+    }
+
+    private static void calculateWithAdvance(
+            FieldInfo fi,
+            DictionaryIterator<String> mdi, 
+            LightIterator<String> gti,
+            float[] vl, 
+            PostingsIteratorFeatures feat) {
+        logger.info(String.format("%s: vl with advance", fi.getName()));
+        
+        TermStatsQueryEntry pgte = null;
+        TermStatsQueryEntry gte = null;
+        WeightingFunction wf = feat.getWeightingFunction();
+        WeightingComponents wc = feat.getWeightingComponents();
+
+        while(mdi.hasNext()) {
+
+            Entry<String> mde = mdi.next();
+            try {
+                logger.info(String.format("mde: %s %s", mde.getName(), Util.toHexDigits(mde.getName())));
+                gte = (TermStatsQueryEntry) gti.advanceTo(mde.getName(), pgte);
 
                 if(gte != null) {
 
@@ -172,7 +236,7 @@ public class DocumentVectorLengths {
                     pgte = gte;
                 } else {
                     //
-                    // The term is only in this dictionary.
+                    // The term is only in the dictionary for the partition.
                     wc.Ft = mde.getTotalOccurrences();
                     wc.ft = mde.getN();
                     wf.initTerm(wc);
@@ -185,14 +249,67 @@ public class DocumentVectorLengths {
                 throw (ex);
             }
         }
+    }
+
+    private static void calculateWithIteration(
+            FieldInfo fi,
+            DictionaryIterator<String> mdi,
+            LightIterator<String> gti,
+            float[] vl,
+            PostingsIteratorFeatures feat) {
+        
+        logger.info(String.format("%s: vl with iteration", fi.getName()));
+        
+        if(!gti.next()) {
+            calculateWithNoTermStats(fi, mdi, vl, feat);
+            return;
+        }
+        
+        String gtn = gti.getName();
+        
+        TermStatsQueryEntry pgte = null;
+        WeightingFunction wf = feat.getWeightingFunction();
+        WeightingComponents wc = feat.getWeightingComponents();
+        while(mdi.hasNext()) {
+
+            Entry<String> mde = mdi.next();
+            String mden = mde.getName();
+            try {
+                int cmp;
+                while((cmp = gtn.compareTo(mden)) < 0) {
+                    if(!gti.next()) {
+                        break;
+                    }
+                    gtn = gti.getName();
+                }
+
+                if(cmp == 0) {
+                    pgte = (TermStatsQueryEntry) gti.getEntry(pgte);
+                    TermStatsImpl ts = pgte.getTermStats();
+                    ts.add(mde);
+                    wc.setTerm(ts);
+                } else {
+                    //
+                    // The term is only in the dictionary for the partition.
+                    wc.Ft = mde.getTotalOccurrences();
+                    wc.ft = mde.getN();
+                }
+
+                wf.initTerm(wc);
+                PostingsIterator pi = mde.iterator(feat);
+                addPostings(pi, vl);
+            } catch(RuntimeException ex) {
+                logger.log(Level.SEVERE, String.format("Error generating vector lengths for %s at term %s",
+                        fi.getName(), mde.getName()));
+                throw (ex);
+            }
+        }
 
         //
-        // Write the document vectors.
-        vectorLengthsBuffer.byteEncode(maxDocID, 4);
-        for(int i = 1; i < vl.length; i++) {
-            vectorLengthsBuffer.encode((float) Math.sqrt(vl[i]));
-        }
-    }
+        // Handle whatever's left in the main dictionary, if we ran out of term
+        // stats before we ran out of the main dictionary.
+        calculateWithNoTermStats(fi, mdi, vl, feat);
+}
 
     /**
      * Adds the postings from a given iterator to the vector lengths that we're

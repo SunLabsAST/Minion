@@ -24,7 +24,6 @@
 package com.sun.labs.minion.util.buffer;
 
 import java.io.RandomAccessFile;
-
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.logging.Level;
@@ -83,6 +82,8 @@ public class NIOFileReadableBuffer extends StdReadableImpl {
      * The in-memory buffer.
      */
     protected ByteBuffer buff;
+    
+    public int reads;
 
     /**
      * A log.
@@ -159,6 +160,7 @@ public class NIOFileReadableBuffer extends StdReadableImpl {
     protected int read(long off) {
         try {
             buff.clear();
+            reads++;
             return chan.read(buff, off);
         } catch (java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Error reading from file", ioe);

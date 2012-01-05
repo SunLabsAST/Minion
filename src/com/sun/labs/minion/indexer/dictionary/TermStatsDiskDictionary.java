@@ -86,7 +86,7 @@ public class TermStatsDiskDictionary implements Closeable {
                     fieldDicts[e.getKey()] = new DiskDictionary(new TermStatsEntryFactory(), new StringNameHandler(), raf, 
                             null, DiskDictionary.PostingsInputType.CHANNEL_FULL_POST, 
                             DiskDictionary.BufferType.NIOFILEBUFFER, 1024, 
-                            16 * 1024, 16 * 1024, 16*1024, 16*1024, null);
+                            128 * 1024, 128 * 1024, 128*1024, 128*1024, null);
                     size = Math.max(fieldDicts[e.getKey()].size(), size);
                 }
             }

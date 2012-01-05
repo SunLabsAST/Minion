@@ -24,7 +24,6 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
-import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.QueryEntry;

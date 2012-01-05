@@ -121,10 +121,12 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         }
     }
 
+    @Override
     public DictionaryHeader getHeader() {
         return header;
     }
 
+    @Override
     public void write(IndexEntry e) {
         if(!started) {
             throw new IllegalStateException("Can't write entries when the dictionary has not been started");

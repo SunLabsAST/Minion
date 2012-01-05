@@ -145,7 +145,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             : dicts[Type.UNCASED_TOKENS.ordinal()];
                     dicts[ord] = new DiskBiGramDictionary(dictFile, postIn[0],
                             DiskDictionary.PostingsInputType.FILE_PART_POST,
-                            DiskDictionary.BufferType.FILEBUFFER,
+                            DiskDictionary.BufferType.NIOFILEBUFFER,
                             256, 2048, 2048, 2048, 2048,
                             null,
                             tokenDict);
@@ -155,7 +155,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     dicts[ord] =
                             new DiskBiGramDictionary(dictFile, postIn[0],
                             DiskDictionary.PostingsInputType.FILE_PART_POST,
-                            DiskDictionary.BufferType.FILEBUFFER,
+                            DiskDictionary.BufferType.NIOFILEBUFFER,
                             256, 2048, 2048, 2048, 2048,
                             null,
                             dicts[Type.RAW_SAVED.ordinal()]);
@@ -1008,7 +1008,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             mergeState.maxDocID,
                             mergeState.maxDocID,
                             mergeState.manager,
-                            newMainDict.iterator(),
+                            (DictionaryIterator<String>) newMainDict.iterator(),
                             vlb,
                             mergeState.manager.getTermStatsDict());
                     for(RandomAccessFile mprf : mPostRAF) {
@@ -1153,17 +1153,26 @@ public class DiskDictionaryBundle<N extends Comparable> {
     }
 
     public void calculateVectorLengths(PartitionOutput partOut) throws java.io.IOException {
-        //
-        // Remember where the vector lengths start.
-        header.vectorLengthOffset = partOut.getVectorLengthsBuffer().position();
-        DiskPartition p = (DiskPartition) field.getPartition();
-        DocumentVectorLengths.calculate(field.getInfo(),
-                p.getNDocs(),
-                p.getMaxDocumentID(),
-                p.getPartitionManager(),
-                field.getTermDictionary(false).iterator(),
-                partOut.getVectorLengthsBuffer(),
-                p.getPartitionManager().getTermStatsDict());
+        
+//        logger.info(String.format("%s", field.getInfo()));
+        
+        DiskDictionary<String> termDict = field.getTermDictionary(false);
+        
+        if(termDict == null) {
+            header.vectorLengthOffset = -1;
+        } else {
+            //
+            // Remember where the vector lengths start.
+            header.vectorLengthOffset = partOut.getVectorLengthsBuffer().position();
+            DiskPartition p = (DiskPartition) field.getPartition();
+            DocumentVectorLengths.calculate(field.getInfo(),
+                    p.getNDocs(),
+                    p.getMaxDocumentID(),
+                    p.getPartitionManager(),
+                    (DictionaryIterator<String>) termDict.iterator(),
+                    partOut.getVectorLengthsBuffer(),
+                    p.getPartitionManager().getTermStatsDict());
+        }
 
         //
         // Re-write our header.

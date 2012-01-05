@@ -670,10 +670,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
         //
         // The name of the previous entry.
-        N prev = null;
+        lus.decodedName = null;
         for(int i = 0, index = mid * 4 + i; i < 4 && index < dh.size; i++, index++) {
 
-            lus.decodedName = decoder.decodeName(prev, lus.localNames);
+            lus.decodedName = decoder.decodeName(lus.decodedName, lus.localNames);
 
             //
             // If we're looking for partial matches, check
@@ -697,7 +697,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 // done.
                 return (0 - index) - 1;
             }
-            prev = lus.decodedName;
         }
 
         //
@@ -719,7 +718,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @param lus the state to use to do the decoding
      * @return the name at the given position.
      */
-    private N getUncompressedName(int pos, LookupState lus) {
+    private N getUncompressedName(int pos, LookupState<N> lus) {
         
         //
         // Get the offset of the uncompressed entry.
@@ -728,7 +727,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Get the name of the entry at that position.
         lus.localNames.position(offset);
-        return decoder.decodeName(null, lus.localNames);
+        lus.decodedName = decoder.decodeName(null, lus.localNames);
+        return lus.decodedName;
     }
 
     /**
@@ -737,7 +737,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * there is no entry at that position in this block.
      * @param lus the current state of the lookup
      */
-    protected QueryEntry<N> find(int posn, LookupState lus) {
+    protected QueryEntry<N> find(int posn, LookupState<N> lus) {
 
         //
         // Bounds check.
@@ -750,17 +750,17 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // there do we need to venture to get the entry at this position?
         int ui = posn / 4;
         int n = posn % 4;
-        N localName = getUncompressedName(ui, lus);
+        lus.decodedName = getUncompressedName(ui, lus);
 
         //
         // Walk ahead and get the name of the entry we want.
         for(int i = 0; i < n; i++) {
-            localName = decoder.decodeName(localName, lus.localNames);
+            lus.decodedName = decoder.decodeName(lus.decodedName, lus.localNames);
         }
 
         //
         // Get an entry and return it.
-        return newEntry(localName, posn, lus, postIn);
+        return newEntry(lus.decodedName, posn, lus, postIn);
     }
 
     /**
@@ -1762,15 +1762,15 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      */
     public static class LookupState<N extends Comparable> {
 
-        ReadableBuffer localNames;
+        public ReadableBuffer localNames;
 
-        ReadableBuffer localNameOffsets;
+        public ReadableBuffer localNameOffsets;
 
-        ReadableBuffer localInfo;
+        public ReadableBuffer localInfo;
 
-        ReadableBuffer localInfoOffsets;
+        public ReadableBuffer localInfoOffsets;
 
-        ReadableBuffer localIDToPosn;
+        public ReadableBuffer localIDToPosn;
         
         /**
          * A place to keep names decoded while searching dictionaries.
@@ -2088,17 +2088,12 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
          * The current position in the dictionary.
          */
         protected int posn;
-
+        
         /**
-         * A lookup state for doing our won decoding.
+         * A lookup state for doing our own decoding.
          */
         protected LookupState<N> lus;
 
-        /**
-         * The name of the previous entry that we decoded.
-         */
-        protected N prevName;
-        
         /**
          * The name at the head of the block that's the next step when 
          * we're advancing to a given term.
@@ -2111,17 +2106,33 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         protected int nextBlockPosn;
         
         /**
+         * How many steps of <code>stepSize</code> we took while advancing.
+         */
+        protected int stepsTaken;
+
+        /**
+         * The position of the last block of terms in the dictionary.
+         */
+        protected int lastBlockPosn;
+        
+        /**
          * The step size when we're advancing to look for a given name in the
          * dictionary.  The actual step taken may be up to 3 terms larger,
          * since we want to end on an uncompressed term.
          */
-        protected int stepSize = 256;
-
+        protected int stepSize = 512;
+        
         public LightDiskDictionaryIterator() {
             lus = new LookupState<N>(DiskDictionary.this);
+            lus.setQueryStats(new QueryStats());
             posn = -1;
             lus.localNames.position(0);
             lus.localInfo.position(0);
+            
+            //
+            // The last block position that we can use for advancing.
+            lastBlockPosn = (int) dh.size - 1;
+            lastBlockPosn -= lastBlockPosn % 4;
         }
 
         @Override
@@ -2130,71 +2141,151 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             if(posn >= dh.size) {
                 return false;
             }
-            prevName = decoder.decodeName(prevName, lus.localNames);
+            if(posn >= nextBlockPosn) {
+                nextBlockName = null;
+            }
+            lus.decodedName = decoder.decodeName(lus.decodedName, lus.localNames);
             return true;
+        }
+        
+        public QueryStats getQueryStats() {
+            return lus.qs;
+        }
+        
+        public LookupState<N> getLookupState() {
+            return lus;
+        }
+
+        public int getStepsTaken() {
+            return stepsTaken;
+        }
+
+        @Override
+        public void advanceTo(int id) {
+            QueryEntry<N> e = find(id - 1, lus);
+            if(e == null) {
+                posn = (int) dh.size;
+            } else {
+                posn = id - 1;
+            }
         }
 
         @Override
         public QueryEntry<N> advanceTo(N name, QueryEntry<N> qe) {
             
             //
-            // Get started by looking up the first next block name.
-            if(nextBlockName == null) {
-                nextBlockPosn = posn + stepSize;
-                nextBlockPosn += (4  - (nextBlockPosn % 4));
-                nextBlockName = getUncompressedName(nextBlockPosn/4, lus);
+            // We're past the end of the dictionary, so no go.
+            if(posn >= dh.size) {
+                return null;
             }
             
             //
-            // Take steps until we find a next block name that's greater than
-            // the name that we're looking for.  We already may have such a name.
-            while(nextBlockName.compareTo(name) < 0) {
+            // Deal with the case where we're finishing off the dictionary.
+            if(posn >= lastBlockPosn) {
+                int cmp;
+                while((cmp = name.compareTo(lus.decodedName)) > 0) {
+                    if(!next()) {
+                        //
+                        // We ran out of dictionary.
+                        return null;
+                    }
+                }
+
+                //
+                // We found the entry name.
+                if(cmp == 0) {
+                    return fillEntry(qe, name);
+                } 
                 
                 //
-                // After we started, we will always move by a multiple of 4, so
-                // we don't need to ensure that the position is 0 mod 4.
-                posn = nextBlockPosn;
-                nextBlockPosn += stepSize;
-                nextBlockName = getUncompressedName(nextBlockPosn/4, lus);
+                // We went past the entry name.
+                return null;
             }
-            
-            int lower = (posn - (posn % 4)) / 4;
-            int upper = nextBlockPosn/4;
             
             //
-            // OK, now we know that somewhere between posn and nextBlockPosn 
-            // there might be a name that's equal to the name that we're looking
-            // for.  Let's binary search for that.
-            int bspos = binarySearch(name, lus, false, lower, upper);
-
-            if(bspos < 0) {
+            // Try to get the closest block.
+            if(getClosestBlock(name)) {
+                int lower = (posn - (posn % 4)) / 4;
+                int upper = nextBlockPosn / 4;
+                
                 //
-                // We didn't find it.  Position at the point of the next higher
-                // name.
-                posn = -bspos -1;
-                prevName = lus.decodedName;
-                return null;
+                // OK, now we know that somewhere between posn and nextBlockPosn 
+                // there might be a name that's equal to the name that we're looking
+                // for.  Let's binary search for that.
+                lus.qs.dictLookupW.start();
+                int bspos = binarySearch(name, lus, false, lower, upper);
+                lus.qs.dictLookupW.stop();
+
+                if(bspos < 0) {
+                    //
+                    // We didn't find it.  Position at the point of the next higher
+                    // name.
+                    posn = -bspos - 1;
+                    return null;
+                } else {
+                    posn = bspos;
+                    return fillEntry(qe, name);
+                }
             } else {
-                posn = bspos;
-                lus.localInfoOffsets.position(posn * 4);
-                lus.localInfo.position(lus.localInfoOffsets.byteDecode(4));
-                qe = factory.fillQueryEntry(qe, name, lus.localInfo);
-                qe.setDictionary(DiskDictionary.this);
-                qe.setPostingsInput(postIn);
-                return qe;
+                posn = lastBlockPosn;
+                
+                //
+                // Make sure that the names array is at the right spot so that
+                // we can use next to iterate through the last few entries.
+                lus.localNames.position(lus.localNameOffsets.byteDecodeLong(posn, 4));
+                lus.decodedName = decoder.decodeName(lus.decodedName, lus.localNames);
+                return advanceTo(name, qe);
             }
         }
-
+        
+        private QueryEntry<N> fillEntry(QueryEntry<N> qe, N name) {
+            
+            //
+            // Fill the entry.
+            qe = factory.fillQueryEntry(qe, name, lus.localInfo);
+            qe.setDictionary(DiskDictionary.this);
+            qe.setPostingsInput(postIn);
+            qe.setID(posn+1);
+            
+            return qe;
+        }
+        
+        private boolean getClosestBlock(N name) {
+            
+            if(nextBlockName == null) {
+                nextBlock();
+            }
+            
+            while(nextBlockName.compareTo(name) < 0 && nextBlockPosn < lastBlockPosn) {
+                posn = nextBlockPosn;
+                nextBlock();
+            }
+            return nextBlockName.compareTo(name) >= 0;
+        }
+        
+        private void nextBlock() {
+            nextBlockPosn = posn + stepSize;
+            int rem = nextBlockPosn % 4;
+            if(rem != 0) {
+                nextBlockPosn += (4 - rem);
+            }
+            if(nextBlockPosn >= dh.size) {
+                nextBlockPosn = lastBlockPosn;
+            }
+            stepsTaken++;
+            nextBlockName = getUncompressedName(nextBlockPosn / 4, lus);
+        }
+        
         @Override
         public N getName() {
-            return prevName;
+            return lus.decodedName;
         }
  
         @Override
         public QueryEntry getEntry(QueryEntry qe) {
             lus.localInfoOffsets.position(posn * 4);
             lus.localInfo.position(lus.localInfoOffsets.byteDecode(4));
-            qe = factory.fillQueryEntry(qe, prevName, lus.localInfo);
+            qe = factory.fillQueryEntry(qe, lus.decodedName, lus.localInfo);
             qe.setDictionary(DiskDictionary.this);
             qe.setPostingsInput(postIn);
             return qe;
@@ -2203,9 +2294,9 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         @Override
         public int compareTo(Object o) {
             if(o instanceof LightIterator) {
-                return prevName.compareTo(((LightIterator) o).getName());
+                return lus.decodedName.compareTo(((LightIterator) o).getName());
             } else if(o instanceof DictionaryIterator) {
-                return prevName.compareTo(((DictionaryIterator) o).getName());
+                return lus.decodedName.compareTo(((DictionaryIterator) o).getName());
             } else {
                 throw new IllegalArgumentException(String.format("Can't compare %s to a light iterator", o.getClass()));
             }
