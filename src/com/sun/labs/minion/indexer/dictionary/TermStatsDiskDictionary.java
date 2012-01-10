@@ -184,6 +184,11 @@ public class TermStatsDiskDictionary implements Closeable {
         if(fi == null) {
             return null;
         }
+        
+        if(fi.getID() >= fieldDicts.length) {
+            return null;
+        }
+        
         return fieldDicts[fi.getID()];
     }
 
@@ -191,14 +196,17 @@ public class TermStatsDiskDictionary implements Closeable {
         return size;
     }
 
+    @Override
     public void setCloseTime(long closeTime) {
         this.closeTime = closeTime;
     }
 
+    @Override
     public long getCloseTime() {
         return closeTime;
     }
 
+    @Override
     public boolean close(long currTime) {
         if(closeTime <= currTime) {
             try {
@@ -215,14 +223,17 @@ public class TermStatsDiskDictionary implements Closeable {
         return false;
     }
 
+    @Override
     public void setClosed() {
         closed = true;
     }
 
+    @Override
     public boolean isClosed() {
         return closed;
     }
 
+    @Override
     public void createRemoveFile() {
         try {
             manager.makeRemovedTermStatsFile(dictNumber).createNewFile();
