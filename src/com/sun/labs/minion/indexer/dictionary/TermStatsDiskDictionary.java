@@ -32,6 +32,7 @@ import com.sun.labs.minion.retrieval.TermStatsImpl;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -244,6 +245,6 @@ public class TermStatsDiskDictionary implements Closeable {
     
     @Override
     public String toString() {
-        return String.format("TSD: %d", dictNumber);
+        return String.format("TSD: %d Dicts: %s", dictNumber, Arrays.toString(fieldDicts));
     }
 }

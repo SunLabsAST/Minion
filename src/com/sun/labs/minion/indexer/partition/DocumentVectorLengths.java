@@ -27,7 +27,6 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
-import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
@@ -38,11 +37,11 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
-import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -156,23 +155,31 @@ public class DocumentVectorLengths {
         //    to particular tokens.
         if(gts == null) {
             calculateWithNoTermStats(fi, mdi, vl, feat);
-        }
-        
+            writeVectorLengths(maxDocID, vl, vectorLengthsBuffer);
+            return;
+        }        
         //
         // Get an iterator for the term stats.
         DiskDictionary<String> tsd = gts.getDictionary(fi);
+        if(tsd == null) {
+            //
+            // We had a dictionary, but it didn't have term stats for this field,
+            // so we can calculate with no term stats.
+            calculateWithNoTermStats(fi, mdi, vl, feat);
+            writeVectorLengths(maxDocID, vl, vectorLengthsBuffer);
+            return;
+        }
         LightIterator<String> gti = tsd.literator();
-        
-        logger.info(String.format("field: %s md: %d gts: %d", 
-                fi.getName(),
-                mdi.getNEntries(), 
-                tsd.size()));
         
         if(mdi.getNEntries() * 10 >= tsd.size()) {
             calculateWithIteration(fi, mdi, gti, vl, feat);
         } else {
             calculateWithAdvance(fi, mdi, gti, vl, feat);
         }
+        writeVectorLengths(maxDocID, vl, vectorLengthsBuffer);
+    }
+    
+    private static void writeVectorLengths(int maxDocID, float[] vl, WriteableBuffer vectorLengthsBuffer) {
 
         //
         // Write the document vectors.
@@ -186,7 +193,6 @@ public class DocumentVectorLengths {
             FieldInfo fi,
             DictionaryIterator<String> mdi, float[] vl, 
             PostingsIteratorFeatures feat) {
-        logger.info(String.format("%s: vl with no term stats", fi.getName()));
         WeightingFunction wf = feat.getWeightingFunction();
         WeightingComponents wc = feat.getWeightingComponents();
                
@@ -213,7 +219,6 @@ public class DocumentVectorLengths {
             LightIterator<String> gti,
             float[] vl, 
             PostingsIteratorFeatures feat) {
-        logger.info(String.format("%s: vl with advance", fi.getName()));
         
         TermStatsQueryEntry pgte = null;
         TermStatsQueryEntry gte = null;
@@ -224,7 +229,6 @@ public class DocumentVectorLengths {
 
             Entry<String> mde = mdi.next();
             try {
-                logger.info(String.format("mde: %s %s", mde.getName(), Util.toHexDigits(mde.getName())));
                 gte = (TermStatsQueryEntry) gti.advanceTo(mde.getName(), pgte);
 
                 if(gte != null) {
@@ -257,8 +261,6 @@ public class DocumentVectorLengths {
             LightIterator<String> gti,
             float[] vl,
             PostingsIteratorFeatures feat) {
-        
-        logger.info(String.format("%s: vl with iteration", fi.getName()));
         
         if(!gti.next()) {
             calculateWithNoTermStats(fi, mdi, vl, feat);

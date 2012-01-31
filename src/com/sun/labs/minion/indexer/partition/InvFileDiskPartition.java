@@ -392,18 +392,14 @@ public class InvFileDiskPartition extends DiskPartition {
         
         MetaFile mf = partitions[0].manager.getMetaFile();
 
-        logger.info(String.format("Generating term stats"));
         for(FieldInfo fi : mf) {
             
             if(!fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
-                logger.info(String.format("Skipping %s", fi.getName()));
                 //
                 // Skip fields that don't have term information.
                 tsh.addOffset(fi.getID(), -1);
                 continue;
             }
-            
-            logger.info(String.format("Generating stats for %s", fi.getName()));
             
             DiskField[] fields = new DiskField[partitions.length];
             DiskField regen = null;
