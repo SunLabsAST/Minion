@@ -29,8 +29,6 @@ import java.util.List;
 
 public class And extends Operator {
 
-    protected static String logTag = "AND";
-
     /**
      * Constructs an <tt>AND</tt> operator that takes a list of operands.
      */
@@ -42,6 +40,7 @@ public class And extends Operator {
     /**
      * Estimates the size of the results set.
      */
+    @Override
     protected int calculateEstimatedSize() {
         return operands.size() > 0 ?
             ((QueryElement) operands.get(0)).estimateSize() :
@@ -51,6 +50,7 @@ public class And extends Operator {
     /**
      * Evaluates this operator, returning the results.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
         return and(ag, operands, strictEval);
     }
@@ -66,7 +66,7 @@ public class And extends Operator {
      * @param ag Any initial group.  May be <code>null</code>.
      * @param operands The operands to process.
      */
-    protected static ArrayGroup and(ArrayGroup ag, List operands,
+    protected static ArrayGroup and(ArrayGroup ag, List<QueryElement> operands,
                                     boolean strict) {
         ArrayGroup ret = ag;
         for(Iterator i = operands.iterator(); i.hasNext(); ) {
