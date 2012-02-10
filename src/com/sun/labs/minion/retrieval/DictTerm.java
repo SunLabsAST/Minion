@@ -41,7 +41,6 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.util.Util;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 /**
  * A concrete subclass of <code>QueryTerm</code> that represents a term
@@ -452,13 +451,13 @@ public class DictTerm extends QueryTerm implements Comparator {
                 continue;
             }
             pi.next();
-
+            
             //
             // We need to decide whether we're going to use findID or just
             // iterate through the postings for the current term.  We'll
             // iterate through the postings if it's less work than running
             // findID too many times.
-            if(dictEntries[i].getN() < 10 * ag.size) {
+            if(dictEntries[i].getN() < 100 * ag.size) {
 
                 qs.piW.start();
                 //
@@ -473,7 +472,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                 }
                 qs.piW.stop();
             } else {
-
+                
                 //
                 // We're going to use findID.
                 for(int j = 0; j < ag.size; j++) {

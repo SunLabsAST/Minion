@@ -110,7 +110,7 @@ public class PositionPostings implements Postings {
     /**
      * The number of documents in a skip.
      */
-    protected int skipSize = 256;
+    protected int skipSize = 16;
 
     PostingsInput posnInput;
     
@@ -201,6 +201,10 @@ public class PositionPostings implements Postings {
     @Override
     public String[] getChannelNames() {
         return new String[]{"post", "prox"};
+    }
+
+    public int[] getSkipID() {
+        return skipID;
     }
     
     @Override
@@ -338,29 +342,36 @@ public class PositionPostings implements Postings {
 
     }
 
+    @Override
     public Type getType() {
         return Type.ID_FREQ_POS;
     }
 
+    @Override
     public int getN() {
         return nIDs;
     }
 
+    @Override
     public int getLastID() {
         return lastID;
     }
 
+    @Override
     public long getTotalOccurrences() {
         return totalOccurrences;
     }
 
+    @Override
     public int getMaxFDT() {
         return maxfdt;
     }
 
+    @Override
     public void remap(int[] idMap) {
     }
 
+    @Override
     public void append(Postings p, int start) {
         PositionPostings other = (PositionPostings) p;
         other.readPositions();
@@ -386,8 +397,8 @@ public class PositionPostings implements Postings {
         // entry we're appending are based on the byte index from the
         // beginning of the encoded documents.  We're about to take off the
         // first document ID and reencode it as a delta, which may change
-        // the number of bits that it requires (it will proabably take more
-        // bytes, since it's likely to be a small number originally and now
+        // the number of bits that it requires (it will probably take more
+        // bytes, since it was likely to be a small number originally and now
         // it will be a delta between two larger numbers).  So, we need to
         // figure out the difference between the old number of bytes and
         // the new number of bytes.  This is the adj variable.
@@ -407,6 +418,15 @@ public class PositionPostings implements Postings {
         nb += ((WriteableBuffer) idBuff).byteEncode(mPosnOffset - lastPosnOffset);
         adj = nb - adj;
 
+        //
+        // A quick digression about skips: if we don't have any skips yet, and 
+        // the list that we're appending doesn't have any, but we'll exceed the 
+        // skip size with this addition, then we'll go ahead and put a skip to
+        // the start of the second list, so that we'll build up skips over time.
+        if(nSkips == 0 && other.nSkips == 0 && nIDs + other.nIDs>= skipSize) {
+            addSkip(newID, idOffset, mPosnOffset);
+        }
+        
         //
         // Get a buffer for the remaining postings, and make sure that it
         // looks like a buffer that was written and not read by slicing and
@@ -554,6 +574,38 @@ public class PositionPostings implements Postings {
         }
     }
     
+    @Override
+    public String describe(boolean verbose) {
+        StringBuilder b = new StringBuilder();
+        b.append(getType()).append(' ').append("N: ").append(nIDs);
+        b.append(" nSkips: ").append(nSkips);
+        if(verbose) {
+            PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
+            feat.setPositions(true);
+            PostingsIteratorWithPositions pi = (PostingsIteratorWithPositions) iterator(feat);
+            boolean first = true;
+            while(pi.next()) {
+                if(!first) {
+                    b.append(' ');
+                }
+                first = false;
+                int freq = pi.getFreq();
+                b.append('<').append(pi.getID()).append(',').append(pi.getFreq()).append('>').append(" [");
+                int[] pp = pi.getPositions();
+                for(int i = 0; i < freq; i++) {
+                    if(i > 0) {
+                        b.append(',');
+                    }
+                    b.append(pp[i]);
+                }
+                b.append("]>,");
+            }
+        }
+        return b.toString();
+    }
+
+    
+    @Override
     public String toString() {
         if(idBuff != null) {
             return idBuff.toString(dataStart, dataStart + 10, Buffer.DecodeMode.BYTE_ENCODED);
@@ -758,6 +810,10 @@ public class PositionPostings implements Postings {
                 }
             }
         }
+        
+        public int[] getSkipID() {
+            return skipID;
+        }
 
         /**
          * Gets the number of IDs in this postings list.
@@ -851,7 +907,7 @@ public class PositionPostings implements Postings {
 
         @Override
         public boolean findID(int id) {
-
+            
             if(nIDs == 0) {
                 return false;
             }
@@ -868,6 +924,7 @@ public class PositionPostings implements Postings {
             //
             // Set up.  Start at the beginning or skip to the right place.
             if(nSkips == 0) {
+                logger.info(String.format("No skips for find :-("));
                 if(id < currID) {
                     currID = 0;
                     next(dataStart, -1, -1);

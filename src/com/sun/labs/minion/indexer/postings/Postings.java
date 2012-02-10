@@ -192,5 +192,14 @@ public interface Postings {
      * postings.
      */
     public void clear();
+    
+    /**
+     * Provides a string description of the postings.  Do not use this in an
+     * inner loop!
+     * 
+     * @param verbose if <code>true</code> a more verbose description (possibly
+     * including all of the postings data) will be generated.
+     */
+    public String describe(boolean verbose);
 
 }// Postings

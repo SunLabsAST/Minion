@@ -120,7 +120,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * The number of skips in the skip table.
      */
     protected int nSkips;
-
+    
     /**
      * The position in the compressed representation where the data
      * starts.
@@ -130,7 +130,7 @@ public class IDPostings implements Postings, MergeablePostings {
     /**
      * The number of documents in a skip.
      */
-    protected int skipSize = 256;
+    protected int skipSize = 16;
 
     /**
      * Makes a postings entry that is useful during indexing.
@@ -175,6 +175,7 @@ public class IDPostings implements Postings, MergeablePostings {
         //
         // Decode the skip table.
         nSkips = ((ReadableBuffer) idBuff).byteDecode();
+        
 
         if(nSkips > 0) {
 
@@ -331,12 +332,13 @@ public class IDPostings implements Postings, MergeablePostings {
     protected WriteableBuffer encodeIDs() {
 
         if(idBuff == null) {
-            idBuff = new ArrayBuffer(nIDs * 2);
+            idBuff = new ArrayBuffer(nIDs);
         }
         if(idBuff.position() > 0) {
             return (WriteableBuffer) idBuff;
         }
         WriteableBuffer wIDBuff = (WriteableBuffer) idBuff;
+        
         int prev = 0;
         for(int i = 0; i < nIDs; i++) {
             if(i > 0 && i % skipSize == 0) {
@@ -573,6 +575,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * features are requested, a warning will be logged and
      * <code>null</code> will be returned.
      */
+    @Override
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
         if(ids != null) {
             return new UncompressedIDIterator(features);
@@ -580,6 +583,7 @@ public class IDPostings implements Postings, MergeablePostings {
         return new CompressedIDIterator(features);
     }
 
+    @Override
     public void clear() {
         if(ids == null) {
             return;
@@ -592,6 +596,26 @@ public class IDPostings implements Postings, MergeablePostings {
             ((WriteableBuffer) idBuff).clear();
         }
     }
+
+    @Override
+    public String describe(boolean verbose) {
+        StringBuilder b = new StringBuilder();
+        b.append(getType()).append(' ').append("N: ").append(nIDs);
+        if(verbose) {
+            PostingsIterator pi = iterator(null);
+            boolean first = true;
+            while(pi.next()){
+                if(!first) {
+                    b.append(' ');
+                }
+                first = false;
+                b.append(pi.getID()).append(',');
+            }
+        }
+        return b.toString();
+    }
+    
+    
 
     /**
      * A postings iterator than can be used for in-memory data.

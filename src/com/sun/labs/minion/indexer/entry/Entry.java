@@ -131,6 +131,10 @@ public abstract class Entry<N extends Comparable> implements Comparable<Entry>, 
         return n;
     }
 
+    public Postings getPostings() {
+        return post;
+    }
+
     /**
      * Gets the total number of occurrences associated with this entry.
      * For this base class, this is the same as n.

@@ -28,7 +28,6 @@ import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
-
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
@@ -292,6 +291,25 @@ public class IDFreqPostings extends IDPostings {
         super.clear();
         pos = -1;
     }
+    
+    @Override
+    public String describe(boolean verbose) {
+        StringBuilder b = new StringBuilder();
+        b.append(getType()).append(' ').append("N: ").append(nIDs);
+        if(verbose) {
+            PostingsIterator pi = iterator(null);
+            boolean first = true;
+            while(pi.next()) {
+                if(!first) {
+                    b.append(' ');
+                }
+                first = false;
+                b.append('<').append(pi.getID()).append(',').append(pi.getFreq()).append('>').append(',');
+            }
+        }
+        return b.toString();
+    }
+
 
     public class UncompressedIDFreqIterator extends UncompressedIDIterator {
 

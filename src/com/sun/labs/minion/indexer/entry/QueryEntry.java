@@ -30,6 +30,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,6 +105,18 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
 
     public void setField(FieldInfo field) {
         this.field = field;
+    }
+
+    @Override
+    public Postings getPostings() {
+        if(post == null) {
+            try {
+            readPostings();
+            } catch (IOException ex) {
+                logger.log(Level.SEVERE, String.format("Error reading postings!"), ex);
+            }
+        }
+        return post;
     }
     
     /**
