@@ -131,6 +131,11 @@ public class IDPostings implements Postings, MergeablePostings {
      * The number of documents in a skip.
      */
     protected int skipSize = 16;
+    
+    /**
+     * The position of the skip list in the postings buffer.
+     */
+    protected int skipTableOffset;
 
     /**
      * Makes a postings entry that is useful during indexing.
@@ -171,40 +176,38 @@ public class IDPostings implements Postings, MergeablePostings {
         // Get the initial data.
         nIDs = ((ReadableBuffer) idBuff).byteDecode();
         lastID = ((ReadableBuffer) idBuff).byteDecode();
+        skipTableOffset = ((ReadableBuffer) idBuff).byteDecode();
+        dataStart = (int) idBuff.position();
 
         //
-        // Decode the skip table.
-        nSkips = ((ReadableBuffer) idBuff).byteDecode();
-        
-
-        if(nSkips > 0) {
-
+        // When we encoded the skip table offset at write time, we hadn't 
+        // encoded the above stuff onto the buffer for the postings, so we need
+        // to account for that now.
+        if(skipTableOffset > 0) {
+            skipTableOffset += dataStart;
+        }
+    }
+    
+    private void decodeSkipTable() {
+        if(skipTableOffset > 0 && skipID == null) {
+            ReadableBuffer ridb = ((ReadableBuffer) idBuff).duplicate();
+            ridb.position(skipTableOffset);
+            nSkips = ridb.byteDecode();
             skipID = new int[nSkips + 1];
             skipPos = new int[nSkips + 1];
+            skipPos[0] = dataStart;
             int currSkipDoc = 0;
-            int currSkipPos = 0;
+            int currSkipPos = dataStart;
             for(int i = 1; i <= nSkips; i++) {
-                currSkipDoc += ((ReadableBuffer) idBuff).byteDecode();
-                currSkipPos += ((ReadableBuffer) idBuff).byteDecode();
+                currSkipDoc += ridb.byteDecode();
+                currSkipPos += ridb.byteDecode();
                 skipID[i] = currSkipDoc;
                 skipPos[i] = currSkipPos;
             }
-
-            //
-            // Now, the values for the bit positions of the entries are
-            // from the *end* of the skip table, and we want them to be
-            // from the beginning of the buffer so that we can use
-            // jump directly to them.  So we need to figure out
-            // how much to add.
-            dataStart = (int) idBuff.position();
-            for(int i = 0; i <= nSkips; i++) {
-                skipPos[i] += dataStart;
-            }
-        } else {
-            dataStart = (int) idBuff.position();
         }
     }
 
+    @Override
     public String[] getChannelNames() {
         return new String[]{"post"};
     }
@@ -250,6 +253,7 @@ public class IDPostings implements Postings, MergeablePostings {
      *
      * @param oThe occurrence.
      */
+    @Override
     public void add(Occurrence o) {
         int oid = o.getID();
         if(oid != currentID) {
@@ -262,10 +266,12 @@ public class IDPostings implements Postings, MergeablePostings {
         }
     }
 
+    @Override
     public int getN() {
         return nIDs;
     }
 
+    @Override
     public int getLastID() {
         return lastID;
     }
@@ -276,6 +282,7 @@ public class IDPostings implements Postings, MergeablePostings {
      *
      * @return 1.
      */
+    @Override
     public int getMaxFDT() {
         return 1;
     }
@@ -284,6 +291,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * Gets the total number of occurrences in this postings list, which is
      * always the number of postings, since we don't encode any frequencies.
      */
+    @Override
     public long getTotalOccurrences() {
         return nIDs;
     }
@@ -295,6 +303,7 @@ public class IDPostings implements Postings, MergeablePostings {
         return (int) idBuff.position();
     }
 
+    @Override
     public void write(PostingsOutput[] out, long[] offset, int[] size) throws java.io.IOException {
 
         //
@@ -302,7 +311,11 @@ public class IDPostings implements Postings, MergeablePostings {
         offset[0] = out[0].position();
         encodeIDs();
         WriteableBuffer headerBuff = out[0].getTempBuffer();
+        if(nSkips > 0) {
+            skipTableOffset = (int) idBuff.position();
+        }
         encodeHeaderData(headerBuff);
+        encodeSkipTable();
         size[0] = out[0].write(
                 new WriteableBuffer[]{
                     headerBuff,
@@ -315,17 +328,24 @@ public class IDPostings implements Postings, MergeablePostings {
         // Encode the number of IDs and the last ID
         headerBuff.byteEncode(nIDs);
         headerBuff.byteEncode(lastID);
+        headerBuff.byteEncode(skipTableOffset);
+    }
+    
+    protected void encodeSkipTable() {
 
         //
         // Encode the skip table.
-        headerBuff.byteEncode(nSkips);
-        int prevSkipID = 0;
-        int prevPos = 0;
-        for(int i = 0; i < nSkips; i++) {
-            headerBuff.byteEncode(skipID[i] - prevSkipID);
-            headerBuff.byteEncode(skipPos[i] - prevPos);
-            prevSkipID = skipID[i];
-            prevPos = skipPos[i];
+        if(nSkips > 0) {
+            WriteableBuffer wIDBuff = (WriteableBuffer) idBuff;
+            wIDBuff.byteEncode(nSkips);
+            int prevSkipID = 0;
+            int prevPos = 0;
+            for(int i = 0; i < nSkips; i++) {
+                wIDBuff.byteEncode(skipID[i] - prevSkipID);
+                wIDBuff.byteEncode(skipPos[i] - prevPos);
+                prevSkipID = skipID[i];
+                prevPos = skipPos[i];
+            }
         }
     }
 
@@ -351,12 +371,12 @@ public class IDPostings implements Postings, MergeablePostings {
                 throw (ex);
             }
             prev = ids[i];
-            encodeOtherData(wIDBuff, i);
+            encodeOtherPostingsData(wIDBuff, i);
         }
         return wIDBuff;
     }
 
-    protected void encodeOtherData(WriteableBuffer b, int i) {
+    protected void encodeOtherPostingsData(WriteableBuffer b, int i) {
     }
 
     /**
@@ -372,6 +392,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * @param idMap A map from the IDs currently in use in the postings to
      * new IDs.
      */
+    @Override
     public void remap(int[] idMap) {
     }
 
@@ -384,6 +405,7 @@ public class IDPostings implements Postings, MergeablePostings {
      * @param start The new starting document ID for the partition
      * that the entry was drawn from.
      */
+    @Override
     public void append(Postings p, int start) {
 
         IDPostings other = (IDPostings) p;
@@ -427,10 +449,14 @@ public class IDPostings implements Postings, MergeablePostings {
         adj = nb - adj;
 
         //
-        // Get a buffer for the remaining postings, and make sure that it
-        // looks like a buffer that was written and not read by slicing and
-        // manipulating the position.
-        ((WriteableBuffer) idBuff).append((ReadableBuffer) other.idBuff);
+        // Copy over the remaining postings, but don't copy the skip table
+        // at the end, if there is one.
+        if(other.skipTableOffset > 0) {
+        ((WriteableBuffer) idBuff).append((ReadableBuffer) other.idBuff, 
+                other.skipTableOffset - other.idBuff.position());
+        } else {
+            ((WriteableBuffer) idBuff).append((ReadableBuffer) other.idBuff);
+        }
 
         //
         // The last ID on this entry is now the last ID from the entry we
@@ -440,7 +466,7 @@ public class IDPostings implements Postings, MergeablePostings {
         //
         // Increment the number of documents in this new entry.
         nIDs += other.nIDs;
-
+        other.decodeSkipTable();
         if(other.nSkips > 0) {
 
             //
@@ -520,6 +546,7 @@ public class IDPostings implements Postings, MergeablePostings {
         }
     }
 
+    @Override
     public void merge(MergeablePostings mp, int[] map) {
 
         int n = ((Postings) mp).getN();
@@ -592,6 +619,7 @@ public class IDPostings implements Postings, MergeablePostings {
         currentID = -1;
         lastID = 0;
         nSkips = 0;
+        skipTableOffset = 0;
         if(idBuff != null) {
             ((WriteableBuffer) idBuff).clear();
         }
@@ -800,6 +828,8 @@ public class IDPostings implements Postings, MergeablePostings {
             }
             done = false;
 
+            decodeSkipTable();
+            
             //
             // Set up.  Start at the beginning or skip to the right place.
             if(nSkips == 0) {

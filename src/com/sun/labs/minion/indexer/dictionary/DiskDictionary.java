@@ -41,6 +41,7 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.postings.Occurrence;
+import com.sun.labs.minion.indexer.postings.PositionPostings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.io.FilePostingsInput;
@@ -1434,9 +1435,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 // building.
                 top.curr.readPostings();
                 if(appendPostings) {
-                    if(logger.isLoggable(Level.FINE)) {
-                        logger.fine(String.format("me: %s top.index: %d top.origID: %d mapID: %d", me.getName(), top.index, top.origID, me.getID()));
-                        }
                     me.append(top.curr, starts[top.index], postIDMaps[top.index]);
                 } else {
                     me.merge(top.curr, postIDMaps[top.index]);

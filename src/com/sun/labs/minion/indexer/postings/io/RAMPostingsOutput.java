@@ -1,6 +1,5 @@
 package com.sun.labs.minion.indexer.postings.io;
 
-import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.IOException;
@@ -30,12 +29,14 @@ public class RAMPostingsOutput extends AbstractPostingsOutput {
         buff = new ArrayBuffer(initialSize, 256 * 1024);
     }
 
+    @Override
     public int write(WriteableBuffer b) throws IOException {
         int n = (int) b.position();
         b.write(buff);
         return n;
     }
 
+    @Override
     public int write(WriteableBuffer[] buffs) throws IOException {
         int n = 0;
         for(WriteableBuffer b : buffs) {
@@ -45,10 +46,12 @@ public class RAMPostingsOutput extends AbstractPostingsOutput {
         return n;
     }
 
+    @Override
     public long position() throws IOException {
         return buff.position();
     }
 
+    @Override
     public void flush() throws IOException {
         //
         // Doesn't do anything, since we're all in RAM.

@@ -23,12 +23,7 @@
  */
 package com.sun.labs.minion.indexer.entry;
 
-import com.sun.labs.minion.indexer.postings.MergeablePostings;
-import com.sun.labs.minion.indexer.postings.Occurrence;
-
-import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.PostingsIterator;
-import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.indexer.postings.*;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 
 import com.sun.labs.minion.util.buffer.WriteableBuffer;

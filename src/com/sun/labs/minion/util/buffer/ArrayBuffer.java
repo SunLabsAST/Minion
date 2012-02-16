@@ -363,6 +363,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * this buffer.
      * @see java.nio.ByteBuffer#put(byte[],int,int)
      */
+    @Override
     public void write(ByteBuffer b) {
         b.put(units, 0, pos);
     }
@@ -373,16 +374,19 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param chan The channel to which the buffer should be written.
      * @throws java.io.IOException If there is any error writing to the channel.
      */
+    @Override
     public void write(WritableByteChannel chan)
             throws java.io.IOException {
         write(chan, 0, pos);
     }
 
+    @Override
     public void write(WritableByteChannel chan, long start, long end) throws IOException {
         ChannelUtil.writeFully(chan,
                 (ByteBuffer) ByteBuffer.wrap(units, (int) start, (int) (end - start)));
     }
 
+    @Override
     public void write(WriteableBuffer b) {
         b.append(getReadableBuffer());
     }
@@ -394,6 +398,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param o The output to which the buffer will be written.
      * @throws java.io.IOException If there is any error writing the buffer.
      */
+    @Override
     public void write(DataOutput o)
             throws java.io.IOException {
         o.write(units, 0, pos);
@@ -404,6 +409,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param os The stream to which the buffer should be written.
      * @throws java.io.IOException If there is any error writing the buffer.
      */
+    @Override
     public void write(OutputStream os)
             throws java.io.IOException {
         os.write(units, 0, pos);
@@ -414,6 +420,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * will share the representation with the buffer that generated it.
      * @return A version of this buffer as a readable buffer.
      */
+    @Override
     public ReadableBuffer getReadableBuffer() {
         ArrayBuffer ret = new ArrayBuffer();
         ret.units = units;
@@ -431,6 +438,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @return A new readable buffer that shares the underlying
      * representation with this buffer.
      */
+    @Override
     public ReadableBuffer duplicate() {
         ArrayBuffer ret = new ArrayBuffer();
         ret.units = units;

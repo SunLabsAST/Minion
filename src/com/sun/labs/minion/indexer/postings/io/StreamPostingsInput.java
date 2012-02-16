@@ -116,6 +116,7 @@ public class StreamPostingsInput implements PostingsInput {
      * postings.
      * @return A readable buffer containing the postings.
      */
+    @Override
     public ReadableBuffer read(long offset, int size)
             throws java.io.IOException {
 

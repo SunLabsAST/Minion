@@ -68,6 +68,7 @@ public class MTDictReader implements Runnable {
         Collections.shuffle(this.terms);
     }
 
+    @Override
     public void run() {
         int iter = 0;
         while(System.currentTimeMillis() < stopTime) {

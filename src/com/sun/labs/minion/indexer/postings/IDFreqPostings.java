@@ -135,7 +135,7 @@ public class IDFreqPostings extends IDPostings {
     }
 
     @Override
-    protected void encodeOtherData(WriteableBuffer b, int i) {
+    protected void encodeOtherPostingsData(WriteableBuffer b, int i) {
         b.byteEncode(freqs[i]);
     }
 

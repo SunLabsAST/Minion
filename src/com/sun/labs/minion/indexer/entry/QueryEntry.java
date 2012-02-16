@@ -41,7 +41,7 @@ import java.util.logging.Logger;
 public class QueryEntry<N extends Comparable> extends Entry<N> implements
         Cloneable {
 
-    private static Logger logger = Logger.getLogger(QueryEntry.class.getName());
+    private static final Logger logger = Logger.getLogger(QueryEntry.class.getName());
 
     /**
      * The input channels that are associated with the postings for this

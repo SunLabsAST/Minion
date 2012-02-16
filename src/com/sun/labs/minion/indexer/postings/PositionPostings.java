@@ -111,6 +111,11 @@ public class PositionPostings implements Postings {
      * The number of documents in a skip.
      */
     protected int skipSize = 16;
+    
+    /**
+     * The position of the skip table at the end of the postings.
+     */
+    protected int skipTableOffset;
 
     PostingsInput posnInput;
     
@@ -161,18 +166,29 @@ public class PositionPostings implements Postings {
         nIDs = ((ReadableBuffer) this.idBuff).byteDecode();
         lastID = ((ReadableBuffer) this.idBuff).byteDecode();
         lastPosnOffset = ((ReadableBuffer) this.idBuff).byteDecode();
-
+        skipTableOffset = ((ReadableBuffer) this.idBuff).byteDecode();
+        dataStart = (int) this.idBuff.position();
+        
         //
-        // Decode the skip table.
-        nSkips = ((ReadableBuffer) this.idBuff).byteDecode();
-
-        if(nSkips > 0) {
-
+        // When we encoded the skip table offset at write time, we hadn't 
+        // encoded the above stuff onto the buffer for the postings, so we need
+        // to account for that now.
+        if(skipTableOffset > 0) {
+            skipTableOffset += dataStart;
+        }
+    }
+    
+    protected void decodeSkipTable() {
+        if(skipTableOffset > 0 && skipID == null) {
+            ReadableBuffer ridb = ((ReadableBuffer) idBuff).duplicate();
+            ridb.position(skipTableOffset);
+            nSkips = ridb.byteDecode();
             skipID = new int[nSkips + 1];
             skipIDOffsets = new int[nSkips + 1];
+            skipIDOffsets[0] = dataStart;
             skipPosnOffsets = new int[nSkips + 1];
             int currSkipDoc = 0;
-            int currIDOffset = 0;
+            int currIDOffset = dataStart;
             int currPosnOffset = 0;
             for(int i = 1; i <= nSkips; i++) {
                 currSkipDoc += ((ReadableBuffer) this.idBuff).byteDecode();
@@ -182,19 +198,6 @@ public class PositionPostings implements Postings {
                 skipIDOffsets[i] = currIDOffset;
                 skipPosnOffsets[i] = currPosnOffset;
             }
-
-            //
-            // Now, the values for the positions of the entries are
-            // from the *end* of the skip table, and we want them to be
-            // from the beginning of the buffer so that we can use
-            // jump directly to them.  So we need to figure out
-            // how much to add.
-            dataStart = (int) this.idBuff.position();
-            for(int i = 0; i <= nSkips; i++) {
-                skipIDOffsets[i] += dataStart;
-            }
-        } else {
-            dataStart = (int) this.idBuff.position();
         }
     }
 
@@ -263,8 +266,15 @@ public class PositionPostings implements Postings {
         //
         // Encode the header data for the postings.
         WriteableBuffer headerBuff = out[0].getTempBuffer();
+        //
+        // Remember where the skip table will be at the end of the postings.
+        if(nSkips > 0) {
+            skipTableOffset = (int) idBuff.position();
+        }
         encodeHeaderData(headerBuff);
-
+        
+        encodeSkipTable();
+        
         //
         // Write the buffers.
         offset[0] = out[0].position();
@@ -324,24 +334,30 @@ public class PositionPostings implements Postings {
         headerBuff.byteEncode(nIDs);
         headerBuff.byteEncode(lastID);
         headerBuff.byteEncode(lastPosnOffset);
+        headerBuff.byteEncode(skipTableOffset);
+    }
+
+    protected void encodeSkipTable() {
 
         //
         // Encode the skip table.
-        headerBuff.byteEncode(nSkips);
-        int prevSkipID = 0;
-        int prevIDOffset = 0;
-        int prevPosnOffset = 0;
-        for(int i = 0; i < nSkips; i++) {
-            headerBuff.byteEncode(skipID[i] - prevSkipID);
-            headerBuff.byteEncode(skipIDOffsets[i] - prevIDOffset);
-            headerBuff.byteEncode(skipPosnOffsets[i] - prevPosnOffset);
-            prevSkipID = skipID[i];
-            prevIDOffset = skipIDOffsets[i];
-            prevPosnOffset = skipPosnOffsets[i];
+        if(nSkips > 0) {
+            WriteableBuffer wIDBuff = (WriteableBuffer) idBuff;
+            wIDBuff.byteEncode(nSkips);
+            int prevSkipID = 0;
+            int prevIDOffset = 0;
+            int prevPosnOffset = 0;
+            for(int i = 0; i < nSkips; i++) {
+                wIDBuff.byteEncode(skipID[i] - prevSkipID);
+                wIDBuff.byteEncode(skipIDOffsets[i] - prevIDOffset);
+                wIDBuff.byteEncode(skipPosnOffsets[i] - prevPosnOffset);
+                prevSkipID = skipID[i];
+                prevIDOffset = skipIDOffsets[i];
+                prevPosnOffset = skipPosnOffsets[i];
+            }
         }
-
     }
-
+    
     @Override
     public Type getType() {
         return Type.ID_FREQ_POS;
@@ -386,7 +402,7 @@ public class PositionPostings implements Postings {
             idBuff = new ArrayBuffer((int) other.idBuff.limit());
             posnBuff = new ArrayBuffer((int) other.posnBuff.limit());
         }
-
+        
         //
         // We'll need to know where we started this entry.
         int idOffset = (int) idBuff.position();
@@ -426,15 +442,16 @@ public class PositionPostings implements Postings {
         if(nSkips == 0 && other.nSkips == 0 && nIDs + other.nIDs>= skipSize) {
             addSkip(newID, idOffset, mPosnOffset);
         }
-        
+
         //
-        // Get a buffer for the remaining postings, and make sure that it
-        // looks like a buffer that was written and not read by slicing and
-        // manipulating the position.
-        
-        //
-        // We can just append the positions.
-        ((WriteableBuffer) idBuff).append((ReadableBuffer) other.idBuff);
+        // Append the remaining postings data, remembering to not copy the skip
+        // table at the end of the postings if there is one.
+        if(other.skipTableOffset > 0) {
+                    ((WriteableBuffer) idBuff).append((ReadableBuffer) other.idBuff,
+                            other.skipTableOffset - other.idBuff.position());
+        } else {
+            ((WriteableBuffer) idBuff).append((ReadableBuffer) other.idBuff);
+        }
         ((WriteableBuffer) posnBuff).append((ReadableBuffer) other.posnBuff);
 
         //
@@ -568,6 +585,7 @@ public class PositionPostings implements Postings {
         nSkips = 0;
         pos = -1;
         posPos = 0;
+        skipTableOffset = 0;
         if(idBuff != null) {
             ((WriteableBuffer) idBuff).clear();
             ((WriteableBuffer) posnBuff).clear();
@@ -578,7 +596,7 @@ public class PositionPostings implements Postings {
     public String describe(boolean verbose) {
         StringBuilder b = new StringBuilder();
         b.append(getType()).append(' ').append("N: ").append(nIDs);
-        b.append(" nSkips: ").append(nSkips);
+        b.append(" nSkips: ").append(nSkips).append(' ');
         if(verbose) {
             PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
             feat.setPositions(true);
@@ -590,7 +608,7 @@ public class PositionPostings implements Postings {
                 }
                 first = false;
                 int freq = pi.getFreq();
-                b.append('<').append(pi.getID()).append(',').append(pi.getFreq()).append('>').append(" [");
+                b.append('<').append(pi.getID()).append(',').append(pi.getFreq()).append(" [");
                 int[] pp = pi.getPositions();
                 for(int i = 0; i < freq; i++) {
                     if(i > 0) {
@@ -920,6 +938,8 @@ public class PositionPostings implements Postings {
                 return false;
             }
             done = false;
+            
+            decodeSkipTable();
 
             //
             // Set up.  Start at the beginning or skip to the right place.

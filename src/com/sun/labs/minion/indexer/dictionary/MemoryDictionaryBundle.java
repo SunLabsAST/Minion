@@ -9,10 +9,7 @@ import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
-import com.sun.labs.minion.indexer.postings.DocOccurrence;
-import com.sun.labs.minion.indexer.postings.Occurrence;
-import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
-import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.indexer.postings.*;
 import com.sun.labs.minion.pipeline.Token;
 import com.sun.labs.minion.util.CDateParser;
 import com.sun.labs.minion.util.CharUtils;
@@ -472,7 +469,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     break;
 
                 case TOKEN_BIGRAMS:
-                    MemoryDictionary tdict = null;
+                    MemoryDictionary tdict;
                     if(dicts[Type.CASED_TOKENS.ordinal()] != null) {
                         tdict = dicts[Type.CASED_TOKENS.ordinal()];
                     } else {

@@ -28,6 +28,7 @@ import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -174,9 +175,10 @@ public abstract class Entry<N extends Comparable> implements Comparable<Entry>, 
     public String toString() {
         return String.format("%s (%s)", name, type);
     }
-
+    
     public String toVerboseString() {
-        return String.format("%s: %s", name, post.toString());
+        return String.format("%s: off: %s size: %s", name, 
+                Arrays.toString(offset), Arrays.toString(size));
     }
 
     /**

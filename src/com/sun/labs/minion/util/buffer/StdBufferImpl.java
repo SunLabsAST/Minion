@@ -381,6 +381,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param bitIndex the index of the bit to test.
      * @return true if the bit is 1, false if it is 0
      */
+    @Override
     public boolean test(long bitIndex) {
         long i = bitIndex >>> 3;
         return i >= limit() ? false :
@@ -391,6 +392,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * Gets a string from this buffer.
      * @return The decoded string.
      */
+    @Override
     public String getString() {
         int l = byteDecode();
         char[] ret = new char[l];
@@ -433,6 +435,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         return toString(0, position(), DecodeMode.BYTE_ENCODED);
     }
 
+    @Override
     public long countBits() {
         return countBits(0, limit());
     }
@@ -445,6 +448,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         return n;
     }
 
+    @Override
     public String toString(Portion portion, DecodeMode decode) {
 
         long start;
@@ -471,6 +475,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         return toString(start, end, decode);
     }
 
+    @Override
     public String toString(long start, long end, DecodeMode decode) {
 
         StringBuilder b = new StringBuilder((int) (end - start + 1) * 8);
