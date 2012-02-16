@@ -121,6 +121,13 @@ public class Range extends Element implements Serializable {
                 rightVal, rightOp == Operator.LEQ);
     }
 
+    @Override
+    public String toQueryString() {
+        return String.format("(%s %s %s) <and> (%s %s %s)", 
+        field, leftOp.getRep(), leftVal, 
+        field, rightOp.getRep(), rightVal);
+    }
+    
     public String toString() {
         return "(Range " +
                 "(" + leftOp.getRep() + " " + leftVal +

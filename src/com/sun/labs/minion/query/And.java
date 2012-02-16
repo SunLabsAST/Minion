@@ -70,6 +70,12 @@ public class And extends Operator implements Serializable {
         return new com.sun.labs.minion.retrieval.And(operands);
     }
 
+    @Override
+    public String toQueryString() {
+        return Operator.getInfixOperatorQueryString("<and>", elements, fields, strict);
+    }
+
+
     public String toString() {
         return "(And " + strict + " " + elements + ")";
     }

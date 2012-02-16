@@ -1,6 +1,7 @@
 package com.sun.labs.minion.util;
 
 
+import java.util.Collection;
 import java.util.logging.Logger;
 
 /**
@@ -55,7 +56,31 @@ public class StringUtil {
         }
         return sb.toString();
     }
+    
+    public static String toString(String join, String... els) {
+        StringBuilder sb = new StringBuilder();
+        for(int i = 0; i < els.length; i++) {
+            if(i > 0) {
+                sb.append(join);
+            }
+            sb.append(els[i]);
+        }
+        return sb.toString();
+    }
 
+    public static String toString(String join, Collection<String> els) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for(String el : els) {
+            if(!first) {
+                sb.append(join);
+            }
+            sb.append(el);
+            first = false;
+        }
+        return sb.toString();
+    }
+    
     public static String toString(String[] s) {
         return toString(s, " ");
     }
@@ -72,5 +97,9 @@ public class StringUtil {
             sb.append(s[i]);
         }
         return sb.toString();
+    }
+    
+    public static String escapeQuotes(String s) {
+        return s.replace("\"", "\\\"");
     }
 }

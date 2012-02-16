@@ -24,11 +24,13 @@
 
 package com.sun.labs.minion.query;
 
+import com.sun.labs.minion.util.StringUtil;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * An abstract class for a query operator.
@@ -75,6 +77,14 @@ public abstract class Operator extends Element implements Iterable<Element>, Ser
         elements.add(element);
         return this;
     }
+    
+    public boolean isEmpty() {
+        return elements.isEmpty();
+    }
+    
+    public int size() {
+        return elements.size();
+    }
 
     public Iterator<Element> iterator() {
         return elements.iterator();
@@ -83,4 +93,59 @@ public abstract class Operator extends Element implements Iterable<Element>, Ser
     public Collection<Element> getOperands() {
         return new ArrayList<Element>(elements);
     }
+    
+    protected static String getInfixOperatorQueryString(String opName, List<Element> elements, Set<String> fields, boolean strict) {
+        StringBuilder sb = new StringBuilder();
+        if(strict) {
+            sb.append("<if> (");
+        }
+        
+        if(fields != null && !fields.isEmpty()) {
+            sb.append(StringUtil.toString(",", fields));
+            sb.append(" <contains> (");
+        }
+        
+        boolean first = true;
+        for(Element element : elements) {
+            if(!first) {
+                sb.append(' ');
+                sb.append(opName);
+                sb.append(' ');
+            }
+            sb.append('(');
+            sb.append(element.toQueryString());
+            sb.append(')');
+            first = false;
+        }
+        
+        if(fields != null && fields.size() > 0) {
+            sb.append(')');
+        }
+        
+        if(strict) {
+            sb.append(')');
+        }
+
+        return sb.toString();
+    }
+    
+    protected static String getPrefixOperatorQueryString(String opName, List<Element> elements, Set<String> fields) {
+        StringBuilder sb = new StringBuilder();
+        if(fields != null && !fields.isEmpty()) {
+            sb.append(StringUtil.toString(",", fields));
+            sb.append(" <contains> (");
+        }
+        sb.append('(');
+        sb.append(opName);
+        for(Element element : elements) {
+            sb.append(' ');
+            sb.append(element.toQueryString());
+        }
+        sb.append(')');
+        if(fields != null && !fields.isEmpty()) {
+            sb.append(')');
+        }
+        return sb.toString();
+    }
+   
 }

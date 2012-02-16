@@ -56,6 +56,11 @@ public class Or extends Operator implements Serializable {
         return new com.sun.labs.minion.retrieval.Or(operands);
     }
 
+    @Override
+    public String toQueryString() {
+        return Operator.getInfixOperatorQueryString("<or>", elements, fields, strict);
+    }
+
     public String toString() {
         return "(Or " + strict + " " + elements + ")";
     }

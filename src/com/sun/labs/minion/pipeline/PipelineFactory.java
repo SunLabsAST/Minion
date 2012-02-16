@@ -117,7 +117,7 @@ public class PipelineFactory implements Configurable {
         }
         return new QueryPipelineImpl(this, engine, getPipeline(queryStages));
     }
-
+    
     /**
      * Gets a set of new instances for the configured stages.  The stages will
      * be connected together into a pipeline.

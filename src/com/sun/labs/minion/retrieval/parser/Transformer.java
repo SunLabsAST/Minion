@@ -36,7 +36,6 @@ import com.sun.labs.minion.retrieval.QueryElement;
  * It's more than meets the eye.
  *
  * @author Jeff Alexander
- * @version $Revision: 1.1.2.2 $
  */
 
 public abstract class Transformer
