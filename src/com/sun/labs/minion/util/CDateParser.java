@@ -95,6 +95,7 @@ public class CDateParser {
 	    "hh 'o''clock' a, zzzz",
 	    "yyyyy.MMMMM.dd GGG hh:mm aaa",
 	    "yyyyy.MMMMM.dd GGG HH:mm",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSz",
 	    "E,MMM d y z",
 	    "E,MMM d y",
 	    "E,d MMM y h:m:s a z",
