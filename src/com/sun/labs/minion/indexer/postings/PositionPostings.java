@@ -191,9 +191,9 @@ public class PositionPostings implements Postings {
             int currIDOffset = dataStart;
             int currPosnOffset = 0;
             for(int i = 1; i <= nSkips; i++) {
-                currSkipDoc += ((ReadableBuffer) this.idBuff).byteDecode();
-                currIDOffset += ((ReadableBuffer) this.idBuff).byteDecode();
-                currPosnOffset += ((ReadableBuffer) this.idBuff).byteDecode();
+                currSkipDoc += ridb.byteDecode();
+                currIDOffset += ridb.byteDecode();
+                currPosnOffset += ridb.byteDecode();
                 skipID[i] = currSkipDoc;
                 skipIDOffsets[i] = currIDOffset;
                 skipPosnOffsets[i] = currPosnOffset;
@@ -391,6 +391,7 @@ public class PositionPostings implements Postings {
     public void append(Postings p, int start) {
         PositionPostings other = (PositionPostings) p;
         other.readPositions();
+        other.decodeSkipTable();
 
         //
         // Check for empty postings on the other side.
@@ -626,7 +627,7 @@ public class PositionPostings implements Postings {
     @Override
     public String toString() {
         if(idBuff != null) {
-            return idBuff.toString(dataStart, dataStart + 10, Buffer.DecodeMode.BYTE_ENCODED);
+            return String.format("dataStart: %d\n%s", dataStart, idBuff.toString(Buffer.Portion.ALL, Buffer.DecodeMode.BYTE_ENCODED));
         } else {
             return null;
         }
@@ -741,10 +742,12 @@ public class PositionPostings implements Postings {
             return currPosns;
         }
 
+        @Override
         public int compareTo(PostingsIterator other) {
             return getID() - other.getID();
         }
 
+        @Override
         public PostingsIteratorFeatures getFeatures() {
             return features;
         }
@@ -829,8 +832,25 @@ public class PositionPostings implements Postings {
             }
         }
         
+        public long getIDPos() {
+            return ridf.position();
+        }
+        
+        public long getPosPos() {
+            if(rPosn != null) {
+                return rPosn.position();
+            }
+            return 0;
+        }
+        
         public int[] getSkipID() {
+            decodeSkipTable();
             return skipID;
+        }
+
+        public int[] getSkipIDOffsets() {
+            decodeSkipTable();
+            return skipIDOffsets;
         }
 
         /**
@@ -944,7 +964,6 @@ public class PositionPostings implements Postings {
             //
             // Set up.  Start at the beginning or skip to the right place.
             if(nSkips == 0) {
-                logger.info(String.format("No skips for find :-("));
                 if(id < currID) {
                     currID = 0;
                     next(dataStart, -1, -1);

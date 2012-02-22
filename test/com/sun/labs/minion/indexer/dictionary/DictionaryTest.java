@@ -118,7 +118,7 @@ public class DictionaryTest {
         sd.put("c");
         sd.put("a");
         sd.sort(MemoryDictionary.Renumber.RENUMBER, MemoryDictionary.IDMap.NONE);
-        Iterator<Entry> i = sd.iterator();
+        Iterator<Entry<String>> i = sd.iterator();
         assertEquals("a", i.next().getName());
         assertEquals("b", i.next().getName());
         assertEquals("c", i.next().getName());
@@ -133,13 +133,13 @@ public class DictionaryTest {
         id.put(1l);
         id.put(4l);
         id.sort(MemoryDictionary.Renumber.RENUMBER, MemoryDictionary.IDMap.NONE);
-        i = id.iterator();
-        assertEquals(1L, i.next().getName());
-        assertEquals(2L, i.next().getName());
-        assertEquals(4L, i.next().getName());
-        assertEquals(5L, i.next().getName());
-        assertEquals(7L, i.next().getName());
-        assertFalse(i.hasNext());
+        Iterator<Entry<Long>> ii = id.iterator();
+        assertEquals(1L, ii.next().getName().longValue());
+        assertEquals(2L, ii.next().getName().longValue());
+        assertEquals(4L, ii.next().getName().longValue());
+        assertEquals(5L, ii.next().getName().longValue());
+        assertEquals(7L, ii.next().getName().longValue());
+        assertFalse(ii.hasNext());
     }
 
     /**
@@ -240,7 +240,7 @@ public class DictionaryTest {
 
     @Test
     public void testDiskIteration() throws Exception {
-        DictionaryIterator di = all.dd.iterator();
+        Iterator<Entry<String>> di = all.dd.iterator();
         NanoWatch nw = new NanoWatch();
         nw.start();
         for(String w : all.words) {
@@ -259,7 +259,7 @@ public class DictionaryTest {
     public void testRandomIteration() throws Exception {
 
         TestData td = new TestData((int) (all.words.size() * 0.001), all.words);
-        DictionaryIterator di = td.dd.iterator();
+        Iterator<Entry<String>> di = td.dd.iterator();
         for(String w : td.uniq) {
             QueryEntry qe = (QueryEntry) di.next();
             if(!w.equals(qe.getName())) {
@@ -274,7 +274,7 @@ public class DictionaryTest {
     public void testOldIterations() throws Exception {
         for(String r : otherData) {
             TestData td = new TestData(r);
-            DictionaryIterator di = td.dd.iterator();
+            Iterator<Entry<String>> di = td.dd.iterator();
             for(String w : td.uniq) {
                 QueryEntry qe = (QueryEntry) di.next();
                 if(!w.equals(qe.getName())) {

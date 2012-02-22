@@ -209,30 +209,72 @@ public class MetaFile implements Iterable<FieldInfo> {
     public synchronized int size() {
         return idToInfo.size();
     }
-
+    
     /**
-     * Gets an array of integers.
-     * @return An array of integers.  A one in element i of the array means that
-     * the field with the ID i is a vectored field.
+     * Gets an array for the IDs of the fields that have the given attribute.
+     * @param attr the attribute that we wish the fields to have
+     * @return an array that is as wide as the number of fields. If this array
+     * has a 1 in the <em>i</em><sup>th</sup> position, then the field with ID
+     * <em>i</em> has this attribute.
      */
-    public synchronized int[] getVectoredFields() {
+    public synchronized int[] getFieldArray(FieldInfo.Attribute attr) {
         int[] ret = new int[size() + 1];
         ret[0] = 1;
-        for(Iterator i = idToInfo.values().iterator(); i.hasNext();) {
-            FieldInfo fi = (FieldInfo) i.next();
-            if(fi.hasAttribute(FieldInfo.Attribute.VECTORED)) {
+        for(FieldInfo fi : idToInfo.values()) {
+            if(fi.hasAttribute(attr)) {
+                ret[fi.getID()] = 1;
+            }
+        }
+        return ret;
+    }
+    
+    /**
+     * Gets a list of the information for the fields that have a given attribute.
+     *
+     * @param attr the attribute that we wish the fields to have
+     * @return a list of the information for the fields that have this attribute.
+     */
+    public synchronized List<FieldInfo> getFieldInfo(FieldInfo.Attribute attr) {
+        List<FieldInfo> ret = new ArrayList<FieldInfo>();
+        for(FieldInfo fi : idToInfo.values()) {
+            if(fi.hasAttribute(attr)) {
+                ret.add(fi);
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Gets an array for the IDs of the fields that have all of the given attributes.
+     *
+     * @param attrs the attributes that we wish the fields to have
+     * @return an array that is as wide as the number of fields. If this array
+     * has a 1 in the <em>i</em><sup>th</sup> position, then the field with ID
+     * <em>i</em> has all of these attributes.
+     */
+    public synchronized int[] getFieldArray(EnumSet<FieldInfo.Attribute> attrs) {
+        int[] ret = new int[size() + 1];
+        ret[0] = 1;
+        for(FieldInfo fi : idToInfo.values()) {
+            if(fi.getAttributes().containsAll(attrs)) {
                 ret[fi.getID()] = 1;
             }
         }
         return ret;
     }
 
-    public synchronized List<FieldInfo> getVectoredFieldInfo() {
-        List<FieldInfo> ret =
-                new ArrayList<FieldInfo>();
-        for(Iterator i = idToInfo.values().iterator(); i.hasNext();) {
-            FieldInfo fi = (FieldInfo) i.next();
-            if(fi.hasAttribute(FieldInfo.Attribute.VECTORED)) {
+    /**
+     * Gets a list of the information for the fields that have all of the given
+     * attributes.
+     *
+     * @param attrs the attributes that we wish the fields to have
+     * @return a list of the information for the fields that have all of these
+     * attributes.
+     */
+    public synchronized List<FieldInfo> getFieldInfo(EnumSet<FieldInfo.Attribute> attrs) {
+        List<FieldInfo> ret = new ArrayList<FieldInfo>();
+        for(FieldInfo fi : idToInfo.values()) {
+            if(fi.getAttributes().containsAll(attrs)) {
                 ret.add(fi);
             }
         }
@@ -276,8 +318,7 @@ public class MetaFile implements Iterable<FieldInfo> {
         }
 
         int[] ret = new int[size() + 1];
-        for(int i = 0; i < fieldNames.length;
-                i++) {
+        for(int i = 0; i < fieldNames.length; i++) {
             if(fieldNames[i] == null) {
                 ret[0] = 1;
                 continue;
@@ -464,6 +505,17 @@ public class MetaFile implements Iterable<FieldInfo> {
      * Gets the information associated with a number of field names.
      */
     public Collection<FieldInfo> getFieldInfo(String[] names) {
+        Set<FieldInfo> ret = new HashSet<FieldInfo>();
+        for(String name : names) {
+            ret.add(getFieldInfo(name));
+        }
+        return ret;
+    }
+
+    /**
+     * Gets the information associated with a number of field names.
+     */
+    public Collection<FieldInfo> getFieldInfo(Collection<String> names) {
         Set<FieldInfo> ret = new HashSet<FieldInfo>();
         for(String name : names) {
             ret.add(getFieldInfo(name));

@@ -48,7 +48,12 @@ public class Util {
 
     public static File getTempFile(File path, String prefix,
             String suffix) throws java.io.IOException {
-        return File.createTempFile(prefix, suffix, path);
+        File ret = File.createTempFile(prefix, suffix, path);
+        
+        //
+        // Make sure we clean up temp files when we're done.
+        ret.deleteOnExit();
+        return ret;
     }
 
     public static int[] addExpand(int[] a, int n, int x) {

@@ -23,22 +23,13 @@
  */
 package com.sun.labs.minion.engine;
 
-import com.sun.labs.minion.Document;
-import com.sun.labs.minion.Posting;
-import com.sun.labs.minion.SearchEngineException;
-import com.sun.labs.minion.SimpleIndexer;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.*;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import java.io.PrintWriter;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -188,7 +179,7 @@ public class DocumentImpl implements Document {
             return;
         }
         List<FieldInfo> vfs =
-                p.getPartitionManager().getMetaFile().getVectoredFieldInfo();
+                p.getPartitionManager().getMetaFile().getFieldInfo(FieldInfo.Attribute.VECTORED);
         List<Posting> lp = getPostings(dke, 0);
         if(lp != null) {
             vectoredFields.put(null, lp);
