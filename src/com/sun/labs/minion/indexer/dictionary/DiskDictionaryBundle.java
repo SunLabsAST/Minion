@@ -871,6 +871,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
             logger.fine(String.format(" Merging %s", type));
 
             try {
+//                if(type == Type.UNCASED_TOKENS && mergeState.info.getName().equals("original-text")) {
+//                    Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINE);
+//                }
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                         encoder,
                         mDicts,
@@ -880,6 +883,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         fieldDictOut,
                         mergeState.partOut.getPostingsOutput(),
                         true);
+//                Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.INFO);
             } catch(RuntimeException ex) {
                 logger.log(Level.SEVERE, String.format("Exception merging %s of field %s",
                         type, mergeState.info.getName()));

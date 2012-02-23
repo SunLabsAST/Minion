@@ -27,6 +27,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
@@ -34,7 +35,6 @@ import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.*;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.util.LabsLogFormatter;
-import com.sun.labs.util.NanoWatch;
 import java.util.*;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -67,6 +67,23 @@ public class PostTest {
                 + "The p and f options may be specified multiple times,"
                 + "if so desired.");
     }
+    
+    public static String toString(int[] a, int[] b) {
+        StringBuilder s = new StringBuilder(a.length * 4);
+        s.append('[');
+        int prev = 0;
+        for(int i = 0; i < a.length && i < b.length; i++) {
+            if(i > 0) {
+                s.append(", ");
+            }
+            s.append('<').append(a[i] - prev).append(',').append(a[i]).append(',').append(b[i]).append('>');
+            
+            prev = a[i];
+        }
+        return s.toString();
+    }
+
+
 
     public static void main(String[] args) throws java.io.IOException, SearchEngineException {
 
@@ -159,7 +176,7 @@ public class PostTest {
                 (SearchEngineImpl) com.sun.labs.minion.SearchEngineFactory.getSearchEngine(indexDir);
         PartitionManager pm = engine.getManager();
         
-        logger.info(String.format("Opened index"));
+        logger.info(String.format("Opened index with %d docs", engine.getNDocs()));
 
         //
         // The partitions.
@@ -177,8 +194,6 @@ public class PostTest {
             }
         }
 
-        int nEntries = 1;
-        
         logger.info(String.format("Processing partitions %s", parts));
 
         //
@@ -203,16 +218,25 @@ public class PostTest {
         //
         // Loop over the partitions.
         for(DiskPartition part : parts) {
+            
+            System.out.format("Processing %s %d docs\n", part, part.getNDocs());
 
             for(FieldInfo fi : doFields) {
 
-                System.out.println(String.format("Processing %s %s", part, fi.getName()));
+                System.out.println(String.format(" Field %s", fi.getName()));
 
                 Iterator termIter;
                 DiskField df = ((InvFileDiskPartition) part).getDF(fi);
 
+                int nEntries = 1;
+
                 if(fullDict) {
-                    termIter = df.getTermDictionary(caseSensitive).iterator();
+                    DiskDictionary dd = df.getTermDictionary(caseSensitive);
+                    if(dd == null) {
+                        System.out.format("No dictionary for %s?\n", fi.getName());
+                        continue;
+                    }
+                    termIter = dd.iterator();
                 } else {
                     List<QueryEntry> el = new ArrayList<QueryEntry>();
                     for(int j = gopt.optInd; j < args.length; j++) {
@@ -228,7 +252,7 @@ public class PostTest {
                 while(termIter.hasNext()) {
 
                     if(quiet && nEntries % 50000 == 0) {
-                        System.out.println("Processed: " + nEntries);
+                        System.out.println("  Processed: " + nEntries);
                     }
                     nEntries++;
 
@@ -236,7 +260,7 @@ public class PostTest {
                     QueryEntry e = (QueryEntry) termIter.next();
                     
                     if(!quiet) {
-                        System.out.format(" %s %d docs\n", e.getName(), e.getN());
+                        System.out.format("  %s %d docs\n", e.getName(), e.getN());
                     }
                     
                     int nDocs = e.getN();
@@ -247,14 +271,18 @@ public class PostTest {
                     int[] offSkipTable = null;
                     PostingsIterator pi = e.iterator(feat);
                     
+                    if(pi == null) {
+                        continue;
+                    }
+
                     if(pi instanceof PositionPostings.CompressedIterator) {
                         idSkipTable = ((PositionPostings.CompressedIterator) pi).getSkipID();
                         offSkipTable = ((PositionPostings.CompressedIterator) pi).getSkipIDOffsets();
                     }
 
-                    if(pi == null) {
-                        continue;
-                    }
+//                    logger.info(String.format("idSkipTable: %s", Arrays.toString(idSkipTable)));
+//                    logger.info(String.format("offSkipTable: %s", Arrays.toString(offSkipTable)));
+//                    logger.info(String.format("postings:\n%s", ((PositionPostings) e.getPostings()).toString()));
 
 
                     int n = 0;
@@ -279,6 +307,9 @@ public class PostTest {
                         ex.printStackTrace(System.out);
                         continue termLoop;
                     }
+                    
+//                    logger.info(String.format("docs & skip pos: %s", 
+//                            toString(docs, idSkipPos)));
 
                     pi.reset();
                     
@@ -299,7 +330,7 @@ public class PostTest {
 
                     if(n == 0) {
                         if(!quiet) {
-                            System.out.println(" No docs");
+                            System.out.println("  No docs");
                         }
                         continue termLoop;
                     }
@@ -313,12 +344,12 @@ public class PostTest {
                             if(!pi.findID(docs[pos])) {
                                 if(!headerPrinted) {
                                     if(quiet) {
-                                        System.out.println("Problem with term: " + e);
+                                        System.out.println("   Problem with term: " + e);
                                     }
-                                    System.out.println("  Known present docs");
+                                    System.out.println("    Known present docs");
                                     headerPrinted = true;
                                 }
-                                System.out.println(" BAD:  " + docs[pos]);
+                                System.out.println("     BAD:  " + docs[pos]);
                             } else {
                                 if(getWords) {
                                     ((PostingsIteratorWithPositions) pi).getPositions();
@@ -342,24 +373,30 @@ public class PostTest {
                                     if(pi.findID(docs[pos] + 1)) {
                                         if(!headerPrinted) {
                                             if(quiet) {
-                                                System.out.format("Problem with term: %s\n", e);
+                                                System.out.format("   Problem with term: %s\n", e);
                                             }
-                                            System.out.println("  Known absent docs");
+                                            System.out.println("    Known absent docs");
                                             headerPrinted = true;
                                         }
-                                        System.out.println(" BAD:  " + docs[pos]);
+                                        System.out.println("     BAD:  " + docs[pos]);
                                     }
                                 }
                             }
                         } catch(Exception ex) {
-                            System.out.format("Error finding absent documents for %s doc: %d\n",
+                            System.out.format("    Error finding absent documents for %s doc: %d\n",
                                     e, docs[pos]);
                             ex.printStackTrace(System.out);
                             continue termLoop;
                         }
                     }
                 }
+                
+                if(quiet && nEntries % 50000 != 0) {
+                    System.out.println("  Processed: " + nEntries);
+                }
+
             }
+            
         }
         
         engine.close();

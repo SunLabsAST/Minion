@@ -392,6 +392,13 @@ public class PositionPostings implements Postings {
         PositionPostings other = (PositionPostings) p;
         other.readPositions();
         other.decodeSkipTable();
+        
+//        if(logger.isLoggable(Level.FINE)) {
+//            logger.fine(String.format("Other: nIDs: %d nSkips: %d skipTableOff: %d\n%s", 
+//                    other.nIDs,
+//                    other.nSkips, other.skipTableOffset,
+//                    other.idBuff.toString(Buffer.Portion.ALL, Buffer.DecodeMode.BYTE_ENCODED)));
+//        }
 
         //
         // Check for empty postings on the other side.
@@ -434,14 +441,22 @@ public class PositionPostings implements Postings {
         nb += ((WriteableBuffer) idBuff).byteEncode(firstFreq);
         nb += ((WriteableBuffer) idBuff).byteEncode(mPosnOffset - lastPosnOffset);
         adj = nb - adj;
+        
+//        if(logger.isLoggable(Level.FINE)) {
+//            logger.fine(String.format("firstID: %d newID: %d adj: %d", firstID, newID, adj));
+//        }
 
         //
-        // A quick digression about skips: if we don't have any skips yet, and 
-        // the list that we're appending doesn't have any, but we'll exceed the 
-        // skip size with this addition, then we'll go ahead and put a skip to
-        // the start of the second list, so that we'll build up skips over time.
-        if(nSkips == 0 && other.nSkips == 0 && nIDs + other.nIDs>= skipSize) {
-            addSkip(newID, idOffset, mPosnOffset);
+        // A quick digression about skips: if the other postings don't have 
+        // any skips, but adding the documents will take these postings past
+        // a skip boundary (estimated), then we should add a skip.
+        if(other.nSkips == 0 && nIDs > 0) {
+            int csm = nSkips % skipSize;
+            int osm = (nIDs + other.nIDs) % skipSize;
+            if(osm > csm) {
+//                logger.fine(String.format("Adding a skip because it got big"));
+                addSkip(newID, idOffset, mPosnOffset);
+            }
         }
 
         //
@@ -466,7 +481,7 @@ public class PositionPostings implements Postings {
         nIDs += other.nIDs;
         
         if(other.nSkips > 0) {
-
+            
             //
             // Now we need to fix up the skip table.  The skip postions in
             // the other entry had the length of the initial part of the
@@ -491,7 +506,25 @@ public class PositionPostings implements Postings {
                        other.skipIDOffsets[i] - other.dataStart + idOffset + adj, 
                        other.skipPosnOffsets[i] + mPosnOffset);
             }
+            
+        } else {
+//            logger.fine(String.format("Adding no skips"));
         }
+        
+//        if(logger.isLoggable(Level.FINE)) {
+//            if(logger.isLoggable(Level.FINE)) {
+//                logger.fine(String.format("Added %d skips:\nids: %s\noffsets: %s", other.nSkips, Arrays.toString(skipID),
+//                        Arrays.toString(skipIDOffsets)));
+//            }
+//
+//            logger.fine(String.format("after append nSkips: %d\nids: %s\noffsets: %s\nidBuff:\n%s",
+//                    nSkips,
+//                    Arrays.toString(skipID),
+//                    Arrays.toString(skipIDOffsets),
+//                    idBuff.toString(Buffer.Portion.BEGINNING_TO_POSITION,
+//                    Buffer.DecodeMode.BYTE_ENCODED)));
+//        }
+
     }
 
     @Override

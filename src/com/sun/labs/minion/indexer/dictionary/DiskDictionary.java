@@ -1435,7 +1435,12 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 // building.
                 top.curr.readPostings();
                 if(appendPostings) {
+//                    if(logger.isLoggable(Level.FINE) && me.getName().equals("addition")) {
+//                        Logger.getLogger(PositionPostings.class.getName()).setLevel(Level.FINE);
+//                        logger.fine(String.format("Merging from %s", dicts[top.index].getPartition()));
+//                    }
                     me.append(top.curr, starts[top.index], postIDMaps[top.index]);
+//                    Logger.getLogger(PositionPostings.class.getName()).setLevel(Level.INFO);
                 } else {
                     me.merge(top.curr, postIDMaps[top.index]);
                 }
