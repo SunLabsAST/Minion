@@ -331,7 +331,6 @@ public class PostTest implements Runnable {
 
         String flags = "d:f:p:lo:aqw";
         String indexDir = null;
-        boolean fullDict = false;
         boolean allParts = false;
         boolean quiet = false;
         boolean getWords = false;
@@ -375,10 +374,6 @@ public class PostTest implements Runnable {
                     }
                     break;
 
-                case 'l':
-                    fullDict = true;
-                    break;
-                    
                 case 'o':
                     outputDir = new File(gopt.optArg);
                     if(!outputDir.exists()) {
@@ -393,6 +388,7 @@ public class PostTest implements Runnable {
                         usage();
                         return;
                     }
+                    break;
 
                 case 'a':
                     allParts = true;
@@ -442,6 +438,8 @@ public class PostTest implements Runnable {
                 }
             }
         }
+        
+        logger.info(String.format("Using parts: %s", parts));
         
         //
         // Get the fields of interest.
@@ -493,10 +491,17 @@ public class PostTest implements Runnable {
             docsIterated += pt.docsIterated;
         }
         
-        System.out.format("Iterated %,d docs in %,.2fms %,.2fms/docs\n", docsIterated, iw.getTimeMillis(), 
-                iw.getTimeMillis() / docsIterated);
-        System.out.format("Found %,d docs in %,.2fms. Average findID time %,.2fms\n", 
-                fw.getClicks(), fw.getTimeMillis(), fw.getAvgTimeMillis());
+        System.out.format("Iterated %,d docs in %,.2fms %,.2fdocs/ms."
+                + " Average iteration time %,.2fns/docs\n", 
+                          docsIterated, 
+                          iw.getTimeMillis(),
+                          docsIterated / iw.getTimeMillis(), 
+                iw.getTimeNanos() / (double) docsIterated);
+        System.out.format("Found %,d docs in %,.2fms. %,.2f finds/ms. "
+                + "Average findID time %,.2fns\n", 
+                fw.getClicks(), fw.getTimeMillis(), 
+                fw.getClicks() / fw.getTimeMillis(),
+                fw.getAvgTime());
         
         engine.close();
     }

@@ -26,6 +26,10 @@ package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
+import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.PartitionManager;
+import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -36,10 +40,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
-import com.sun.labs.minion.engine.SearchEngineImpl;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.partition.PartitionManager;
-import com.sun.labs.minion.util.Getopt;
 
 /**
  *
