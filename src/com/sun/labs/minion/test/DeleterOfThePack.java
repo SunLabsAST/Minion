@@ -30,9 +30,14 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.util.SimpleLabsLogFormatter;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,7 +45,9 @@ import java.util.logging.Logger;
 /**
  * A class to test deletions in partitions and how the deletions affect merges.
  */
-public class DelMergeTest {
+public class DeleterOfThePack {
+    
+    private static final Logger logger = Logger.getLogger(DeleterOfThePack.class.getName());
 
     public static void deleter(DiskPartition dp, List<Integer> docs) {
         for(Integer doc : docs) {
@@ -69,8 +76,8 @@ public class DelMergeTest {
 
         //
         // Set up the log.
-        Logger logger = Logger.getLogger("");
-        for(Handler h : logger.getHandlers()) {
+        Logger rl = Logger.getLogger("");
+        for(Handler h : rl.getHandlers()) {
             h.setFormatter(new SimpleLabsLogFormatter());
         }
 
@@ -139,7 +146,8 @@ public class DelMergeTest {
                 }
             }
         }
-        logger.info("Partitions: " + parts);
+        
+        logger.info(String.format("Partitions: %s", parts));
 
         //
         // Delete some docs.
@@ -150,14 +158,21 @@ public class DelMergeTest {
 
         //
         // Merge them.
-        PartitionManager.Merger merger = null;
+        PartitionManager.Merger merger;
         merger = pm.getMerger(parts);
         if(merger == null) {
-            logger.severe("Could not get merger for " + parts);
+            logger.log(Level.SEVERE, String.format("Could not get merger for %s", parts));
             return;
         }
 
         DiskPartition mp = merger.merge();
+        
+        if(mp == null) {
+            logger.log(Level.SEVERE, String.format("Merge failed"));
+            for(Deletion del : deletions) {
+                del.print(System.out);
+            }
+        }
 
         engine.close();
     }
@@ -181,9 +196,19 @@ public class DelMergeTest {
             Random rand = new Random();
             int n = rand.nextInt((int) (proportion * part.getMaxDocumentID())) + 1;
             dels = new int[n];
+            logger.info(String.format("Deleting %d from %s", n, part));
             for(int i = 0; i < n; i++) {
                 dels[i] = rand.nextInt(part.getMaxDocumentID()) + 1;
                 part.deleteDocument(dels[i]);
+            }
+        }
+
+        private void print(PrintStream out) {
+            out.println(part.getPartitionNumber());
+            out.println(dels.length);
+            for(int i = 0; i < dels.length; i++) {
+                out.print(dels[i]);
+                out.print(' ');
             }
         }
     }

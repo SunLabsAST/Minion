@@ -2359,14 +2359,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         @Override
         public void run() {
             
+            newDP = null;
+
             try {
                 localMergeLock.tradeLock(parent, Thread.currentThread());
             } catch(FileLockException fle) {
                 logger.severe("Failed to trade merge lock");
                 return;
             }
-
-            newDP = null;
 
             //
             // Do the merge.
@@ -2388,8 +2388,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             }
 
             if(newDP != null) {
-
-                boolean releaseNeeded = false;
 
                 try {
                     activeFile.lock();
