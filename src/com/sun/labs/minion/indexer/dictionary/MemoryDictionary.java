@@ -42,6 +42,7 @@ import com.sun.labs.minion.indexer.partition.PartitionStats;
 
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Util;
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -551,17 +552,52 @@ public class MemoryDictionary implements Dictionary {
         protected Iterator iter;
 
         protected boolean actualOnly;
+        
+        private ReadableBuffer deletionMap;
+        
+        private QueryEntry curr;
+        
+        private boolean returnCurr;
 
         public MemoryDictionaryIterator() {
             iter = map.values().iterator();
         }
 
+        @Override
+        public void setDeletionMap(ReadableBuffer deletionMap) {
+            this.deletionMap = deletionMap;
+        }
+
         public boolean hasNext() {
-            return iter.hasNext();
+            if(!iter.hasNext()) {
+                return false;
+            }
+            if(returnCurr) {
+                return true;
+            }
+            while(iter.hasNext()) {
+                curr = (QueryEntry) iter.next();
+                if(deletionMap != null && deletionMap.test(curr.getID())) {
+                    continue;
+                }
+                returnCurr = true;
+                return true;
+            }
+            return false;
         }
 
         public QueryEntry next() {
-            return (QueryEntry) iter.next();
+            if(!returnCurr) {
+                if(hasNext()) {
+                    returnCurr = false;
+                    return curr;
+                } else {
+                    throw new java.util.NoSuchElementException("No more entries");
+                }
+            } else {
+                returnCurr = false;
+                return curr;
+            }
         }
 
         public void remove() {

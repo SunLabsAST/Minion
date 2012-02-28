@@ -26,6 +26,7 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import java.util.Iterator;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
 
 /**
  * An interface for iterators for a dictionary.
@@ -69,5 +70,12 @@ public interface DictionaryIterator extends Iterator<QueryEntry> {
      * use unbuffered postings.
      */
     public void setUnbufferedPostings(boolean unbufferedPostings);
+
+    /**
+     * Sets a map of the IDs that have been removed from a dictionary and 
+     * should therefore not be returned by the iterator.
+     * @param deletionMap 
+     */
+    void setDeletionMap(ReadableBuffer deletionMap);
 
 } // DictionaryIterator

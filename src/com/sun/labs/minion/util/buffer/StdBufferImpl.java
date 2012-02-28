@@ -24,6 +24,8 @@
 
 package com.sun.labs.minion.util.buffer;
 
+import java.util.logging.Logger;
+
 
 /**
  * A abstract class that implements most of the
@@ -35,6 +37,8 @@ package com.sun.labs.minion.util.buffer;
  * @see ReadableBuffer
  */
 public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
+    
+    private static final Logger logger = Logger.getLogger(StdBufferImpl.class.getName());
 
     /**
      * The maximum values that can be encoded using a given number of

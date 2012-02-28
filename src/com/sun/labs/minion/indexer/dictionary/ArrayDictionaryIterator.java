@@ -25,6 +25,7 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
 
 /**
  * A dictionary iterator for an array of terms.
@@ -42,6 +43,8 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
     private int begin;
 
     private int end;
+    
+    private ReadableBuffer deletionMap;
 
     public ArrayDictionaryIterator(DiskDictionary dd, QueryEntry[] entries) {
         this(dd, entries, 0, entries != null ? entries.length : 0);
@@ -66,6 +69,11 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
             this.begin = begin;
             this.end = end;
         }
+    }
+
+    @Override
+    public void setDeletionMap(ReadableBuffer deletionMap) {
+        this.deletionMap = deletionMap;
     }
 
     // Implementation of java.util.Iterator
@@ -117,6 +125,12 @@ public class ArrayDictionaryIterator implements DictionaryIterator {
             while(curr < end) {
                 nextEntry = (QueryEntry) entries[curr++].getEntry();
                 if(nextEntry != null) {
+                    
+                    //
+                    // Skip entries with deleted IDs.
+                    if(deletionMap != null && deletionMap.test(nextEntry.getID())) {
+                        continue; 
+                    }
                     break;
                 }
             }
