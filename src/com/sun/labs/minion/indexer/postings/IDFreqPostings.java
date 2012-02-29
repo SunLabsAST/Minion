@@ -246,10 +246,12 @@ public class IDFreqPostings extends IDPostings {
             np += toadd;
         }
 
-        nIDs = np;
-        ids = tid;
-        lastID = ids[np - 1];
-        freqs = tf;
+        if(np > 0) {
+            nIDs = np;
+            ids = tid;
+            lastID = ids[np - 1];
+            freqs = tf;
+        }
     }
 
     /**

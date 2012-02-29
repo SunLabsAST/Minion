@@ -32,7 +32,10 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
-import com.sun.labs.minion.indexer.postings.*;
+import com.sun.labs.minion.indexer.postings.PositionPostings;
+import com.sun.labs.minion.indexer.postings.PostingsIterator;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.NanoWatch;
@@ -182,7 +185,7 @@ public class PostTest implements Runnable {
                     iw.stop();
                     docsIterated += nDocs;
                 } catch(Exception ex) {
-                    output.format("Error iterating through entry %s\n", e);
+                    output.format("Error iterating through entry %s %d\n", e.getName(), e.getN());
                     ex.printStackTrace(output);
                     continue termLoop;
                 }
@@ -278,9 +281,9 @@ public class PostTest implements Runnable {
                 output.println("  Processed: " + nEntries);
                 output.flush();
             }
-            System.out.format("Finished %s in %s\n", fi.getName(), part);
+            logger.info(String.format("Finished %s in %s\n", fi.getName(), part));
         }
-        System.out.format("Finished %s\n", part);
+        logger.info(String.format("Finished %s\n", part));
         output.flush();
         latch.countDown();
     }
@@ -464,7 +467,7 @@ public class PostTest implements Runnable {
         for(int i = 0; i < postTest.length; i++) {
             DiskPartition part = parts.get(i);
             File outFile = new File(outputDir, String.format("%06d.out", part.getPartitionNumber()));
-            System.out.format("New output file %s\n", outFile);
+            logger.info(String.format("New output file %s\n", outFile));
             outputs[i] = new PrintWriter(new FileWriter(outFile));
             postTest[i] = new PostTest(engine, part, doFields, terms, caseSensitive, getWords, quiet, outputs[i], latch);
             partThreads[i] = new Thread(postTest[i]);
@@ -491,17 +494,17 @@ public class PostTest implements Runnable {
             docsIterated += pt.docsIterated;
         }
         
-        System.out.format("Iterated %,d docs in %,.2fms %,.2fdocs/ms."
+        logger.info(String.format("Iterated %,d docs in %,.2fms %,.2fdocs/ms."
                 + " Average iteration time %,.2fns/docs\n", 
                           docsIterated, 
                           iw.getTimeMillis(),
                           docsIterated / iw.getTimeMillis(), 
-                iw.getTimeNanos() / (double) docsIterated);
-        System.out.format("Found %,d docs in %,.2fms. %,.2f finds/ms. "
+                iw.getTimeNanos() / (double) docsIterated));
+        logger.info(String.format("Found %,d docs in %,.2fms. %,.2f finds/ms. "
                 + "Average findID time %,.2fns\n", 
                 fw.getClicks(), fw.getTimeMillis(), 
                 fw.getClicks() / fw.getTimeMillis(),
-                fw.getAvgTime());
+                fw.getAvgTime()));
         
         engine.close();
     }

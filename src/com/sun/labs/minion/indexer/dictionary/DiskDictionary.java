@@ -1439,10 +1439,22 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 //                        Logger.getLogger(PositionPostings.class.getName()).setLevel(Level.FINE);
 //                        logger.fine(String.format("Merging from %s", dicts[top.index].getPartition()));
 //                    }
-                    me.append(top.curr, starts[top.index], postIDMaps[top.index]);
+                    try {
+                        me.append(top.curr, starts[top.index], postIDMaps[top.index]);
+                    } catch(RuntimeException ex) {
+                        logger.log(Level.SEVERE, String.format("Exception appending entry %s from %s",
+                                me.getName(), dicts[top.index].getPartition()));
+                        throw (ex);
+                    }
 //                    Logger.getLogger(PositionPostings.class.getName()).setLevel(Level.INFO);
                 } else {
-                    me.merge(top.curr, postIDMaps[top.index]);
+                    try {
+                        me.merge(top.curr, postIDMaps[top.index]);
+                    } catch(RuntimeException ex) {
+                        logger.log(Level.SEVERE, String.format("Exception merging entry %s from %s",
+                                me.getName(), dicts[top.index].getPartition()));
+                        throw (ex);
+                    }
                 }
 
                 //
@@ -1476,29 +1488,27 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 top = h.peek();
             }
 
-            me.setUsed(true);
-            
             //
             // Write the postings for the newly merged entry.
             try {
-            if(me.writePostings(postOut, null) == true) {
+                if(me.writePostings(postOut, null) == true) {
 
-                //
-                // Add the new entry to the dictionary that we're building.
+                    //
+                    // Add the new entry to the dictionary that we're building.
                     dictOut.write(me);
-            } else {
-                //
-                // Remember what we said about not writing the entry to the 
-                // merged dictionary?  This is where we notice that we 
-                // don't have any postings for a dictionary entry and that we 
-                // therefore won't write it to the dictionary.  So, we need
-                // to remove whatever mappings we made.  Life is hard.
-                for(int i = 0; i < mapped.length; i++) {
-                    if(mapped[i] > 0) {
-                        idMaps[i][mapped[i]] = -1;
+                } else {
+                    //
+                    // Remember what we said about not writing the entry to the 
+                    // merged dictionary?  This is where we notice that we 
+                    // don't have any postings for a dictionary entry and that we 
+                    // therefore won't write it to the dictionary.  So, we need
+                    // to remove whatever mappings we made.  Life is hard.
+                    for(int i = 0; i < mapped.length; i++) {
+                        if(mapped[i] > 0) {
+                            idMaps[i][mapped[i]] = -1;
+                        }
                     }
                 }
-            }
             } catch(java.lang.ArithmeticException ex) {
                 logger.severe(String.format(
                         "Arithmetic exception encoding postings for entry: %s", me.getName()));

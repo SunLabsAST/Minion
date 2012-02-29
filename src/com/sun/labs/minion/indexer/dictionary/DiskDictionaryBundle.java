@@ -856,7 +856,17 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     for(int i = 0; i < mDicts.length; i++) {
                         bgDicts[i] = (DiskBiGramDictionary) mDicts[i];
                     }
-                    DiskBiGramDictionary.merge(mergeState, bgDicts);
+                    try {
+                        DiskBiGramDictionary.merge(mergeState, bgDicts);
+                    } catch(RuntimeException ex) {
+                        logger.log(Level.SEVERE, String.format(
+                                "Exception merging %s of field %s using bigrams from %s",
+                                type, 
+                                mergeState.info.getName(), 
+                                entryIDMaps[Type.CASED_TOKENS.ordinal()] != null ? Type.CASED_TOKENS : Type.UNCASED_TOKENS));
+                        throw (ex);
+
+                    }
                     continue;
 
                 case SAVED_VALUE_BIGRAMS:
@@ -864,7 +874,14 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     for(int i = 0; i < mDicts.length; i++) {
                         bgDicts[i] = (DiskBiGramDictionary) mDicts[i];
                     }
-                    DiskBiGramDictionary.merge(mergeState, bgDicts);
+                    try {
+                        DiskBiGramDictionary.merge(mergeState, bgDicts);
+                    } catch(RuntimeException ex) {
+                        logger.log(Level.SEVERE, String.format("Exception merging %s of field %s",
+                                type, mergeState.info.getName()));
+                        throw (ex);
+
+                    }
                     continue;
             }
 

@@ -26,18 +26,20 @@ package com.sun.labs.minion.test;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.Marshaller;
+import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.util.SimpleLabsLogFormatter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,7 +48,7 @@ import java.util.logging.Logger;
  * A class to test deletions in partitions and how the deletions affect merges.
  */
 public class DeleterOfThePack {
-    
+
     private static final Logger logger = Logger.getLogger(DeleterOfThePack.class.getName());
 
     public static void deleter(DiskPartition dp, List<Integer> docs) {
@@ -59,12 +61,13 @@ public class DeleterOfThePack {
      * @param args the command line arguments
      */
     public static void main(String[] args) throws SearchEngineException, FileNotFoundException, IOException {
-        String flags = "ad:p:r:x:";
+        String flags = "ad:o:mp:r:x:";
         String indexDir = null;
-        String ddmFile = null;
         boolean allParts = false;
         double proportion = 0.05;
+        boolean doMerge = false;
         URL cmFile = null;
+        File outputDir = new File(System.getProperty("user.dir"));
         Getopt gopt = new Getopt(args, flags);
         int c;
         if(args.length == 0) {
@@ -81,6 +84,9 @@ public class DeleterOfThePack {
             h.setFormatter(new SimpleLabsLogFormatter());
         }
 
+        Logger dpl = Logger.getLogger(DiskPartition.class.getName());
+        dpl.setLevel(Level.FINER);
+
         while((c = gopt.getopt()) != -1) {
             switch(c) {
 
@@ -91,22 +97,43 @@ public class DeleterOfThePack {
                 case 'd':
                     indexDir = gopt.optArg;
                     break;
+
+                case 'm':
+                    doMerge = true;
+                    break;
+
+                case 'o':
+                    outputDir = new File(gopt.optArg);
+                    if(!outputDir.exists()) {
+                        if(!outputDir.mkdirs()) {
+                            logger.log(Level.SEVERE, String.format("Unable to make output directory %s", outputDir));
+                            usage();
+                            return;
+                        }
+                    }
+                    if(!outputDir.isDirectory()) {
+                        logger.log(Level.SEVERE, String.format("Output directory %s is not a directory", outputDir));
+                        usage();
+                        return;
+                    }
+                    break;
+
                 case 'p':
                     try {
                         partNums.add(new Integer(gopt.optArg));
                     } catch(NumberFormatException nfe) {
                         logger.severe(String.format("Bad partition number %s",
-                                                    gopt.optArg));
+                                gopt.optArg));
                         return;
                     }
                     break;
-                    
+
                 case 'r':
                     try {
                         proportion = Double.parseDouble(gopt.optArg);
                     } catch(NumberFormatException nfe) {
                         logger.severe(String.format("Bad proportion %s",
-                                                    gopt.optArg));
+                                gopt.optArg));
                         return;
                     }
                     break;
@@ -117,15 +144,14 @@ public class DeleterOfThePack {
             }
         }
 
-        if(indexDir == null || ddmFile == null) {
+        if(indexDir == null) {
             usage();
             return;
         }
 
         //
         // Get our engine.
-        SearchEngineImpl engine = (SearchEngineImpl) SearchEngineFactory.
-                getSearchEngine(indexDir, cmFile);
+        SearchEngineImpl engine = (SearchEngineImpl) SearchEngineFactory.getSearchEngine(indexDir, cmFile);
 
         //
         // Get the partitions.
@@ -146,7 +172,7 @@ public class DeleterOfThePack {
                 }
             }
         }
-        
+
         logger.info(String.format("Partitions: %s", parts));
 
         //
@@ -156,21 +182,30 @@ public class DeleterOfThePack {
             deletions[i] = new Deletion(parts.get(i), proportion);
         }
 
-        //
-        // Merge them.
-        PartitionManager.Merger merger;
-        merger = pm.getMerger(parts);
-        if(merger == null) {
-            logger.log(Level.SEVERE, String.format("Could not get merger for %s", parts));
-            return;
-        }
+        if(doMerge) {
+            //
+            // Merge them.
+            PartitionManager.Merger merger;
+            merger = pm.getMerger(parts);
+            if(merger == null) {
+                logger.log(Level.SEVERE, String.format("Could not get merger for %s", parts));
+                return;
+            }
 
-        DiskPartition mp = merger.merge();
-        
-        if(mp == null) {
-            logger.log(Level.SEVERE, String.format("Merge failed"));
+            DiskPartition mp = merger.merge();
+
+            if(mp == null) {
+                logger.log(Level.SEVERE, String.format("Merge failed"));
+                for(Deletion del : deletions) {
+                    del.print(outputDir);
+                }
+            }
+        } else {
+            
+            //
+            // Always print the deletions when we don't do a merge.
             for(Deletion del : deletions) {
-                del.print(System.out);
+                del.print(outputDir);
             }
         }
 
@@ -179,15 +214,15 @@ public class DeleterOfThePack {
 
     private static void usage() {
         System.err.println(
-                "Usage: DelDuringMerge -d <indexDir> -f <del-during-merge file>");
+                "Usage: DeleterOfthePack -d <indexDir> -f <del-during-merge file>");
     }
-    
+
     private static class Deletion {
-        
+
         DiskPartition part;
-        
-        int[] dels;
-        
+
+        Set<Integer> dels;
+
         /**
          * Do random deletions.
          */
@@ -195,19 +230,25 @@ public class DeleterOfThePack {
             this.part = part;
             Random rand = new Random();
             int n = rand.nextInt((int) (proportion * part.getMaxDocumentID())) + 1;
-            dels = new int[n];
-            logger.info(String.format("Deleting %d from %s", n, part));
+            dels = new HashSet<Integer>(n);
             for(int i = 0; i < n; i++) {
-                dels[i] = rand.nextInt(part.getMaxDocumentID()) + 1;
-                part.deleteDocument(dels[i]);
+                dels.add(rand.nextInt(part.getMaxDocumentID()) + 1);
             }
+            logger.info(String.format("Deleting %d from %s", dels.size(), part));
+            for(Integer del : dels) {
+                part.deleteDocument(del);
+            }
+
         }
 
-        private void print(PrintStream out) {
+        private void print(File outputDir) throws IOException {
+            PrintWriter out = new PrintWriter(new FileWriter(
+                    new File(outputDir, 
+                    String.format("%07d.dels", part.getPartitionNumber()))));
             out.println(part.getPartitionNumber());
-            out.println(dels.length);
-            for(int i = 0; i < dels.length; i++) {
-                out.print(dels[i]);
+            out.println(dels.size());
+            for(Integer del : dels) {
+                out.print(del);
                 out.print(' ');
             }
         }

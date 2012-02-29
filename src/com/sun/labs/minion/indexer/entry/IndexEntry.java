@@ -78,31 +78,32 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
      */
     public boolean writePostings(PostingsOutput[] out, int[] idMap)
             throws java.io.IOException {
-        if(!used) {
-            return false;
-        }
-
+        
         if(post == null || post.getType() == Postings.Type.NONE) {
             return true;
         }
 
-        try {
-        //
-        // Possibly remap the data and get a buffer to write.
-        post.remap(idMap);
+        if(!used) {
+            return false;
+        }
 
-        //
-        // Set the elements of the term information, so that they can
-        // be encoded later.
-        n = post.getN();
-        maxFDT = post.getMaxFDT();
-        offset = new long[out.length];
-        size = new int[out.length];
-        post.write(out, offset, size);
-        return true;
-        } catch (ArithmeticException ex) {
+        try {
+            //
+            // Possibly remap the data and get a buffer to write.
+            post.remap(idMap);
+
+            //
+            // Set the elements of the term information, so that they can
+            // be encoded later.
+            n = post.getN();
+            maxFDT = post.getMaxFDT();
+            offset = new long[out.length];
+            size = new int[out.length];
+            post.write(out, offset, size);
+            return true;
+        } catch(ArithmeticException ex) {
             logger.log(Level.SEVERE, String.format("Error writing entry %s: %s", getName(), ex.getMessage()));
-            throw(ex);
+            throw (ex);
         }
     }
 
@@ -150,7 +151,10 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
 
         post.append(qe.post, start, idMap);
         n = post.getN();
-        used = true;
+        
+        //
+        // This entry was used if we actually added some postings.
+        used = n > 0;
     }
 
     public void merge(QueryEntry qe, int[] idMap) {
