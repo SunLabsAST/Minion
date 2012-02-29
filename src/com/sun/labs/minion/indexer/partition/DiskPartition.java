@@ -645,6 +645,8 @@ public class DiskPartition extends Partition implements Closeable {
             // The number of documents in each of the partitions, excluding
             // documents that have been deleted.
             mergeState.nUndel = new int[mergeState.partitions.length];
+            
+            StringBuilder provenance = new StringBuilder();
 
             //
             // We'll quickly build some stats that we need for pretty much
@@ -652,6 +654,13 @@ public class DiskPartition extends Partition implements Closeable {
             for(int i = 0; i < mergeState.partitions.length; i++) {
 
                 DiskPartition d = mergeState.partitions[i];
+                
+                //
+                // Build a provenance string.
+                if(i > 0) {
+                    provenance.append(' ');
+                }
+                provenance.append(d.partNumber);
 
                 //
                 // Get buffers for the postings from this partition.
@@ -700,8 +709,10 @@ public class DiskPartition extends Partition implements Closeable {
             docDictIDMaps[0][0] = mergeState.maxDocID;
 
             //
-            // Merge the document dictionaries.  We'll need to remap the
-            mergeState.partOut.getPartitionHeader().setDocDictOffset(fieldDictOut.position());
+            // Merge the document dictionaries.  We'll need to remap the IDs.
+            PartitionHeader mPartHeader = mergeState.partOut.getPartitionHeader();
+            mPartHeader.setDocDictOffset(fieldDictOut.position());
+            mPartHeader.setProvenance(String.format("merged %s", provenance.toString()));
             DiskDictionary.merge(pm.getIndexDir(),
                     new StringNameHandler(),
                            dicts,
@@ -815,14 +826,17 @@ public class DiskPartition extends Partition implements Closeable {
         return String.format("DP: %d", partNumber);
     }
 
+    @Override
     public void setCloseTime(long closeTime) {
         this.closeTime = closeTime;
     }
 
+    @Override
     public long getCloseTime() {
         return closeTime;
     }
 
+    @Override
     public void createRemoveFile() {
         try {
             removedFile.createNewFile();

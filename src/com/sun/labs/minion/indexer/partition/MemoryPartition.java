@@ -98,6 +98,7 @@ public abstract class MemoryPartition extends Partition {
         }
         
         PartitionHeader partHeader = partOut.getPartitionHeader();
+        partHeader.setProvenance("marshalled");
         partHeader.setPostingsChannelNames(getPostingsChannelNames());
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 

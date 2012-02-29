@@ -4,14 +4,12 @@ import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.IDMap;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.Renumber;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
-import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionHeader;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.util.FileLockException;
-import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
 import java.io.IOException;
@@ -21,15 +19,15 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * An abstract base class for partition outputs that handles some of the 
- * boring stuff.
+ * An abstract base class for partition outputs that handles some of the boring
+ * stuff.
  */
 public abstract class AbstractPartitionOutput implements PartitionOutput {
 
     private static final Logger logger = Logger.getLogger(AbstractPartitionOutput.class.getName());
-    
+
     private boolean longIndexingRun;
-    
+
     /**
      * The partition being output.
      */
@@ -44,12 +42,12 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      * A header for the partition being dumped.
      */
     protected PartitionHeader partitionHeader;
-    
+
     /**
      * The document keys for the partition that we're dumping.
      */
     protected Set<String> keys;
-    
+
     /**
      * The number of the partition that is being dumped.
      */
@@ -74,7 +72,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      * A postings ID map to use when dumping.
      */
     protected int[] postingsIDMap;
-    
+
     /**
      * The files where we're putting the postings.
      */
@@ -99,7 +97,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      * A buffer where deletions can be written.
      */
     protected WriteableBuffer deletionsBuffer;
-    
+
     private String name;
 
     private boolean started = false;
@@ -107,7 +105,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     public AbstractPartitionOutput(PartitionManager manager) throws IOException {
         this.partitionManager = manager;
     }
-    
+
     public AbstractPartitionOutput(File outputDir) throws IOException {
         partitionManager = new PartitionManager(outputDir);
     }
@@ -126,7 +124,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     public PartitionManager getPartitionManager() {
         return partitionManager;
     }
-    
+
     @Override
     public int startPartition(MemoryPartition partition) throws IOException {
         if(started) {
@@ -145,6 +143,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         return partitionNumber;
     }
 
+    @Override
     public int startPartition(String[] postingsChannelNames) throws IOException {
         if(started) {
             throw new IllegalStateException("Already outputting a partition, can't start another");
@@ -159,94 +158,115 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         }
         keys = null;
         return partitionNumber;
-        
+
     }
 
-
-            public void setPartitionNumber(int partitionNumber) {
+    @Override
+    public void setPartitionNumber(int partitionNumber) {
         this.partitionNumber = partitionNumber;
     }
 
+    @Override
     public void setKeys(Set<String> keys) {
         this.keys = new HashSet<String>(keys);
     }
 
+    @Override
     public WriteableBuffer getDeletionsBuffer() {
         return deletionsBuffer;
     }
 
+    @Override
     public int getMaxDocID() {
         return partitionHeader.getMaxDocID();
     }
 
+    @Override
     public int getNDocs() {
         return partitionHeader.getnDocs();
     }
 
+    @Override
     public DictionaryOutput getPartitionDictionaryOutput() {
         return partDictOut;
     }
 
+    @Override
     public PartitionHeader getPartitionHeader() {
         return partitionHeader;
     }
 
+    @Override
     public int getPartitionNumber() {
         return partitionNumber;
     }
 
+    @Override
     public File[] getPostingsFiles() {
         return postOutFiles;
     }
 
+    @Override
     public PostingsOutput[] getPostingsOutput() {
         return postOut;
     }
 
+    @Override
     public void setPostingsOutput(PostingsOutput[] postOut) {
         this.postOut = postOut;
     }
 
+    @Override
     public MemoryPartition getPartition() {
         return partition;
     }
 
+    @Override
     public WriteableBuffer getVectorLengthsBuffer() {
         return vectorLengthsBuffer;
     }
 
+    @Override
     public void setDictionaryEncoder(NameEncoder encoder) {
         this.encoder = encoder;
     }
 
+    @Override
     public NameEncoder getDictionaryEncoder() {
         return encoder;
     }
 
+    @Override
     public void setDictionaryIDMap(IDMap idMap) {
         this.idMap = idMap;
     }
 
+    @Override
     public IDMap getDictionaryIDMap() {
         return idMap;
     }
 
+    @Override
     public void setDictionaryRenumber(Renumber renumber) {
         this.renumber = renumber;
     }
 
+    @Override
     public Renumber getDictionaryRenumber() {
         return renumber;
     }
 
+    @Override
     public void setMaxDocID(int maxDocID) {
         partitionHeader.setMaxDocID(maxDocID);
     }
 
+    @Override
     public void setNDocs(int nDocs) {
         partitionHeader.setnDocs(nDocs);
     }
 
+    @Override
     public void setPostingsIDMap(int[] postingsIDMap) {
         this.postingsIDMap = postingsIDMap;
     }
@@ -264,7 +284,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     public void setLongIndexingRun(boolean longIndexingRun) {
         this.longIndexingRun = longIndexingRun;
     }
-    
+
     @Override
     public void flushVectorLengths() throws IOException {
         if(vectorLengthsBuffer.position() > 0) {
@@ -327,8 +347,6 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         vectorLengthsBuffer.clear();
         deletionsBuffer.clear();
     }
-    
-    
 
     public void close() throws IOException {
         if(partDictOut != null) {
@@ -345,6 +363,4 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     public String toString() {
         return "APO: " + name + ' ' + partition + " partition number: " + partitionNumber;
     }
-    
-    
 }
