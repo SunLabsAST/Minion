@@ -23,32 +23,32 @@
  */
 package com.sun.labs.minion.test;
 
-import com.sun.labs.minion.IndexableFile;
-import com.sun.labs.minion.SearchEngine;
-import com.sun.labs.minion.SearchEngineException;
-import com.sun.labs.minion.SearchEngineFactory;
+import com.sun.labs.minion.*;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.util.SimpleLabsLogFormatter;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import com.sun.labs.util.LabsLogFormatter;
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class Mutator extends SEMain implements Runnable {
+/**
+ * A mutator that indexes a simplified version of Wikipedia entries so that we
+ * can test indexing and re-indexing.
+ *
+ * @author Stephen
+ */
+public class WikipediaMutator implements Runnable {
 
     protected SearchEngine engine;
 
     protected Thread indexingThread;
 
-    protected String logTag;
-
-    protected List<String> indexList;
+    protected List<IndexableMap> indexList;
 
     protected String stuff;
 
@@ -60,18 +60,18 @@ public class Mutator extends SEMain implements Runnable {
 
     protected int updateInterval;
 
-    static final Logger logger = Logger.getLogger(Mutator.class.getName());
+    static final Logger logger =
+            Logger.getLogger(WikipediaMutator.class.getName());
 
     private static String indexDir;
 
-    public Mutator(SearchEngine engine, List<String> l, int index)
+    public WikipediaMutator(SearchEngine engine, List<IndexableMap> indexList)
             throws SearchEngineException {
         this.engine = engine;
-        logTag = "M" + index;
-        indexList = new ArrayList<String>(l);
+        this.indexList = indexList;
     }
 
-    public  void setMaxUpd(int maxUpd) {
+    public void setMaxUpd(int maxUpd) {
         this.maxUpd = maxUpd;
     }
 
@@ -87,12 +87,44 @@ public class Mutator extends SEMain implements Runnable {
         this.updateInterval = updateInterval;
     }
 
-    
+    private static void defineFields(SearchEngine engine, boolean simpleFields)
+            throws SearchEngineException {
+        EnumSet<FieldInfo.Attribute> indexed = FieldInfo.getIndexedAttributes();
+        EnumSet<FieldInfo.Attribute> indexedAndSaved = EnumSet.copyOf(indexed);
+        indexedAndSaved.add(FieldInfo.Attribute.SAVED);
+        EnumSet<FieldInfo.Attribute> savedOnly = EnumSet.of(
+                FieldInfo.Attribute.SAVED);
+
+        FieldInfo fi;
+        if(simpleFields) {
+            indexed.remove(FieldInfo.Attribute.POSITIONS);
+            indexed.remove(FieldInfo.Attribute.VECTORED);
+            indexed.remove(FieldInfo.Attribute.CASED);
+            indexedAndSaved.remove(FieldInfo.Attribute.POSITIONS);
+            indexedAndSaved.remove(FieldInfo.Attribute.VECTORED);
+            indexedAndSaved.remove(FieldInfo.Attribute.CASED);
+            fi = new FieldInfo("title",
+                               savedOnly, FieldInfo.Type.STRING);
+        } else {
+            fi = new FieldInfo("title",
+                               indexedAndSaved, FieldInfo.Type.STRING,
+                               FieldInfo.DEFAULT_PIPELINE_FACTORY_NAME);
+        }
+        engine.defineField(fi);
+        fi = new FieldInfo("text", indexed, FieldInfo.Type.NONE,
+                           FieldInfo.DEFAULT_PIPELINE_FACTORY_NAME);
+        engine.defineField(fi);
+        fi = new FieldInfo("timestamp", savedOnly, FieldInfo.Type.DATE);
+        engine.defineField(fi);
+        fi = new FieldInfo("id", savedOnly, FieldInfo.Type.INTEGER);
+        engine.defineField(fi);
+    }
+
+    @Override
     public void run() {
 
         int nIter = 1;
         boolean done = false;
-        Thread.currentThread().setName(logTag);
         Random rand = new Random();
 
         //
@@ -104,25 +136,20 @@ public class Mutator extends SEMain implements Runnable {
             // How many documents will we do this time around?  Note that
             // the answer can be 0!
             int toIndex = rand.nextInt(maxUpd);
-            logger.info("Iteration: " + nIter + " " + toIndex + " docs");
+            logger.log(Level.INFO, String.format("Iteration %d %d docs",
+                       nIter, toIndex));
 
             for(int i = 0; i < toIndex; i++) {
 
                 //
-                // Choose a random document from the list
-                IndexableFile file =
-                        new IndexableFile(
-                        indexList.get(rand.nextInt(indexList.size())));
-
-                //
                 // Try to index it.
+                IndexableMap map = indexList.get(rand.nextInt(indexList.size()));
                 try {
-                    engine.index(makeDocument(file));
-                } catch(SearchEngineException se) {
-                    logger.log(Level.SEVERE, "Error indexing document " + file,
-                            se);
-                } catch(Exception e) {
-                    logger.log(Level.SEVERE, "Error indexing", e);
+                    engine.index(map);
+                } catch(Exception se) {
+                    logger.log(Level.SEVERE, 
+                               String.format("Error indexing document %s", map.getKey()),
+                               se);
                 }
             }
 
@@ -138,7 +165,7 @@ public class Mutator extends SEMain implements Runnable {
 
                 int ms = rand.nextInt(updateInterval * 1000);
 
-                logger.info("Sleeping " + ms + "ms");
+                logger.info(String.format("Sleeping %d ms", ms));
 
                 try {
                     Thread.sleep(ms);
@@ -155,28 +182,26 @@ public class Mutator extends SEMain implements Runnable {
 
     public static void usage() {
         System.out.println(
-                "Usage: java Mutator\n" +
-                " -i <file list>   " +
-                "Directory or file list to index (Required)\n" +
-                " -d <index dir>   " +
-                "The index directory\n" +
-                " -r <num>         " +
-                "The number of times to update, < 0 means run continuously (default: 10)\n" +
-                " -s <num>         " +
-                "Maximum number of seconds between update runs\n" +
-                " -t <num>         " +
-                "The number of threads to run\n" +
-                " -n <num>         " +
-                "The number of lines to use from the input file (default: all)\n" +
-                " -m <num>          " +
-                "The maximum number of files to index/update\n" +
-                " -x <file>        " +
-                "An XML configuration file specifying extra props for " +
-                "the index");
-        return;
+                "Usage: java Mutator\n" + " -i <Wikipedia data>   "
+                + "Wiki data in PBLML (Required)\n" + " -d <index dir>   "
+                + "The index directory\n" + 
+                " -r <num>         "
+                + "The number of times to update, < 0 means run continuously (default: 10)\n"
+                + " -s <num>         "
+                + "Maximum number of seconds between update runs\n"
+                + " -t <num>         " + 
+                "The number of threads to run\n"
+                + " -n <num>         "
+                + "The number of lines to use from the input file (default: all)\n"
+                + " -m <num>          "
+                + "The maximum number of files to index/update\n"
+                + " -x <file>        "
+                + "An XML configuration file specifying extra props for "
+                + "the index");
     }
 
-    public static void main(String[] args) throws java.io.IOException, SearchEngineException {
+    public static void main(String[] args) throws java.io.IOException,
+            SearchEngineException {
 
         String flags = "i:d:s:n:m:r:t:x:";
         String stuff = null;
@@ -196,9 +221,9 @@ public class Mutator extends SEMain implements Runnable {
 
         //
         // Set up the log.
-        Logger logger = Logger.getLogger("");
-        for(Handler h : logger.getHandlers()) {
-            h.setFormatter(new SimpleLabsLogFormatter());
+        Logger rl = Logger.getLogger("");
+        for(Handler h : rl.getHandlers()) {
+            h.setFormatter(new LabsLogFormatter());
         }
 
         //
@@ -256,8 +281,8 @@ public class Mutator extends SEMain implements Runnable {
                     } catch(NumberFormatException nfe) {
                         //
                         // Unknown type.
-                        logger.warning("Invalid number of updates: " +
-                                gopt.optArg);
+                        logger.warning("Invalid number of updates: "
+                                + gopt.optArg);
                         usage();
                         return;
                     }
@@ -268,8 +293,8 @@ public class Mutator extends SEMain implements Runnable {
                     } catch(NumberFormatException nfe) {
                         //
                         // Unknown type.
-                        logger.warning("Invalid number of threads: " +
-                                gopt.optArg);
+                        logger.warning("Invalid number of threads: "
+                                + gopt.optArg);
                         usage();
                         return;
                     }
@@ -282,48 +307,61 @@ public class Mutator extends SEMain implements Runnable {
         }
 
         if(stuff == null) {
-            logger.warning("You must specify a list of files to index.");
+            logger.warning("You must specify wikipedia data.");
             usage();
             return;
         }
 
-        if(cmFile == null) {
-            cmFile = Mutator.class.getResource("Mutator-config.xml");
-        }
-
         //
-        // Open the file of file names.
-        BufferedReader inFile = null;
+        // Open the input data.
+        BufferedReader in = null;
 
         try {
-            inFile = new BufferedReader(new FileReader(stuff));
+            in = new BufferedReader(new FileReader(stuff));
         } catch(java.io.IOException ioe) {
             logger.log(Level.SEVERE, "Unable to open file: " + stuff, ioe);
             usage();
             return;
         }
 
+        List<IndexableMap> docs = new ArrayList<IndexableMap>();
+
+        BufferedReader r =
+                new BufferedReader(new InputStreamReader(new FileInputStream(
+                stuff)));
         String l;
-        int n = 0;
-        List<String> il = new ArrayList<String>();
-        while((l = inFile.readLine()) != null && n < nLines) {
-            il.add(l);
+        int line = 0;
+        while((l = r.readLine()) != null && docs.size() < nLines) {
+            String[] fields = l.split("<sep>");
+            if(fields.length != 4) {
+                logger.warning(String.format("Weird line %s:%d", stuff,
+                                             line));
+                continue;
+            }
+            IndexableMap doc = new IndexableMap(fields[0]);
+            doc.put("id", fields[0]);
+            doc.put("timestamp", fields[1]);
+            doc.put("title", fields[2]);
+            doc.put("text", fields[3]);
+            docs.add(doc);
         }
 
+
         Thread[] threads = new Thread[nThreads];
-        Mutator[] muts = new Mutator[nThreads];
+        WikipediaMutator[] muts = new WikipediaMutator[nThreads];
 
         SearchEngine engine = SearchEngineFactory.getSearchEngine(indexDir,
-                cmFile);
-        defineFields(engine);
+                                                                  cmFile);
+        defineFields(engine, false);
         try {
             for(int i = 0; i < nThreads; i++) {
-                muts[i] = new Mutator(engine, il, i + 1);
+                muts[i] = new WikipediaMutator(engine, docs);
                 muts[i].setMaxUpd(maxUpd);
                 muts[i].setUpdateInterval(updateInterval);
                 muts[i].setnLines(nLines);
                 muts[i].setnUpdates(nUpdates);
                 threads[i] = new Thread(muts[i]);
+                threads[i].setName(String.format("Mut-%03d", i));
                 threads[i].start();
             }
         } catch(SearchEngineException se) {
@@ -346,4 +384,4 @@ public class Mutator extends SEMain implements Runnable {
             logger.log(Level.SEVERE, "Error closing engines", se);
         }
     }
-} // Mutator
+}
