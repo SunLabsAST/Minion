@@ -718,6 +718,106 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add("di", "Terms", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length != 4) {
+                    return "Must specify a partition, a field and a dictionary type";
+                }
+
+                int partNum = Integer.parseInt(args[1]);
+                String fieldName = args[2];
+                MemoryDictionaryBundle.Type type = MemoryDictionaryBundle.Type.valueOf(args[3].toUpperCase());
+
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    if(p.getPartitionNumber() == partNum) {
+                        DiskField df = ((InvFileDiskPartition) p).getDF(fieldName);
+                        if(df == null) {
+                            return String.format("No such field %s", fieldName);
+                        }
+                        DiskDictionary dict = df.getDictionary(type);
+                        if(dict == null) {
+                            return String.format("No dictionary of type %s for %s", type, fieldName);
+                        }
+                        for(Iterator di = dict.iterator(); di.hasNext();) {
+                            QueryEntry qe = (QueryEntry) di.next();
+                            shell.out.format("Entry: %s %d\n", qe.getName(), qe.getID());
+                        }
+                    }
+                }
+                return "";
+            }
+
+            public String getHelp() {
+                return "partNum field dict - prints all the terms from a particular field's dictionary and partition";
+            }
+        });
+        
+        shell.add("ck", "Info", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 2) {
+                    return getHelp();
+                }
+
+                List<FieldInfo> vf = manager.getMetaFile().getFieldInfo(FieldInfo.Attribute.VECTORED);
+                List<DiskPartition> parts = manager.getActivePartitions();
+                for(int i = 1; i < args.length; i++) {
+                    for(DiskPartition p : parts) {
+
+                        DiskDictionary dd = p.getDocumentDictionary();
+                        QueryEntry key = dd.get(args[i]);
+                        if(key == null) {
+                            continue;
+                        }
+                        for(FieldInfo fi : vf) {
+
+                            DiskField df = ((InvFileDiskPartition) p).getDF(fi);
+
+                            DiskDictionary rvd = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+                            QueryEntry re = null;
+                            String res = "no raw";
+                            if(rvd != null) {
+                                re = rvd.get(args[i]);
+                                if(re == null) {
+                                    res = "rv term not found!";
+                                } else {
+                                    res = String.format("rv id: %d", re.getID());
+                                }
+                            }
+
+                            DiskDictionary svd = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+                            QueryEntry se = null;
+                            String ses = "no stemmed";
+                            if(svd != null) {
+                                se = rvd.get(args[i]);
+                                if(se == null) {
+                                    ses = "sv term not found!";
+                                } else {
+                                    ses = String.format("sv id: %d", se.getID());
+                                }
+                            }
+
+                            boolean del = p.isDeleted(key.getID());
+
+                            shell.out.format("%s %s %s dd id: %d%s%s %s\n",
+                                    p, fi.getName(), args[i], key.getID(),
+                                    del ? " deleted " : " ",
+                                    res, ses);
+                        }
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field key [key]... - Get the document key from the document dictionary and from any vector dictionaries";
+            }
+        });
+        
         shell.add("post", "Info", new CommandInterface() {
 
             public String execute(CommandInterpreter ci, String[] args) throws Exception {

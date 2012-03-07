@@ -5,7 +5,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
-import com.sun.labs.minion.indexer.entry.Entry;
+import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.pipeline.PipelineFactory;
@@ -63,7 +63,7 @@ public class MemoryField extends Field {
         return bundle.getPostingsChannelNames();
     }
 
-    public void startDocument(Entry docKey) {
+    public void startDocument(IndexEntry<String> docKey) {
         bundle.startDocument(docKey);
     }
 

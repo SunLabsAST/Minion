@@ -91,6 +91,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
      */
     private int[] idToPosn = null;
 
+    @Override
     public void start(MemoryDictionary dict, NameEncoder encoder, 
             MemoryDictionary.Renumber renumber, int nChans) {
         if(!finished) {

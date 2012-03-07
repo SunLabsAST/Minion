@@ -1345,7 +1345,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             //
         // We'll keep a map from old to new IDs for each of the
         // dictionaries and a heap to manage the merge.
-        boolean keepIDToPosn = false;
         int[][] idMaps = new int[dicts.length][];
         PriorityQueue<HE> h = new PriorityQueue<HE>();
         DiskDictionary merger = null;
@@ -1360,9 +1359,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 merger = dd;
             }
 
-            if(dd.idToPosn != null) {
-                keepIDToPosn = true;
-            }
             idMaps[i] = new int[dd.dh.getMaxID() + 1];
 
             //
@@ -1371,13 +1367,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             if(he.next()) {
                 h.offer(he);
             }
-        }
-
-        //
-        // Make more room if we're merging the doc dict since the idMap
-        // will be used for another purpose
-        if(mappers != null) {
-            idMaps[0] = new int[postIDMaps[0][0] + 1];
         }
 
         //
@@ -1435,18 +1424,13 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 // building.
                 top.curr.readPostings();
                 if(appendPostings) {
-//                    if(logger.isLoggable(Level.FINE) && me.getName().equals("addition")) {
-//                        Logger.getLogger(PositionPostings.class.getName()).setLevel(Level.FINE);
-//                        logger.fine(String.format("Merging from %s", dicts[top.index].getPartition()));
-//                    }
                     try {
                         me.append(top.curr, starts[top.index], postIDMaps[top.index]);
                     } catch(RuntimeException ex) {
-                        logger.log(Level.SEVERE, String.format("Exception appending entry %s from %s",
-                                me.getName(), dicts[top.index].getPartition()));
+                        logger.log(Level.SEVERE, String.format("Exception appending entry %s (%d) from %s",
+                                me.getName(), top.curr.getID(), dicts[top.index].getPartition()));
                         throw (ex);
                     }
-//                    Logger.getLogger(PositionPostings.class.getName()).setLevel(Level.INFO);
                 } else {
                     try {
                         me.merge(top.curr, postIDMaps[top.index]);
@@ -1464,9 +1448,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 // merged docs.  Note that this should only happen where
                 // duplicate doc keys are allowed - namely the cluster
                 // partition, and specifically not the real inverted file.
-                if(mappers != null) {
-                    idMaps[0][top.curr.getID()] = me.getID();
-                } else {
+                if(mappers == null) {
                     //
                     // Map the old, original ID for the top entry to the new
                     // ID.
@@ -1741,10 +1723,17 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 if(mapper == null) {
                     return true;
                 }
+                
+                boolean debug = mapper != null && curr.getName().equals("13938");
 
                 //
                 // Go ahead and map the entry.
+                QueryEntry foo = curr;
                 curr = (QueryEntry) mapper.map(curr);
+                
+                if(debug) {
+                    logger.info(String.format("%s %s: %s", foo.getPartition(), foo.getName(), curr));
+                }
 
                 //
                 // If this entry is not to appear in the merged dictionary,

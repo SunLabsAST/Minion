@@ -25,7 +25,6 @@ package com.sun.labs.minion.indexer.entry;
 
 import com.sun.labs.minion.indexer.postings.*;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;

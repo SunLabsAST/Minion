@@ -23,15 +23,15 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import java.io.IOException;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Indexable;
-import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.pipeline.Token;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -50,7 +50,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
      */
     private MemoryField[] fields;
 
-    private IndexEntry dockey;
+    private IndexEntry<String> dockey;
     
     public InvFileMemoryPartition() {
         super();
@@ -95,6 +95,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
      */
     public void startDocument(String key) {
 
+        logger.info(String.format("%s start %s", getPartitionName(), key));
         IndexEntry old = docDict.remove(key);
         if(old != null) {
             if(deletions == null) {
@@ -178,6 +179,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
      *
      * @return the number of documents indexed into this partition.
      */
+    @Override
     public int getNDocs() {
         return docDict.size();
     }

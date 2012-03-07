@@ -624,7 +624,7 @@ public class DiskPartition extends Partition implements Closeable {
             mergeState.partitions = partCopy.toArray(new DiskPartition[0]);
             DiskDictionary[] dicts = new DiskDictionary[mergeState.partitions.length];
             ByteBuffer[][] buffs = new ByteBuffer[mergeState.partitions.length][];
-            EntryMapper[] mappers = new EntryMapper[dicts.length];
+            mergeState.docIDMappers = new EntryMapper[dicts.length];
 
             //
             // The new starting document IDs for the merged partition.
@@ -702,7 +702,7 @@ public class DiskPartition extends Partition implements Closeable {
             // Pick up the document dictionaries for the merge.
             for(int i = 0; i < dicts.length; i++) {
                 dicts[i] = mergeState.partitions[i].docDict;
-                mappers[i] = new DocEntryMapper(mergeState.docIDStarts[i], mergeState.docIDMaps[i]);
+                mergeState.docIDMappers[i] = new DocEntryMapper(mergeState.docIDStarts[i], mergeState.docIDMaps[i]);
             }
             
             int[][] docDictIDMaps = new int[dicts.length][1];
@@ -716,7 +716,7 @@ public class DiskPartition extends Partition implements Closeable {
             DiskDictionary.merge(pm.getIndexDir(),
                     new StringNameHandler(),
                            dicts,
-                           mappers,
+                           mergeState.docIDMappers,
                            mergeState.fakeStarts, 
                            docDictIDMaps,
                            fieldDictOut, 

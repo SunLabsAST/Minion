@@ -33,6 +33,7 @@ import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -176,7 +177,14 @@ public class IDFreqPostings extends IDPostings {
                 addSkip(cID, (int) idBuff.position());
             }
             
+            try {
             wpost.byteEncode(cID - lastID);
+            } catch (ArithmeticException ex) {
+                logger.log(Level.SEVERE, String.format(
+                        "Error appending start: %s origID: %d mapID: %d cID: %d", 
+                        start, origID, mapID, cID));
+                throw(ex);
+            }
             to += pi.getFreq();
             maxfdt = Math.max(pi.getFreq(), maxfdt);
             wpost.byteEncode(pi.getFreq());

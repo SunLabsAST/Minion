@@ -2,7 +2,6 @@ package com.sun.labs.minion.indexer.partition.io;
 
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
-import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionHeader;

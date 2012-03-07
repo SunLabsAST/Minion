@@ -9,7 +9,7 @@ import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
-import com.sun.labs.minion.indexer.entry.IndexEntry;
+import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -759,6 +759,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 break;
             }
         }
+        
+        //
+        // Whether we're merging document IDs in the dictionary entries, in which
+        // case we need to use the entry mappers in the merge state.
+        boolean mergingDocEntries;
 
         //
         // ID maps for the entries in the dictionaries.  We'll store them all, 
@@ -776,8 +781,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
             int ord = type.ordinal();
             DiskDictionary[] mDicts = new DiskDictionary[bundles.length];
             DiskBiGramDictionary[] bgDicts = new DiskBiGramDictionary[bundles.length];
-            
             boolean foundDict = false;
+            mergingDocEntries = false;
 
             for(int i = 0; i < bundles.length; i++) {
 
@@ -837,6 +842,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         mergeState.postIDMaps = entryIDMaps[Type.CASED_TOKENS.ordinal()];
                     }
                     idStarts = mergeState.fakeStarts;
+                    mergingDocEntries = true;
                     break;
                 case STEMMED_VECTOR:
                     //
@@ -845,6 +851,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     encoder = new StringNameHandler();
                     mergeState.postIDMaps = entryIDMaps[Type.STEMMED_TOKENS.ordinal()];
                     idStarts = mergeState.fakeStarts;
+                    mergingDocEntries = true;
                     break;
 
                 case TOKEN_BIGRAMS:
@@ -888,19 +895,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
             logger.fine(String.format(" Merging %s", type));
 
             try {
-//                if(type == Type.UNCASED_TOKENS && mergeState.info.getName().equals("original-text")) {
-//                    Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINE);
-//                }
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                         encoder,
                         mDicts,
-                        null,
+                        mergingDocEntries ? mergeState.docIDMappers : null,
                         idStarts,
                         mergeState.postIDMaps,
                         fieldDictOut,
                         mergeState.partOut.getPostingsOutput(),
                         true);
-//                Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.INFO);
             } catch(RuntimeException ex) {
                 logger.log(Level.SEVERE, String.format("Exception merging %s of field %s",
                         type, mergeState.info.getName()));

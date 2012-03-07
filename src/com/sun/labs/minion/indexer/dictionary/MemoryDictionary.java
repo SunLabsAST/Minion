@@ -182,7 +182,8 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     }
 
     /**
-     * Puts an entry into the dictionary.  
+     * Puts an entry name into the dictionary, creating an entry for the name
+     * if none exists.
      *
      * @param name The name of the entry.
      * @return The entry corresponding to the given name
@@ -195,6 +196,24 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             map.put(name, old);
         }
         return old;
+    }
+    
+    /**
+     * Puts an entry into the dictionary directly.  This will clone the 
+     * given entry so that it can have its own postings.
+     * 
+     * @param entry the entry to add to the dictionary
+     * @return The entry corresponding to the given name.
+     */
+    public IndexEntry put(IndexEntry<N> entry) {
+        N name = entry.getName();
+        IndexEntry<N> oldEntry = map.get(name);
+        IndexEntry<N> newEntry = factory.getIndexEntry(entry);
+        if(oldEntry == null) {
+            oldEntry = newEntry;
+        }
+        map.put(name, oldEntry);
+        return oldEntry;
     }
 
     /**
@@ -276,7 +295,9 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * @return <code>true</code> if there were entries that were sorted, 
      * <code>false</code> otherwise.
      */
-    protected boolean sort(Renumber renumber, IDMap idMapType) {
+     protected boolean sort(Renumber renumber, IDMap idMapType) {
+        
+//        logger.fine(String.format("sort: %s %s", renumber, idMapType));
         
         //
         // Figure out how many used elements there were in the map.
@@ -306,6 +327,9 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         nUsed = 0;
         for(IndexEntry e : map.values()) {
             if(e.isUsed()) {
+//                if(nUsed <= 10) {
+//                    logger.fine(String.format("si %d %s %d", nUsed, e.getName(), e.getID()));
+//                }
                 sortedEntries[nUsed++] = e;
             }
         }
@@ -395,7 +419,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             return false;
         }
 
-        logger.fine(String.format("Marshalling %d entries", nUsed));
+//        logger.fine(String.format("Marshalling %d entries %s", nUsed, partOut.getDictionaryRenumber()));
 
         DictionaryOutput dictOut = partOut.getPartitionDictionaryOutput();
         PostingsOutput[] postOut = partOut.getPostingsOutput();
@@ -422,6 +446,9 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         // Write the postings and entries.
         for(int i = 0 ; i < nUsed; i++) {
             IndexEntry entry = sortedEntries[i];
+//            if(logger.isLoggable(Level.FINER)) {
+//                logger.fine(String.format("m: %s %d", entry.getName(), entry.getID()));
+//            }
             if(entry.writePostings(postOut, postingsIDMap)) {
                 dictOut.write(entry);
             }

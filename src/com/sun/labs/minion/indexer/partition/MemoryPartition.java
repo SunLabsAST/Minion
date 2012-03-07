@@ -46,7 +46,7 @@ public abstract class MemoryPartition extends Partition {
     /**
      * A partition-wide document dictionary, which we'll use to assign doc IDs.
      */
-    protected MemoryDictionary docDict;
+    protected MemoryDictionary<String> docDict;
 
     /**
      * A deletion map.

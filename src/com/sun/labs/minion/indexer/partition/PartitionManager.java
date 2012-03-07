@@ -859,6 +859,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         mergeRate = rate;
     }
 
+    public boolean isReapDoesNothing() {
+        return reapDoesNothing;
+    }
+
+    public void setReapDoesNothing(boolean reapDoesNothing) {
+        this.reapDoesNothing = reapDoesNothing;
+    }
+    
     /**
      * Checks to see if a document is in the index.
      *
