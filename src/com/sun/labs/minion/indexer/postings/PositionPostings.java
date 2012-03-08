@@ -316,10 +316,10 @@ public class PositionPostings implements Postings {
             for(int j = 0; j < freqs[i]; j++, pp++) {
                 int currPosn = posns[pp];
                 try {
-                wPosnBuff.byteEncode(currPosn - prevPosn);
-                } catch (ArithmeticException ex) {
-                    logger.log(Level.SEVERE, String.format("Error encoding position %d (prev %d) at %d (numposns: %d) for doc %d", 
-                            currPosn, prevPosn, 
+                    wPosnBuff.byteEncode(currPosn - prevPosn);
+                } catch(ArithmeticException ex) {
+                    logger.log(Level.SEVERE, String.format("Error encoding position %d (prev %d) at %d (numposns: %d) for doc %d",
+                            currPosn, prevPosn,
                             pp, posPos, prevID));
                     throw ex;
                 }
@@ -576,8 +576,10 @@ public class PositionPostings implements Postings {
             lastPosnOffset = (int) wPosnBuff.position();
             int freq = pi.getFreq();
             int[] tp = pi.getPositions();
+            int prevPosn = 0;
             for(int i = 0; i < freq; i++) {
-                wPosnBuff.byteEncode(tp[i]);
+                wPosnBuff.byteEncode(tp[i] - prevPosn);
+                prevPosn = tp[i];
             }
 
             //

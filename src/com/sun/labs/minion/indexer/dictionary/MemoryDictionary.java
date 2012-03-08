@@ -170,6 +170,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         this.factory = factory;
     }
 
+    @Override
     public String[] getPostingsChannelNames() {
         if(factory != null) {
             return factory.getPostingsChannelNames();
@@ -188,8 +189,8 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * @param name The name of the entry.
      * @return The entry corresponding to the given name
      */
-    public IndexEntry put(N name) {
-        IndexEntry old = map.get(name);
+    public IndexEntry<N> put(N name) {
+        IndexEntry<N> old = map.get(name);
         if(old == null) {
             old = factory.getIndexEntry(name, ++id);
             old.setDictionary(this);
@@ -205,14 +206,16 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
      * @param entry the entry to add to the dictionary
      * @return The entry corresponding to the given name.
      */
-    public IndexEntry put(IndexEntry<N> entry) {
+    public IndexEntry<N> put(IndexEntry<N> entry) {
         N name = entry.getName();
         IndexEntry<N> oldEntry = map.get(name);
-        IndexEntry<N> newEntry = factory.getIndexEntry(entry);
         if(oldEntry == null) {
-            oldEntry = newEntry;
+            oldEntry =  factory.getIndexEntry(entry);
+            oldEntry.setDictionary(this);
+            map.put(name, oldEntry);
+        } else {
+            oldEntry.setID(entry.getID());
         }
-        map.put(name, oldEntry);
         return oldEntry;
     }
 
@@ -429,6 +432,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         dictOut.start(this, 
                 partOut.getDictionaryEncoder(),
                 partOut.getDictionaryRenumber(),
+                partOut.getDictionaryRenumber() == MemoryDictionary.Renumber.NONE,
                 postOut.length);
 
         DictionaryHeader dh = dictOut.getHeader();

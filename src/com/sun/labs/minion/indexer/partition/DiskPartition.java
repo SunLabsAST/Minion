@@ -722,7 +722,6 @@ public class DiskPartition extends Partition implements Closeable {
                            fieldDictOut, 
                            mergeState.partOut.getPostingsOutput(), true);
 
-
             mergeCustom(mergeState);
 
             long phoffset = fieldDictOut.position();

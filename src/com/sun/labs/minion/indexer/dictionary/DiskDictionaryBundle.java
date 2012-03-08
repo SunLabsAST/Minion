@@ -9,7 +9,6 @@ import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
-import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -974,6 +973,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             int eid = dtvDup.byteDecode();
                             int mappedID = valIDMap[eid];
                             mdtvBuff.byteEncode(mappedID);
+                            }
                         }
                     }
                 }
@@ -1075,7 +1075,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // the entries and copy out the data, so no need for messing with the heap.
         int nMerged = 0;
         int tsid = 1;
-        termStatsDictOut.start(null, new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, 0);
+        termStatsDictOut.start(null, new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, false, 0);
 
         if(bundles.length == 1) {
             DictionaryIterator di = null;

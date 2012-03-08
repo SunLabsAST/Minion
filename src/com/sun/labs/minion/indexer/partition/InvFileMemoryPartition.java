@@ -95,7 +95,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
      */
     public void startDocument(String key) {
 
-        logger.info(String.format("%s start %s", getPartitionName(), key));
+//        logger.info(String.format("%s start %s", getPartitionName(), key));
         IndexEntry old = docDict.remove(key);
         if(old != null) {
             if(deletions == null) {

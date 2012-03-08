@@ -40,10 +40,7 @@ import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.partition.Partition;
-import com.sun.labs.minion.indexer.postings.Occurrence;
-import com.sun.labs.minion.indexer.postings.PositionPostings;
-import com.sun.labs.minion.indexer.postings.PostingsIterator;
-import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.indexer.postings.*;
 import com.sun.labs.minion.indexer.postings.io.FilePostingsInput;
 import com.sun.labs.minion.indexer.postings.io.ChannelPostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
@@ -1348,11 +1345,16 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         int[][] idMaps = new int[dicts.length][];
         PriorityQueue<HE> h = new PriorityQueue<HE>();
         DiskDictionary merger = null;
+        boolean keepIDToPosn = false;
         for(int i = 0; i < dicts.length; i++) {
             DiskDictionary dd = dicts[i];
             if(dd == null) {
                 idMaps[i] = new int[1];
                 continue;
+            }
+            
+            if(dd.idToPosn != null) {
+                keepIDToPosn = true;
             }
 
             if(merger == null) {
@@ -1371,7 +1373,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
         //
         // Where we'll write the dictionary.
-        dictOut.start(null, encoder, MemoryDictionary.Renumber.RENUMBER, postOut.length);
+        dictOut.start(null, encoder, MemoryDictionary.Renumber.NONE, keepIDToPosn, postOut.length);
         
         int[] mapped = new int[idMaps.length];
 
@@ -1539,7 +1541,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                               PostingsOutput[] postOut) throws
             java.io.IOException {
 
-        dictOut.start(null, encoder, MemoryDictionary.Renumber.RENUMBER, postOut.length);
+        dictOut.start(null, encoder, MemoryDictionary.Renumber.RENUMBER, idToPosn != null, postOut.length);
 
         //
         // Track what the highest ID is in the new dictionary

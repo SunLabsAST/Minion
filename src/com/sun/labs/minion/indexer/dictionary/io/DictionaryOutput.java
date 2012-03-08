@@ -14,7 +14,11 @@ import java.io.RandomAccessFile;
  */
 public interface DictionaryOutput extends WriteableBuffer {
     
-    public void start(MemoryDictionary dict, NameEncoder encoder, MemoryDictionary.Renumber renumber, int nChans);
+    public void start(MemoryDictionary dict, 
+            NameEncoder encoder, 
+            MemoryDictionary.Renumber renumber, 
+            boolean keepIDToPosn,
+            int nChans);
     
     /**
      * Gets a header for the dictionary currently being dumped.
