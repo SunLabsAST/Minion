@@ -35,16 +35,6 @@ public class MergeState implements Cloneable {
     public FieldInfo info;
     
     /**
-     * The number of documents in the merged partition.
-     */
-    public int nDocs;
-
-    /**
-     * The new maximum document ID for the merged data;
-     */
-    public int maxDocID;
-    
-    /**
      * Mappers for the entries in a dictionary.  Mostly used for the document
      * dictionary and for the document vector dictionaries so that we can
      * remove the entries for deleted documents.

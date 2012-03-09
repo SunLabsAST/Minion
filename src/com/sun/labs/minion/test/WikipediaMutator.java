@@ -24,9 +24,7 @@
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.*;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.partition.Marshaller;
-import com.sun.labs.minion.indexer.partition.MemoryPartition;
+import com.sun.labs.minion.indexer.partition.*;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.io.*;
@@ -355,9 +353,15 @@ public class WikipediaMutator implements Runnable {
         Logger sl;
         sl = Logger.getLogger(MemoryPartition.class.getName());
         sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(InvFileMemoryPartition.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(InvFileMemoryPartition.class.getName());
+        sl.setLevel(Level.FINE);
         sl = Logger.getLogger(Marshaller.class.getName());
         sl.setLevel(Level.FINE);
         sl = Logger.getLogger(DiskPartition.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(InvFileDiskPartition.class.getName());
         sl.setLevel(Level.FINE);
 
         //

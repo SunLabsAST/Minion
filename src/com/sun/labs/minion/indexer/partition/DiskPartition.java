@@ -653,6 +653,11 @@ public class DiskPartition extends Partition implements Closeable {
             mergeState.partitions = new DiskPartition[partsWithMaps.size()];
             for(int i = 0; i < partsWithMaps.size(); i++) {
                 mergeState.partitions[i] = partsWithMaps.get(i).part;
+//                logger.info(String.format("%d maxDocID: %d nDeleted: %d nDocs: %d", 
+//                        mergeState.partitions[i].partNumber,
+//                        mergeState.partitions[i].header.getMaxDocID(), 
+//                        mergeState.partitions[i].getDelMap().getNDeleted(), 
+//                        mergeState.partitions[i].getNDocs()));
             }
             
             DiskDictionary[] dicts = new DiskDictionary[mergeState.partitions.length];
@@ -729,8 +734,9 @@ public class DiskPartition extends Partition implements Closeable {
                 if(i > 0) {
                     mergeState.docIDStarts[i] = mergeState.docIDStarts[i - 1] + mergeState.nUndel[i - 1];
                 }
-                mergeState.maxDocID += mergeState.nUndel[i];
+                mergeState.partOut.setMaxDocID(mergeState.partOut.getMaxDocID() + mergeState.nUndel[i]);
             }
+            
             
 //            logger.info(String.format("starts: %s nUndel: %s maxDocID: %d", 
 //                    Arrays.toString(mergeState.docIDStarts), 
@@ -752,7 +758,7 @@ public class DiskPartition extends Partition implements Closeable {
             }
             
             int[][] docDictIDMaps = new int[dicts.length][1];
-            docDictIDMaps[0][0] = mergeState.maxDocID;
+            docDictIDMaps[0][0] = mergeState.partOut.getMaxDocID();
 
             //
             // Merge the document dictionaries.  We'll need to remap the IDs.

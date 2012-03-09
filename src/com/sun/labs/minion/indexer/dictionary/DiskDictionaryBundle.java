@@ -746,7 +746,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         long headerPos = fieldDictOut.position();
         FieldHeader mergeHeader = new FieldHeader();
         mergeHeader.fieldID = mergeState.info.getID();
-        mergeHeader.maxDocID = mergeState.maxDocID;
+        mergeHeader.maxDocID = mergeState.partOut.getMaxDocID();
         mergeHeader.write(fieldDictOut);
         DiskDictionaryBundle exemplar = null;
 
@@ -1032,10 +1032,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             new StringNameHandler(),
                             fieldDictOut,
                             mPostRAF);
-                    logger.info(String.format("CDV with %d docs", mergeState.maxDocID));
                     DocumentVectorLengths.calculate(mergeState.info,
-                            mergeState.maxDocID,
-                            mergeState.maxDocID,
+                            mergeState.partOut.getMaxDocID(),
+                            mergeState.partOut.getMaxDocID(),
                             mergeState.manager,
                             (DictionaryIterator<String>) newMainDict.iterator(),
                             vlb,

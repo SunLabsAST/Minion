@@ -34,6 +34,7 @@ import com.sun.labs.minion.pipeline.Token;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -50,8 +51,8 @@ public class InvFileMemoryPartition extends MemoryPartition {
      */
     private MemoryField[] fields;
 
-    private IndexEntry<String> dockey;
-    
+    private IndexEntry<String> docKey;
+
     public InvFileMemoryPartition() {
         super();
     }
@@ -60,7 +61,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         super(manager, Postings.Type.NONE);
         fields = new MemoryField[16];
     }
-    
+
     @Override
     public String[] getPostingsChannelNames() {
         String[] max = null;
@@ -74,10 +75,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
         }
         return max;
     }
-    
+
     public void index(Indexable doc) {
         startDocument(doc.getKey());
-        for(Map.Entry<String,Object> field : doc.getMap().entrySet()) {
+        for(Map.Entry<String, Object> field : doc.getMap().entrySet()) {
             FieldInfo fi = manager.getFieldInfo(field.getKey());
             if(fi == null) {
                 logger.warning(String.format("Unknown field: %s in %s", field.getKey(), doc.getKey()));
@@ -90,28 +91,29 @@ public class InvFileMemoryPartition extends MemoryPartition {
     /**
      * Starts a new document in this partition.
      *
-     * @param key The key for this document, which is added to the
-     * dictionary.
+     * @param key The key for this document, which is added to the dictionary.
      */
     public void startDocument(String key) {
 
-//        logger.info(String.format("%s start %s", getPartitionName(), key));
         IndexEntry old = docDict.remove(key);
         if(old != null) {
             if(deletions == null) {
                 deletions = new DelMap();
             }
-            logger.fine(String.format("%s already occurred", key));
             deletions.delete(old.getID());
         }
-        dockey = docDict.put(key);
-        dockey.setUsed(true);
-        
-        maxDocumentID = dockey.getID();
+        docKey = docDict.put(key);
+        docKey.setUsed(true);
+        if(old != null && logger.isLoggable(Level.FINE)) {
+            logger.info(String.format("%s %s replace %d with %d", 
+                    getPartitionName(), key, old.getID(), docKey.getID()));
+        }
+
+        maxDocumentID = docKey.getID();
 
         for(MemoryField field : fields) {
             if(field != null) {
-                field.startDocument(dockey);
+                field.startDocument(docKey);
             }
         }
     }
@@ -121,7 +123,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
     }
 
     private MemoryField getMF(FieldInfo fi) {
-        
+
         //
         // Non-field stuff goes into the 0th position.
         int fid = 0;
@@ -134,20 +136,20 @@ public class InvFileMemoryPartition extends MemoryPartition {
         }
         if(fields[fid] == null) {
             fields[fid] = new MemoryField(this, fi);
-            
+
             //
             // We might have just started this document!
-            fields[fid].startDocument(dockey);
+            fields[fid].startDocument(docKey);
         }
         return fields[fid];
     }
-    
+
     public void addField(String field, Object val) {
         FieldInfo fi = manager.getFieldInfo(field);
 
         if(field != null && fi == null) {
             logger.warning(String.format("Can't add term to undefined field %s",
-                                         field));
+                    field));
         }
         addField(fi, val);
     }
@@ -157,7 +159,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
      */
     public void addField(FieldInfo fi, Object val) {
         MemoryField mf = getMF(fi);
-        mf.addData(dockey.getID(), val);
+        mf.addData(docKey.getID(), val);
     }
 
     /**
@@ -170,7 +172,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         }
         MemoryField mf = getMF(fi);
         Token t = new Token(term, count);
-        t.setID(dockey.getID());
+        t.setID(docKey.getID());
         mf.token(t);
     }
 
@@ -188,9 +190,9 @@ public class InvFileMemoryPartition extends MemoryPartition {
     protected void customMarshall(PartitionOutput partOut) throws IOException {
 
         int tsn = 0;
-        
+
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
-        
+
         //
         // Dump the fields.  Keep track of the offsets of the field and of the
         // offsets for the term statistics dictionaries for the fields.
@@ -198,13 +200,13 @@ public class InvFileMemoryPartition extends MemoryPartition {
             if(mf == null) {
                 continue;
             }
-            
+
             //
             // Remember where we are 
             long fieldOffset = partDictOut.position();
-            
+
             logger.fine(String.format("Dumping %s", mf.getInfo().getName()));
-            
+
             //
             // Dump the dictionary and deal with the result.
             switch(mf.marshall(partOut)) {
@@ -216,11 +218,11 @@ public class InvFileMemoryPartition extends MemoryPartition {
                 case EVERYTHING_DUMPED:
                     break;
             }
-            
+
             partOut.getPartitionHeader().addOffset(mf.getInfo().getID(), fieldOffset);
         }
     }
-    
+
     public void clear() {
         super.clear();
         for(MemoryField mf : fields) {
