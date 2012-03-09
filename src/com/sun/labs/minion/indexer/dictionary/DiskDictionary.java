@@ -1399,6 +1399,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             //
             // Make a new entry for the merged data.
             IndexEntry me = merger.factory.getIndexEntry(top.curr.getName(), newid);
+//            boolean debug = logger.isLoggable(Level.FINE) && me.getName().equals("friesland");
+//            if(debug) {
+//                Logger.getLogger(PositionPostings.class.getName()).setLevel(Level.FINE);
+//            }
             
             //
             // We need to keep track of any mappings that we've made for the 
@@ -1424,6 +1428,9 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 //
                 // Get the top of the heap and merge it with the entry we're
                 // building.
+//                if(debug) {
+//                    logger.fine(String.format("Merging from %s", top.curr.getPartition()));
+//                }
                 top.curr.readPostings();
                 if(appendPostings) {
                     try {
@@ -1498,6 +1505,8 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                         "Arithmetic exception encoding postings for entry: %s", me.getName()));
                 throw (ex);
             }
+            
+            Logger.getLogger(PositionPostings.class.getName()).setLevel(Level.INFO);
 
             if(logger.isLoggable(Level.FINE)) {
                 if(dictOut.getHeader().size % 10000 == 0) {

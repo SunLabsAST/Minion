@@ -45,7 +45,9 @@ import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import com.sun.labs.util.NanoWatch;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -455,6 +457,7 @@ public class DiskPartition extends Partition implements Closeable {
      * @return the number of documents in this partition, not including
      * deleted documents
      */
+    @Override
     public int getNDocs() {
         return header.getnDocs() - deletions.getNDeleted();
     }
@@ -568,22 +571,40 @@ public class DiskPartition extends Partition implements Closeable {
                                PartitionOutput partOut,
                                boolean calculateDVL, int depth)
             throws Exception {
+        
+        //
+        // We want to sort the partitions by number, but we need to keep the 
+        // delmaps that were passed in with them, so we'll make a container class for 
+        // that.
+        class PartWithDelMap implements Comparable<PartWithDelMap> {
+            DiskPartition part;
+            DelMap delMap;
+
+            public PartWithDelMap(DiskPartition part, DelMap delMap) {
+                this.part = part;
+                this.delMap = delMap;
+            }
+            
+            @Override
+            public int compareTo(PartWithDelMap o) {
+                return part.partNumber - o.part.partNumber;
+            }
+
+            @Override
+            public String toString() {
+                return part.toString();
+            }
+        }
 
         //
         // A copy of the partition list and a place to put delmaps.
-        List<DiskPartition> partCopy = new ArrayList<DiskPartition>(partitions);
-
-        //
-        // We need to make sure that the list is sorted by partition number
-        // so that the merge will work correctly.  We can't guarantee that
-        // it happened outside, so we'll do it here.
-        Collections.sort(partCopy);
+        List<PartWithDelMap> partsWithMaps = new ArrayList<PartWithDelMap>(partitions.size());
 
         //
         // A quick sanity check:  Any partitions whose documents have all
         // been deleted can be removed from the list.
         Iterator<DelMap> dmi = delMaps.iterator();
-        Iterator<DiskPartition> dpi = partCopy.iterator();
+        Iterator<DiskPartition> dpi = partitions.iterator();
         while(dpi.hasNext() && dmi.hasNext()) {
             DiskPartition p = dpi.next();
             DelMap d = dmi.next();
@@ -592,15 +613,23 @@ public class DiskPartition extends Partition implements Closeable {
                 p.ignored = true;
                 dpi.remove();
                 dmi.remove();
+            } else {
+                partsWithMaps.add(new PartWithDelMap(p, d));
             }
+        }
+        
+        //
+        // If we're left with no partitions, we're done.
+        if(partsWithMaps.isEmpty()) {
+            return null;
         }
 
         //
-        // If we're left with no partitions, we're done.
-        if(partCopy.isEmpty()) {
-            return null;
-        }
-        
+        // We need to make sure that the list is sorted by partition number
+        // so that the merge will work correctly.  We can't guarantee that
+        // it happened outside, so we'll do it here.
+        Collections.sort(partsWithMaps);
+
         //
         // A place to store state and pass it around while we're merging.
         MergeState mergeState = new MergeState(partOut);
@@ -613,7 +642,7 @@ public class DiskPartition extends Partition implements Closeable {
             NanoWatch mw = new NanoWatch();
             mw.start();
             if(logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format("Merging %s into DP: %d", partCopy,
+                logger.fine(String.format("Merging %s into DP: %d", partsWithMaps,
                         mergeState.partOut.getPartitionNumber()));
             }
 
@@ -621,7 +650,11 @@ public class DiskPartition extends Partition implements Closeable {
             // Get an array of partitions, and a similar sized array of
             // dictionaries, term mappers, and starting points for the new
             // partition's document IDs.
-            mergeState.partitions = partCopy.toArray(new DiskPartition[0]);
+            mergeState.partitions = new DiskPartition[partsWithMaps.size()];
+            for(int i = 0; i < partsWithMaps.size(); i++) {
+                mergeState.partitions[i] = partsWithMaps.get(i).part;
+            }
+            
             DiskDictionary[] dicts = new DiskDictionary[mergeState.partitions.length];
             ByteBuffer[][] buffs = new ByteBuffer[mergeState.partitions.length][];
             mergeState.docIDMappers = new EntryMapper[dicts.length];
@@ -653,18 +686,19 @@ public class DiskPartition extends Partition implements Closeable {
             // everything.
             for(int i = 0; i < mergeState.partitions.length; i++) {
 
-                DiskPartition d = mergeState.partitions[i];
+                DiskPartition part = partsWithMaps.get(i).part;
+                DelMap delMap = partsWithMaps.get(i).delMap;
                 
                 //
                 // Build a provenance string.
                 if(i > 0) {
                     provenance.append(' ');
                 }
-                provenance.append(d.partNumber);
+                provenance.append(part.partNumber);
 
                 //
                 // Get buffers for the postings from this partition.
-                buffs[i] = d.getInputBuffers(1024 * 1024);
+                buffs[i] = part.getInputBuffers(1024 * 1024);
 
                 //
                 // Make the map from old to new document IDs.  Note here
@@ -673,10 +707,16 @@ public class DiskPartition extends Partition implements Closeable {
                 // could clearly be a more complicated decision, perhaps
                 // even handled by a class implementing a GCPolicy
                 // interface or something similar.
-                mergeState.docIDMaps[i] =
-                        d.getDocIDMap((ReadableBuffer) delMaps.get(i).delMap);
+                mergeState.docIDMaps[i] = part.getDocIDMap((ReadableBuffer) delMap.delMap);
+                
+                //
+                // The new maximum document ID for the merged partition.  We need 
+                // to take into account the fact that we might have a partition with
+                // no deleted documents where the number of documents and maximum
+                // document ID are different.  This happens when a document is 
+                // re-indexed into the same memory partition.
                 mergeState.nUndel[i] =
-                        mergeState.docIDMaps[i] == null ? d.header.getnDocs()
+                        mergeState.docIDMaps[i] == null ? part.header.getnDocs()
                         : mergeState.docIDMaps[i][0];
                 mergeState.fakeStarts[i] = 1;
 
@@ -684,12 +724,18 @@ public class DiskPartition extends Partition implements Closeable {
 
                 //
                 // We need to figure out the new starting sequence numbers for
-                // each partition.
+                // each partition. This has to take into account the maximum document ID for the 
+                // partition that we're merging in.
                 if(i > 0) {
                     mergeState.docIDStarts[i] = mergeState.docIDStarts[i - 1] + mergeState.nUndel[i - 1];
                 }
                 mergeState.maxDocID += mergeState.nUndel[i];
             }
+            
+//            logger.info(String.format("starts: %s nUndel: %s maxDocID: %d", 
+//                    Arrays.toString(mergeState.docIDStarts), 
+//                    Arrays.toString(mergeState.nUndel), 
+//                    mergeState.maxDocID));
             
             //
             // Write a placeholder for the offset of the partition header.
@@ -789,7 +835,27 @@ public class DiskPartition extends Partition implements Closeable {
         } catch(Exception e) {
 
             logger.log(Level.SEVERE, "Exception merging partitions", e);
-
+            logger.info(String.format("Dumping merge delmaps"));
+            String dd = System.getProperty("delDir");
+            if(dd == null) {
+                dd = "del";
+            }
+            File delDir = new File(dd);
+            if(!delDir.exists()) {
+                delDir.mkdirs();
+            }
+            for(int i = 0; i < mergeState.partitions.length; i++) {
+                File f = new File(delDir, String.format("%d.mdel", mergeState.partitions[i].partNumber));
+                if(!f.exists()) {
+                    WriteableBuffer delbuff = (WriteableBuffer) delMaps.get(i).delMap;
+                    if(delbuff == null) {
+                        logger.info(String.format("No deletions for %s", mergeState.partitions[i]));
+                    } else {
+                        logger.info(String.format("Writing %s delmap to %s", mergeState.partitions[i], f));
+                        DelMap.write(f, delbuff);
+                    }
+                }
+            }
 
             //
             // Clean up the unfinished partition.

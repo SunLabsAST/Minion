@@ -399,6 +399,8 @@ public class PositionPostings implements Postings {
 //                    other.nSkips, other.skipTableOffset,
 //                    other.idBuff.toString(Buffer.Portion.ALL, Buffer.DecodeMode.BYTE_ENCODED)));
 //        }
+        
+        logger.fine(String.format("Append without dels %s", start));
 
         //
         // Check for empty postings on the other side.
@@ -542,6 +544,8 @@ public class PositionPostings implements Postings {
             return;
         }
         
+        logger.fine(String.format("Append %d %s", start, Arrays.toString(idMap)));
+        
         //
         // We'll iterate through the postings.
         PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
@@ -552,6 +556,10 @@ public class PositionPostings implements Postings {
         while(pi.next()) {
             int origID = pi.getID();
             int mapID = idMap[origID];
+            
+            if(logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format("origID: %d mapID: %d", origID, mapID));
+            }
             
             //
             // Skip deleted documents.

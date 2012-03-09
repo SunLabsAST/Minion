@@ -101,7 +101,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
             if(deletions == null) {
                 deletions = new DelMap();
             }
-            logger.info(String.format("%s already occurred", key));
+            logger.fine(String.format("%s already occurred", key));
             deletions.delete(old.getID());
         }
         dockey = docDict.put(key);

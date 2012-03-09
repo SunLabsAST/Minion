@@ -63,7 +63,10 @@ public class MergeState implements Cloneable {
     public int[] fakeStarts;
 
     /**
-     * The number of undeleted documents in each partition that is being merged.
+     * The new maximum document ID in a partition, after deleted documents are
+     * taken into account.  We need to keep this around in order to fill in the
+     * data for partitions that didn't have saved data for a particular field
+     * when merging partitions.
      */
     public int[] nUndel;
 

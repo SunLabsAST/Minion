@@ -894,6 +894,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
             logger.fine(String.format(" Merging %s", type));
 
             try {
+//                if(type == Type.UNCASED_TOKENS && mergeState.info.getName().equals("title")) {
+//                    Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINE);
+//                }
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                         encoder,
                         mDicts,
@@ -903,6 +906,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         fieldDictOut,
                         mergeState.partOut.getPostingsOutput(),
                         true);
+//                Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.INFO);
             } catch(RuntimeException ex) {
                 logger.log(Level.SEVERE, String.format("Exception merging %s of field %s",
                         type, mergeState.info.getName()));
@@ -977,8 +981,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         }
                     }
                 }
-            }
-
             //
             // Transfer the temp buffers into the dictionary file.
             mergeHeader.dtvOffset = fieldDictOut.position();
@@ -991,6 +993,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
         }
+
 
         //
         // Calculate document vector lengths.
@@ -1029,6 +1032,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             new StringNameHandler(),
                             fieldDictOut,
                             mPostRAF);
+                    logger.info(String.format("CDV with %d docs", mergeState.maxDocID));
                     DocumentVectorLengths.calculate(mergeState.info,
                             mergeState.maxDocID,
                             mergeState.maxDocID,
@@ -1041,7 +1045,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     }
                     fieldDictOut.position(mdsp);
                 } catch(RuntimeException ex) {
-                    logger.log(Level.SEVERE, String.format("Exception computing vectors for merged partition on field %s", mergeState.info.getName()));
+                    logger.log(Level.SEVERE, String.format(
+                            "Exception computing vectors for merged partition on field %s using %s", 
+                            mergeState.info.getName(), 
+                            mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()] >= 0 ? 
+                            Type.UNCASED_TOKENS : Type.CASED_TOKENS));
                     throw (ex);
                 }
 

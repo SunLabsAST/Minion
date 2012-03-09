@@ -184,6 +184,7 @@ public class QueryTest extends SEMain {
         }
         shell = new CommandInterpreter(inputFile);
         manager = engine.getManager();
+        manager.setReapDoesNothing(true);
         searcher = engine;
         morphEn = LiteMorph_en.getMorph();
         displaySpec = new DisplaySpec(displayFields, displayFormat);
@@ -212,7 +213,11 @@ public class QueryTest extends SEMain {
             List<DiskPartition> activeParts = manager.getActivePartitions();
             shell.out.format(" %d active partitions: ", activeParts.size());
             for(DiskPartition p : activeParts) {
-                shell.out.format("%d (%d) ", p.getPartitionNumber(), p.getNDocs());
+                shell.out.format("%d (%d/%d/%d) ", 
+                        p.getPartitionNumber(), 
+                        p.getMaxDocumentID(),
+                        p.getNDocs(), 
+                        p.getDelMap().getNDeleted());
             }
             shell.out.println("");
             shell.out.println(" Sorting specification is: " + sortSpec);

@@ -162,6 +162,9 @@ public class DelMap implements Cloneable {
 
     public static void write(File f, WriteableBuffer m)
             throws java.io.IOException {
+        if(m == null) {
+            return;
+        }
         RandomAccessFile raf = new RandomAccessFile(f, "rw");
         raf.writeInt((int) m.position());
         m.write(raf);
@@ -435,10 +438,12 @@ public class DelMap implements Cloneable {
      * A main program that prints out a deletion map.
      */
     public static void main(String[] args) throws Exception {
-        File m = new File(args[0]);
-        FileLock l = new FileLock(new File(args[0] + ".lock"));
-        DelMap dl = new DelMap(m, l);
-        System.out.println(dl);
+        for(String arg : args) {
+            File m = new File(arg);
+            FileLock l = new FileLock(new File(arg + ".lock"));
+            DelMap dl = new DelMap(m, l);
+            System.out.println(dl);
+        }
     }
 } // DelMap
 

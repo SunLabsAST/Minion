@@ -125,7 +125,7 @@ public abstract class MemoryPartition extends Partition {
         // If we deleted some documents along the way, then dump that data
         // now.
         if(deletions != null && deletions.getNDeleted() > 0) {
-            logger.fine("Dump deleted documents");
+            logger.info(String.format("Dump %d deleted documents", deletions.getNDeleted()));
             deletions.write(manager.makeDeletedDocsFile(partNumber));
         }
 
