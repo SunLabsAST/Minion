@@ -91,10 +91,12 @@ public abstract class MemoryPartition extends Partition {
         
         long dur = System.currentTimeMillis() - startIndexTime;
         if(logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("Indexing %s %d, %d docs took %s",
+            logger.fine(String.format("Indexing %s %d, %d docs (%d maxID) took %s",
                     getPartitionName(),
                     partOut.getPartitionNumber(),
-                    docDict.size(), Util.millisToTimeString(dur)));
+                    docDict.size(), 
+                    maxDocumentID,
+                    Util.millisToTimeString(dur)));
         }
         
         PartitionHeader partHeader = partOut.getPartitionHeader();
@@ -125,8 +127,10 @@ public abstract class MemoryPartition extends Partition {
         // If we deleted some documents along the way, then dump that data
         // now.
         if(deletions != null && deletions.getNDeleted() > 0) {
-            logger.info(String.format("Dump %d deleted documents", deletions.getNDeleted()));
-            deletions.write(manager.makeDeletedDocsFile(partNumber));
+            if(logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format("Dump %d deleted documents", deletions.getNDeleted()));
+            }
+            deletions.write(manager.makeDeletedDocsFile(partOut.getPartitionNumber()));
         }
 
         //
@@ -149,7 +153,8 @@ public abstract class MemoryPartition extends Partition {
                     getPartitionName(),
                     partOut.getPartitionNumber(),
                     partOut.getName(),
-                    docDict.size(), Util.millisToTimeString(mw.getTimeMillis())));
+                    partOut.getNDocs(), 
+                    Util.millisToTimeString(mw.getTimeMillis())));
         }
         return partOut;
 
