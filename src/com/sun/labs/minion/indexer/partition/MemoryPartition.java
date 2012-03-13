@@ -91,11 +91,10 @@ public abstract class MemoryPartition extends Partition {
         
         long dur = System.currentTimeMillis() - startIndexTime;
         if(logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("Indexing %s %d, %d docs (%d maxID) took %s",
+            logger.fine(String.format("Indexing %s %d, %d docs took %s",
                     getPartitionName(),
                     partOut.getPartitionNumber(),
                     docDict.size(), 
-                    maxDocumentID,
                     Util.millisToTimeString(dur)));
         }
         

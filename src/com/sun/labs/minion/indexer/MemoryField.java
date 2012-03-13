@@ -1,10 +1,10 @@
 package com.sun.labs.minion.indexer;
 
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
@@ -41,6 +41,8 @@ public class MemoryField extends Field {
     private Pipeline pipeline;
 
     private FieldStage fieldStage;
+    
+    private boolean debug;
 
     public MemoryField(MemoryPartition partition, FieldInfo info) {
         super(partition, info);
@@ -64,6 +66,9 @@ public class MemoryField extends Field {
     }
 
     public void startDocument(IndexEntry<String> docKey) {
+        if(pipeline != null) {
+            pipeline.reset();
+        }
         bundle.startDocument(docKey);
     }
 
@@ -165,6 +170,9 @@ public class MemoryField extends Field {
         @Override
         public void token(Token t) {
             t.setID(docID);
+            if(debug) {
+            logger.info(String.format("%s %d", t.getToken(), t.getWordNum()));
+            }
             MemoryField.this.token(t);
         }
 
