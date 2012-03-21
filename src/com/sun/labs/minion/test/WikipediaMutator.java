@@ -407,6 +407,8 @@ public class WikipediaMutator implements Runnable {
 
         sl = Logger.getLogger(MemoryPartition.class.getName());
         sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(InvFileMemoryPartition.class.getName());
+        sl.setLevel(Level.FINE);
         sl = Logger.getLogger(Marshaller.class.getName());
         sl.setLevel(Level.FINE);
         sl = Logger.getLogger(DiskPartition.class.getName());
