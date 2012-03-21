@@ -27,6 +27,9 @@ package com.sun.labs.minion.indexer;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.util.CharUtils;
+import com.sun.labs.minion.util.FileLock;
+import com.sun.labs.minion.util.FileLockException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -40,9 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import com.sun.labs.minion.util.CharUtils;
-import com.sun.labs.minion.util.FileLock;
-import com.sun.labs.minion.util.FileLockException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -147,16 +147,13 @@ public class MetaFile implements Iterable<FieldInfo> {
 
         try {
             if(metaFile.exists()) {
-                RandomAccessFile ra =
-                        new RandomAccessFile(metaFile, "r");
+                RandomAccessFile ra = new RandomAccessFile(metaFile, "r");
                 partNumber = ra.readInt();
                 currentTermStatsNumber = ra.readInt();
                 nextTermStatsNumber = ra.readInt();
                 nextID = ra.readInt();
-                for(int i = 0; i < nextID;
-                        i++) {
-                    FieldInfo fi = new FieldInfo();
-                    fi.read(ra);
+                for(int i = 0; i < nextID; i++) {
+                    FieldInfo fi = new FieldInfo(ra);
                     nameToInfo.put(fi.getName(), fi);
                     idToInfo.put(fi.getID(), fi);
                 }
@@ -189,8 +186,7 @@ public class MetaFile implements Iterable<FieldInfo> {
             ra.writeInt(currentTermStatsNumber);
             ra.writeInt(nextTermStatsNumber);
             ra.writeInt(idToInfo.size());
-            for(Iterator i = idToInfo.values().iterator(); i.hasNext();) {
-                FieldInfo fi = (FieldInfo) i.next();
+            for(FieldInfo fi : idToInfo.values()) {
                 fi.write(ra);
             }
             ra.close();
@@ -350,12 +346,10 @@ public class MetaFile implements Iterable<FieldInfo> {
         }
 
         float[] ret = new float[size() + 1];
-        for(int i = 0; i < ret.length;
-                i++) {
+        for(int i = 0; i < ret.length; i++) {
             ret[i] = 1;
         }
-        for(int i = 0; i < fieldNames.length;
-                i++) {
+        for(int i = 0; i < fieldNames.length; i++) {
             if(fieldNames[i] == null) {
                 ret[i] = mult[0];
             }
@@ -371,17 +365,16 @@ public class MetaFile implements Iterable<FieldInfo> {
      * Gets an array for field multipliers suitable for use in postings
      * iterators.
      */
-    public float[] getMultArray(Map mult) {
-        if(mult == null || mult.size() == 0) {
+    public float[] getMultArray(Map<String,Float> mult) {
+        if(mult == null || mult.isEmpty()) {
             return null;
         }
 
         float[] ret = new float[size() + 1];
 
-        for(Iterator i = mult.entrySet().iterator(); i.hasNext();) {
-            Map.Entry e = (Map.Entry) i.next();
-            String name = (String) e.getKey();
-            Float val = (Float) e.getValue();
+        for(Map.Entry<String,Float> e : mult.entrySet()) {
+            String name = e.getKey();
+            Float val = e.getValue();
             if(name == null) {
                 ret[0] = val.floatValue();
             } else {
@@ -573,6 +566,7 @@ public class MetaFile implements Iterable<FieldInfo> {
         return (new ArrayList(idToInfo.values())).iterator();
     }
 
+    @Override
     public Iterator<FieldInfo> iterator() {
         return fieldIterator();
     }
