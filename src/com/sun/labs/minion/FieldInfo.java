@@ -32,8 +32,10 @@ import java.io.IOException;
 import com.sun.labs.util.props.ConfigEnum;
 import com.sun.labs.util.props.ConfigEnumSet;
 import com.sun.labs.util.props.ConfigString;
+import java.io.RandomAccessFile;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -43,82 +45,78 @@ import java.util.logging.Logger;
  * <p>
  *
  * Fields can be defined in the configuration file used to create a search
- * engine or via the {@link com.sun.labs.minion.SearchEngine#defineField} method.
+ * engine or via the {@link com.sun.labs.minion.SearchEngine#defineField}
+ * method.
  *
  * <p>
  *
- * Each field has a name, which is a string.  Note that field names are <em>case
- * insensitive</em>.  This means, for example, that <code>title</code>,
- * <code>Title</code>, and <code>TITLE</code> will be considered the same.
+ * Each field has a name, which is a string. Note that field names are <em>case
+ * insensitive</em>. This means, for example, that
+ * <code>title</code>,
+ * <code>Title</code>, and
+ * <code>TITLE</code> will be considered the same.
  *
  * <p>
  *
- * The disposition of the field data by the indexer is controlled
- * by the attributes that are assigned to the field.  The following attributes
- * are defined by the {@link Attribute} enumeration:
+ * The disposition of the field data by the indexer is controlled by the
+ * attributes that are assigned to the field. The following attributes are
+ * defined by the {@link Attribute} enumeration:
  *
  * <dl>
  *
- * <dt><code>TOKENIZED</code></dt>
- * <dd>The field value should be tokenized.    If this attribute is set, then
- * the data in the field will be
- * tokenized according to the rules of whatever tokenizer is currently
- * being used.  Typically, this means that the data in the field will be broken
- * into tokens at spaces and punctuation.
- * </dd>
+ * <dt><code>TOKENIZED</code></dt> <dd>The field value should be tokenized. If
+ * this attribute is set, then the data in the field will be tokenized according
+ * to the rules of whatever tokenizer is currently being used. Typically, this
+ * means that the data in the field will be broken into tokens at spaces and
+ * punctuation. </dd>
  *
  * <dt><code>INDEXED</code></dt>
  *
- * <dd>Any terms in the field (whether the field is tokenized or
- * un-tokenized) will have entries added to the main dictionary and postings
- * data added to the postings file for that dictionary.  Fields that specify
- * this attribute can be specified in queries that use the
- * <code>&lt;contains&gt;</code> operator.  For example, if the <code>title</code>
- * field has the <code>INDEXED</code> attribute, then the query:
- * <blockquote>
- * <code>title &lt;contains&gt; java</code>
- * </blockquote>
- * will return those documents that have the term <code>java</code> in the
- * <code>title</code> field.
- * </dd>
+ * <dd>Any terms in the field (whether the field is tokenized or un-tokenized)
+ * will have entries added to the main dictionary and postings data added to the
+ * postings file for that dictionary. Fields that specify this attribute can be
+ * specified in queries that use the
+ * <code>&lt;contains&gt;</code> operator. For example, if the
+ * <code>title</code> field has the
+ * <code>INDEXED</code> attribute, then the query: <blockquote>
+ * <code>title &lt;contains&gt; java</code> </blockquote> will return those
+ * documents that have the term
+ * <code>java</code> in the
+ * <code>title</code> field. </dd>
  *
  * <dt><code>VECTORED</code></dt>
  *
- * <dd>
- * This attribute indicates that terms extracted from the field value should be
- * added to a document vector specific to the field, as well as to the overall
- * document vector for this document.   Specifying this attribute allows
+ * <dd> This attribute indicates that terms extracted from the field value
+ * should be added to a document vector specific to the field, as well as to the
+ * overall document vector for this document. Specifying this attribute allows
  * applications to perform classification or document similarity computations
- * against just this field.  So, for example, you could find a set of documents
- * that have titles similar to a given document's title.
- * </dd>
+ * against just this field. So, for example, you could find a set of documents
+ * that have titles similar to a given document's title. </dd>
  *
  * <dt><code>TRIMMED</code></dt>
  *
- * <dd>
- * This attribute indicates that field values passed into the indexer should
- * have any leading or trailing spaces trimmed from the values before they
- * are processed any further.
- * </dd>
+ * <dd> This attribute indicates that field values passed into the indexer
+ * should have any leading or trailing spaces trimmed from the values before
+ * they are processed any further. </dd>
  *
  * <dt><code>CASED</code></dt>
  *
- * <dd>
- * This attribute indicates that a given string field should be stored so that
- * case sensitive and case insensitive queries can be run against it.  If a
+ * <dd> This attribute indicates that a given string field should be stored so
+ * that case sensitive and case insensitive queries can be run against it. If a
  * string field does not have this attribute set, then queries against that
- * field will be run in a case insensitive manner.  This attribute applies to both
- * the saved field values as well as the tokens extracted from the field when the
- * <code>TOKENIZED</code> attribute is set.
- * </dd>
+ * field will be run in a case insensitive manner. This attribute applies to
+ * both the saved field values as well as the tokens extracted from the field
+ * when the
+ * <code>TOKENIZED</code> attribute is set. </dd>
  *
  * <dt><code>SAVED</code></dt>
  *
- * <dd>This attribute indicates that the value for the field should be stored
- * in the index exactly as it provided.  Values that are in saved fields are
- * available for parametric searches (e.g., <code>price &lt; 10</code>) and
- * for results sorting. If <code>SAVED</code> is specified as an attribute,
- * then <em>one</em> of the following types <em>must</em> be specified:
+ * <dd>This attribute indicates that the value for the field should be stored in
+ * the index exactly as it provided. Values that are in saved fields are
+ * available for parametric searches (e.g.,
+ * <code>price &lt; 10</code>) and for results sorting. If
+ * <code>SAVED</code> is specified as an attribute, then <em>one</em> of the
+ * following types <em>must</em> be specified:
  *
  * <dl>
  *
@@ -132,22 +130,22 @@ import java.util.logging.Logger;
  *
  * <dt><code>DATE</code></dt>
  *
- * <dd>The field value is a date, given in some text representation.  This
- * date will be parsed and then stored in a Java long as the number of
- * milliseconds since the epoch (00:00:00 GMT, January 1, 1970).</dd>
+ * <dd>The field value is a date, given in some text representation. This date
+ * will be parsed and then stored in a Java long as the number of milliseconds
+ * since the epoch (00:00:00 GMT, January 1, 1970).</dd>
  *
  * <dt><code>STRING</code></dt>
  *
  * <dd>A text field that consists of a variable number of characters. The
  * default string field is the empty string.</dd>
  *
- * </dl>
- * </dl>
+ * </dl> </dl>
  *
  * <p>
  *
- * The attributes of the <code>FieldInfo</code> object can be set by providing
- * an {@link java.util.EnumSet} to the constructor, or by using the
+ * The attributes of the
+ * <code>FieldInfo</code> object can be set by providing an {@link java.util.EnumSet}
+ * to the constructor, or by using the
  * <code>setAttribute</code> method.
  *
  */
@@ -156,31 +154,30 @@ public class FieldInfo implements Cloneable, Configurable {
     protected static final Logger logger = Logger.getLogger(FieldInfo.class.getName());
 
     /**
-     * The various attributes that a field can have.  Any field may specify
-     * any combination of these attributes. 
+     * The various attributes that a field can have. Any field may specify any
+     * combination of these attributes.
      */
     public enum Attribute {
 
         /**
-         * Values for the field will be broken into tokens.  The universal tokenizer
-         * is used by default.
+         * Values for the field will be broken into tokens. The universal
+         * tokenizer is used by default.
          */
         TOKENIZED,
         /**
-         * Values in the field will be placed into the main dictionary, for use as
-         * query terms.  This is useful in conjunction with the <code>TOKENIZED</code>
-         * attribute.
+         * Values in the field will be placed into the main dictionary, for use
+         * as query terms. This is useful in conjunction with the
+         * <code>TOKENIZED</code> attribute.
          */
         INDEXED,
         /**
-         * Postions for the tokens in this field will be stored in the
-         * index
+         * Postions for the tokens in this field will be stored in the index
          */
         POSITIONS,
         /**
-         * The values tokenized from this field will be stored in a document vector
-         * for this field, which will allow document similarity computations to
-         * be done using the data from this field.
+         * The values tokenized from this field will be stored in a document
+         * vector for this field, which will allow document similarity
+         * computations to be done using the data from this field.
          */
         VECTORED,
         /**
@@ -194,26 +191,26 @@ public class FieldInfo implements Cloneable, Configurable {
          */
         UNCASED,
         /**
-         * When tokens are indexed into the field, the tokens will be stored
-         * as stems.  At query time, search terms will be stemmed as well.
+         * When tokens are indexed into the field, the tokens will be stored as
+         * stems. At query time, search terms will be stemmed as well.
          */
         STEMMED,
         /**
          * When tokens are indexed into the field, the tokens will be stored
-         * unstemmed.   At query time, search terms will be expanded.
+         * unstemmed. At query time, search terms will be expanded.
          */
         UNSTEMMED,
         /**
-         * The values for this field will be stored as-is in the index for use in
-         * relational queries or for sorting search results.
+         * The values for this field will be stored as-is in the index for use
+         * in relational queries or for sorting search results.
          */
         SAVED;
 
     }
 
     /**
-     * The types of fields.  The type of the field influences the names that
-     * can be stored in the dictionary.
+     * The types of fields. The type of the field influences the names that can
+     * be stored in the dictionary.
      */
     public enum Type {
 
@@ -238,7 +235,7 @@ public class FieldInfo implements Cloneable, Configurable {
     /**
      * A factory for pipelines.
      */
-    @ConfigString(defaultValue=FieldInfo.DEFAULT_PIPELINE_FACTORY_NAME)
+    @ConfigString(defaultValue = FieldInfo.DEFAULT_PIPELINE_FACTORY_NAME)
     public static final String PROP_PIPELINE_FACTORY_NAME = "pipelineFactoryName";
 
     private String pipelineFactoryName;
@@ -269,12 +266,13 @@ public class FieldInfo implements Cloneable, Configurable {
     private Type type;
 
     public FieldInfo() {
-        this(0, null, getDefaultAttributes(), Type.NONE, null);
+        attributes = getDefaultAttributes();
+        type = Type.NONE;
     }
 
     /**
-     * Constructs a <code>FieldInfo</code> instance for the given field
-     * name.
+     * Constructs a
+     * <code>FieldInfo</code> instance for the given field name.
      *
      * @param name The name of the field.
      */
@@ -283,8 +281,8 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     /**
-     * Constructs a <code>FieldInfo</code> instance for the given field
-     * name.
+     * Constructs a
+     * <code>FieldInfo</code> instance for the given field name.
      *
      * @param id the ID of the field
      * @param name The name of the field.
@@ -294,12 +292,12 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     /**
-     * Constructs a <code>FieldInfo</code> object with the given attributes
-     * and type.
+     * Constructs a
+     * <code>FieldInfo</code> object with the given attributes and type.
      *
      * @param name The name of the field.
-     * @param attributes A set of field attributes.  Note that we take a copy
-     * of this set, so it is safe to modify or reuse the attributes.
+     * @param attributes A set of field attributes. Note that we take a copy of
+     * this set, so it is safe to modify or reuse the attributes.
      *
      */
     public FieldInfo(String name, EnumSet<Attribute> attributes) {
@@ -307,12 +305,12 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     /**
-     * Constructs a <code>FieldInfo</code> object with the given attributes
-     * and type.
+     * Constructs a
+     * <code>FieldInfo</code> object with the given attributes and type.
      *
      * @param name The name of the field.
-     * @param attributes A set of field attributes.  Note that we take a copy
-     * of this set, so it is safe to modify or reuse the attributes.
+     * @param attributes A set of field attributes. Note that we take a copy of
+     * this set, so it is safe to modify or reuse the attributes.
      * @param type A type that will be used if the attributes indicate that the
      * field is saved.
      */
@@ -321,12 +319,12 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     /**
-     * Constructs a <code>FieldInfo</code> object with the given attributes
-     * and type.
+     * Constructs a
+     * <code>FieldInfo</code> object with the given attributes and type.
      *
      * @param name The name of the field.
-     * @param attributes A set of field attributes.  Note that we take a copy
-     * of this set, so it is safe to modify or reuse the attributes.
+     * @param attributes A set of field attributes. Note that we take a copy of
+     * this set, so it is safe to modify or reuse the attributes.
      * @param type A type that will be used if the attributes indicate that the
      * field is saved.
      */
@@ -335,22 +333,23 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     /**
-     * Constructs a <code>FieldInfo</code> object with the given attributes
-     * and sub-attribute.
+     * Constructs a
+     * <code>FieldInfo</code> object with the given attributes and
+     * sub-attribute.
      *
      * @param id the ID to assign to this field.
      * @param name The name of the field.
-     * @param attributes A set of field attributes.  Note that we take a copy
-     * of this set, so it is safe to modify or reuse the attributes.
+     * @param attributes A set of field attributes. Note that we take a copy of
+     * this set, so it is safe to modify or reuse the attributes.
      * @param type The field type
      * @throws IllegalArgumentException if the attributes of the field specify
-     * that a field is saved and the type of the field is <code>null</code> or
-     * Type.NONE, or if a type other than Type.NONE is specified and the
-     * attributes do not contain the SAVED attribute.
+     * that a field is saved and the type of the field is
+     * <code>null</code> or Type.NONE, or if a type other than Type.NONE is
+     * specified and the attributes do not contain the SAVED attribute.
      */
     public FieldInfo(int id, String name,
-                     EnumSet<Attribute> attributes,
-                     Type type, String pipelineFactoryName) {
+            EnumSet<Attribute> attributes,
+            Type type, String pipelineFactoryName) {
         this.id = id;
         this.name = name == null ? null : name.toLowerCase();
         if(attributes != null) {
@@ -359,7 +358,17 @@ public class FieldInfo implements Cloneable, Configurable {
             this.attributes = getDefaultAttributes();
         }
         this.type = type;
-        this.pipelineFactoryName = pipelineFactoryName;
+        if(pipelineFactoryName == null && this.attributes.contains(Attribute.INDEXED)) {
+            logger.log(Level.WARNING, String.format("Field %s is indexed but has no pipeline defined, using the default", name),
+                    new Exception("here"));
+            this.pipelineFactoryName = DEFAULT_PIPELINE_FACTORY_NAME;
+        } else {
+            this.pipelineFactoryName = pipelineFactoryName;
+        }
+    }
+    
+    public FieldInfo(RandomAccessFile raf) throws IOException {
+        read(raf);
     }
 
     @Override
@@ -376,7 +385,9 @@ public class FieldInfo implements Cloneable, Configurable {
 
     /**
      * Gets the name of the field.
-     * @return the name of the field. Note that field names are case insensitive.
+     *
+     * @return the name of the field. Note that field names are case
+     * insensitive.
      */
     public String getName() {
         return this.name;
@@ -407,9 +418,8 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     /**
-     * Sets the attributes associated with the field.  The provided attributes
-     * will replace whatever attributes are currently associated with the
-     * field.
+     * Sets the attributes associated with the field. The provided attributes
+     * will replace whatever attributes are currently associated with the field.
      *
      * @param attributes the attribute value to set.
      */
@@ -432,9 +442,10 @@ public class FieldInfo implements Cloneable, Configurable {
 
     /**
      * Gets the field type.
-     * @return the type of this field.  If this field does not have the
-     * <code>SAVED</code> attribute, then the type <code>NONE</code> is
-     * returned.
+     *
+     * @return the type of this field. If this field does not have the
+     * <code>SAVED</code> attribute, then the type
+     * <code>NONE</code> is returned.
      */
     public Type getType() {
         return type;
@@ -442,10 +453,11 @@ public class FieldInfo implements Cloneable, Configurable {
 
     /**
      * Gets the default saved value for a field of this type.
-     * @return a default value for the saved type of this field.  For numeric fields
-     * (including DATE fields), 0 is returned.  For string fields, the empty string
-     * is returned.  If this field
-     * is not a saved field, <code>null</code> will be returned.
+     *
+     * @return a default value for the saved type of this field. For numeric
+     * fields (including DATE fields), 0 is returned. For string fields, the
+     * empty string is returned. If this field is not a saved field,
+     * <code>null</code> will be returned.
      */
     public Object getDefaultSavedValue() {
         if(!attributes.contains(Attribute.SAVED)) {
@@ -487,7 +499,7 @@ public class FieldInfo implements Cloneable, Configurable {
     @Override
     public String toString() {
         return String.format("%s: %d type: %s attributes: %s", this.name, id,
-                             type, attributes);
+                type, attributes);
     }
 
     /**
@@ -497,7 +509,8 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param ps a property sheet for this field
      * @throws com.sun.labs.util.props.PropertyException if there is any error
      * processing the properties
-     * @see com.sun.labs.util.props.Configurable#newProperties(com.sun.labs.util.props.PropertySheet)
+     * @see
+     * com.sun.labs.util.props.Configurable#newProperties(com.sun.labs.util.props.PropertySheet)
      *
      */
     @Override
@@ -512,9 +525,10 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     /**
-     * Sets the type of this field info from a string.  If the type provided
-     * is not one of the defined types, then an error will be logged and
-     * the type <code>STRING</code> will be used as the default.
+     * Sets the type of this field info from a string. If the type provided is
+     * not one of the defined types, then an error will be logged and the type
+     * <code>STRING</code> will be used as the default.
+     *
      * @param typeString a string representation of the type.
      */
     private void setType(String typeString) {
@@ -523,13 +537,14 @@ public class FieldInfo implements Cloneable, Configurable {
         } catch(IllegalArgumentException iae) {
             logger.severe(String.format(
                     "Unknown type for field %s: %s, defaulting to NONE",
-                                        this.name, typeString));
+                    this.name, typeString));
             type = Type.NONE;
         }
     }
 
     /**
      * Writes this field information object to a data output.
+     *
      * @param out the output where we will write the object
      * @throws java.io.IOException if there is any error writing the information
      */
@@ -551,11 +566,12 @@ public class FieldInfo implements Cloneable, Configurable {
 
     /**
      * Reads a filed information object from the provided input.
+     *
      * @param in the input from which we will read the field information
      * @throws java.io.IOException if there is any error reading the field
      * information
      */
-    public void read(DataInput in)
+    private void read(DataInput in)
             throws java.io.IOException {
         name = in.readUTF();
         setType(in.readUTF());
@@ -573,35 +589,38 @@ public class FieldInfo implements Cloneable, Configurable {
 
     /**
      * Gets a set of the typical attributes for an indexed field.
-     * @return a set of attributes containing the INDEXED, TOKENIZED, and VECTORED
-     * attributes
+     *
+     * @return a set of attributes containing the INDEXED, TOKENIZED, and
+     * VECTORED attributes
      */
     public static EnumSet<Attribute> getIndexedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                          Attribute.TOKENIZED,
-                          Attribute.POSITIONS,
-                          Attribute.CASED,
-                          Attribute.UNCASED,
-                          Attribute.VECTORED);
+                Attribute.TOKENIZED,
+                Attribute.POSITIONS,
+                Attribute.CASED,
+                Attribute.UNCASED,
+                Attribute.VECTORED);
     }
 
     /**
      * Gets the default set of attributes, which indexes a field, but doesn't
      * vector or save it.
-     * @return 
+     *
+     * @return
      */
     public static EnumSet<Attribute> getDefaultAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                          Attribute.CASED,
-                          Attribute.UNCASED,
-                          Attribute.TOKENIZED, 
-                          Attribute.POSITIONS);
+                Attribute.CASED,
+                Attribute.UNCASED,
+                Attribute.TOKENIZED,
+                Attribute.POSITIONS);
     }
 
     /**
      * Gets a set of the typical attributes for an indexed field.
-     * @return a set of attributes containing the INDEXED, TOKENIZED, and VECTORED
-     * attributes
+     *
+     * @return a set of attributes containing the INDEXED, TOKENIZED, and
+     * VECTORED attributes
      */
     public static EnumSet<Attribute> getIndexedAndSavedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
@@ -609,7 +628,7 @@ public class FieldInfo implements Cloneable, Configurable {
                 Attribute.POSITIONS,
                 Attribute.CASED,
                 Attribute.UNCASED,
-                Attribute.VECTORED, 
+                Attribute.VECTORED,
                 Attribute.SAVED);
     }
 
@@ -621,7 +640,7 @@ public class FieldInfo implements Cloneable, Configurable {
     }
 
     /**
-     * Gets a set of attributes for a string field that stores case insensitive 
+     * Gets a set of attributes for a string field that stores case insensitive
      * versions of the saved values as well.
      */
     public static EnumSet<Attribute> getUncasedStringAttributes() {
@@ -644,9 +663,9 @@ public class FieldInfo implements Cloneable, Configurable {
         if(this.id != other.id) {
             return false;
         }
-        if(this.attributes != other.attributes &&
-                (this.attributes == null ||
-                !this.attributes.equals(other.attributes))) {
+        if(this.attributes != other.attributes
+                && (this.attributes == null
+                || !this.attributes.equals(other.attributes))) {
             return false;
         }
         return true;
@@ -658,8 +677,8 @@ public class FieldInfo implements Cloneable, Configurable {
         hash = 37 * hash + (this.name != null ? this.name.hashCode() : 0);
         hash = 37 * hash + this.id;
         hash =
-                37 * hash +
-                (this.attributes != null ? this.attributes.hashCode() : 0);
+                37 * hash
+                + (this.attributes != null ? this.attributes.hashCode() : 0);
         hash = 37 * hash + (this.type != null ? this.type.hashCode() : 0);
         return hash;
     }
