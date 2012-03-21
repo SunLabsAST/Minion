@@ -122,6 +122,7 @@ public class MemoryField extends Field {
         bundle.token(t);
     }
 
+    @Override
     public int getMaximumDocumentID() {
         return bundle.getMaxDocID();
     }
@@ -155,6 +156,7 @@ public class MemoryField extends Field {
         bundle.clear();
     }
 
+    @Override
     public MemoryDictionary getTermDictionary(boolean cased) {
         return bundle.getTermDictionary(cased);
     }
@@ -170,9 +172,6 @@ public class MemoryField extends Field {
         @Override
         public void token(Token t) {
             t.setID(docID);
-            if(debug) {
-            logger.info(String.format("%s %d", t.getToken(), t.getWordNum()));
-            }
             MemoryField.this.token(t);
         }
 
