@@ -2710,7 +2710,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             int numDocs = getNDocs();
             float changedRatio = Math.abs(((float) numDocs - lastNumDocs) / numDocs);
             if(changedRatio > termStatsRegenerationRatio) {
-                logger.info(String.format("TermStatsKeeper: %d %d %.2f", lastNumDocs, numDocs, changedRatio * 100));
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format("TermStatsKeeper: %d %d %.2f", lastNumDocs, numDocs, changedRatio * 100));
+                }
                 NanoWatch nw = new NanoWatch();
                 nw.start();
                 try {
@@ -2721,7 +2723,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     logger.log(Level.SEVERE, String.format("Error recalculating term stats"), ex);
                 }
                 nw.stop();
-                logger.info(String.format("Generated term stats in %s", Util.millisToTimeString(nw.getTimeMillis())));
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format("Generated term stats in %s", Util.millisToTimeString(nw.getTimeMillis())));
+                }
                 lastNumDocs = numDocs;
             }
         }
