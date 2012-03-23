@@ -21,14 +21,13 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion;
 
-import java.io.Serializable;
-import java.util.Comparator;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.Serializable;
+import java.util.Comparator;
 
 public class WeightedFeature implements Feature, Serializable {
 
@@ -36,69 +35,79 @@ public class WeightedFeature implements Feature, Serializable {
      * The name of the feature.
      */
     protected String name;
+
     /**
      * The ID for the feature, used when doing postings.
      */
     protected int id;
+
     /**
      * The frequency of the feature.
      */
     protected int freq;
+
     /**
      * The weight associated with the feature.
      */
     protected float weight;
+
     /**
-     * The dictionary entry that gave us this feature.  This is an optimization
+     * The dictionary entry that gave us this feature. This is an optimization
      * to avoid having to re-fetch and re-decode features when doing things like
      * <code>DocumentVector.findSimilar</code>
      */
     protected transient QueryEntry entry;
-    
+
     /**
      * A weight comparator where small weights are less than large weights
      */
-    protected static final Comparator<WeightedFeature> weightComparator =
+    public static final Comparator<WeightedFeature> WEIGHT_COMPARATOR =
             new Comparator<WeightedFeature>() {
 
-        public int compare(WeightedFeature o1,
-                WeightedFeature o2) {
-            if(o1.getWeight() < o2.getWeight()) {
-                return -1;
-            }
+                @Override
+                public int compare(WeightedFeature o1,
+                        WeightedFeature o2) {
+                    if(o1.getWeight() < o2.getWeight()) {
+                        return -1;
+                    }
 
-            if(o1.getWeight() > o2.getWeight()) {
-                return 1;
-            }
-            return 0;
-        }
+                    if(o1.getWeight() > o2.getWeight()) {
+                        return 1;
+                    }
+                    return 0;
+                }
 
-        public boolean equals(Object o) {
-            return false;
-        }
-    };
+                @Override
+                public boolean equals(Object o) {
+                    return false;
+                }
+            };
+
     /**
-     * An "inverse" weight comparator where large weights are less than small weights
+     * An "inverse" weight comparator where large weights are less than small
+     * weights
      */
-    protected static final Comparator<WeightedFeature> invWeightComparator =
+    public static final Comparator<WeightedFeature> INVERSE_WEIGHT_COMPARATOR =
             new Comparator<WeightedFeature>() {
 
-        public int compare(WeightedFeature o1,
-                WeightedFeature o2) {
-            if(o1.getWeight() < o2.getWeight()) {
-                return 1;
-            }
+                @Override
+                public int compare(WeightedFeature o1,
+                        WeightedFeature o2) {
+                    if(o1.getWeight() < o2.getWeight()) {
+                        return 1;
+                    }
 
-            if(o1.getWeight() > o2.getWeight()) {
-                return -1;
-            }
-            return 0;
-        }
+                    if(o1.getWeight() > o2.getWeight()) {
+                        return -1;
+                    }
+                    return 0;
+                }
 
-        public boolean equals(Object o) {
-            return false;
-        }
-    };
+                @Override
+                public boolean equals(Object o) {
+                    return false;
+                }
+            };
 
     /**
      * An inverse count comparator.
@@ -106,16 +115,25 @@ public class WeightedFeature implements Feature, Serializable {
     public static final Comparator<WeightedFeature> INV_COUNT_COMPARATOR =
             new Comparator<WeightedFeature>() {
 
-        @Override
-        public int compare(WeightedFeature o1, WeightedFeature o2) {
-            return o2.freq - o1.freq;
-        }
+                @Override
+                public int compare(WeightedFeature o1, WeightedFeature o2) {
+                    return o2.freq - o1.freq;
+                }
 
-        public boolean equals(Object o) {
-            return this == o;
-        }
+                @Override
+                public boolean equals(Object o) {
+                    return this == o;
+                }
+            };
 
-    };
+    public static final Comparator<WeightedFeature> NAME_COMPARATOR =
+            new Comparator<WeightedFeature>() {
+
+                @Override
+                public int compare(WeightedFeature t, WeightedFeature t1) {
+                    return t.name.compareTo(t1.name);
+                }
+            };
 
     public WeightedFeature() {
     }
@@ -134,6 +152,13 @@ public class WeightedFeature implements Feature, Serializable {
         this.id = id;
         this.weight = weight;
     } // WeightedFeature constructor
+    
+    public WeightedFeature(QueryEntry<String> entry, int freq, float weight) {
+        this.name = entry.getName();
+        this.id = entry.getID();
+        this.entry = entry;
+        this.freq = freq;
+    }
 
     public WeightedFeature(WeightedFeature f) {
         name = f.name;
@@ -146,6 +171,7 @@ public class WeightedFeature implements Feature, Serializable {
      *
      * @param name the name of the feature.
      */
+    @Override
     public void setName(String name) {
         this.name = name;
     }
@@ -155,6 +181,7 @@ public class WeightedFeature implements Feature, Serializable {
      *
      * @return the name of the feature.
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -176,8 +203,8 @@ public class WeightedFeature implements Feature, Serializable {
     }
 
     /**
-     * Combines another weighted feature with this one.  The other feature
-     * is assumed to have the same name!
+     * Combines another weighted feature with this one. The other feature is
+     * assumed to have the same name!
      */
     public void combine(WeightedFeature f) {
         freq += f.freq;
@@ -187,9 +214,9 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * Encodes the information in this feature onto the given buffer.
      *
-     * @param b a buffer onto which the feature's information can be
-     * encoded.
+     * @param b a buffer onto which the feature's information can be encoded.
      */
+    @Override
     public void encode(WriteableBuffer b) {
         b.byteEncode(Float.floatToIntBits(weight), 4);
     }
@@ -197,9 +224,9 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * Decodes the information in this feature from the given buffer.
      *
-     * @param b a buffer from which the feature's information can be
-     * decoded.
+     * @param b a buffer from which the feature's information can be decoded.
      */
+    @Override
     public void decode(ReadableBuffer b) {
         weight = Float.intBitsToFloat(b.byteDecode(4));
     }
@@ -209,6 +236,7 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * Sets the ID associated with this feature.
      */
+    @Override
     public void setID(int id) {
         this.id = id;
     }
@@ -216,6 +244,7 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * Gets the ID associated with an occurrence.
      */
+    @Override
     public int getID() {
         return id;
     }
@@ -228,6 +257,7 @@ public class WeightedFeature implements Feature, Serializable {
         return freq;
     }
 
+    @Override
     public int getPosition() {
         return 1;
     }
@@ -237,6 +267,7 @@ public class WeightedFeature implements Feature, Serializable {
      *
      * @return the number of occurrences, which is always 1 in this case
      */
+    @Override
     public int getCount() {
         return 1;
     }
@@ -246,14 +277,15 @@ public class WeightedFeature implements Feature, Serializable {
      *
      * @param count the number of occurrences.
      */
+    @Override
     public void setCount(int count) {
         freq = count;
     }
-    
+
     public void setEntry(QueryEntry entry) {
         this.entry = entry;
     }
-    
+
     public QueryEntry getEntry() {
         return entry;
     }
@@ -261,34 +293,19 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * Compares two features on the basis of their names.
      */
+    @Override
     public int compareTo(Feature o) {
         return name.compareTo(o.getName());
     }
 
     /**
-     * Gets a comparator that compares weighted features based on
-     * their weights.  Smaller weights are "less than" larger weights.
-     */
-    public static Comparator<WeightedFeature> getWeightComparator() {
-        return weightComparator;
-    }
-
-    /**
-     * Gets a comparator that compares weighted features based on
-     * their weights.  Larger weights are "less than" smaller weights.
-     */
-    public static Comparator<WeightedFeature> getInverseWeightComparator() {
-        return invWeightComparator;
-    }
-
-    /**
-     * Two WeightedFeature objects are equal if they represent
-     * the same feature -- that is, their names are the same, but
-     * their weights need not be.
+     * Two WeightedFeature objects are equal if they represent the same feature
+     * -- that is, their names are the same, but their weights need not be.
      *
      * @param o the object to compare to this one
      * @return true if the names of the features are the same
      */
+    @Override
     public boolean equals(Object o) {
         try {
             return name.equals(((WeightedFeature) o).getName());
@@ -297,6 +314,7 @@ public class WeightedFeature implements Feature, Serializable {
         }
     }
 
+    @Override
     public String toString() {
         return String.format("%s %.6f", name, weight);
     }

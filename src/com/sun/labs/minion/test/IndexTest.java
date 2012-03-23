@@ -23,29 +23,24 @@
  */
 package com.sun.labs.minion.test;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.net.MalformedURLException;
-import java.net.URL;
-
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import java.io.File;
-
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
-
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.util.LabsLogFormatter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class IndexTest extends SEMain {
 

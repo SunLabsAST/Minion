@@ -281,9 +281,9 @@ public class PostTest implements Runnable {
                 output.println("  Processed: " + nEntries);
                 output.flush();
             }
-            logger.info(String.format("Finished %s in %s\n", fi.getName(), part));
+            logger.info(String.format("Finished %s in %s", fi.getName(), part));
         }
-        logger.info(String.format("Finished %s\n", part));
+        logger.info(String.format("Finished %s", part));
         output.flush();
         latch.countDown();
     }
@@ -467,7 +467,7 @@ public class PostTest implements Runnable {
         for(int i = 0; i < postTest.length; i++) {
             DiskPartition part = parts.get(i);
             File outFile = new File(outputDir, String.format("%06d.out", part.getPartitionNumber()));
-            logger.info(String.format("New output file %s\n", outFile));
+            logger.info(String.format("New output file %s", outFile));
             outputs[i] = new PrintWriter(new FileWriter(outFile));
             postTest[i] = new PostTest(engine, part, doFields, terms, caseSensitive, getWords, quiet, outputs[i], latch);
             partThreads[i] = new Thread(postTest[i]);
@@ -495,13 +495,13 @@ public class PostTest implements Runnable {
         }
         
         logger.info(String.format("Iterated %,d docs in %,.2fms %,.2fdocs/ms."
-                + " Average iteration time %,.2fns/docs\n", 
+                + " Average iteration time %,.2fns/docs", 
                           docsIterated, 
                           iw.getTimeMillis(),
                           docsIterated / iw.getTimeMillis(), 
                 iw.getTimeNanos() / (double) docsIterated));
         logger.info(String.format("Found %,d docs in %,.2fms. %,.2f finds/ms. "
-                + "Average findID time %,.2fns\n", 
+                + "Average findID time %,.2fns", 
                 fw.getClicks(), fw.getTimeMillis(), 
                 fw.getClicks() / fw.getTimeMillis(),
                 fw.getAvgTime()));

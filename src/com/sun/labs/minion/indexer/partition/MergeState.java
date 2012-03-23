@@ -1,9 +1,8 @@
 package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.indexer.entry.EntryFactory;
+import com.sun.labs.minion.indexer.entry.EntryMapper;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
-import java.io.File;
 import java.util.logging.Logger;
 
 /**
@@ -36,15 +35,12 @@ public class MergeState implements Cloneable {
     public FieldInfo info;
     
     /**
-     * The number of documents in the merged partition.
+     * Mappers for the entries in a dictionary.  Mostly used for the document
+     * dictionary and for the document vector dictionaries so that we can
+     * remove the entries for deleted documents.
      */
-    public int nDocs;
-
-    /**
-     * The new maximum document ID for the merged data;
-     */
-    public int maxDocID;
-
+    public EntryMapper[] docIDMappers;
+    
     /**
      * An array of the new starting document ID for each of the merged partitions.
      */
@@ -57,7 +53,10 @@ public class MergeState implements Cloneable {
     public int[] fakeStarts;
 
     /**
-     * The number of undeleted documents in each partition that is being merged.
+     * The new maximum document ID in a partition, after deleted documents are
+     * taken into account.  We need to keep this around in order to fill in the
+     * data for partitions that didn't have saved data for a particular field
+     * when merging partitions.
      */
     public int[] nUndel;
 

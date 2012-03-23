@@ -40,6 +40,7 @@ public class DuplicateKeyException extends RuntimeException {
         return dke;
     }
     
+    @Override
     public String getMessage() {
         return "Duplicate document key from " + dke.getPartition() +  
                 ": \"" + dke.getName() + "\"";

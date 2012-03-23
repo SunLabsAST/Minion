@@ -80,7 +80,7 @@ public class PartitionHeader {
         long headerOffset = raf.readLong();
         raf.seek(headerOffset);
         read(raf);
-        
+        raf.close();
     }
     
     /**
@@ -223,6 +223,7 @@ public class PartitionHeader {
                 + " nFields=" + nFields + " fieldOffsets=" + fieldOffsets
                 + " docDictOffset=" + docDictOffset
                 + " postingsChannelNames=" + Arrays.toString(postingsChannelNames)
+                + " provenance: %s" + provenance 
                 + '}';
     }
 
@@ -312,7 +313,7 @@ public class PartitionHeader {
                 int partNumber = Integer.parseInt(args[i]);
                 partFile = PartitionManager.makeDictionaryFile(indexDir.getAbsolutePath(), partNumber);
                 PartitionHeader header = new PartitionHeader(partFile);
-                logger.info(String.format("%d provenance: %s", partNumber, header.getProvenance()));
+                System.out.format("%s\n", header.toString());
             } catch(NumberFormatException ex) {
                 logger.log(Level.SEVERE, String.format("Bad partition number: %s", args[i]));
             } catch(IOException ex) {

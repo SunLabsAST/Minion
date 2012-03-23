@@ -4,12 +4,14 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
-import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
-import com.sun.labs.minion.indexer.postings.*;
+import com.sun.labs.minion.indexer.postings.DocOccurrence;
+import com.sun.labs.minion.indexer.postings.Occurrence;
+import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
+import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.pipeline.Token;
 import com.sun.labs.minion.util.CDateParser;
 import com.sun.labs.minion.util.CharUtils;
@@ -183,17 +185,16 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         return max;
     }
     
-    public void startDocument(Entry docKey) {
-        String key = docKey.getName().toString();
+    public void startDocument(IndexEntry<String> docKey) {
         maxDocID = Math.max(maxDocID, docKey.getID());
         if(field.isVectored()) {
             if(field.isCased()) {
-                dicts[Type.RAW_VECTOR.ordinal()].remove(key);
-                rawVector = dicts[Type.RAW_VECTOR.ordinal()].put(key);
+                rawVector = dicts[Type.RAW_VECTOR.ordinal()].put(docKey);
+//                logger.info(String.format("%s %s rv: %d dk: %d", info.getName(), docKey.getName(), rawVector.getID(), docKey.getID()));
             }
             if(field.isStemmed()) {
-                dicts[Type.STEMMED_VECTOR.ordinal()].remove(key);
-                stemmedVector = dicts[Type.STEMMED_VECTOR.ordinal()].put(key);
+                stemmedVector = dicts[Type.STEMMED_VECTOR.ordinal()].put(docKey);
+//                logger.info(String.format("%s %s sv: %d dk: %d", info.getName(), docKey.getName(), stemmedVector.getID(), docKey.getID()));
             }
         } else {
             rawVector = null;
@@ -531,6 +532,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             long dictPos = partDictOut.position();
             
             try {
+//                if(type == Type.RAW_VECTOR || type == Type.STEMMED_VECTOR) {
+//                    Logger.getLogger(MemoryDictionary.class.getName()).setLevel(Level.FINER);
+//                    logger.info(String.format("marshall %s: %s", info.getName(), type));
+//                }
                 if(dicts[ord].marshall(partOut)) {
                     header.dictOffsets[ord] = dictPos;
                     entryIDMaps[ord] = dicts[ord].getIdMap();
@@ -548,6 +553,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 // But we want the marshalling thread to ultimately catch the exception.
                 throw (ex);
             }
+//            Logger.getLogger(MemoryDictionary.class.getName()).setLevel(Level.INFO);
             dw.stop();
             if(logger.isLoggable(Level.FINER)) {
                 logger.finer(String.format("%s in %s took %.2fms", type, field.getInfo().getName(), dw.getLastTimeMillis()));

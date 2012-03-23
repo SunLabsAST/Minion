@@ -37,6 +37,10 @@ public class EntryFactory<N extends Comparable> implements Configurable {
     public IndexEntry<N> getIndexEntry(N name, int id) {
         return new IndexEntry(name, id, Type.getPostings(type));
     }
+    
+    public IndexEntry<N> getIndexEntry(IndexEntry<N> entry) {
+        return new IndexEntry(entry.getName(), entry.getID(), Type.getPostings(type));
+    }
 
     public QueryEntry<N> getQueryEntry(N name, ReadableBuffer b) {
         return new QueryEntry(name, type, b);

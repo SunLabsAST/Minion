@@ -25,7 +25,7 @@ package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.indexer.DiskField;
-import com.sun.labs.minion.retrieval.DocumentVectorImpl;
+import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import java.util.logging.Logger;
@@ -38,7 +38,7 @@ public class DocCacheElement {
     private static Logger logger = Logger.getLogger(DocCacheElement.class.
             getName());
 
-    private DocumentVectorImpl dvi;
+    private SingleFieldDocumentVector dvi;
 
     private DiskField df;
 
@@ -51,14 +51,14 @@ public class DocCacheElement {
      */
     public DocCacheElement(String key, DiskField df,
             WeightingFunction wf, WeightingComponents wc) {
-        dvi = new DocumentVectorImpl(key, df, wf, wc);
+        dvi = new SingleFieldDocumentVector(key, df, wf, wc);
     }
 
     public WeightedFeature[] getFeatures() {
         return dvi.getFeatures();
     }
 
-    public DocumentVectorImpl getDVI() {
+    public SingleFieldDocumentVector getDVI() {
         return dvi;
     }
 }

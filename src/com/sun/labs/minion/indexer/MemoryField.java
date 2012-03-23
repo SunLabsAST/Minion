@@ -1,11 +1,11 @@
 package com.sun.labs.minion.indexer;
 
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
-import com.sun.labs.minion.indexer.entry.Entry;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
+import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.pipeline.PipelineFactory;
@@ -41,6 +41,8 @@ public class MemoryField extends Field {
     private Pipeline pipeline;
 
     private FieldStage fieldStage;
+    
+    private boolean debug;
 
     public MemoryField(MemoryPartition partition, FieldInfo info) {
         super(partition, info);
@@ -63,7 +65,10 @@ public class MemoryField extends Field {
         return bundle.getPostingsChannelNames();
     }
 
-    public void startDocument(Entry docKey) {
+    public void startDocument(IndexEntry<String> docKey) {
+        if(pipeline != null) {
+            pipeline.reset();
+        }
         bundle.startDocument(docKey);
     }
 
@@ -117,6 +122,7 @@ public class MemoryField extends Field {
         bundle.token(t);
     }
 
+    @Override
     public int getMaximumDocumentID() {
         return bundle.getMaxDocID();
     }
@@ -150,6 +156,7 @@ public class MemoryField extends Field {
         bundle.clear();
     }
 
+    @Override
     public MemoryDictionary getTermDictionary(boolean cased) {
         return bundle.getTermDictionary(cased);
     }

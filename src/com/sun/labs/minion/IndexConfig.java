@@ -23,26 +23,25 @@
  */
 package com.sun.labs.minion;
 
+import com.sun.labs.minion.lexmorph.Lexicon;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigComponentList;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.ConfigString;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Map;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.ConfigurationManager;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.minion.lexmorph.Lexicon;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
  * A class that holds configuration data for indexing documents.
  */
-public class IndexConfig implements Cloneable,
-        Configurable {
+public class IndexConfig implements Cloneable, Configurable {
 
     //Configuration Manager properties
     /**
@@ -129,7 +128,7 @@ public class IndexConfig implements Cloneable,
      * A property that names the default field information to use when
      * encountering an unknown field during indexing.
      */
-    @ConfigComponent(type = FieldInfo.class)
+    @ConfigComponent(type = FieldInfo.class, mandatory=false)
     public static final String PROP_DEFAULT_FIELD_INFO =
             "default_field_info";
 
@@ -297,6 +296,7 @@ public class IndexConfig implements Cloneable,
      * @param ps the property sheet containing the properties.
      * @throws com.sun.labs.util.props.PropertyException if there is any error processing the provided properties
      */
+    @Override
     public void newProperties(PropertySheet ps)
             throws PropertyException {
         indexDir = ps.getString(PROP_INDEX_DIRECTORY);
@@ -377,8 +377,10 @@ public class IndexConfig implements Cloneable,
      * 
      * @return the field information for the unknown field.
      */
-    public FieldInfo getDefaultFieldInfo(String name) {
-        return new FieldInfo(name, defaultField.getAttributes(),
-                defaultField.getType());
+    public FieldInfo getDefaultFieldInfo() {
+        if(defaultField == null) {
+            return null;
+        }
+        return defaultField.clone();
     }
 } // IndexConfig

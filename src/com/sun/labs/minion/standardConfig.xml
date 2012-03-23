@@ -44,7 +44,7 @@
     <!-- The number of indexing pipelines to use.  This is a global property
     so that it may be set easily. -->
     <property name="num_indexing_threads" value="1"/>
-    <property name="docs_per_partition" value="-1"/>
+    <property name="docs_per_partition" value="500"/>
     <property name="partition_manager_name" value="partition_manager"/>
     <property name="marshall_queue_length" value="2"/>
     <property name="partition_output_pool_size" value="2"/>
@@ -74,14 +74,8 @@
     <!-- The index configuration -->
     <component name="index_config" type="com.sun.labs.minion.IndexConfig">
         <property name="index_directory" value="${index_directory}"/>
-        <property name="default_field_info" value="unknown_field"/>
     </component>
 
-    <!-- The information for the default field to use when an unknown field is
-        encountered during indexing -->
-    <component name="unknown_field" type="com.sun.labs.minion.FieldInfo">
-    </component>
-    
     <!-- The query configuration -->
     <component name="query_config" type="com.sun.labs.minion.QueryConfig">
         <property name="vector_zero_words" value="zero_words"/>

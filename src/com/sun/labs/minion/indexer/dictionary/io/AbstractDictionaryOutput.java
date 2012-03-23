@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -90,15 +91,20 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
      * A place to store the id to position map for one dictionary.
      */
     private int[] idToPosn = null;
+    
+    protected boolean keepIDToPosn;
 
+    @Override
     public void start(MemoryDictionary dict, NameEncoder encoder, 
-            MemoryDictionary.Renumber renumber, int nChans) {
+            MemoryDictionary.Renumber renumber, 
+            boolean keepIDToPosn, int nChans) {
         if(!finished) {
             throw new IllegalStateException("Starting another dictionary before finishing the previous one");
         }
         this.header = new DictionaryHeader(nChans);
         this.encoder = encoder;
         this.renumber = renumber;
+        this.keepIDToPosn = keepIDToPosn;
         started = true;
         finished = false;
         prevName = null;
@@ -107,14 +113,17 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         // If we're not supposed to re-number the dictionary entries as we output them, 
         // then we need to keep an ID to position map.  Make sure we have the space
         // to store that map.
-        if(renumber == MemoryDictionary.Renumber.NONE) {
-            if(dict == null) {
-                throw new IllegalStateException(String.format("Can't start a dictionary with %s without a dictionary", renumber));
-            } else {
-                if(idToPosn == null) {
+        if(keepIDToPosn) {
+            
+            if(idToPosn == null) {
+                if(dict == null) {
+                    idToPosn = new int[2048];
+                } else {
                     idToPosn = new int[dict.getMaxID() + 1];
-                } else if(dict.getMaxID() >= idToPosn.length) {
-                    idToPosn = Arrays.copyOf(idToPosn, dict.getMaxID() + 1);
+                }
+            } else {
+                if(dict != null && dict.getMaxID() >= idToPosn.length) {
+                    idToPosn = new int[dict.getMaxID() + 1];
                 }
             }
             Arrays.fill(idToPosn, 0);
@@ -152,7 +161,10 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
 
         //
         // Keep the ID to position map up to date, if necessary.
-        if(renumber == MemoryDictionary.Renumber.NONE) {
+        if(keepIDToPosn) {
+            if(e.getID() >= idToPosn.length) {
+                idToPosn = Arrays.copyOf(idToPosn, e.getID() + 1024);
+            }
             idToPosn[e.getID()] = (int) header.size;
         }
 
@@ -164,6 +176,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         header.maxEntryID = Math.max(header.maxEntryID, e.getID());
     }
 
+    @Override
     public void finish() {
         if(!started) {
             throw new IllegalStateException("Can't finish a dictionary that hasn't been started");
@@ -189,7 +202,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         // Copy everything to our completed buffer.
         long headerPos = completed.position();
         header.write(completed);
-        if(renumber == MemoryDictionary.Renumber.NONE) {
+        if(keepIDToPosn) {
             header.idToPosnPos = completed.position();
             for(int i = 0; i <= header.maxEntryID; i++) {
                 completed.byteEncode(idToPosn[i], 4);
@@ -220,22 +233,26 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
 
         started = false;
         finished = true;
+        keepIDToPosn = false;
     }
 
+    @Override
     public void cleanUp() {
         started = false;
         finished = true;
+        keepIDToPosn = false;
         names.clear();
         nameOffsets.clear();
         entryInfo.clear();
         completed.clear();
     }
-    
 
+    @Override
     public long position() {
         return completed.position();
     }
 
+    @Override
     public void write(ReadableBuffer b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't write a buffer when writing a dictionary.");

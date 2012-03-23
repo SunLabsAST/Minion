@@ -271,7 +271,7 @@ public class WeightingComponents {
      * @param dv a representation of the document to be used for weighting
      * @return weighting components representing the document
      */
-    public WeightingComponents setDocument(DocumentVectorImpl dv) {
+    public WeightingComponents setDocument(SingleFieldDocumentVector dv) {
         nd = dv.getNumDistinct();
         ld = dv.getTotalOccurrences();
         dvl = dv.length();

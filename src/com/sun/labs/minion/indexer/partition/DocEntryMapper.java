@@ -79,6 +79,7 @@ public class DocEntryMapper implements EntryMapper {
      * not be included in a merged dictionary.  It is up to classes using
      * the entry mapper to account for this case!
      */
+    @Override
     public Entry map(Entry e) {
         if(idMap == null) {
             e.setID(e.getID() + start - 1);

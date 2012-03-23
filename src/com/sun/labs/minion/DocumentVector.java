@@ -53,15 +53,6 @@ public interface DocumentVector extends Cloneable {
     public void setEngine(SearchEngine e);
 
     /** 
-     * Determines of two document vectors are equal.  Document vectors are
-     * equal each of their terms is equal in both name and weight.
-     * 
-     * @param o the document vector to which this vector is compared
-     * @return true if the two document vectors are equal, false otherwise
-     */
-    public boolean equals(Object o);
-
-    /** 
      * Computes the similarity between this document vector and the
      * supplied vector.  Similarity is as how small or large the angle
      * between the two vectors is.  The measurement returned is the cosine

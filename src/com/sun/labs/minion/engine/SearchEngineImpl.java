@@ -1000,6 +1000,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return An instance of <CODE>DocumentVector</CODE> containing the vector for this document.
      * @see DocumentVector
      */
+    @Override
     public DocumentVector getDocumentVector(String key, String field) {
         if(invFilePartitionManager == null) {
             return null;
@@ -1007,6 +1008,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return invFilePartitionManager.getDocumentVector(key, field);
     }
 
+    @Override
     public DocumentVector getDocumentVector(String key, WeightedField[] fields) {
         if(invFilePartitionManager == null) {
             return null;
@@ -1014,6 +1016,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return invFilePartitionManager.getDocumentVector(key, fields);
     }
 
+    @Override
     public DocumentVector getDocumentVector(Document doc, String field)
             throws SearchEngineException {
 
@@ -1044,7 +1047,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         //
         // Get a document vector for that field.
-        DocumentVectorImpl dvi = null;
+        SingleFieldDocumentVector dvi = null;
 //                new DocumentVectorImpl(this,
 //                ((FieldedDocKeyEntry) dke).getWeightedFeatures(fid,
 //                queryConfig.getWeightingFunction(),
@@ -1053,6 +1056,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return dvi;
     }
 
+    @Override
     public DocumentVector getDocumentVector(Document doc,
                                             WeightedField[] fields)
             throws SearchEngineException {
@@ -1081,6 +1085,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     /**
      * Deletes all of the data in the index.
      */
+    @Override
     public void purge() {
 
         if(invFilePartitionManager != null) {

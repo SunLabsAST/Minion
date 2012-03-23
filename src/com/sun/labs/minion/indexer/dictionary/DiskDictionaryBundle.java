@@ -9,7 +9,6 @@ import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
-import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -747,7 +746,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         long headerPos = fieldDictOut.position();
         FieldHeader mergeHeader = new FieldHeader();
         mergeHeader.fieldID = mergeState.info.getID();
-        mergeHeader.maxDocID = mergeState.maxDocID;
+        mergeHeader.maxDocID = mergeState.partOut.getMaxDocID();
         mergeHeader.write(fieldDictOut);
         DiskDictionaryBundle exemplar = null;
 
@@ -759,6 +758,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 break;
             }
         }
+        
+        //
+        // Whether we're merging document IDs in the dictionary entries, in which
+        // case we need to use the entry mappers in the merge state.
+        boolean mergingDocEntries;
 
         //
         // ID maps for the entries in the dictionaries.  We'll store them all, 
@@ -776,8 +780,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
             int ord = type.ordinal();
             DiskDictionary[] mDicts = new DiskDictionary[bundles.length];
             DiskBiGramDictionary[] bgDicts = new DiskBiGramDictionary[bundles.length];
-            
             boolean foundDict = false;
+            mergingDocEntries = false;
 
             for(int i = 0; i < bundles.length; i++) {
 
@@ -837,6 +841,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         mergeState.postIDMaps = entryIDMaps[Type.CASED_TOKENS.ordinal()];
                     }
                     idStarts = mergeState.fakeStarts;
+                    mergingDocEntries = true;
                     break;
                 case STEMMED_VECTOR:
                     //
@@ -845,6 +850,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     encoder = new StringNameHandler();
                     mergeState.postIDMaps = entryIDMaps[Type.STEMMED_TOKENS.ordinal()];
                     idStarts = mergeState.fakeStarts;
+                    mergingDocEntries = true;
                     break;
 
                 case TOKEN_BIGRAMS:
@@ -888,13 +894,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
             logger.fine(String.format(" Merging %s", type));
 
             try {
-//                if(type == Type.UNCASED_TOKENS && mergeState.info.getName().equals("original-text")) {
+//                if(type == Type.UNCASED_TOKENS && mergeState.info.getName().equals("title")) {
 //                    Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINE);
 //                }
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                         encoder,
                         mDicts,
-                        null,
+                        mergingDocEntries ? mergeState.docIDMappers : null,
                         idStarts,
                         mergeState.postIDMaps,
                         fieldDictOut,
@@ -970,12 +976,20 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         for(int k = 0; k < n; k++) {
                             int eid = dtvDup.byteDecode();
                             int mappedID = valIDMap[eid];
+                            try {
                             mdtvBuff.byteEncode(mappedID);
+                            } catch (ArithmeticException ex) {
+                                logger.log(Level.SEVERE, 
+                                        String.format("Error encoding data for field %s from %s orig ID %d",
+                                        mergeState.info.getName(),
+                                        bundles[i].dicts[Type.RAW_SAVED.ordinal()].getPartition(), 
+                                        eid));
+                                throw(ex);
+                            }
                         }
                     }
                 }
             }
-
             //
             // Transfer the temp buffers into the dictionary file.
             mergeHeader.dtvOffset = fieldDictOut.position();
@@ -988,6 +1002,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
         }
+
 
         //
         // Calculate document vector lengths.
@@ -1027,8 +1042,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             fieldDictOut,
                             mPostRAF);
                     DocumentVectorLengths.calculate(mergeState.info,
-                            mergeState.maxDocID,
-                            mergeState.maxDocID,
+                            mergeState.partOut.getMaxDocID(),
+                            mergeState.partOut.getMaxDocID(),
                             mergeState.manager,
                             (DictionaryIterator<String>) newMainDict.iterator(),
                             vlb,
@@ -1038,7 +1053,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     }
                     fieldDictOut.position(mdsp);
                 } catch(RuntimeException ex) {
-                    logger.log(Level.SEVERE, String.format("Exception computing vectors for merged partition on field %s", mergeState.info.getName()));
+                    logger.log(Level.SEVERE, String.format(
+                            "Exception computing vectors for merged partition on field %s using %s", 
+                            mergeState.info.getName(), 
+                            mergeHeader.dictOffsets[Type.UNCASED_TOKENS.ordinal()] >= 0 ? 
+                            Type.UNCASED_TOKENS : Type.CASED_TOKENS));
                     throw (ex);
                 }
 
@@ -1072,7 +1091,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // the entries and copy out the data, so no need for messing with the heap.
         int nMerged = 0;
         int tsid = 1;
-        termStatsDictOut.start(null, new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, 0);
+        termStatsDictOut.start(null, new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, false, 0);
 
         if(bundles.length == 1) {
             DictionaryIterator di = null;

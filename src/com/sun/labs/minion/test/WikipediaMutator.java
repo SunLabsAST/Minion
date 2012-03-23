@@ -24,14 +24,16 @@
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.*;
+import com.sun.labs.minion.indexer.partition.*;
 import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.util.LabsLogFormatter;
+import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,11 +41,11 @@ import java.util.logging.Logger;
 /**
  * A mutator that indexes a simplified version of Wikipedia entries so that we
  * can test indexing and re-indexing.
- *
- * @author Stephen
  */
 public class WikipediaMutator implements Runnable {
 
+    protected PrintWriter out;
+    
     protected SearchEngine engine;
 
     protected Thread indexingThread;
@@ -65,10 +67,11 @@ public class WikipediaMutator implements Runnable {
 
     private static String indexDir;
 
-    public WikipediaMutator(SearchEngine engine, List<IndexableMap> indexList)
-            throws SearchEngineException {
+    public WikipediaMutator(SearchEngine engine, List<IndexableMap> indexList, File outputFile)
+            throws SearchEngineException, IOException {
         this.engine = engine;
         this.indexList = indexList;
+        out = new PrintWriter(new FileWriter(outputFile));
     }
 
     public void setMaxUpd(int maxUpd) {
@@ -136,14 +139,16 @@ public class WikipediaMutator implements Runnable {
             // How many documents will we do this time around?  Note that
             // the answer can be 0!
             int toIndex = rand.nextInt(maxUpd);
-            logger.log(Level.INFO, String.format("Iteration %d %d docs",
-                       nIter, toIndex));
+            String ls = String.format("Iteration %d %d docs", nIter, toIndex);
+            logger.log(Level.INFO, ls);
+            out.format("%d %s\n", System.currentTimeMillis(), ls);
 
             for(int i = 0; i < toIndex; i++) {
 
                 //
                 // Try to index it.
                 IndexableMap map = indexList.get(rand.nextInt(indexList.size()));
+                out.format("%d i %s\n", System.currentTimeMillis(), map.getKey());
                 try {
                     engine.index(map);
                 } catch(Exception se) {
@@ -177,15 +182,21 @@ public class WikipediaMutator implements Runnable {
             // See whether we're done.
             done = nUpdates >= 0 && nIter >= nUpdates;
             nIter++;
+            out.flush();
         }
+        out.close();
     }
 
     public static void usage() {
         System.out.println(
-                "Usage: java Mutator\n" + " -i <Wikipedia data>   "
-                + "Wiki data in PBLML (Required)\n" + " -d <index dir>   "
-                + "The index directory\n" + 
-                " -r <num>         "
+                "Usage: java Mutator\n" 
+                + " -i <Wikipedia data>   "
+                + "Wiki data in PBLML (Required)\n" 
+                + " -d <index dir>   "
+                + "The index directory\n" 
+                + " -k               " 
+                + "Keep all partitions, even reaped ones"
+                + " -r <num>         "
                 + "The number of times to update, < 0 means run continuously (default: 10)\n"
                 + " -s <num>         "
                 + "Maximum number of seconds between update runs\n"
@@ -203,27 +214,22 @@ public class WikipediaMutator implements Runnable {
     public static void main(String[] args) throws java.io.IOException,
             SearchEngineException {
 
-        String flags = "i:d:s:n:m:r:t:x:";
+        String flags = "i:d:ks:n:m:o:r:t:x:";
         String stuff = null;
         int updateInterval = 10;
         int nUpdates = 10;
         int nLines = Integer.MAX_VALUE;
         int maxUpd = 100;
         int nThreads = 1;
+        boolean reapDoesNothing = false;
         Getopt gopt = new Getopt(args, flags);
         int c;
         URL cmFile = null;
+        File outputDir = new File("mut");
 
         if(args.length == 0) {
             usage();
             return;
-        }
-
-        //
-        // Set up the log.
-        Logger rl = Logger.getLogger("");
-        for(Handler h : rl.getHandlers()) {
-            h.setFormatter(new LabsLogFormatter());
         }
 
         //
@@ -237,6 +243,9 @@ public class WikipediaMutator implements Runnable {
 
                 case 'd':
                     indexDir = gopt.optArg;
+                    break;
+                case 'k':
+                    reapDoesNothing = true;
                     break;
 
                 case 's':
@@ -273,6 +282,10 @@ public class WikipediaMutator implements Runnable {
                         usage();
                         return;
                     }
+                    break;
+                    
+                case 'o':
+                    outputDir = new File(gopt.optArg);
                     break;
 
                 case 'r':
@@ -311,6 +324,45 @@ public class WikipediaMutator implements Runnable {
             usage();
             return;
         }
+        
+        if(outputDir.exists()) {
+            if(!outputDir.isDirectory()) {
+                logger.warning(String.format("Output directory %s is not a directory", outputDir));
+                usage();
+                return;
+            }
+        } else {
+            if(!outputDir.mkdirs()) {
+                logger.warning(String.format("Unable to make output directory %s", outputDir));
+                usage();
+                return;
+            }
+        }
+        
+        //
+        // Set up the log.
+        Logger rl = Logger.getLogger("");
+        Handler fh = new FileHandler((new File(outputDir, "mut.log")).getAbsolutePath());
+        rl.addHandler(fh);
+        for(Handler h : rl.getHandlers()) {
+            h.setFormatter(new SimpleLabsLogFormatter());
+            h.setLevel(Level.ALL);
+        }
+
+        
+        Logger sl;
+        sl = Logger.getLogger(MemoryPartition.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(InvFileMemoryPartition.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(InvFileMemoryPartition.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(Marshaller.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(DiskPartition.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(InvFileDiskPartition.class.getName());
+        sl.setLevel(Level.FINE);
 
         //
         // Open the input data.
@@ -352,10 +404,22 @@ public class WikipediaMutator implements Runnable {
 
         SearchEngine engine = SearchEngineFactory.getSearchEngine(indexDir,
                                                                   cmFile);
+
+        sl = Logger.getLogger(MemoryPartition.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(InvFileMemoryPartition.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(Marshaller.class.getName());
+        sl.setLevel(Level.FINE);
+        sl = Logger.getLogger(DiskPartition.class.getName());
+        sl.setLevel(Level.FINE);
+
+        engine.getManager().setReapDoesNothing(reapDoesNothing);
         defineFields(engine, false);
         try {
             for(int i = 0; i < nThreads; i++) {
-                muts[i] = new WikipediaMutator(engine, docs);
+                File outputFile = new File(outputDir, String.format("%03d.out", i+1));
+                muts[i] = new WikipediaMutator(engine, docs, outputFile);
                 muts[i].setMaxUpd(maxUpd);
                 muts[i].setUpdateInterval(updateInterval);
                 muts[i].setnLines(nLines);

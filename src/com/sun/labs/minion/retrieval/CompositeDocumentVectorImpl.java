@@ -59,7 +59,7 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
     /**
      * The individual field vectors that are composed into this vector.
      */
-    private DocumentVectorImpl[] vecs;
+    private SingleFieldDocumentVector[] vecs;
 
     /**
      * The name of the key, which will survive transport.
@@ -123,9 +123,9 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
 
         this.e = e;
         keyName = key.getName().toString();
-        vecs = new DocumentVectorImpl[fields.length];
+        vecs = new SingleFieldDocumentVector[fields.length];
         for(int i = 0; i < fields.length; i++) {
-            vecs[i] = new DocumentVectorImpl(e, key, fields[i].getFieldName());
+            vecs[i] = new SingleFieldDocumentVector(e, key, fields[i].getFieldName());
         }
     }
 
@@ -134,9 +134,9 @@ public class CompositeDocumentVectorImpl implements DocumentVector {
                                        WeightedField[] fields) {
         this.e = e;
         keyName = null;
-        vecs = new DocumentVectorImpl[fields.length];
+        vecs = new SingleFieldDocumentVector[fields.length];
         for(int i = 0; i < fields.length; i++) {
-            vecs[i] = new DocumentVectorImpl(e, wf);
+            vecs[i] = new SingleFieldDocumentVector(e, wf);
         }
     }
 
