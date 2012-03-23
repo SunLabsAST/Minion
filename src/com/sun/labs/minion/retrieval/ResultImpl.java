@@ -214,7 +214,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      */
     @Override
     public DocumentVector getDocumentVector() {
-        return new DocumentVectorImpl(this, null);
+        return new SingleFieldDocumentVector(this, null);
     }
 
     /**
@@ -222,13 +222,13 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      */
     @Override
     public DocumentVector getDocumentVector(String field) {
-        return new DocumentVectorImpl(this, field);
+        return new SingleFieldDocumentVector(this, field);
     }
 
     @Override
     public DocumentVector getDocumentVector(WeightedField[] fields) {
         if(fields.length == 1) {
-            return new DocumentVectorImpl(this, fields[0].getFieldName());
+            return new SingleFieldDocumentVector(this, fields[0].getFieldName());
         } else {
             return new CompositeDocumentVectorImpl(this, fields);
         }

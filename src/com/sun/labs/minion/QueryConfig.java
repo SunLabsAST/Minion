@@ -24,18 +24,6 @@
 
 package com.sun.labs.minion;
 
-import com.sun.labs.util.props.ConfigBoolean;
-import com.sun.labs.util.props.ConfigComponent;
-import com.sun.labs.util.props.ConfigComponentList;
-import com.sun.labs.util.props.ConfigInteger;
-import com.sun.labs.util.props.ConfigString;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import com.sun.labs.util.props.Configurable;
-import com.sun.labs.util.props.PropertyException;
-import com.sun.labs.util.props.PropertySheet;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
 import com.sun.labs.minion.pipeline.StopWords;
@@ -44,15 +32,29 @@ import com.sun.labs.minion.retrieval.TFIDF;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.CharUtils;
-import java.util.ArrayList;
+import com.sun.labs.util.props.ConfigBoolean;
+import com.sun.labs.util.props.ConfigComponent;
+import com.sun.labs.util.props.ConfigComponentList;
+import com.sun.labs.util.props.ConfigInteger;
+import com.sun.labs.util.props.ConfigString;
+import com.sun.labs.util.props.Configurable;
+import com.sun.labs.util.props.PropertyException;
+import com.sun.labs.util.props.PropertySheet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * A class that holds configuration data for querying.
  */
-public class QueryConfig implements Cloneable,
-        Configurable {
+public class QueryConfig implements Cloneable, Configurable {
+
+    static final Logger logger = Logger.getLogger(QueryConfig.class.getName());
 
     //Configuration properties
 
@@ -63,8 +65,13 @@ public class QueryConfig implements Cloneable,
      * to wildcard dictionary lookups when processing queries.
      */
     @ConfigInteger(defaultValue = 100)
-    public static final String PROP_MAX_TERMS =
-            "max_terms";
+    public static final String PROP_MAX_TERMS = "max_terms";
+
+    /**
+     * The maximum number of terms to retrieve from the dictionary for any one
+     * term operator.
+     */
+    protected int maxDictTerms = 100;
 
     /**
      * The property for the maximum amount of time (in milliseconds) to
@@ -73,24 +80,19 @@ public class QueryConfig implements Cloneable,
      * spent doing wildcard matches in the dictionary.
      */
     @ConfigInteger(defaultValue = 1000)
-    public static final String PROP_MAX_WC_TIME =
-            "max_wc_time";
+    public static final String PROP_MAX_WC_TIME = "max_wc_time";
 
     /**
      * The property for the limit of the window size to consider when
      * computing proximity queries.
      */
     @ConfigInteger(defaultValue = 4000)
-    public static final String PROP_PROXIMITY_LIMIT =
-            "proximity_limit";
+    public static final String PROP_PROXIMITY_LIMIT = "proximity_limit";
 
     /**
-     * The property indicating whether we should allow proximity queries to
-     * cross field boundaries.
+     * The amount of time to spend on proximity queries, in milliseconds.
      */
-    @ConfigBoolean(defaultValue = false)
-    public static final String PROP_FIELD_CROSS =
-            "field_cross";
+    protected long proxLimit = 4000;
 
     /**
      * The property indicating whether a query term provided in all upper
@@ -98,8 +100,13 @@ public class QueryConfig implements Cloneable,
      * (i.e., all case variants will be considered).
      */
     @ConfigBoolean(defaultValue = true)
-    public static final String PROP_ALL_UPPER_IS_CI =
-            "all_upper_is_CI";
+    public static final String PROP_ALL_UPPER_IS_CI = "all_upper_is_CI";
+
+    /**
+     * Whether all upper case terms should be treated case insensitively. The
+     * default is to do so.
+     */
+    protected boolean allUpperIsCI = true;
 
     /**
      * The property for the maximum amount of time (in milliseconds) to
@@ -107,8 +114,13 @@ public class QueryConfig implements Cloneable,
      * should be no time limit.
      */
     @ConfigInteger(defaultValue = -1)
-    public static final String PROP_MAX_QUERY_TIME =
-            "max_query_time";
+    public static final String PROP_MAX_QUERY_TIME = "max_query_time";
+
+    /**
+     * The maximum amount of time to spend on a query, in ms. Less than zero
+     * indicates that there is no maximum.
+     */
+    protected long maxQueryTime = -1;
 
     /**
      * The property naming the class containing the weighting function to
@@ -117,8 +129,7 @@ public class QueryConfig implements Cloneable,
      * com.sun.labs.minion.retrieval.WeightingFunction}
      */
     @ConfigString(defaultValue = "com.sun.labs.minion.retrieval.TFIDF")
-    public static final String PROP_WEIGHTING_FUNCTION =
-            "weighting_function";
+    public static final String PROP_WEIGHTING_FUNCTION = "weighting_function";
 
     /**
      * The property indicating whether perfect proximity scores (i.e., when
@@ -127,8 +138,7 @@ public class QueryConfig implements Cloneable,
      * differentiation between multiple documents with perfect passages.
      */
     @ConfigBoolean(defaultValue = true)
-    public static final String PROP_BOOST_PERFECT_PROXIMITY =
-            "boost_perfect_proximity";
+    public static final String PROP_BOOST_PERFECT_PROXIMITY = "boost_perfect_proximity";
 
     /**
      * The property for the list of field multipliers to be used during
@@ -136,43 +146,49 @@ public class QueryConfig implements Cloneable,
      * scores of hits occurring in titles or section headers.
      */
     @ConfigComponentList(type = FieldMultiplier.class)
-    public static final String PROP_FIELD_MULTIPLIERS =
-            "field_multipliers";
+    public static final String PROP_FIELD_MULTIPLIERS = "field_multipliers";
+
+    /**
+     * The property for the stopwords that should be ignored while computing
+     * document vectors.
+     */
+    @ConfigComponent(type = com.sun.labs.minion.pipeline.StopWords.class)
+    public static final String PROP_VECTOR_ZERO_WORDS = "vector_zero_words";
+
+    /**
+     * Words to ignore during document vector creation.
+     */
+    protected StopWords vectorZeroWords;
+
+    /**
+     * A property for a list of fields to search by default.
+     */
+    @ConfigComponentList(type = com.sun.labs.minion.FieldInfo.class, defaultList = {})
+    public static final String PROP_DEFAULT_FIELDS = "default_fields";
+
+    Set<FieldInfo> defaultFields;
+
+    /**
+     * The names of fields to which multipliers have been applied.
+     */
+    protected String[] multFields;
+
+    /**
+     * The map from field names to multipliers for those fields.
+     */
+    protected Map<String, Float> fieldMultipliers = new HashMap<String, Float>();
 
     /**
      * The property for a knowledge source to consult during querying.
      */
     @ConfigComponent(type = com.sun.labs.minion.knowledge.KnowledgeSource.class)
-    public static final String PROP_KNOWLEDGE_SOURCE =
-            "knowledge_source";
+    public static final String PROP_KNOWLEDGE_SOURCE = "knowledge_source";
 
     /**
      * The search engine associated with the collection that we're
      * querying.
      */
     protected SearchEngine e;
-
-    /**
-     * The amount of time to spend on proximity queries, in milliseconds.
-     */
-    protected long proxLimit = 4000;
-
-    /**
-     * The maximum number of terms to retrieve from the dictionary for any
-     * one term operator.
-     */
-    protected int maxDictTerms = 100;
-
-    /**
-     * The map from field names to multipliers for those fields.
-     */
-    protected Map<String, Float> fieldMultipliers =
-            new HashMap<String, Float>();
-
-    /**
-     * The names of fields to which multipliers have been applied.
-     */
-    protected String[] multFields;
 
     /**
      * The multiplier values to use for the multiplied fields.  Elements
@@ -194,33 +210,15 @@ public class QueryConfig implements Cloneable,
     protected boolean alwaysFindCaseVariants = false;
 
     /**
-     * Whether all upper case terms should be treated case insensitively.
-     * The default is to do so.
-     */
-    protected boolean allUpperIsCI = true;
-
-    /**
      * Whether all lower case terms should be treated case insensitively.
      * The default is to do so.
      */
     protected boolean allLowerIsCI = true;
 
     /**
-     * Whether proximity queries are allowed to cross field boundaries.
-     * Default is false.
-     */
-    protected boolean fieldCross = false;
-
-    /**
      * Whether we should boost perfect proximity scores with term weights.
      */
     protected boolean boostPerfectProx = true;
-
-    /**
-     * The maximum amount of time to spend on a query, in ms.  Less than zero
-     * indicates that there is no maximum.
-     */
-    protected long maxQueryTime = -1;
 
     /**
      * A string representation of the sorting specification to use for
@@ -245,12 +243,6 @@ public class QueryConfig implements Cloneable,
     protected boolean dvln;
 
     /**
-     * Words to ignore during document vector creation.
-     */
-    protected StopWords vectorZeroWords;
-
-
-    /**
      * Statistics for the collection we're evaluating the query in.
      */
     public CollectionStats cs;
@@ -258,13 +250,7 @@ public class QueryConfig implements Cloneable,
     /**
      * The knowledge source to use. Default to english morphological analyzer.
      */
-    protected KnowledgeSource knowledgeSource =
-            LiteMorph_en.getMorph();
-
-    /**
-     * Our log.
-     */
-    static Logger logger = Logger.getLogger(QueryConfig.class.getName());
+    protected KnowledgeSource knowledgeSource = LiteMorph_en.getMorph();
 
     /**
      * The log tag.
@@ -347,7 +333,7 @@ public class QueryConfig implements Cloneable,
      */
     public void setFieldMultipliers(Map<String, Float> fieldMultipliers) {
         this.fieldMultipliers = fieldMultipliers;
-        if(fieldMultipliers.size() != 0) {
+        if(!fieldMultipliers.isEmpty()) {
             multFields = new String[fieldMultipliers.size()];
             multValues = new float[multFields.length];
             int n = 0;
@@ -550,11 +536,12 @@ public class QueryConfig implements Cloneable,
     /**
      * Clones the query configuration.
      */
+    @Override
     public Object clone() {
         QueryConfig result = null;
         try {
             result = (QueryConfig) super.clone();
-            result.defaultFields = new ArrayList<FieldInfo>(defaultFields);
+            result.defaultFields = new HashSet<FieldInfo>(defaultFields);
         } catch(CloneNotSupportedException ex) {
             throw new InternalError();
         }
@@ -567,6 +554,7 @@ public class QueryConfig implements Cloneable,
      * @throws com.sun.labs.util.props.PropertyException if there is any error
      * retrieving the properties.
      */
+    @Override
     public void newProperties(PropertySheet ps)
             throws PropertyException {
         setWeightingFunction(ps);
@@ -574,7 +562,6 @@ public class QueryConfig implements Cloneable,
         setMaxDictLookupTime(ps.getInt(PROP_MAX_WC_TIME));
         setMaxDictTerms(ps.getInt(PROP_MAX_TERMS));
         setMaxQueryTime(ps.getInt(PROP_MAX_QUERY_TIME));
-        setFieldCross(ps.getBoolean(PROP_FIELD_CROSS));
         setBoostPerfectProximity(ps.getBoolean(PROP_BOOST_PERFECT_PROXIMITY));
         setAllUpperIsCI(ps.getBoolean(PROP_ALL_UPPER_IS_CI));
         vectorZeroWords =
@@ -584,7 +571,7 @@ public class QueryConfig implements Cloneable,
             setKnowledgeSource((KnowledgeSource) ps.getComponent(PROP_KNOWLEDGE_SOURCE));
         } catch(PropertyException pe) {
         }
-        defaultFields = (List<FieldInfo>) ps.getComponentList(PROP_DEFAULT_FIELDS);
+        defaultFields = new HashSet<FieldInfo>((List<FieldInfo>) ps.getComponentList(PROP_DEFAULT_FIELDS));
     }
 
     public void setAllUpperIsCI(boolean allUpperIsCI) {
@@ -593,10 +580,6 @@ public class QueryConfig implements Cloneable,
 
     public void setBoostPerfectProximity(boolean boostPerfectProx) {
         this.boostPerfectProx = boostPerfectProx;
-    }
-
-    private void setFieldCross(boolean fieldCross) {
-        this.fieldCross = fieldCross;
     }
 
     private void setKnowledgeSource(KnowledgeSource knowledgeSource) {
@@ -642,16 +625,10 @@ public class QueryConfig implements Cloneable,
         }
     }
     
-    @ConfigComponent(type=com.sun.labs.minion.pipeline.StopWords.class)
-    public static final String PROP_VECTOR_ZERO_WORDS = "vector_zero_words";
-
     /**
-     * A property for a list of fields to search by default.
+     * Adds a field to the set of default fields to search.
+     * @param field the name of the field to add.
      */
-    @ConfigComponentList(type=com.sun.labs.minion.FieldInfo.class,defaultList={})
-    public static final String PROP_DEFAULT_FIELDS = "default_fields";
-    List<FieldInfo> defaultFields;
-
     public void addDefaultField(String field) {
         FieldInfo fi = e.getFieldInfo(field);
         if(fi == null) {
@@ -661,6 +638,10 @@ public class QueryConfig implements Cloneable,
         }
     }
     
+    /**
+     * Removes a field from the set of default fields to search.
+     * @param field the name of the field to remove.
+     */
     public void removeDefaultField(String field) {
         FieldInfo fi = e.getFieldInfo(field);
         if (fi == null) {
@@ -670,9 +651,8 @@ public class QueryConfig implements Cloneable,
         }
     }
 
-    public List<FieldInfo> getDefaultFields() {
+    public Set<FieldInfo> getDefaultFields() {
         return defaultFields;
     }
-
 
 } // QueryConfig

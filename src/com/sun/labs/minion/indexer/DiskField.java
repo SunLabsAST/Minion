@@ -45,6 +45,7 @@ public class DiskField extends Field {
         return bundle.getHeader().maxDocID;
     }
 
+    @Override
     public DiskDictionary getTermDictionary(boolean cased) {
         return bundle.getTermDictionary(cased);
     }

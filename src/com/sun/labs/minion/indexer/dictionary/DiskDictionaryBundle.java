@@ -976,11 +976,20 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         for(int k = 0; k < n; k++) {
                             int eid = dtvDup.byteDecode();
                             int mappedID = valIDMap[eid];
+                            try {
                             mdtvBuff.byteEncode(mappedID);
+                            } catch (ArithmeticException ex) {
+                                logger.log(Level.SEVERE, 
+                                        String.format("Error encoding data for field %s from %s orig ID %d",
+                                        mergeState.info.getName(),
+                                        bundles[i].dicts[Type.RAW_SAVED.ordinal()].getPartition(), 
+                                        eid));
+                                throw(ex);
                             }
                         }
                     }
                 }
+            }
             //
             // Transfer the temp buffers into the dictionary file.
             mergeHeader.dtvOffset = fieldDictOut.position();

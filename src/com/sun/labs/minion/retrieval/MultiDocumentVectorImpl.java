@@ -37,7 +37,7 @@ import java.util.Collection;
  * An implementation of a document vector that combines the vectors for
  * a number of documents into a single document.
  */
-public class MultiDocumentVectorImpl extends DocumentVectorImpl implements DocumentVector {
+public class MultiDocumentVectorImpl extends SingleFieldDocumentVector implements DocumentVector {
     
     List<QueryEntry> keys;
     
@@ -51,7 +51,7 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
     public MultiDocumentVectorImpl(Collection<DocumentVector> dvs) {
         List<WeightedFeature[]> fvs = new ArrayList<WeightedFeature[]>(dvs.size());
         for(DocumentVector dv : dvs) {
-            fvs.add(((DocumentVectorImpl) dv).getFeatures());
+            fvs.add(((SingleFieldDocumentVector) dv).getFeatures());
         }
         v = combineFeatures(fvs);
     }
@@ -63,7 +63,7 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
     public MultiDocumentVectorImpl(Collection<DocumentVector> dvs, SearchEngine e, String field) {
         List<WeightedFeature[]> fvs = new ArrayList<WeightedFeature[]>(dvs.size());
         for(DocumentVector dv : dvs) {
-            fvs.add(((DocumentVectorImpl) dv).getFeatures());
+            fvs.add(((SingleFieldDocumentVector) dv).getFeatures());
         }
         v = combineFeatures(fvs);
         this.field = field;
@@ -128,7 +128,7 @@ public class MultiDocumentVectorImpl extends DocumentVectorImpl implements Docum
     private WeightedFeature[] initFeatures() {
         List<WeightedFeature[]> fvs = new ArrayList<WeightedFeature[]>();
         for(QueryEntry dke : keys) {
-            DocumentVectorImpl dvi = new DocumentVectorImpl(e, key, field);
+            SingleFieldDocumentVector dvi = new SingleFieldDocumentVector(e, key, field);
             fvs.add(dvi.getFeatures());
         }
         return combineFeatures(fvs);

@@ -46,7 +46,7 @@ import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
-import com.sun.labs.minion.retrieval.DocumentVectorImpl;
+import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
@@ -1166,7 +1166,7 @@ public class QueryTest extends SEMain {
                 double skim = args.length > 2 ? Double.parseDouble(args[2]) : 1.0;
                 DocumentVector dv = engine.getDocumentVector(key);
                 if(dv != null) {
-                    ResultSet rs = ((DocumentVectorImpl) dv).findSimilar("-score",
+                    ResultSet rs = ((SingleFieldDocumentVector) dv).findSimilar("-score",
                             skim);
                     displayResults(rs);
                 } else {
@@ -1234,7 +1234,7 @@ public class QueryTest extends SEMain {
     }
 
     private void dumpDocVectorByWeight(DocumentVector dv) {
-        SortedSet set = ((DocumentVectorImpl) dv).getSet(); // set sorted by
+        SortedSet set = ((SingleFieldDocumentVector) dv).getSet(); // set sorted by
         // name
 
         //

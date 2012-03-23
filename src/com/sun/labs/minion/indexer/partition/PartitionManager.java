@@ -57,7 +57,7 @@ import com.sun.labs.minion.indexer.Closeable;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.retrieval.CollectionStats;
-import com.sun.labs.minion.retrieval.DocumentVectorImpl;
+import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.FileLockException;
@@ -958,6 +958,36 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
         return null;
     }
+    
+    /**
+     * Gets the field for the partition that contains a given document key.
+     * @param key the document key to search for.
+     * @param fieldName the name of the field that we want.
+     * @return the field for the partition containing the key, or <code>null<code> 
+     * if the key does not occur.
+     */
+    public DiskField getField(String key, String fieldName) {
+        return getField(key, getFieldInfo(fieldName));
+    }
+    
+    /**
+     * Gets the field for the partition that contains a given document key.
+     *
+     * @param key the document key to search for.
+     * @param field the field that we want.
+     * @return the field for the partition containing the key, or
+     * <code>null<code>
+     * if the key does not occur.
+     */
+    public DiskField getField(String key, FieldInfo field) {
+        for(DiskPartition p : getActivePartitions()) {
+            QueryEntry dt = p.getDocumentDictionary().get(key);
+            if(dt != null && !p.isDeleted(dt.getID())) {
+                return ((InvFileDiskPartition) p).getDF(field);
+            }
+        }
+        return null;
+    }
 
     /**
      * Gets a document vector for the given document key.
@@ -986,7 +1016,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public DocumentVector getDocumentVector(String key, String field) {
         QueryEntry dt = getDocumentTerm(key);
         if(dt != null) {
-            return new DocumentVectorImpl(engine, dt, field);
+            return new SingleFieldDocumentVector(engine, dt, field);
         }
         return null;
     }

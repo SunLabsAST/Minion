@@ -38,6 +38,7 @@ public class TFIDF implements WeightingFunction {
      * calculating the collection-level IDF component, which is returned.
      * @param wc a set of weighting components.
      */
+    @Override
     public float initTerm(WeightingComponents wc) {
         if(wc.ft == 0) {
             wc.wt = 0;
@@ -60,6 +61,7 @@ public class TFIDF implements WeightingFunction {
      *
      * @return the weight of the given term in the given document.
      */
+    @Override
     public float termWeight(WeightingComponents wc) {
         float res = 0;
         if(wc.fdt != 0) {
