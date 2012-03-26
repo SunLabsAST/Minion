@@ -231,7 +231,7 @@ public class QueryTest extends SEMain {
     /**
      * Sets the prompt to show which of the toggles are on.
      */
-    public void setPrompt() {
+    private void setPrompt() {
 
         StringBuilder v = new StringBuilder();
 
@@ -343,11 +343,13 @@ public class QueryTest extends SEMain {
         
         shell.add("stats", "Info", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                  stats();
                  return "";
             }
 
+            @Override
             public String getHelp() {
                 return "Show collection statistics";
             }
@@ -355,6 +357,7 @@ public class QueryTest extends SEMain {
         
         shell.add("qop", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     return String.format("Query op is: %s", queryOp);
@@ -495,6 +498,7 @@ public class QueryTest extends SEMain {
         
         shell.add("format", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 
                 if(args.length == 1) {
@@ -504,6 +508,7 @@ public class QueryTest extends SEMain {
                 return String.format("Display spec is %s", displaySpec);
             }
 
+            @Override
             public String getHelp() {
                 return "Set the display format for hits";
             }
@@ -511,6 +516,7 @@ public class QueryTest extends SEMain {
         
         shell.add("gram", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     return "Currently using " + grammar;
@@ -525,6 +531,7 @@ public class QueryTest extends SEMain {
                 return "Grammar set to " + grammar;
             }
 
+            @Override
             public String getHelp() {
                 return "Set the default grammar to use for parsing queries";
             }
@@ -532,6 +539,7 @@ public class QueryTest extends SEMain {
 
         shell.add("term", "Terms", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     return "Must specify at least one term";
@@ -563,6 +571,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "[term...] - Perform a case sensitive term lookup for one or more terms";
             }
@@ -570,6 +579,7 @@ public class QueryTest extends SEMain {
 
         shell.add("termi", "Terms", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     return "Must specify one or more terms";
@@ -599,6 +609,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "[term...] Perform a case insensitive lookup for one or more terms";
             }
@@ -606,6 +617,7 @@ public class QueryTest extends SEMain {
         
         shell.add("tbid", "Terms", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length != 5) {
                     return "Must specify a partition, a field, a dictionary type and ID";
@@ -637,6 +649,7 @@ public class QueryTest extends SEMain {
                 return String.format("No such partition: %d", partNum);
             }
 
+            @Override
             public String getHelp() {
                 return "partNum field dict id - Gets a term by term id from a particular dictionary and partition";
             }
@@ -644,6 +657,7 @@ public class QueryTest extends SEMain {
         
         shell.add("wild", "Terms", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     return "Must specify one or more patterns";
@@ -677,6 +691,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "[expr] [expr...] Match one or more wild card expressions against fields";
             }
@@ -684,6 +699,7 @@ public class QueryTest extends SEMain {
         
         shell.add("morph", "Terms", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     return "Must specify one or more terms";
@@ -718,6 +734,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "[term] [term...] - Get morphological variants for one or more terms";
             }
@@ -754,6 +771,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "partNum field dict - prints all the terms from a particular field's dictionary and partition";
             }
@@ -782,7 +800,7 @@ public class QueryTest extends SEMain {
                             DiskField df = ((InvFileDiskPartition) p).getDF(fi);
 
                             DiskDictionary rvd = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
-                            QueryEntry re = null;
+                            QueryEntry re;
                             String res = "no raw";
                             if(rvd != null) {
                                 re = rvd.get(args[i]);
@@ -794,7 +812,7 @@ public class QueryTest extends SEMain {
                             }
 
                             DiskDictionary svd = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
-                            QueryEntry se = null;
+                            QueryEntry se;
                             String ses = "no stemmed";
                             if(svd != null) {
                                 se = rvd.get(args[i]);
@@ -892,6 +910,7 @@ public class QueryTest extends SEMain {
         
         shell.add("keys", "Info", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] strings) throws Exception {
                 List<DiskPartition> parts = manager.getActivePartitions();
                 if(strings.length == 1) {
@@ -911,6 +930,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "[pn] [pn]... - List the keys in specified partitions";
             }
@@ -918,6 +938,7 @@ public class QueryTest extends SEMain {
         
         shell.add("svals", "Info", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 3) {
                     return "Must specify partition number and field names";
@@ -946,6 +967,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "pn field [field]... - Prints all the values for a saved field in that partition";
             }
@@ -1074,8 +1096,9 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("get", new CommandInterface() {
+        shell.add("get", "Info", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 4) {
                     return "Must specify a partition number, document ID and a list of fields";
@@ -1098,6 +1121,7 @@ public class QueryTest extends SEMain {
             }
 
 
+            @Override
             public String getHelp() {
                 return "partNum docID field [field...] - Get field values from a particular doc";
             }
@@ -1105,6 +1129,7 @@ public class QueryTest extends SEMain {
         
         shell.add("merge", "Maintenance", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     ci.out.println("Merging all partitions");
@@ -1122,6 +1147,7 @@ public class QueryTest extends SEMain {
                 }
             }
 
+            @Override
             public String getHelp() {
                 return "pn [pn] ... - Merge a number of partitions";
             }
@@ -1129,6 +1155,7 @@ public class QueryTest extends SEMain {
         
         shell.add("sim", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 3) {
                     return "Must specify two document keys";
@@ -1150,6 +1177,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "Compute the similarity between two documents";
             }
@@ -1157,6 +1185,7 @@ public class QueryTest extends SEMain {
         
         shell.add("findsim", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 2) {
                     return "Must specify document key";
@@ -1182,6 +1211,7 @@ public class QueryTest extends SEMain {
         
         shell.add("dv", "Terms", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 3) {
                     return "Must specify field and document key";
@@ -1198,6 +1228,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "field dockey - Show the document vector for a given field in a given document";
             }

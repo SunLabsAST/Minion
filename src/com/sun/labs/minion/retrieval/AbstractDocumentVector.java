@@ -41,7 +41,7 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
     /**
      * The entry from the document dictionary for this partition.
      */
-    protected transient QueryEntry keyEntry;
+    protected transient QueryEntry<String> keyEntry;
 
     /**
      * The length of this document vector.
@@ -435,5 +435,38 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
         }
         sb.append(String.format("\nss: %.3f len: %.3f", ss, Math.sqrt(ss)));
         return sb.toString();
+    }
+    
+    /**
+     * Two document vectors are equal if all their weighted features are equal
+     * (in both name and weight)
+     *
+     * @param dv the document vector to compare this one to
+     * @return true if the document vectors have equal weighed features
+     */
+    @Override
+    public boolean equals(Object dv) {
+        if(!(dv instanceof AbstractDocumentVector)) {
+            return false;
+        }
+        
+        AbstractDocumentVector odv = (AbstractDocumentVector) dv;
+        odv.getFeatures();
+        getFeatures();
+
+        //
+        // Quick check for equal numbers of terms.
+        if(odv.v.length != v.length) {
+            return false;
+        }
+
+        for(int i = 0; i < v.length; i++) {
+            WeightedFeature f1 = v[i];
+            WeightedFeature f2 = odv.v[i];
+            if(f1.getWeight() != f2.getWeight() || !f1.getName().equals(f2.getName())) {
+                return false;
+            }
+        }
+        return true;
     }
 }

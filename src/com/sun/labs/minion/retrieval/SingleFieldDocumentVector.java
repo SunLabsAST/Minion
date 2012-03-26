@@ -83,7 +83,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
      * the named field is not a field that was indexed with the vectored
      * attribute set, the resulting document vector will be empty!
      */
-    public SingleFieldDocumentVector(ResultImpl r, String field) {
+    public SingleFieldDocumentVector(ResultImpl r, FieldInfo field) {
         this(r.set.getEngine(),
                 r.ag.part.getDocumentDictionary().getByID(r.doc), field);
     }
@@ -102,21 +102,21 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
      * vector will be empty!
      */
     public SingleFieldDocumentVector(SearchEngine e,
-            QueryEntry key, 
-            String field) {
+            QueryEntry<String> key, 
+            FieldInfo field) {
         this(e, key, field, e.getQueryConfig().getWeightingFunction(),
                 e.getQueryConfig().getWeightingComponents());
     }
 
     public SingleFieldDocumentVector(SearchEngine e,
-            QueryEntry key,
-            String field,
+            QueryEntry<String> key,
+            FieldInfo field,
             WeightingFunction wf,
             WeightingComponents wc) {
         this.e = e;
         this.keyEntry = key;
-        this.key = key.getName().toString();
-        setField(field);
+        this.key = key.getName();
+        this.field = field;
         this.wf = wf;
         this.wc = wc;
         initFeatures();
@@ -126,7 +126,6 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             WeightedFeature[] basisFeatures,
             String field) {
         this.e = e;
-        this.key = null;
         QueryConfig qc = e.getQueryConfig();
         wf = qc.getWeightingFunction();
         wc = qc.getWeightingComponents();
@@ -157,8 +156,8 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
         //
         // Get the dictionary from which we'll draw the vector and the one
         // from which we'll draw terms, then look up the document.
-        DiskDictionary vecDict;
-        DiskDictionary termDict;
+        DiskDictionary<String> vecDict;
+        DiskDictionary<String> termDict;
         if(df.isStemmed()) {
             vecDict = df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
             termDict = df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
@@ -167,7 +166,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             termDict = df.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
         }
 
-        QueryEntry vecEntry = vecDict.get(keyEntry.getID());
+        QueryEntry<String> vecEntry = vecDict.getByID(keyEntry.getID());
         if(vecEntry == null) {
             v = new WeightedFeature[0];
             return;
@@ -295,43 +294,6 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
     }
 
     /**
-     * Two document vectors are equal if all their weighted features are equal
-     * (in both name and weight)
-     *
-     * @param dv the document vector to compare this one to
-     * @return true if the document vectors have equal weighed features
-     */
-    @Override
-    public boolean equals(Object dv) {
-        if(!(dv instanceof SingleFieldDocumentVector)) {
-            return false;
-        }
-        SingleFieldDocumentVector other = (SingleFieldDocumentVector) dv;
-
-        //
-        // Quick check for equal numbers of terms.
-        if(other.v.length != v.length) {
-            return false;
-        }
-
-        other.getFeatures();
-        getFeatures();
-        int i = 0;
-        while(i < v.length) {
-            WeightedFeature f1 = v[i];
-            WeightedFeature f2 = other.v[i];
-
-            if(f1.getName().equals(f2.getName())
-                    && f1.getWeight() == f2.getWeight()) {
-                i++;
-                continue;
-            }
-            return false;
-        }
-        return true;
-    }
-
-    /**
      * Finds similar documents to this one. An OR is run with all the terms in
      * the documents. The resulting docs are returned ordered from most similar
      * to least similar.
@@ -441,9 +403,5 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
         ResultSetImpl ret = new ResultSetImpl(e, sortOrder, groups);
         ret.setQueryStats(qs);
         return ret;
-    }
-
-    private void setField(String field) {
-        this.field = e.getFieldInfo(field);
     }
 }

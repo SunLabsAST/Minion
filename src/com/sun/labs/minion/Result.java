@@ -78,7 +78,7 @@ public interface Result extends Comparable<Result> {
     public DocumentVector getDocumentVector();
     
     /**
-     * Gets a document vector corresponding to a particluar vectored field in
+     * Gets a document vector corresponding to a particular vectored field in
      * the document in this result.
      * @param field the name of a vectored field upon which the clustering
      * should be based.  A value of <code>null</code> indicates that all vectored
@@ -90,7 +90,7 @@ public interface Result extends Comparable<Result> {
      * 
      * @see #getDocumentVector(WeightedField[])
      */
-    public DocumentVector getDocumentVector(String field);
+    public DocumentVector getDocumentVector(FieldInfo field);
     
     /**
      * Gets a composite document vector that corresponds to a linear combination of a number

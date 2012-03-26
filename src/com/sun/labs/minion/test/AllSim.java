@@ -1,6 +1,7 @@
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.DocumentVector;
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
@@ -70,9 +71,10 @@ public class AllSim {
             ResultSet rs = se.search(query, sort);
             logger.info(String.format("Got %d documents for %s in %dms", rs.size(), query, rs.getQueryTime()));
             DocumentVector[] dvs = new DocumentVector[rs.size()];
+            FieldInfo fi = se.getFieldInfo(field);
             int p = 0;
             for(Result r : rs.getAllResults(sort != null)) {
-                dvs[p++] = r.getDocumentVector(field);
+                dvs[p++] = r.getDocumentVector(fi);
             }
             logger.info("Got document vectors");
             ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(outFile));

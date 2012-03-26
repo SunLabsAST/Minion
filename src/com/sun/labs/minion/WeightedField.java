@@ -33,7 +33,7 @@ import java.io.Serializable;
  */
 public class WeightedField implements Serializable {
     
-    private String fieldName;
+    private FieldInfo field;
     
     private float weight;
     
@@ -42,13 +42,13 @@ public class WeightedField implements Serializable {
      * @param fieldName the name of the field to which we want to apply the weight
      * @param weight the weight that we want to apply
      */
-    public WeightedField(String fieldName, float weight) {
-        this.fieldName = fieldName;
+    public WeightedField(FieldInfo field, float weight) {
+        this.field = field;
         this.weight = weight;
     }
     
-    public String getFieldName() {
-        return fieldName;
+    public FieldInfo getField() {
+        return field;
     }
     
     public float getWeight() {

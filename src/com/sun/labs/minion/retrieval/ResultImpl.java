@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import com.sun.labs.minion.DocumentVector;
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
@@ -221,16 +222,19 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * Gets the document vector corresponding to this result.
      */
     @Override
-    public DocumentVector getDocumentVector(String field) {
+    public DocumentVector getDocumentVector(FieldInfo field) {
         return new SingleFieldDocumentVector(this, field);
     }
 
     @Override
     public DocumentVector getDocumentVector(WeightedField[] fields) {
         if(fields.length == 1) {
-            return new SingleFieldDocumentVector(this, fields[0].getFieldName());
+            
+            //
+            // One weighted field? It's just a scaling, so ignore the weight.
+            return new SingleFieldDocumentVector(this, fields[0].getField());
         } else {
-            return new CompositeDocumentVectorImpl(this, fields);
+            return new MultiFieldDocumentVector(this, fields);
         }
     }
 

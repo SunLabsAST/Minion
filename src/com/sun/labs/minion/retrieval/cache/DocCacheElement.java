@@ -25,6 +25,7 @@ package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
@@ -35,7 +36,7 @@ import java.util.logging.Logger;
  */
 public class DocCacheElement {
 
-    private static Logger logger = Logger.getLogger(DocCacheElement.class.
+    private static final Logger logger = Logger.getLogger(DocCacheElement.class.
             getName());
 
     private SingleFieldDocumentVector dvi;
@@ -51,7 +52,9 @@ public class DocCacheElement {
      */
     public DocCacheElement(String key, DiskField df,
             WeightingFunction wf, WeightingComponents wc) {
-        dvi = new SingleFieldDocumentVector(key, df, wf, wc);
+        dvi = new SingleFieldDocumentVector(df.getPartition().getPartitionManager().getEngine(), 
+                ((DiskPartition) df.getPartition()).getDocumentDictionary().get(key), 
+                df.getInfo(), wf, wc);
     }
 
     public WeightedFeature[] getFeatures() {

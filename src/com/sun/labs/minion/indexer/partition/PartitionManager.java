@@ -23,65 +23,65 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
+import com.sun.labs.minion.DocumentVector;
+import com.sun.labs.minion.FieldFrequency;
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.FieldValue;
+import com.sun.labs.minion.IndexConfig;
 import com.sun.labs.minion.IndexListener;
+import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.WeightedField;
+import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.Closeable;
+import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.MetaFile;
+import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
+import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
+import com.sun.labs.minion.indexer.partition.io.AbstractPartitionOutput;
+import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
+import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
+import com.sun.labs.minion.retrieval.CollectionStats;
+import com.sun.labs.minion.retrieval.MultiFieldDocumentVector;
+import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
+import com.sun.labs.minion.retrieval.TermStatsImpl;
+import com.sun.labs.minion.util.DirCopier;
+import com.sun.labs.minion.util.FileLock;
+import com.sun.labs.minion.util.FileLockException;
+import com.sun.labs.minion.util.SimpleFilter;
+import com.sun.labs.minion.util.Util;
+import com.sun.labs.minion.util.buffer.ArrayBuffer;
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import com.sun.labs.util.NanoWatch;
+import com.sun.labs.util.props.ConfigBoolean;
+import com.sun.labs.util.props.ConfigComponent;
+import com.sun.labs.util.props.ConfigDouble;
+import com.sun.labs.util.props.ConfigInteger;
+import com.sun.labs.util.props.ConfigString;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Timer;
-import com.sun.labs.minion.DocumentVector;
-import com.sun.labs.minion.FieldFrequency;
-import com.sun.labs.minion.FieldValue;
-import com.sun.labs.minion.IndexConfig;
-import com.sun.labs.minion.QueryConfig;
-import com.sun.labs.minion.SearchEngine;
-import com.sun.labs.minion.WeightedField;
-import com.sun.labs.util.props.ConfigBoolean;
-import com.sun.labs.util.props.ConfigComponent;
-import com.sun.labs.util.props.ConfigInteger;
-import com.sun.labs.util.props.ConfigString;
-import java.util.Comparator;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeSet;
-import com.sun.labs.minion.engine.SearchEngineImpl;
-import com.sun.labs.minion.indexer.Closeable;
-import com.sun.labs.minion.indexer.DiskField;
-import com.sun.labs.minion.indexer.MetaFile;
-import com.sun.labs.minion.retrieval.CollectionStats;
-import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
-import com.sun.labs.minion.retrieval.TermStatsImpl;
-import com.sun.labs.minion.util.FileLock;
-import com.sun.labs.minion.util.FileLockException;
-import com.sun.labs.minion.util.SimpleFilter;
-import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
-import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
-import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
-import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
-import com.sun.labs.minion.indexer.partition.io.AbstractPartitionOutput;
-import com.sun.labs.minion.indexer.partition.io.DiskPartitionOutput;
-import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
-import com.sun.labs.minion.util.buffer.ArrayBuffer;
-import com.sun.labs.minion.retrieval.CompositeDocumentVectorImpl;
-import com.sun.labs.minion.util.DirCopier;
-import com.sun.labs.minion.util.Util;
-import com.sun.labs.util.NanoWatch;
-import com.sun.labs.util.props.ConfigDouble;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Queue;
+import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -949,10 +949,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return the entry, or <code>null</code> if this key does not appear in
      * the index or if the associated document has been deleted
      */
-    public QueryEntry getDocumentTerm(String key) {
+    public QueryEntry<String> getDocumentTerm(String key) {
         for(DiskPartition p : getActivePartitions()) {
-            QueryEntry dt = p.getDocumentDictionary().get(key);
-            if(dt != null) {
+            QueryEntry<String> dt = p.getDocumentDictionary().get(key);
+            if(dt != null && !p.isDeleted(dt.getID())) {
                 return dt;
             }
         }
@@ -1014,9 +1014,21 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * associated document has been deleted.
      */
     public DocumentVector getDocumentVector(String key, String field) {
+        FieldInfo fi = null;
+        if(field != null) {
+            fi = getFieldInfo(field);
+            if(fi == null) {
+                throw new IllegalArgumentException(String.format("Unknown field %s", field));
+            }
+        }
+        
         QueryEntry dt = getDocumentTerm(key);
         if(dt != null) {
-            return new SingleFieldDocumentVector(engine, dt, field);
+            if(fi == null) {
+                return new MultiFieldDocumentVector(engine, dt, (FieldInfo[]) null);
+            } else {
+                return new SingleFieldDocumentVector(engine, dt, fi);
+            }
         }
         return null;
     }
@@ -1030,9 +1042,9 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * associated document has been deleted.
      */
     public DocumentVector getDocumentVector(String key, WeightedField[] fields) {
-        QueryEntry dt = getDocumentTerm(key);
+        QueryEntry<String> dt = getDocumentTerm(key);
         if(dt != null) {
-            return new CompositeDocumentVectorImpl(engine, dt, fields);
+            return new MultiFieldDocumentVector(engine, dt, fields);
         }
         return null;
     }

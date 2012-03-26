@@ -34,6 +34,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 
 import java.util.Collection;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -135,12 +136,12 @@ public abstract class QueryElement implements Comparable {
                     //
                     // Set up any default fields if there are none specified in
                     // the query.
-                    List<FieldInfo> df = qc.getDefaultFields();
-                    if(df.size() > 0) {
+                    Set<FieldInfo> df = qc.getDefaultFields();
+                    if(!df.isEmpty()) {
                         searchFieldNames = new String[df.size()];
                         searchFields = df.toArray(new FieldInfo[0]);
-                        for(int i = 0; i < df.size(); i++) {
-                            searchFieldNames[i] = df.get(i).getName();
+                        for(int i = 0; i < searchFields.length; i++) {
+                            searchFieldNames[i] = searchFields[i].getName();
                         }
                     }
                 } else {
