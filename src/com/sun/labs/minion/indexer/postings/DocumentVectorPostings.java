@@ -24,12 +24,6 @@
 
 package com.sun.labs.minion.indexer.postings;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
@@ -43,8 +37,13 @@ import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
-
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**

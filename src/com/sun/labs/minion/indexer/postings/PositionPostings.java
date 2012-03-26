@@ -1112,7 +1112,7 @@ public class PositionPostings implements Postings {
          */
         @Override
         public int compareTo(PostingsIterator other) {
-            return getID() - ((PostingsIterator) other).getID();
+            return getID() - other.getID();
         }
     }
 }

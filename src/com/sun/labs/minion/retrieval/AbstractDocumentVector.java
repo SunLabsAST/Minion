@@ -3,6 +3,7 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
+import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -179,6 +180,23 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
         } else {
             throw new IllegalArgumentException("Can't compute similarity to non AbstractDocumentVectors");
         }
+    }
+
+    /**
+     * Finds similar documents to this one. An OR is run with all the terms in
+     * the documents. The resulting docs are returned ordered from most similar
+     * to least similar.
+     *
+     * @return documents similar to the one this vector represents
+     */
+    @Override
+    public ResultSet findSimilar() {
+        return findSimilar("-score");
+    }
+
+    @Override
+    public ResultSet findSimilar(String sortOrder) {
+        return findSimilar(sortOrder, 1.0);
     }
 
     @Override

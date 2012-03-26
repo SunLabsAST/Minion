@@ -42,12 +42,8 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.util.Util;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -333,23 +329,6 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             return false;
         }
         return true;
-    }
-
-    /**
-     * Finds similar documents to this one. An OR is run with all the terms in
-     * the documents. The resulting docs are returned ordered from most similar
-     * to least similar.
-     *
-     * @return documents similar to the one this vector represents
-     */
-    @Override
-    public ResultSet findSimilar() {
-        return findSimilar("-score");
-    }
-
-    @Override
-    public ResultSet findSimilar(String sortOrder) {
-        return findSimilar(sortOrder, 1.0);
     }
 
     /**

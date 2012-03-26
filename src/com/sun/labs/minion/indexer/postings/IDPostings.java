@@ -661,14 +661,17 @@ public class IDPostings implements Postings, MergeablePostings {
             ourN = nIDs;
         }
 
+        @Override
         public int getN() {
             return ourN;
         }
 
+        @Override
         public boolean next() {
             return ourN != 0 && ++currPos < ourN;
         }
 
+        @Override
         public boolean findID(int id) {
             currPos = Util.binarySearch(ids, 0, ourN, id);
             if(currPos > 0) {
@@ -678,26 +681,32 @@ public class IDPostings implements Postings, MergeablePostings {
             return false;
         }
 
+        @Override
         public void reset() {
             currPos = -1;
         }
 
+        @Override
         public int getID() {
             return ids[currPos];
         }
 
+        @Override
         public float getWeight() {
             return 1 * features.getMultiplier();
         }
 
+        @Override
         public int getFreq() {
             return 1;
         }
 
+        @Override
         public int compareTo(PostingsIterator other) {
             return getID() - other.getID();
         }
 
+        @Override
         public PostingsIteratorFeatures getFeatures() {
             return features;
         }
@@ -928,7 +937,7 @@ public class IDPostings implements Postings, MergeablePostings {
          * respectively.
          */
         public int compareTo(PostingsIterator other) {
-            return getID() - ((PostingsIterator) other).getID();
+            return getID() - other.getID();
         }
     }
 }

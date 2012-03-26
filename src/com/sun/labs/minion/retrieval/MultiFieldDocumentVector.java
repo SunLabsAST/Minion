@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.ResultSet;
@@ -49,20 +50,22 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 
 /**
- * A class that holds a weighted document vector for a given document from
- * a given partition.  This implementation is meant to handle features from
- * either the entire document or a single vectored field.
- * 
- * @see CompositeDocumentVectorImpl for an implementation that can handle 
+ * A class that holds a weighted document vector for a given document from a
+ * given partition. This implementation is meant to handle features from either
+ * the entire document or a single vectored field.
+ *
+ * @see CompositeDocumentVectorImpl for an implementation that can handle
  * features from multiple vectored fields.
  */
 public class MultiFieldDocumentVector extends AbstractDocumentVector {
 
-    private static final Logger logger = Logger.getLogger(MultiFieldDocumentVector.class.getName());
+    private static final Logger logger =
+            Logger.getLogger(MultiFieldDocumentVector.class.getName());
 
     /**
      * We'll need to send this along when serializing as we're doing our own
-     * serialization via the <code>Externalizable</code> interface.
+     * serialization via the
+     * <code>Externalizable</code> interface.
      */
     public static final long serialVersionUID = 2L;
 
@@ -76,10 +79,12 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
 
     /**
      * Creates a document vector with a set of precomputed features.
+     *
      * @param e the engine that we'll use for similarity computations
      * @param basisFeatures the features to use for the vector.
      */
-    public MultiFieldDocumentVector(SearchEngine e, WeightedFeature[] basisFeatures) {
+    public MultiFieldDocumentVector(SearchEngine e,
+                                    WeightedFeature[] basisFeatures) {
         this.e = e;
         this.key = null;
         QueryConfig qc = e.getQueryConfig();
@@ -99,7 +104,9 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
     }
 
     /**
-     * Creates a document vector from a search result.
+     * Creates a document vector from a search result, using the default fields
+     * defined in the query configuration associated with the engine that
+     * generated the result.
      *
      * @param r The search result for which we want a document vector.
      */
@@ -112,46 +119,49 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
      *
      * @param r The search result for which we want a document vector.
      * @param field The name of the field for which we want the document vector.
-     * If this value is <code>null</code> a vector for the whole document will
-     * be returned.  If the named field is not a field that was indexed with the
-     * vectored attribute set, the resulting document vector will be empty!
+     * If this value is
+     * <code>null</code> a vector for the whole document will be returned. If
+     * the named field is not a field that was indexed with the vectored
+     * attribute set, the resulting document vector will be empty!
      */
     public MultiFieldDocumentVector(ResultImpl r, String field) {
-        this(r.set.getEngine(), r.getKey(), 
-                new FieldInfo[] {r.set.getEngine().getFieldInfo(field)});
+        this(r.set.getEngine(), r.getKey(),
+             new FieldInfo[]{r.set.getEngine().getFieldInfo(field)});
     }
 
     /**
      * Creates a document vector for a given document.
      *
      * @param e The search engine with which the document is associated.
-     * @param key The entry from the document dictionary for the given
-     * document.
+     * @param key The entry from the document dictionary for the given document.
      * @param field The name of the field for which we want the document vector.
-     * If this value is <code>null</code> a vector for the whole document will
-     * be returned.  If this value is the empty string, then a vector for the text
-     * not in any defined field will be returned.  If the named field is not a
-     * field that was indexed with the
-     * vectored attribute set, the resulting document vector will be empty!
+     * If this value is
+     * <code>null</code> a vector for the whole document will be returned. If
+     * this value is the empty string, then a vector for the text not in any
+     * defined field will be returned. If the named field is not a field that
+     * was indexed with the vectored attribute set, the resulting document
+     * vector will be empty!
      */
     public MultiFieldDocumentVector(SearchEngine e,
-                              String key, FieldInfo[] fields) {
+                                    String key,
+                                    FieldInfo[] fields) {
         this(e, key, fields, e.getQueryConfig().getWeightingFunction(),
              e.getQueryConfig().getWeightingComponents());
     }
 
     public MultiFieldDocumentVector(SearchEngine e,
-                              String key, 
-                              FieldInfo[] fields,
-                              WeightingFunction wf,
-                              WeightingComponents wc) {
+                                    String key,
+                                    FieldInfo[] fields,
+                                    WeightingFunction wf,
+                                    WeightingComponents wc) {
 
         this.e = e;
         this.key = key;
         if(fields == null) {
             Set<FieldInfo> deff = e.getQueryConfig().getDefaultFields();
             if(deff == null || deff.isEmpty()) {
-                throw new IllegalArgumentException("Must either define default fields or pass fields in!");
+                throw new IllegalArgumentException(
+                        "Must either define default fields or pass fields in!");
             }
             this.fields = deff.toArray(new FieldInfo[deff.size()]);
         } else {
@@ -161,19 +171,34 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
         this.wc = wc;
         initFeatures();
     }
-    
+
+    @Override
+    public DocumentVector copy() {
+        MultiFieldDocumentVector ret = new MultiFieldDocumentVector();
+        ret.e = e;
+        ret.key = key;
+        ret.keyEntry = keyEntry;
+        ret.fields = fields;
+        ret.wf = wf;
+        ret.wc = wc;
+        ret.ignoreWords = ignoreWords;
+        ret.v = v != null ? v.clone() : null;
+        return ret;
+    }
+
     /**
      * A container class for data that we find looking up features.
      */
     private static class LocalTermStats {
+
         int freq;
-        
+
         TermStatsImpl ts;
-        
+
         public LocalTermStats(String name) {
             ts = new TermStatsImpl(name);
         }
-        
+
         public void add(int freq, TermStatsImpl ts) {
             this.freq += freq;
             this.ts.add(ts);
@@ -185,14 +210,16 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
      */
     private void initFeatures() {
 
-        Map<String,LocalTermStats> tm = new HashMap<String, LocalTermStats>();
-        
+        Map<String, LocalTermStats> tm = new HashMap<String, LocalTermStats>();
+
         for(FieldInfo fi : fields) {
 
             if(!fi.hasAttribute(FieldInfo.Attribute.VECTORED)) {
-                logger.warning(String.format("Can't get vector for %s for unvectored field %s", key, fi.getName()));
+                logger.warning(String.format(
+                        "Can't get vector for %s for unvectored field %s", key,
+                                             fi.getName()));
             }
-            
+
             //
             // Get the data for the field in the partition containing this key.
             DiskField df = e.getPM().getField(key, fi);
@@ -206,36 +233,46 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             DiskDictionary vecDict;
             DiskDictionary termDict;
             if(df.isStemmed()) {
-                vecDict = df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
-                termDict = df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
+                vecDict = df.getDictionary(
+                        MemoryDictionaryBundle.Type.STEMMED_VECTOR);
+                termDict = df.getDictionary(
+                        MemoryDictionaryBundle.Type.STEMMED_TOKENS);
             } else {
-                vecDict = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
-                termDict = df.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+                vecDict = df.getDictionary(
+                        MemoryDictionaryBundle.Type.RAW_VECTOR);
+                termDict = df.getDictionary(
+                        MemoryDictionaryBundle.Type.CASED_TOKENS);
             }
-            
+
             QueryEntry<String> vecEntry = vecDict.get(key);
             if(vecEntry == null) {
-                logger.warning(String.format("No vector for %s in %s? That shouldn't have happened", key, fi.getName()));
+                logger.warning(String.format(
+                        "No vector for %s in %s? That shouldn't have happened",
+                                             key, fi.getName()));
                 continue;
             }
-            
+
             //
             // Now iterate through the term IDs, looking them up as we go and
             // accumulating the term statistics.
             PostingsIterator pi = vecEntry.iterator(null);
             if(pi == null) {
-                logger.warning(String.format("No postings for %s in %s", key, fi.getName()));
+                logger.warning(String.format("No postings for %s in %s", key,
+                                             fi.getName()));
                 continue;
             }
             while(pi.next()) {
                 QueryEntry<String> termEntry = termDict.getByID(pi.getID());
                 if(termEntry == null) {
-                    logger.warning(String.format("Tried to get term %d in %s for %s, but failed?", pi.getID(), key, fi.getName()));
+                    logger.warning(String.format(
+                            "Tried to get term %d in %s for %s, but failed?",
+                                                 pi.getID(), key, fi.getName()));
                     continue;
                 }
                 //
                 // Accumulate the frequency and term stats for this entry.
-                TermStatsImpl tsi = (TermStatsImpl) e.getTermStats(termEntry.getName(), fi);
+                TermStatsImpl tsi = (TermStatsImpl) e.getTermStats(termEntry.
+                        getName(), fi);
                 LocalTermStats lts = tm.get(termEntry.getName());
                 if(lts == null) {
                     lts = new LocalTermStats(termEntry.getName());
@@ -245,35 +282,43 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             }
         }
 
-        
+
         //
         // Make the actual feature vector, computing the vector length as we go.
         v = new WeightedFeature[tm.size()];
         int p = 0;
         length = 0;
-        for(Map.Entry<String,LocalTermStats> e : tm.entrySet()) {
+        for(Map.Entry<String, LocalTermStats> ent : tm.entrySet()) {
             //
             // Set up for weighting.
-            wc.setTerm(e.getValue().ts);
-            wc.fdt = e.getValue().freq;
+            wc.setTerm(ent.getValue().ts);
+            wc.fdt = ent.getValue().freq;
             wf.initTerm(wc);
-            v[p] = new WeightedFeature(e.getKey(), wf.termWeight(wc));
+            v[p] = new WeightedFeature(ent.getKey(), wf.termWeight(wc));
             length += (v[p].getWeight() * v[p].getWeight());
         }
-        
+
         length = (float) Math.sqrt(length);
-        
+
         //
         // Sort by name!
         Util.sort(v, WeightedFeature.NAME_COMPARATOR);
+    }
+
+    @Override
+    public WeightedFeature[] getFeatures() {
+        if(v == null) {
+            initFeatures();
+        }
+        return v;
     }
 
     /**
      * Calculates the dot product of this document vector with another.
      *
      * @param dvi another document vector
-     * @return the dot product of the two vectors (i.e. the sum of the
-     * products of the components in each dimension)
+     * @return the dot product of the two vectors (i.e. the sum of the products
+     * of the components in each dimension)
      */
     public float dot(MultiFieldDocumentVector dvi) {
         dvi.getFeatures();
@@ -282,12 +327,13 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
     }
 
     /**
-     * Two document vectors are equal if all their weighted features
-     * are equal (in both name and weight)
+     * Two document vectors are equal if all their weighted features are equal
+     * (in both name and weight)
      *
      * @param dv the document vector to compare this one to
      * @return true if the document vectors have equal weighed features
      */
+    @Override
     public boolean equals(Object dv) {
         if(!(dv instanceof MultiFieldDocumentVector)) {
             return false;
@@ -318,80 +364,14 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
     }
 
     /**
-     * Gets a sorted (by weight) set of the terms contributing to
-     * document similarity with the provided document.  The set consists
-     * of WeightedFeatures that represent the terms that each document
-     * have in common and their combined weights.
+     * Finds similar documents to this one. An OR is run with all the terms in
+     * the documents. The resulting docs are returned ordered from most similar
+     * to least similar.
      *
-     * @param dvi the document to compare this one to
-     * @return a sorted set of WeightedFeature that occurred in both documents
-     */
-    public SortedSet getSimilarityTerms(MultiFieldDocumentVector dvi) {
-
-        WeightedFeature[] other = dvi.getFeatures();
-        getFeatures();
-
-        int i1 = 0;
-        int i2 = 0;
-        int x = 0;
-
-        SortedSet s = new TreeSet(WeightedFeature.INVERSE_WEIGHT_COMPARATOR);
-        //
-        // Go in order (alphabetically) through the two arrays, finding
-        // terms that occur in both.
-        while(i1 < v.length && i2 < dvi.v.length) {
-            WeightedFeature f1 = v[i1];
-            WeightedFeature f2 = other[i2];
-
-            int cmp = f1.getName().compareTo(f2.getName());
-
-            if(cmp == 0) {
-                if(ignoreWords == null || !ignoreWords.isStop(f1.getName())) {
-                    //
-                    // We found two terms with the same name.
-                    float combined = f1.getWeight() * f2.getWeight();
-                    WeightedFeature wf = new WeightedFeature(f1.getName(),
-                                                             combined);
-                    s.add(wf);
-                }
-                i1++;
-                i2++;
-            } else if(cmp < 0) {
-                i1++;
-            } else {
-                i2++;
-            }
-        }
-
-        return s;
-    }
-
-    public float getSimilarity(MultiFieldDocumentVector otherVector) {
-        return dot(otherVector);
-    }
-
-    /**
-     * Finds similar documents to this one.  An OR is run with all the terms
-     * in the documents.  The resulting docs are returned ordered from
-     * most similar to least similar.
-     *
-     * @return documents similar to the one this vector represents
-     */
-    public ResultSet findSimilar() {
-        return findSimilar("-score");
-    }
-
-    public ResultSet findSimilar(String sortOrder) {
-        return findSimilar(sortOrder, 1.0);
-    }
-
-    /**
-     * Finds similar documents to this one.  An OR is run with all the terms
-     * in the documents.  The resulting docs are returned ordered from
-     * most similar to least similar.
-     *
-     * @param sortOrder a string describing the order in which to sort the results
-     * @param skimPercent a number between 0 and 1 representing what percent of the features should be used to perform findSimilar
+     * @param sortOrder a string describing the order in which to sort the
+     * results
+     * @param skimPercent a number between 0 and 1 representing what percent of
+     * the features should be used to perform findSimilar
      * @return documents similar to the one this vector represents
      */
     @Override
@@ -443,58 +423,66 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
         for(DiskPartition dp : e.getManager().getActivePartitions()) {
 
             InvFileDiskPartition curr = (InvFileDiskPartition) dp;
-
             if(curr.isClosed()) {
                 continue;
             }
 
-            DiskField cdf = curr.getDF(df.getInfo());
-
-            if(cdf == null) {
-                continue;
-            }
-
-
-            ScoredQuickOr qor = new ScoredQuickOr(curr, 1024, true);
-            qor.setQueryStats(qs);
-
+            int[] freqs = new int[dp.getMaxDocumentID()];
+            //
+            // OK, here's how it's going to go.  Since we need to meld together
+            // postings from separate fields, we're going to want to work in a
+            // frequency domain until we've collected all the data for a particular 
+            // term and then we can transform it into weighted term data.
+            //
+            // We'll use a heap of postings iterators whose elements are the 
+            // per-field term iterators so that we can gather the per-doc
+            // frequency information.
+            PriorityQueue<PostingsIterator> ph =
+                    new PriorityQueue<PostingsIterator>(fields.length);
             for(WeightedFeature f : sf) {
 
-                QueryEntry entry = cdf.getTerm(f.getName(), false);
-                if(entry != null) {
-                    wf.initTerm(wc.setTerm(f.getName()));
+                //
+                // Collect the iterators and term stats.
+                TermStatsImpl tsi = new TermStatsImpl(f.getName());
+                ph.clear();
+                for(FieldInfo field : fields) {
+                    DiskField cdf = curr.getDF(field);
+                    if(cdf == null) {
+                        continue;
+                    }
+                    QueryEntry entry = cdf.getTerm(f.getName(), false);
+                    if(entry == null) {
+                        continue;
+                    }
+                    tsi.add((TermStatsImpl) e.getTermStats(f.getName(), field));
+                    PostingsIterator pi = entry.iterator(null);
+                    if(pi == null) {
+                        continue;
+                    }
+                    pi.next();
+                    ph.offer(pi);
                 }
 
-                PostingsIterator pi = entry.iterator(feat);
-
-                if(pi != null) {
-                    //
-                    // If we got an entry in this partition, add its postings
-                    // to the quick or.
-                    qor.add(pi, f.getWeight());
-                } else {
-                    qor.addWeightOnly(f.getWeight());
+                //
+                // Collect the frequencies.
+                while(!ph.isEmpty()) {
+                    PostingsIterator pi = ph.poll();
+                    freqs[pi.getID()] += pi.getFreq();
+                    if(pi.next()) {
+                        ph.offer(pi);
+                    }
                 }
-            }
 
-            //
-            // Add the results for this partition into the list
-            // of results.
-            ScoredGroup sg = (ScoredGroup) qor.getGroup();
-            qs.normW.start();
-            if(fields == null) {
-                sg.normalize();
-            } else {
-                for(int i = 0; i < fields.length; i++) {
-                    if(fields[i] == 1) {
-                        sg.normalize(i);
-                        break;
+                //
+                // Compute weights.
+                wc.setTerm(tsi);
+                wf.initTerm(wc);
+                for(int i = 0; i < freqs.length; i++) {
+                    if(freqs[i] == 0) {
+                        continue;
                     }
                 }
             }
-            qs.normW.stop();
-            sg.removeDeleted();
-            groups.add(sg);
         }
         qs.queryW.stop();
         ((SearchEngineImpl) e).addQueryStats(qs);
@@ -502,34 +490,5 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
         ResultSetImpl ret = new ResultSetImpl(e, sortOrder, groups);
         ret.setQueryStats(qs);
         return ret;
-    }
-
-    public String toString() {
-        getFeatures();
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("size: %d length: %.3f ", v.length, length));
-        float ss = 0;
-        for(int i = 0; i < v.length; i++) {
-            ss += v[i].getWeight() * v[i].getWeight();
-            sb.append("\n  <");
-            sb.append(v[i].toString());
-            sb.append('>');
-        }
-        sb.append(String.format("\nss: %.3f len: %.3f", ss, Math.sqrt(ss)));
-        return sb.toString();
-    }
-
-    public void setField(String field) {
-        this.field = field;
-
-        //
-        // If we don't have a search engine (possible if we're a subclass or we
-        // were sent over RMI), then we have to defer figuring out the field ID
-        // until setEngine gets called.
-        if(e == null) {
-            return;
-        }
-
-        df = ((InvFileDiskPartition) key.getPartition()).getDF(field);
     }
 }
