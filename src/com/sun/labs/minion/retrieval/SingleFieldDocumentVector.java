@@ -377,7 +377,6 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             ScoredQuickOr qor = new ScoredQuickOr(curr, 1024, true);
             qor.setQueryStats(qs);
             qor.addField(field);
-
             for(WeightedFeature f : sf) {
 
                 QueryEntry entry = cdf.getTerm(f.getName(), false);

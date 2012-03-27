@@ -422,6 +422,8 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             sf = v;
         }
 
+        logger.info(String.format("findsim query has %d terms", sf.length));
+
         //
         // We now have sf, which is the (possibly skimmed) set of features
         // that we want to use for finding similar documents.  Let's go ahead
@@ -444,8 +446,9 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
                 continue;
             }
 
-            int[] freqs = new int[dp.getMaxDocumentID()];
-            float[] scores = new float[dp.getMaxDocumentID()];
+            int[] freqs = new int[dp.getMaxDocumentID()+1];
+            float[] scores = new float[dp.getMaxDocumentID()+1];
+            float sqw = 0;
 
             //
             // OK, here's how it's going to go.  Since we need to meld together
@@ -455,6 +458,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             for(WeightedFeature f : sf) {
 
                 Arrays.fill(freqs, 0);
+                sqw += f.getWeight() * f.getWeight();
 
                 //
                 // Collect the iterators and term stats.
@@ -489,12 +493,20 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
                 for(int i = 0; i < freqs.length; i++) {
                     if(freqs[i] != 0) {
                         wc.fdt = freqs[i];
-                        scores[i] = wf.termWeight(wc);
+                        scores[i] = wf.termWeight(wc) * f.getWeight();
                     }
                 }
-                ScoredGroup sg = new ScoredGroup(dp, scores);
-                groups.add(sg);
             }
+            
+            ScoredGroup sg = new ScoredGroup(dp, scores);
+            sg.normalized = false;
+            sg.setQueryWeight(sqw);
+            sg.setFields(fields);
+            qs.normW.start();
+            sg.normalize();
+            qs.normW.stop();
+            sg.removeDeleted();
+            groups.add(sg);
         }
         qs.queryW.stop();
         ((SearchEngineImpl) e).addQueryStats(qs);

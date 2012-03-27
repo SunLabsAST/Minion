@@ -398,6 +398,11 @@ public class DocumentVectorLengths {
                 lvl.position(vlpos);
                 norm += lvl.decodeFloat();
             }
+            if(norm == 0) {
+                norm = 1;
+            } else {
+                norm /= lvls.length;
+            }
             scores[i] /= (norm * qw);
         }
     }

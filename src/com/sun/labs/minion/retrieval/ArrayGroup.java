@@ -40,6 +40,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.util.Util;
 
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -292,6 +293,13 @@ public class ArrayGroup implements Cloneable {
 
     public void setFields(Set<FieldInfo> fields) {
         this.fields = fields;
+    }
+    
+    public void setFields(FieldInfo[] fields) {
+        this.fields = new HashSet<FieldInfo>();
+        for(FieldInfo field : fields) {
+            this.fields.add(field);
+        }
     }
     
     /**

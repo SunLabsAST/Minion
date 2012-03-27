@@ -1186,16 +1186,16 @@ public class QueryTest extends SEMain {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
-                if(args.length < 2) {
-                    return "Must specify document key";
+                if(args.length < 3) {
+                    return "Must specify fields and document key";
                 }
                 
-                String key = args[1];
-                double skim = args.length > 2 ? Double.parseDouble(args[2]) : 1.0;
-                DocumentVector dv = engine.getDocumentVector(key);
+                String[] fields = args[1].split(",");
+                String key = args[2];
+                double skim = args.length > 3 ? Double.parseDouble(args[3]) : 1.0;
+                DocumentVector dv = engine.getDocumentVector(key, fields);
                 if(dv != null) {
-                    ResultSet rs = ((SingleFieldDocumentVector) dv).findSimilar("-score",
-                            skim);
+                    ResultSet rs = dv.findSimilar("-score", skim);
                     displayResults(rs);
                 } else {
                     shell.out.println("No such doc: " + key);
@@ -1205,7 +1205,7 @@ public class QueryTest extends SEMain {
 
             @Override
             public String getHelp() {
-                return "key [skim] Find documents similar to the given one";
+                return "fields key [skim] Find documents similar to the given one, using comma-separated field list";
             }
         });
         

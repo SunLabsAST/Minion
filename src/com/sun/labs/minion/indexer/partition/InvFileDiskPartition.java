@@ -188,7 +188,7 @@ public class InvFileDiskPartition extends DiskPartition {
     public void normalize(Set<FieldInfo> fields, int[] docs, float[] scores,
                           int size, float sqw) {
         if(fields == null || fields.isEmpty()) {
-            fields = new HashSet<FieldInfo>(manager.engine.getQueryConfig().getDefaultFields());
+            fields = manager.engine.getQueryConfig().getDefaultFields();
         }
         List<DocumentVectorLengths> dvls = new ArrayList<DocumentVectorLengths>();
         for(FieldInfo field : fields) {
