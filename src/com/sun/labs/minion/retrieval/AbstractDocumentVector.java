@@ -17,11 +17,14 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 /**
  *
  */
 public abstract class AbstractDocumentVector implements DocumentVector, Serializable {
+    
+    private static final Logger logger = Logger.getLogger(AbstractDocumentVector.class.getName());
 
     /**
      * The search engine that generated this vector.
@@ -279,11 +282,11 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
             return;
         }
         getFeatures();
-        for(int i = 0; i < v.length; i++) {
-            if(length() == 0) {
-                v[i].setWeight(0);
+        for(WeightedFeature feat : v) {
+            if(length == 0) {
+                feat.setWeight(0);
             } else {
-                v[i].setWeight(v[i].getWeight() / length());
+                feat.setWeight(feat.getWeight() / length);
             }
         }
         normalized = true;
