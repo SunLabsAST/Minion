@@ -384,7 +384,8 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
                     qor.addWeightOnly(f.getWeight());
                     continue;
                 }
-                wf.initTerm(wc.setTerm(f.getName()));
+                TermStatsImpl tsi = cdf.getTermStats(f.getName());
+                wf.initTerm(wc.setTerm(tsi));
                 PostingsIterator pi = entry.iterator(feat);
 
                 if(pi != null) {
