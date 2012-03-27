@@ -1014,23 +1014,46 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * associated document has been deleted.
      */
     public DocumentVector getDocumentVector(String key, String field) {
-        FieldInfo fi = null;
-        if(field != null) {
-            fi = getFieldInfo(field);
-            if(fi == null) {
-                throw new IllegalArgumentException(String.format("Unknown field %s", field));
-            }
+        QueryEntry dt = getDocumentTerm(key);
+        if(dt == null) {
+            return null;
         }
+
+        if(field == null) {
+            return getDocumentVectorForDefaultFields(dt);
+        }
+
+        FieldInfo fi = getFieldInfo(field);
+        if(fi == null) {
+            throw new IllegalArgumentException(String.format("Unknown field %s", field));
+        }
+
+        return new SingleFieldDocumentVector(engine, dt, fi);
+    }
+    
+    public DocumentVector getDocumentVector(String key, String[] fields) {
         
         QueryEntry dt = getDocumentTerm(key);
-        if(dt != null) {
-            if(fi == null) {
-                return new MultiFieldDocumentVector(engine, dt, (FieldInfo[]) null);
-            } else {
-                return new SingleFieldDocumentVector(engine, dt, fi);
+        if(dt == null) {
+            return null;
+        }
+
+        if(fields == null) {
+            return getDocumentVectorForDefaultFields(dt);
+        }
+        
+        if(fields.length == 1) {
+            return getDocumentVector(key, fields[0]);
+        }
+        
+        FieldInfo[] fi = new FieldInfo[fields.length];
+        for(int i = 0; i < fields.length; i++) {
+            fi[i] = getFieldInfo(fields[i]);
+            if(fi[i] == null) {
+                throw new IllegalArgumentException(String.format("Unknown field %s", fields[i]));
             }
         }
-        return null;
+        return new MultiFieldDocumentVector(engine, dt, fi);
     }
 
     /**
@@ -1043,10 +1066,23 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     public DocumentVector getDocumentVector(String key, WeightedField[] fields) {
         QueryEntry<String> dt = getDocumentTerm(key);
-        if(dt != null) {
-            return new MultiFieldDocumentVector(engine, dt, fields);
+        if(dt == null) {
+            return null;
         }
-        return null;
+        return new MultiFieldDocumentVector(engine, dt, fields);
+    }
+    
+    public DocumentVector getDocumentVectorForDefaultFields(QueryEntry<String> key) {
+        Set<FieldInfo> deff = getQueryConfig().getDefaultFields();
+        if(deff == null || deff.isEmpty()) {
+            throw new IllegalArgumentException("Must specify default fields");
+        }
+        FieldInfo[] fi = deff.toArray(new FieldInfo[0]);
+        if(fi.length == 1) {
+            return new SingleFieldDocumentVector(engine, key, fi[0]);
+        } else {
+            return new MultiFieldDocumentVector(engine, key, fi);
+        }
     }
 
     /**
@@ -1058,8 +1094,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return a sorted set of field values.  This set will be ordered by the
      * proportion of the field value that is covered by the given pattern.
      */
-    public SortedSet<FieldValue> getMatching(String field,
-            String pattern) {
+    public SortedSet<FieldValue> getMatching(String field, String pattern) {
         SortedSet<FieldValue> ret = new TreeSet<FieldValue>();
         FieldInfo fi = metaFile.getFieldInfo(field);
         int l = pattern.length();

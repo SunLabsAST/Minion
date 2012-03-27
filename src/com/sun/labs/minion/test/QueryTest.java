@@ -81,8 +81,7 @@ import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.PostingsIterator;
-import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
+import com.sun.labs.minion.retrieval.AbstractDocumentVector;
 import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.command.CommandInterface;
 import com.sun.labs.util.command.CommandInterpreter;
@@ -1204,6 +1203,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "key [skim] Find documents similar to the given one";
             }
@@ -1217,9 +1217,11 @@ public class QueryTest extends SEMain {
                     return "Must specify field and document key";
                 }
                 
-                String field = args[1];
+                String fieldArg = args[1];
                 String dockey = args[2];
-                DocumentVector dv = engine.getDocumentVector(dockey, field);
+                String[] fields = fieldArg.split(",");
+                DocumentVector dv = engine.getDocumentVector(dockey, fields);
+                logger.info(String.format("dv class: %s", dv.getClass()));
                 if(dv == null) {
                     shell.out.println("Unknown key: " + args[1]);
                 } else {
@@ -1265,29 +1267,10 @@ public class QueryTest extends SEMain {
     }
 
     private void dumpDocVectorByWeight(DocumentVector dv) {
-        SortedSet set = ((SingleFieldDocumentVector) dv).getSet(); // set sorted by
-        // name
-
         //
         // sort by weight:
-        SortedSet w = new TreeSet(new Comparator() {
-
-            public int compare(Object o1, Object o2) {
-                if(o1.equals(o2)) {
-                    return 0;
-                }
-                if(((WeightedFeature) o1).getWeight() > ((WeightedFeature) o2).
-                        getWeight()) {
-                    return -1;
-                }
-                return 1;
-            }
-
-            public boolean equals(Object o) {
-                return false;
-            }
-        });
-        w.addAll(set);
+        SortedSet w = new TreeSet(WeightedFeature.INVERSE_WEIGHT_COMPARATOR);
+        w.addAll(((AbstractDocumentVector) dv).getSet());
         float sum = 0;
         for(Iterator it = w.iterator(); it.hasNext();) {
             WeightedFeature wf = (WeightedFeature) it.next();

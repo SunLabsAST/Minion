@@ -145,8 +145,8 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
         }
         QueryConfig qc = r.set.getEngine().getQueryConfig();
         init(r.set.getEngine(), r.getKeyEntry(),
-               this.fields, 
-               qc.getWeightingFunction(), qc.getWeightingComponents());
+                this.fields,
+                qc.getWeightingFunction(), qc.getWeightingComponents());
     }
 
     /**
@@ -159,7 +159,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
      * the named field is not a field that was indexed with the vectored
      * attribute set, the resulting document vector will be empty!
      */
-    public MultiFieldDocumentVector(SearchEngine e, 
+    public MultiFieldDocumentVector(SearchEngine e,
             QueryEntry<String> key, WeightedField[] fields) {
 
         FieldInfo[] fi = new FieldInfo[fields.length];
@@ -286,15 +286,15 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             DiskDictionary vecDict;
             DiskDictionary termDict;
             if(df.isStemmed()) {
-                vecDict = df.getDictionary(
-                        MemoryDictionaryBundle.Type.STEMMED_VECTOR);
-                termDict = df.getDictionary(
-                        MemoryDictionaryBundle.Type.STEMMED_TOKENS);
+                vecDict = df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
+                termDict = df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
             } else {
-                vecDict = df.getDictionary(
-                        MemoryDictionaryBundle.Type.RAW_VECTOR);
-                termDict = df.getDictionary(
-                        MemoryDictionaryBundle.Type.CASED_TOKENS);
+                vecDict = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+                if(df.isUncased()) {
+                    termDict = df.getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
+                } else {
+                    termDict = df.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+                }
             }
 
             QueryEntry<String> vecEntry = vecDict.get(key);
@@ -346,11 +346,13 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             wc.setTerm(ent.getValue().ts);
             wc.fdt = ent.getValue().freq;
             wf.initTerm(wc);
-            v[p] = new WeightedFeature(ent.getKey(), wf.termWeight(wc));
-            length += (v[p].getWeight() * v[p].getWeight());
+            WeightedFeature feat = new WeightedFeature(ent.getKey(), wf.termWeight(wc));
+            length += (feat.getWeight() * feat.getWeight());
+            v[p++] = feat;
         }
 
         length = (float) Math.sqrt(length);
+        normalize();
 
         //
         // Sort by name!
@@ -444,14 +446,14 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
 
             int[] freqs = new int[dp.getMaxDocumentID()];
             float[] scores = new float[dp.getMaxDocumentID()];
-            
+
             //
             // OK, here's how it's going to go.  Since we need to meld together
             // postings from separate fields, we're going to want to work in a
             // frequency domain until we've collected all the data for a particular 
             // term and then we can transform it into weighted term data.
             for(WeightedFeature f : sf) {
-                
+
                 Arrays.fill(freqs, 0);
 
                 //

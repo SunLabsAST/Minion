@@ -504,6 +504,19 @@ public interface SearchEngine extends Searcher {
      * does not appear in this index.
      */
     public DocumentVector getDocumentVector(String key, String field);
+    
+    /**
+     * Gets a document vector for the given document, combining the data from the
+     * provided fields.
+     * @param key the key for the document whose vector we will return.
+     * @param fields the name of the fields whose data will be included in the 
+     * returned vector.
+     * @return A document vector for the given key. If the key is not found in the
+     * index, then <code>null</code> will be returned.
+     * @throws IllegalArgumentException if one of the named fields does not exist, or
+     * if the named field is not vectored.
+     */
+    public DocumentVector getDocumentVector(String key, String[] fields);
 
     /**
      * Gets a composite document vector for the given linear combination of 

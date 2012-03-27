@@ -163,7 +163,12 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             termDict = df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
         } else {
             vecDict = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
-            termDict = df.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+            if(df.isUncased()) {
+                termDict = df.getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
+            } else {
+                termDict = df.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+            }
+            
         }
 
         QueryEntry<String> vecEntry = vecDict.getByID(keyEntry.getID());
@@ -186,9 +191,12 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             TermStatsImpl tsi = (TermStatsImpl) e.getTermStats(termEntry.getName(), field);
             wc.setTerm(tsi).setDocument(pi);
             wf.initTerm(wc);
-            WeightedFeature feat = new WeightedFeature(termEntry, pi.getFreq(), pi.getWeight());
+            WeightedFeature feat = new WeightedFeature(termEntry, pi.getFreq(), wf.termWeight(wc));
+            length += feat.getWeight() * feat.getWeight();
             v[p++] = feat;
         }
+        length = (float) Math.sqrt(length);
+        normalize();
     }
 
     @Override

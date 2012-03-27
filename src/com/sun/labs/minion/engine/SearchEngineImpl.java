@@ -28,9 +28,9 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.*;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.PipelineFactory;
+import com.sun.labs.minion.query.*;
 import com.sun.labs.minion.query.And;
 import com.sun.labs.minion.query.Or;
-import com.sun.labs.minion.query.*;
 import com.sun.labs.minion.retrieval.*;
 import com.sun.labs.minion.retrieval.parser.*;
 import com.sun.labs.minion.util.CDateParser;
@@ -228,11 +228,13 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         qs = new QueryStats();
     }
 
+    @Override
     public FieldInfo defineField(FieldInfo field)
             throws SearchEngineException {
         return invFilePartitionManager.getMetaFile().defineField(field);
     }
 
+    @Override
     public void setDefaultFieldInfo(FieldInfo field) {
         indexConfig.setDefaultFieldInfo(field);
     }
@@ -244,6 +246,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return the information associated with this field, or <code>null</code>
      * if this name is not the name of a defined field.
      */
+    @Override
     public FieldInfo getFieldInfo(String name) {
         FieldInfo fi = invFilePartitionManager.getMetaFile().getFieldInfo(name);
         if(fi != null) {
@@ -252,6 +255,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return fi;
     }
 
+    @Override
     public Set<String> getTermVariations(String term) {
         Set<String> ret = null;
         KnowledgeSource ks = queryConfig.getKnowledgeSource();
@@ -264,14 +268,17 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return ret;
     }
 
+    @Override
     public TermStats getTermStats(String term, String field) {
         return invFilePartitionManager.getTermStats(term, field);
     }
 
+    @Override
     public TermStats getTermStats(String term, FieldInfo field) {
         return invFilePartitionManager.getTermStats(term, field);
     }
 
+    @Override
     public Document getDocument(String key) {
         QueryEntry dke =
                 (QueryEntry) invFilePartitionManager.getDocumentTerm(key);
@@ -288,6 +295,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return new DocumentImpl(dke);
     }
 
+    @Override
     public List<Document> getDocuments(List<String> keys) {
 
         //
@@ -318,6 +326,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return docs;
     }
 
+    @Override
     public Document createDocument(String key) {
         QueryEntry dke =
                 (QueryEntry) invFilePartitionManager.getDocumentTerm(key);
@@ -360,10 +369,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      *
      * @see com.sun.labs.minion.IndexConfig#IndexConfig
      */
+    @Override
     public void index(String key, Map document) throws SearchEngineException {
         index(new IndexableMap(key, document));
     }
 
+    @Override
     public void index(Indexable doc) throws SearchEngineException {
         int hash = Math.abs(doc.getKey().hashCode());
         
@@ -374,16 +385,19 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         checkDump();
     }
 
+    @Override
     public void index(Document document) throws SearchEngineException {
         SimpleIndexer si = getSimpleIndexer();
         ((DocumentImpl) document).index(si);
         si.finish();
     }
 
+    @Override
     public void addIndexListener(IndexListener il) {
         invFilePartitionManager.addIndexListener(il);
     }
 
+    @Override
     public void removeIndexListener(IndexListener il) {
         invFilePartitionManager.removeIndexListener(il);
     }
@@ -411,6 +425,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @throws com.sun.labs.minion.SearchEngineException If there is any error
      * flushing the in-memory data.
      */
+    @Override
     public synchronized void flush() throws SearchEngineException {
 
         if(invFilePartitionManager == null) {
@@ -440,6 +455,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * document is considered to be in the index if a document with the
      * given key appears in the index and has not been deleted.
      */
+    @Override
     public boolean isIndexed(String key) {
         return invFilePartitionManager.isIndexed(key);
     }
@@ -449,6 +465,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      *
      * @param key The key for the document to delete.
      */
+    @Override
     public void delete(String key) {
         if(invFilePartitionManager == null) {
             return;
@@ -461,6 +478,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @param docs The keys of the documents to delete
      * @throws com.sun.labs.minion.SearchEngineException If there is any error deleting the documents.
      */
+    @Override
     public void delete(List<String> docs)
             throws SearchEngineException {
         if(invFilePartitionManager == null) {
@@ -476,6 +494,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return An instance of <CODE>ResultSet</CODE> containing the results of the query.
      * @see ResultSet
      */
+    @Override
     public ResultSet search(String query)
             throws SearchEngineException {
         return search(query, "-score",
@@ -603,10 +622,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
     }
 
+    @Override
     public ResultSet search(Element el) throws SearchEngineException {
         return search(el, "-score");
     }
 
+    @Override
     public ResultSet search(Element el, String sortOrder) throws
             SearchEngineException {
         checkQuery(null, el);
@@ -706,10 +727,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
     }
     
+    @Override
     public QueryStats getQueryStats() {
         return qs;
     }
 
+    @Override
     public void resetQueryStats() {
         qs = new QueryStats();
     }
@@ -728,6 +751,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * list.  All documents in the set will be assigned a score of 1.  Note that documents
      * that have been deleted will not appear in the result set.
      */
+    @Override
     public ResultSet getResults(Collection<String> keys) {
 
         //
@@ -907,6 +931,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return a sorted set of field values.  This set will be ordered by the
      * proportion of the field value that is covered by the given pattern.
      */
+    @Override
     public SortedSet<FieldValue> getMatching(String field,
                                              String pattern) {
         return invFilePartitionManager.getMatching(field, pattern);
@@ -922,6 +947,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * saved field, then an iterator that will return no values will be
      * returned.
      */
+    @Override
     public Iterator getFieldIterator(String field) {
         return invFilePartitionManager.getFieldIterator(field);
     }
@@ -936,6 +962,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * type.  If the named field is not a saved field, or if the given
      * document key is not in the index, then an empty list is returned.
      */
+    @Override
     public List getAllFieldValues(String field, String key) {
         return invFilePartitionManager.getAllFieldValues(field, key);
     }
@@ -950,6 +977,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return a <code>List</code> containing field values of the appropriate
      *         type for the field, ordered by frequency
      */
+    @Override
     public List<FieldFrequency> getTopFieldValues(String field, int n,
                                                   boolean ignoreCase) {
         return invFilePartitionManager.getTopFieldValues(field, n, ignoreCase);
@@ -971,6 +999,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      *
      * @see #getAllFieldValues
      */
+    @Override
     public Object getFieldValue(String field, String key) {
         return invFilePartitionManager.getFieldValue(field, key);
     }
@@ -984,22 +1013,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return invFilePartitionManager.getFieldNames();
     }
 
-    /**
-     * Gets a document vector for the given key.
-     * @param key The key for the document whose vector we are to retrieve.
-     * @return An instance of <CODE>DocumentVector</CODE> containing the vector for this document.
-     * @see DocumentVector
-     */
+    @Override
     public DocumentVector getDocumentVector(String key) {
         return getDocumentVector(key, (String) null);
     }
 
-    /**
-     * Gets a document vector for the given key.
-     * @param key The key for the document whose vector we are to retrieve.
-     * @return An instance of <CODE>DocumentVector</CODE> containing the vector for this document.
-     * @see DocumentVector
-     */
     @Override
     public DocumentVector getDocumentVector(String key, String field) {
         if(invFilePartitionManager == null) {
@@ -1007,6 +1025,16 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
         return invFilePartitionManager.getDocumentVector(key, field);
     }
+
+    @Override
+    public DocumentVector getDocumentVector(String key, String[] fields) {
+        if(invFilePartitionManager == null) {
+            return null;
+        }
+        return invFilePartitionManager.getDocumentVector(key, fields);
+    }
+    
+    
 
     @Override
     public DocumentVector getDocumentVector(String key, WeightedField[] fields) {
@@ -1115,6 +1143,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return <code>true</code> if a merge was performed,
      * <code>false</code> otherwise.
      */
+    @Override
     public boolean merge() {
         if(invFilePartitionManager == null) {
             return false;
@@ -1134,6 +1163,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * Merges all of the partitions in the index into a single partition.
      * @throws com.sun.labs.minion.SearchEngineException If there is any error during the merge.
      */
+    @Override
     public void optimize() throws SearchEngineException {
         if(invFilePartitionManager == null) {
             return;
@@ -1151,6 +1181,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * sure that lock files are removed.
      * @throws com.sun.labs.minion.SearchEngineException If there is any error during the recovery.
      */
+    @Override
     public void recover()
             throws SearchEngineException {
         if(invFilePartitionManager == null) {
@@ -1170,6 +1201,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * of the non-deleted documents in the index, as strings.  The iterators will be
      * returned in document ID order.
      */
+    @Override
     public Iterator<Document> getDocumentIterator() {
         return new DocumentIterator(invFilePartitionManager);
     }
@@ -1255,6 +1287,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return The name of the engine assigned by the application, or
      * <code>null</code> if none has been assigned.
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -1264,6 +1297,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return The number of documents in the index.  This number does not include documents
      * that have been deleted but whose data has not been garbage collected.
      */
+    @Override
     public int getNDocs() {
         return invFilePartitionManager.getNDocs();
     }
@@ -1272,6 +1306,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * Gets the query configuration being used by this search engine.
      * @return The current query configuration in use by this engine.
      */
+    @Override
     public QueryConfig getQueryConfig() {
         return (QueryConfig) queryConfig.clone();
     }
@@ -1282,6 +1317,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return a simple indexer that will index documents into this
      * engine.
      */
+    @Override
     public SimpleIndexer getSimpleIndexer() {
         return new Indexer();
     }
@@ -1291,6 +1327,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return An instance of <code>Pipeline</code> that can be used to highlight passages in
      * documents returned by a search.
      */
+    @Override
     public HLPipeline getHLPipeline() {
         return pipelineFactory.getHLPipeline();
     }
@@ -1321,6 +1358,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      *
      * @return The partition manager for this search engine.
      */
+    @Override
     public PartitionManager getPM() {
         return invFilePartitionManager;
     }
@@ -1329,6 +1367,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * Gets the partition manager associated with this search engine.
      * @return The partition manager associated with this search engine.
      */
+    @Override
     public PartitionManager getManager() {
         return invFilePartitionManager;
     }
@@ -1337,6 +1376,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * Gets the index configuration in use by this search engine.
      * @return The index configuration in use by this search engine.
      */
+    @Override
     public IndexConfig getIndexConfig() {
         return indexConfig;
     }
@@ -1351,6 +1391,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      *
      * @return the MetaDataStore instance
      */
+    @Override
     public synchronized MetaDataStore getMetaDataStore()
             throws SearchEngineException {
         try {
@@ -1416,6 +1457,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return cm;
     }
 
+    @Override
     public void newProperties(PropertySheet ps)
             throws PropertyException {
         cm = ps.getConfigurationManager();
@@ -1497,6 +1539,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * will not be calculated until the engine is shutdown.  This should be 
      * done before any indexing begins for best results.
      */
+    @Override
     public void setLongIndexingRun(boolean longIndexingRun) {
         this.longIndexingRun = longIndexingRun;
         marshaller.setLongIndexingRun(longIndexingRun);
@@ -1509,6 +1552,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
     }
 
+    @Override
     public void setQueryConfig(QueryConfig queryConfig) {
         this.queryConfig = queryConfig;
         queryConfig.setEngine(this);
@@ -1556,6 +1600,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             this.docsPerPart = docsPerPart;
         }
 
+        @Override
         public void run() {
             while(!finished) {
                 try {
@@ -1629,22 +1674,27 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             nIndexed = 0;
         }
 
+        @Override
         public void finish() {
             finished = true;
         }
 
+        @Override
         public void indexDocument(Indexable doc) throws SearchEngineException {
             index(doc);
         }
 
+        @Override
         public void indexDocument(Document doc) throws SearchEngineException {
         }
 
+        @Override
         public void startDocument(String key) {
             this.key = key;
             part.startDocument(key);
         }
 
+        @Override
         public void addField(String name, String value) {
             FieldInfo fi = getFieldInfo(name);
             if(fi == null) {
@@ -1655,6 +1705,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             part.addField(fi, value);
         }
 
+        @Override
         public void addField(String name, Date value) {
             FieldInfo fi = getFieldInfo(name);
             if(fi == null) {
@@ -1665,6 +1716,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             part.addField(fi, value);
         }
 
+        @Override
         public void addField(String name, Long value) {
             FieldInfo fi = getFieldInfo(name);
             if(fi == null) {
@@ -1675,6 +1727,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             part.addField(fi, value);
         }
 
+        @Override
         public void addField(String name, Integer value) {
             FieldInfo fi = getFieldInfo(name);
             if(fi == null) {
@@ -1685,6 +1738,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             part.addField(fi, value);
         }
 
+        @Override
         public void addField(String name, Double value) {
             FieldInfo fi = getFieldInfo(name);
             if(fi == null) {
@@ -1695,6 +1749,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             part.addField(fi, value);
         }
 
+        @Override
         public void addField(String name, Float value) {
             FieldInfo fi = getFieldInfo(name);
             if(fi == null) {
@@ -1705,6 +1760,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             part.addField(fi, value);
         }
 
+        @Override
         public void addField(String name, Object[] values) {
             FieldInfo fi = getFieldInfo(name);
             if(fi == null) {
@@ -1717,6 +1773,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             }
         }
 
+        @Override
         public void addField(String name,
                              Collection<Object> values) {
             FieldInfo fi = getFieldInfo(name);
@@ -1729,21 +1786,26 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             }
         }
 
+        @Override
         public void addTerm(String term) {
             addTerm(null, term, 1);
         }
 
+        @Override
         public void addTerm(String term, int count) {
             addTerm(null, term, count);
         }
 
+        @Override
         public void addTerm(String field, String term, int count) {
             part.addTerm(field, term, count);
         }
 
+        @Override
         public void endDocument() {
         }
 
+        @Override
         public boolean isIndexed(String key) {
             return part.isIndexed(key) || invFilePartitionManager.isIndexed(key);
         }

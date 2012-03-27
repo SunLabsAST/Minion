@@ -152,17 +152,20 @@ public class WeightedFeature implements Feature, Serializable {
         this.id = id;
         this.weight = weight;
     } // WeightedFeature constructor
-    
+
     public WeightedFeature(QueryEntry<String> entry, int freq, float weight) {
         this.name = entry.getName();
         this.id = entry.getID();
         this.entry = entry;
         this.freq = freq;
+        this.weight = weight;
     }
 
     public WeightedFeature(WeightedFeature f) {
         name = f.name;
         weight = f.weight;
+        id = f.id;
+        entry = f.entry;
         id = f.id;
     }
 

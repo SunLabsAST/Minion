@@ -290,7 +290,8 @@ public class WeightingComponents {
         return this;
     }
 
+    @Override
     public String toString() {
-        return String.format("ts: %s N: %d ft: %d fdt: %d", ts, N, ft, fdt);
+        return String.format("ts: %s N: %d ft: %d fdt: %d wt: %.3f", ts, N, ft, fdt, wt);
     }
 } // WeightingComponents
