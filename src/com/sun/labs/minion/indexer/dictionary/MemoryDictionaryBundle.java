@@ -148,11 +148,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
 
         if(field.isVectored()) {
-            dicts[Type.RAW_VECTOR.ordinal()] = new MemoryDictionary<String>(
-                    vectorEntryFactory);
+            dicts[Type.RAW_VECTOR.ordinal()] = 
+                    new MemoryDictionary<String>(vectorEntryFactory);
             if(field.isStemmed()) {
-                dicts[Type.STEMMED_VECTOR.ordinal()] = new MemoryDictionary<String>(
-                        vectorEntryFactory);
+                dicts[Type.STEMMED_VECTOR.ordinal()] = 
+                        new MemoryDictionary<String>(vectorEntryFactory);
             }
             ddo = new DocOccurrence();
         }
