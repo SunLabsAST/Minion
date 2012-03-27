@@ -342,6 +342,8 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
         } else {
             sf = v;
         }
+        
+        logger.info(String.format("findsim query has %d terms", sf.length));
 
         //
         // We now have sf, which is the (possibly skimmed) set of features
@@ -371,18 +373,19 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             if(cdf == null) {
                 continue;
             }
-
-
+            
             ScoredQuickOr qor = new ScoredQuickOr(curr, 1024, true);
             qor.setQueryStats(qs);
+            qor.addField(field);
 
             for(WeightedFeature f : sf) {
 
                 QueryEntry entry = cdf.getTerm(f.getName(), false);
-                if(entry != null) {
-                    wf.initTerm(wc.setTerm(f.getName()));
+                if(entry == null) {
+                    qor.addWeightOnly(f.getWeight());
+                    continue;
                 }
-
+                wf.initTerm(wc.setTerm(f.getName()));
                 PostingsIterator pi = entry.iterator(feat);
 
                 if(pi != null) {
