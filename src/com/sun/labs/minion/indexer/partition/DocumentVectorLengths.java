@@ -287,9 +287,7 @@ public class DocumentVectorLengths {
 
                 if(cmp == 0) {
                     pgte = (TermStatsQueryEntry) gti.getEntry(pgte);
-                    TermStatsImpl ts = pgte.getTermStats();
-                    ts.add(mde);
-                    wc.setTerm(ts);
+                    wc.setTerm(pgte.getTermStats());
                 } else {
                     //
                     // The term is only in the dictionary for the partition.
@@ -324,6 +322,9 @@ public class DocumentVectorLengths {
         if(pi != null) {
             while(pi.next()) {
                 float w = pi.getWeight();
+                if(pi.getID() == 17778) {
+                    logger.info(String.format("%d %.3f", pi.getID(), w));
+                }
                 vl[pi.getID()] += w * w;
             }
         }
@@ -364,7 +365,11 @@ public class DocumentVectorLengths {
         
         for(int i = 0; i < p; i++) {
             lvl.position((docs[i] - 1) * 4);
-            scores[i] /= (lvl.decodeFloat() * qw);
+            float vl = lvl.decodeFloat();
+            if(docs[i] == 17778) {
+                logger.info(String.format("%d score: %.3f vl: %.3f qw: %.3f", docs[i], scores[i], vl, qw));
+            }
+            scores[i] /= (vl * qw);
         }
     }
     
