@@ -71,7 +71,7 @@ public class ScoredQuickOr extends QuickOr {
     public void add(PostingsIterator pi) {
         add(pi, 1);
     }
-
+    
     @Override
     public void add(PostingsIterator pi, float qw) {
         if(pi == null) {

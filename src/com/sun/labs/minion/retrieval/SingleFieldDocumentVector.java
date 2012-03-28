@@ -182,7 +182,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             v = new WeightedFeature[0];
             return;
         }
-
+        
         v = new WeightedFeature[pi.getN()];
         int p = 0;
         while(pi.next()) {
@@ -397,7 +397,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
                     qor.addWeightOnly(f.getWeight());
                 }
             }
-
+            
             //
             // Add the results for this partition into the list
             // of results.
