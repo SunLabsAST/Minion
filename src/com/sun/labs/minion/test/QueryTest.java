@@ -1152,6 +1152,25 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add("reap", "Maintenance", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                
+                ci.out.println("Reaping");
+                manager.setReapDoesNothing(false);
+                manager.reap();
+                manager.setReapDoesNothing(true);
+                return "Reaped";
+            }
+
+            @Override
+            public String getHelp() {
+                return "removes deleted partitions";
+            }
+        });
+
         shell.add("sim", new CommandInterface() {
 
             @Override
