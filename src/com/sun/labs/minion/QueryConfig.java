@@ -40,6 +40,7 @@ import com.sun.labs.util.props.ConfigString;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -653,6 +654,13 @@ public class QueryConfig implements Cloneable, Configurable {
 
     public Set<FieldInfo> getDefaultFields() {
         return defaultFields;
+    }
+    
+    public void setDefaultFields(Collection<String> fields) {
+        defaultFields.clear();
+        for(String field : fields) {
+            addDefaultField(field);
+        }
     }
 
 } // QueryConfig
