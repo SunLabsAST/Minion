@@ -495,6 +495,7 @@ public class ScoredGroup extends ArrayGroup {
      * @param ag The scored group to intersect with this group.
      * @return The result of intersecting the given group with this group.
      */
+    @Override
     public ArrayGroup intersect(NegativeGroup ag)  {
         
         //
@@ -607,6 +608,7 @@ public class ScoredGroup extends ArrayGroup {
      *
      * @return a clone of this group.  We will clone the internal arrays.
      */
+    @Override
     public Object clone() {
         ScoredGroup result = null;
         result = (ScoredGroup) super.clone();
@@ -625,6 +627,7 @@ public class ScoredGroup extends ArrayGroup {
      * @return <code>true</code> if the groups contain the same documents,
      * <code>false</code> otherwise.
      */
+    @Override
     public boolean equals(Object o) {
         if(!(o instanceof ScoredGroup)) {
             return false;
@@ -646,24 +649,24 @@ public class ScoredGroup extends ArrayGroup {
         return true;
     }
     
+    @Override
     public String toString() {
         return toString(0);
     }
     
     public String toString(int t) {
-        StringBuffer sb = new StringBuffer(size*5);
+        StringBuilder sb = new StringBuilder(size*5);
         switch(t) {
             case 0:
                 sb.append("[");
                 for(int i = 0; i < size; i++) {
-                    sb.append((i == 0 ? "" : ", ") +
-                            String.format("(%d,%5.3f)", docs[i], scores[i]));
+                    sb.append(i == 0 ? "" : ", ").append(String.format("(%d,%5.3f)", docs[i], scores[i]));
                 }
                 
-                sb.append("] " + size + " docs " + sqw + " squared qw");
+                sb.append("] ").append(size).append(" docs ").append(sqw).append(" squared qw");
                 break;
             case 1:
-                sb.append(size + " docs " + sqw + " squared qw\n");
+                sb.append(size).append(" docs ").append(sqw).append(" squared qw\n");
                 for(int i = 0; i < size; i++) {
                     sb.append(String.format("%6d %10f\n", docs[i], scores[i]));
                 }
@@ -689,6 +692,7 @@ public class ScoredGroup extends ArrayGroup {
          */
         private boolean rescore = true;
 
+        @Override
         public float getScore() {
             if(sm != null && rescore) {
                 scores[pos] = sm.modifyScore(scores[pos], this);
@@ -697,6 +701,7 @@ public class ScoredGroup extends ArrayGroup {
             return scores[pos];
         }
         
+        @Override
         public int compareTo(DocIterator o) {
             
             float s1;
@@ -720,6 +725,7 @@ public class ScoredGroup extends ArrayGroup {
             return 0;
         }
         
+        @Override
         public boolean next() {
             rescore = true;
             return super.next();
