@@ -337,6 +337,7 @@ public interface SearchEngine extends Searcher {
      *
      * @param query The query to run, in our query syntax.
      */
+    @Override
     public ResultSet search(String query)
             throws SearchEngineException;
     
@@ -350,6 +351,7 @@ public interface SearchEngine extends Searcher {
      * @throws com.sun.labs.minion.SearchEngineException if there are any errors
      * evaluating the query
      */
+    @Override
     public ResultSet search(String query, String sortOrder)
             throws SearchEngineException;
 
