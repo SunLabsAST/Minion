@@ -100,6 +100,9 @@ public class QuestioningStage extends StageAdapter {
         } else {
             super.token(t);
         }
+        if(downstream != null) {
+            downstream.token(t);
+        }
     }
 
     /**
@@ -139,6 +142,10 @@ public class QuestioningStage extends StageAdapter {
                     flushTokens();
                 }
             }
+        }
+        
+        if(downstream != null) {
+            downstream.punctuation(p);
         }
     }
 
