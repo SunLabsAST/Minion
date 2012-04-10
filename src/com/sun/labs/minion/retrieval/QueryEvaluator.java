@@ -23,19 +23,18 @@
  */
 package com.sun.labs.minion.retrieval;
 
-import java.util.ArrayList;
-import java.util.List;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.query.Relation;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class QueryEvaluator {
 
-    protected static Logger logger = Logger.getLogger(QueryEvaluator.class.getName());
-
-    protected static String logTag = "EVAL";
+    protected static final Logger logger = Logger.getLogger(QueryEvaluator.class.
+            getName());
 
     /**
      * Evaluates a field term.
@@ -44,12 +43,13 @@ public class QueryEvaluator {
      * @param name The name of the field.
      * @param op The operator to use.
      * @param value The value to compare against.
-     * @return a list of <code>ArrayGroup</code>s containing the results
-     * for the corresponding partitions.
+     * @return a list of
+     * <code>ArrayGroup</code>s containing the results for the corresponding
+     * partitions.
      */
     public List eval(List parts,
-            QueryConfig qc,
-            String name, Relation.Operator op, String value) {
+                     QueryConfig qc,
+                     String name, Relation.Operator op, String value) {
         QueryElement qe = new FieldTerm(name, op, value);
         qe.setQueryConfig(qc);
         return eval(parts, qe);
@@ -59,9 +59,11 @@ public class QueryEvaluator {
      * Evaluates a query
      *
      * @param parts The partitions to evaluate against.
-     * @param qe The query element, with query config and weight function already set
-     * @return a list of <code>ArrayGroup</code>s containing the results
-     * for the corresponding partitions.
+     * @param qe The query element, with query config and weight function
+     * already set
+     * @return a list of
+     * <code>ArrayGroup</code>s containing the results for the corresponding
+     * partitions.
      */
     public List eval(Collection<DiskPartition> parts, QueryElement qe) {
 
