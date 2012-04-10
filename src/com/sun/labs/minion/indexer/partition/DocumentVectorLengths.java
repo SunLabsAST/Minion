@@ -322,9 +322,6 @@ public class DocumentVectorLengths {
         if(pi != null) {
             while(pi.next()) {
                 float w = pi.getWeight();
-                if(pi.getID() == 17778) {
-                    logger.info(String.format("%d %.3f", pi.getID(), w));
-                }
                 vl[pi.getID()] += w * w;
             }
         }
