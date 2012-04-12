@@ -1433,6 +1433,11 @@ public class QueryTest extends SEMain {
          * The fields we'll display.
          */
         protected String[] fields;
+        
+        /**
+         * The maximum amount of a string field that we'll show.
+        */
+        protected int[] lengths;
 
         /**
          * The values we'll print.
@@ -1459,19 +1464,34 @@ public class QueryTest extends SEMain {
             setDisplayFields(displayFields);
             setFormatString(formatString);
         }
+        
         public void setDisplayFields(String displayFields) {
             setDisplayFields(displayFields.split("\\s+"));
         }
 
-        public void setDisplayFields(String[] fields) {
+        public void setDisplayFields(String[] inFields) {
             
             //
             // Split the input at commas.
             StringBuilder df = new StringBuilder();
-            this.fields = fields;
-            vals = new Object[fields.length];
-            for(int i = 0; i < fields.length; i++) {
+            fields = new String[inFields.length];
+            lengths = new int[inFields.length];
+            Arrays.fill(lengths, -1);
+            vals = new Object[inFields.length];
+            for(int i = 0; i < inFields.length; i++) {
 
+                int cp = inFields[i].indexOf(':');
+                if(cp >= 0) {
+                    fields[i] = inFields[i].substring(0, cp);
+                    try {
+                    lengths[i] = Integer.parseInt(inFields[i].substring(cp+1));
+                    } catch (NumberFormatException ex) {
+                        logger.warning(String.format("Bad field length spec: %s, Ignoring", inFields[i].substring(cp+1)));
+                        lengths[i] = -1;
+                    }
+                } else {
+                    fields[i] = inFields[i];
+                }
                 String fn = fields[i];
                 FieldInfo fi = engine.getFieldInfo(fn);
                 if(fi == null || !fi.hasAttribute(FieldInfo.Attribute.SAVED)) {
@@ -1485,7 +1505,7 @@ public class QueryTest extends SEMain {
                         df.append("%s ");
                     } else {
                         logger.warning(String.format(
-                                "Display field %s is not saved", fields[i]));
+                                "Display field %s is not saved", inFields[i]));
                         df.append("%s ");
                     }
                 } else {
@@ -1564,6 +1584,12 @@ public class QueryTest extends SEMain {
                         vals[i] = val.get(0);
                     } else {
                         vals[i] = val.toString();
+                    }
+                    if(lengths[i] > 0 && vals[i] instanceof String) {
+                        String s = (String) vals[i];
+                        if(s.length() > lengths[i]) {
+                            vals[i] = s.substring(0, lengths[i]);
+                        }
                     }
                 }
             }
