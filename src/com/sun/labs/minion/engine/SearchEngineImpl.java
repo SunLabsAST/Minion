@@ -88,11 +88,7 @@ import java.util.logging.Logger;
  */
 public class SearchEngineImpl implements SearchEngine, Configurable {
 
-    /**
-     * The log.
-     */
-    static final Logger logger = Logger.getLogger(
-            SearchEngineImpl.class.getName());
+    private static final Logger logger = Logger.getLogger(SearchEngineImpl.class.getName());
 
     @ConfigComponent(type = com.sun.labs.minion.IndexConfig.class)
     public static final String PROP_INDEX_CONFIG = "index_config";

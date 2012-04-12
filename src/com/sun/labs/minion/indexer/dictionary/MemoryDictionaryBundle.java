@@ -216,7 +216,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         IndexEntry ce = null;
         IndexEntry uce = null;
         IndexEntry se = null;
-
+        
         if(field.isCased()) {
             ce = dicts[Type.CASED_TOKENS.ordinal()].put(t.getToken());
             ce.add(t);

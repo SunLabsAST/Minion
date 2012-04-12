@@ -90,7 +90,7 @@ public class IndexEntry<N extends Comparable> extends Entry<N> {
             //
             // Possibly remap the data and get a buffer to write.
             post.remap(idMap);
-
+            
             //
             // Set the elements of the term information, so that they can
             // be encoded later.

@@ -24,16 +24,13 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
-import java.util.Comparator;
-import java.util.List;
-
 import com.sun.labs.minion.QueryConfig;
-
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
