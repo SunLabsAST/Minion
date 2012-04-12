@@ -30,7 +30,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +45,6 @@ import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
-import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
@@ -81,6 +79,9 @@ import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.postings.Postings;
+import com.sun.labs.minion.indexer.postings.PostingsIterator;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
 import com.sun.labs.minion.retrieval.AbstractDocumentVector;
 import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.command.CommandInterface;
@@ -904,6 +905,52 @@ public class QueryTest extends SEMain {
 
             public String getHelp() {
                 return "field term [term...] - Get a verbose description of the postings associated with a term in a given field";
+            }
+        });
+        
+        shell.add("dpost", "Info", new CommandInterface() {
+
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 4) {
+                    return getHelp();
+                }
+                
+                String field = args[1];
+                FieldInfo fi = manager.getFieldInfo(field);
+                if(fi == null) {
+                    return String.format("No such field: %s", field);
+                }
+                int docID = Integer.parseInt(args[2]);
+                List<DiskPartition> parts = manager.getActivePartitions();
+                for(int i = 2; i < args.length; i++) {
+                    for(DiskPartition p : parts) {
+                        DiskField df = ((InvFileDiskPartition) p).getDF(fi);
+                        QueryEntry qe = df.getTerm(args[i], false);
+                        if(qe == null) {
+                            continue;
+                        }
+                        Postings post = qe.getPostings();
+                        if(post != null) {
+                            PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
+                            feat.setPositions(true);
+                            PostingsIterator pi = post.iterator(feat);
+                            if(pi.findID(docID)) {
+                                shell.out.format("%d freq: %d", docID, pi.getFreq());
+                                if(pi instanceof PostingsIteratorWithPositions) {
+                                    int[] posns = ((PostingsIteratorWithPositions) pi).getPositions();
+                                    shell.out.format(" posns: %s\n", Arrays.toString(posns));
+                                } else {
+                                    shell.out.println();
+                                }
+                            }
+                        }
+                    }
+                }
+                return "";
+            }
+
+            public String getHelp() {
+                return "field docID term [term...] - Get all of the postings associated with a term in a particular document, in a given field";
             }
         });
         
