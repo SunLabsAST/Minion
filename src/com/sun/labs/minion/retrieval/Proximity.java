@@ -24,12 +24,10 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-
-import com.sun.labs.minion.util.Util;
 import java.util.logging.Logger;
 
 /**
@@ -161,7 +159,7 @@ public abstract class Proximity extends Operator {
      * constraints.  The list must contain instances of
      * <code>DictTerm</code>.
      */
-    protected ArrayGroup evalTerms(ArrayGroup candidates, List terms) {
+    protected ArrayGroup evalTerms(ArrayGroup candidates, List<DictTerm> terms) {
 
         float maxScore = Float.MIN_VALUE;
         int nPerfect = 0;
@@ -172,7 +170,7 @@ public abstract class Proximity extends Operator {
         // as though it were not a proximity query, making sure to
         // intersect with the candidate set.
         if(terms.size() == 1) {
-            DictTerm term = (DictTerm) terms.get(0);
+            DictTerm term = terms.get(0);
             ArrayGroup ag = term.eval(candidates);
             ag.width = 1;
 
@@ -186,16 +184,9 @@ public abstract class Proximity extends Operator {
             //
             // Figure out what fields we need.
             int[] doFields;
-            doFields = new int[part.getPartitionManager().getMetaFile().size()
-                               + 1];
-            if((searchFields == null) && (part instanceof InvFileDiskPartition)) {
-                for(int i = 0; i < doFields.length; i++) {
-                    doFields[i] = 1;
-                }
-            } else {
-                for(FieldInfo fi : searchFields) {
-                    doFields[fi.getID()] = 1;
-                }
+            doFields = new int[part.getPartitionManager().getMetaFile().size() + 1];
+            for(FieldInfo fi : searchFields) {
+                doFields[fi.getID()] = 1;
             }
 
             int[][] fieldPosns;
@@ -211,9 +202,13 @@ public abstract class Proximity extends Operator {
                         continue;
                     }
 
-                    int n = fieldPosns[f][0];
+                    int[] fposn = fieldPosns[f];
+                    if(fposn == null) {
+                        continue;
+                    }
+                    int n = fposn[0];
                     for(int j = 1; j <= n; j++) {
-                        tops[0] = fieldPosns[f][j];
+                        tops[0] = fposn[j];
                         ag.addPassage(i, f, tops, 0);
                     }
                 }
@@ -251,14 +246,8 @@ public abstract class Proximity extends Operator {
         int[] doFields;
         doFields = new int[((InvFileDiskPartition) part).getPartitionManager().
                 getMetaFile().size() + 1];
-        if((searchFields == null) && (part instanceof InvFileDiskPartition)) {
-            for(int i = 0; i < doFields.length; i++) {
-                doFields[i] = 1;
-            }
-        } else {
-            for(FieldInfo fi : searchFields) {
-                doFields[fi.getID()] = 1;
-            }
+        for(FieldInfo fi : searchFields) {
+            doFields[fi.getID()] = 1;
         }
 
         //
@@ -313,24 +302,9 @@ public abstract class Proximity extends Operator {
                     if(nPosns + lens[j] >= columns[j].length) {
                         columns[j] = Arrays.copyOf(columns[j],
                                                     (nPosns + lens[j]) * 2);
-
-                        //
-                        // Steve says: I know that this doesn't do
-                        // anything, but there appears to be some problem
-                        // with current VMs, whereby the above expansion
-                        // doesn't appear to take hold later on when we
-                        // actually want to sort the array.
-                        //
-                        // Accessing the length of columns[j] here (either
-                        // by a debug statement or by doing an operation on
-                        // it) appears to make the assignment above
-                        // "stick".  This has been a problem for VMs from
-                        // 1.2 up to 1.4.
-                        int x = columns[j].length + 1;
                     }
 
-                    arrayCopy(fposns, 1, columns[j], lens[j], nPosns);
-                    //System.arraycopy(fposns, 1, columns[j], lens[j], nPosns);
+                    System.arraycopy(fposns, 1, columns[j], lens[j], nPosns);
                     lens[j] += nPosns;
 
                     if(lens[j] > columns[j].length) {
