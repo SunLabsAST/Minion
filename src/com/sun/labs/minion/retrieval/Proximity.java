@@ -255,7 +255,7 @@ public abstract class Proximity extends Operator {
         // pull the positions for the terms and check for valid passages.
         for(int i = 0; i < candidates.size; i++) {
             int doc = candidates.docs[i];
-
+            
             //
             // Get the positions for the terms in this document.
             for(int j = 0; j < terms.size(); j++) {
@@ -276,10 +276,8 @@ public abstract class Proximity extends Operator {
 
                 //
                 // Zero out the column lengths.
-                for(int j = 0; j < lens.length; j++) {
-                    lens[j] = 0;
-                }
-
+                Arrays.fill(lens, 0);
+                
                 for(int j = 0; j < fieldPosns.length; j++) {
 
                     if(fieldPosns[j] == null) {
@@ -347,14 +345,14 @@ public abstract class Proximity extends Operator {
                     }
                     Arrays.sort(columns[j], 0, lens[j]);
                 }
-
+                
                 //
                 // OK, now we have all the positions for our current field,
                 // let's see if any of them have matching passages.  Note
                 // that we don't have any intrinsic term penalties for now.
                 float minPenalty =
                         checkPositions(ret, doc, f, columns, lens, ocTerms, null);
-
+                
                 //
                 // If we actually got a passage, it will have been stored
                 // in checkPositions.  We'll deal with keeping the best
