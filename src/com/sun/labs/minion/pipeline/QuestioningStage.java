@@ -97,12 +97,8 @@ public class QuestioningStage extends StageAdapter {
             if(tokenBuffer.size() > MAX_BUFFER_SIZE) {
                 flushTokens();
             }
-        } else {
-            super.token(t);
         }
-        if(downstream != null) {
-            downstream.token(t);
-        }
+        super.token(t);
     }
 
     /**
@@ -144,9 +140,7 @@ public class QuestioningStage extends StageAdapter {
             }
         }
         
-        if(downstream != null) {
-            downstream.punctuation(p);
-        }
+        super.punctuation(p);
     }
 
     private void startQuestion(boolean characterCase) {
