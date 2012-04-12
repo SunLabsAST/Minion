@@ -26,51 +26,54 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Stemmer;
 import com.sun.labs.minion.indexer.DiskField;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.util.Util;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.logging.Level;
 
 /**
- * A concrete subclass of <code>QueryTerm</code> that represents a term
- * taken from one of the main dictionaries for a partition.  Note that a
- * term can be represented by several actual dictionary entries.
+ * A concrete subclass of
+ * <code>QueryTerm</code> that represents a term taken from one of the main
+ * dictionaries for a partition. Note that a term can be represented by several
+ * actual dictionary entries.
  *
  * <p>
  *
- * This class implements <code>Comparator</code> so that we can sort the
- * terms based on their frequency.
+ * This class implements
+ * <code>Comparator</code> so that we can sort the terms based on their
+ * frequency.
  */
 public class DictTerm extends QueryTerm implements Comparator {
 
     /**
      * The set of morphological variations of the term as computed by the
-     * lightweight morphology. We only need to compute this once per query
-     * term, when the term is instantiated.
+     * lightweight morphology. We only need to compute this once per query term,
+     * when the term is instantiated.
      */
     protected String[] knowledgeVariants;
 
     /**
      * The array of semantic variantions of the term as returned from the
-     * taxonomies of all the partitions. We only need to compute this once per query term.
+     * taxonomies of all the partitions. We only need to compute this once per
+     * query term.
      */
     protected String[] semanticVariants;
 
     /**
-     * The list of entries that were pulled from the dictionary for the
-     * current partition.  A single query term may be expanded in various
-     * ways to cover several entries in a dictionary.
+     * The list of entries that were pulled from the dictionary for the current
+     * partition. A single query term may be expanded in various ways to cover
+     * several entries in a dictionary.
      */
     protected QueryEntry[] dictEntries;
 
@@ -83,22 +86,22 @@ public class DictTerm extends QueryTerm implements Comparator {
     protected PostingsIteratorWithPositions[] pis;
 
     /**
-     * An array that will hold per-field word positions.  This will be
-     * given out when anyone asks for positions.
+     * An array that will hold per-field word positions. This will be given out
+     * when anyone asks for positions.
      */
     protected int[][] posns;
-    
+
     /**
      * A weight associated with the query term, which can be used during the
-     * similarity computation.  If this is not specified by the user, then we'll
+     * similarity computation. If this is not specified by the user, then we'll
      * compute a weight by assuming that the query term has a freqeuncy of 1.
      */
     private float termWeight;
 
     /**
-     * Creates a dictionary term for a given query term.  This query term
-     * may be expanded in various ways depending on the operators that have
-     * been applied to the term.
+     * Creates a dictionary term for a given query term. This query term may be
+     * expanded in various ways depending on the operators that have been
+     * applied to the term.
      *
      * @param val The value from the query.
      */
@@ -115,7 +118,7 @@ public class DictTerm extends QueryTerm implements Comparator {
     }
 
     /**
-     * Sets the partition that this term will be operating on.  Does any
+     * Sets the partition that this term will be operating on. Does any
      * dictionary lookups required.
      *
      * @param part The partition that we will be evaluating against.
@@ -129,6 +132,10 @@ public class DictTerm extends QueryTerm implements Comparator {
         // If this isn't a term in an inverted file then we stop
         // here
         if(!(part instanceof InvFileDiskPartition)) {
+            return;
+        }
+        
+        if(searchFields == null || searchFields.length == 0) {
             return;
         }
 
@@ -148,11 +155,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         //
         // A set to hold term variants from morphology or other sources.
         Set<QueryEntry> variants = new HashSet<QueryEntry>();
-        
-        if(searchFields == null) {
-            searchFields = part.getPartitionManager().getEngine().getQueryConfig().getDefaultFields().toArray(new FieldInfo[0]);
-        }
-        
+
         for(FieldInfo sfi : searchFields) {
             DiskField df = ifdp.getDF(sfi);
             if(df == null) {
@@ -252,14 +255,15 @@ public class DictTerm extends QueryTerm implements Comparator {
     /**
      * Evaluates the term in the current partition.
      *
-     * @param ag An array group that we can use to limit the evaluation of
-     * the term.  If this group is <code>null</code> a new group will be
-     * returned.  If this group is non-<code>null</code>, then the elements
-     * in the group will be used to restrict the documents that we return
-     * from the term.
-     * @return A new <code>ArrayGroup</code> containing the results of
-     * evaluating the term against the given group.  The static type of the
-     * returned group depends on the query status parameter.
+     * @param ag An array group that we can use to limit the evaluation of the
+     * term. If this group is
+     * <code>null</code> a new group will be returned. If this group is non-
+     * <code>null</code>, then the elements in the group will be used to
+     * restrict the documents that we return from the term.
+     * @return A new
+     * <code>ArrayGroup</code> containing the results of evaluating the term
+     * against the given group. The static type of the returned group depends on
+     * the query status parameter.
      */
     @Override
     public ArrayGroup eval(ArrayGroup ag) {
@@ -267,8 +271,8 @@ public class DictTerm extends QueryTerm implements Comparator {
         if(ag == null) {
 
             QuickOr or = strictEval
-                    ? new QuickOr(part, estSize)
-                    : new ScoredQuickOr(part, estSize);
+                         ? new QuickOr(part, estSize)
+                         : new ScoredQuickOr(part, estSize);
             or.setQueryStats(qs);
             or.addFields(searchFields);
             for(QueryEntry qe : dictEntries) {
@@ -300,8 +304,8 @@ public class DictTerm extends QueryTerm implements Comparator {
     }
 
     /**
-     * Intersects a strict group with the current term.  This will try to
-     * do the optimal thing.
+     * Intersects a strict group with the current term. This will try to do the
+     * optimal thing.
      *
      * @param ag The group to intersect with.
      * @return a group representing the intersection of this term with the given
@@ -414,8 +418,8 @@ public class DictTerm extends QueryTerm implements Comparator {
     }
 
     /**
-     * Intersects a scored group with the current term.  This will try to
-     * do the optimal thing.
+     * Intersects a scored group with the current term. This will try to do the
+     * optimal thing.
      *
      * @param ag The group to intersect with.
      */
@@ -433,11 +437,6 @@ public class DictTerm extends QueryTerm implements Comparator {
         float[] scores = new float[ag.size];
 
         //
-        // Features for the iterators we'll create.
-        PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
-        feat.setQueryStats(qs);
-
-        //
         // Loop through our terms.
         float sqw = 0;
         qs.intersectW.start();
@@ -451,7 +450,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                 continue;
             }
             pi.next();
-            
+
             //
             // We need to decide whether we're going to use findID or just
             // iterate through the postings for the current term.  We'll
@@ -472,7 +471,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                 }
                 qs.piW.stop();
             } else {
-                
+
                 //
                 // We're going to use findID.
                 for(int j = 0; j < ag.size; j++) {
@@ -507,8 +506,8 @@ public class DictTerm extends QueryTerm implements Comparator {
     }
 
     /**
-     * Intersects a scored group with the current term.  This will try to
-     * do the optimal thing.
+     * Intersects a scored group with the current term. This will try to do the
+     * optimal thing.
      *
      * @param ag The group to intersect with.
      */
@@ -526,12 +525,11 @@ public class DictTerm extends QueryTerm implements Comparator {
     /**
      * Gets the positions for this term in the given document.
      *
-     * @return a two dimensional array of integers.  The first dimension
-     * is indexed by field ID.  The second dimension is the positions for
-     * the given field.  The first element of each sub-array will contain
-     * the number of positions following.  We will only return positions
-     * for those fields in which we have a stated interest.  If there are
-     * no such fields defined, then data from all fields will be returned.
+     * @return a two dimensional array of integers. The first dimension is
+     * indexed by field ID. The second dimension is the positions for the given
+     * field. The first element of each sub-array will contain the number of
+     * positions following. We will only return positions for those fields in
+     * which we have a stated interest.
      */
     public int[][] getPositions(int d) {
 
@@ -544,52 +542,61 @@ public class DictTerm extends QueryTerm implements Comparator {
         //
         // If we don't have iterators, then generate them now.
         if(pis == null) {
-            //
-            // Features for the iterators we'll create.
-            PostingsIteratorFeatures feat = new PostingsIteratorFeatures(wf, wc);
-            feat.setQueryStats(qs);
 
             pis = new PostingsIteratorWithPositions[dictEntries.length];
             for(int i = 0; i < dictEntries.length; i++) {
-                pis[i] = (PostingsIteratorWithPositions) dictEntries[i].iterator(feat);
+                pis[i] = (PostingsIteratorWithPositions) dictEntries[i].iterator(
+                        feat);
             }
 
-            posns = new int[searchFields.length][];
-            for(int i = 0; i < posns.length; i++) {
-                posns[i] = new int[4];
-            }
-        }
-
-        //
-        // Initialize the per-field sizes to 0.
-        for(int i = 0; i < posns.length; i++) {
-            posns[i][0] = 0;
+            posns = new int[part.getPartitionManager().getMetaFile().size()][];
         }
 
         //
         // Get the positions for each term, building them up as we go.
         for(int i = 0; i < dictEntries.length; i++) {
-            if(pis[i] == null) {
+            PostingsIteratorWithPositions termPI = pis[i];
+
+            if(termPI == null) {
                 continue;
             }
 
             //
             // Get the positions for this document.
-            if(pis[i].findID(d)) {
-                int[] fpos = pis[i].getPositions();
-                int n = fpos[0];
+            if(termPI.findID(d)) {
+                int[] termPosns = termPI.getPositions();
+                int n = termPI.getFreq();
                 if(n == 0) {
                     continue;
                 }
 
-                if(posns[0][0] + 1 + n >= posns[0].length) {
-                    posns[0] = Arrays.copyOf(posns[0],
-                            (posns[0].length + n + 1) * 2);
+                //
+                // What field is this term drawn from?
+                int fieldID = dictEntries[i].getField().getID();
+
+                //
+                // We'll store these positions there.
+                int[] fposn = posns[fieldID];
+                if(fposn == null) {
+                    fposn = new int[n * 2];
+                    posns[fieldID] = fposn;
                 }
-                System.arraycopy(fpos, 1,
-                        posns[0], posns[0][0] + 1,
-                        n);
-                posns[0][0] += n;
+
+                if(fposn[0] + 1 + n >= fposn.length) {
+                    fposn = Arrays.copyOf(fposn, (fposn.length + n * 2 + 1));
+                    posns[fieldID] = fposn;
+                }
+                try {
+                    System.arraycopy(termPosns, 0, fposn, fposn[0] + 1, n);
+                } catch(ArrayIndexOutOfBoundsException ex) {
+                    logger.log(Level.SEVERE,
+                               String.format(
+                            "termPosns.length: %d n: %d fposn[0]: %d fposn.length: %d",
+                                             termPosns.length, n, fposn[0],
+                                             fposn.length), ex);
+                    throw ex;
+                }
+                fposn[0] += n;
             }
         }
 
@@ -600,9 +607,11 @@ public class DictTerm extends QueryTerm implements Comparator {
     /**
      * Compares this comparator with another.
      *
-     * @param object an <code>Object</code> to compare against.
-     * @return <code>true</code> if this comparator is the same class as
-     * the other, <code>false</code> otherwise.
+     * @param object an
+     * <code>Object</code> to compare against.
+     * @return
+     * <code>true</code> if this comparator is the same class as the other,
+     * <code>false</code> otherwise.
      */
     public boolean equals(Object object) {
         return object.getClass() == this.getClass();
@@ -614,8 +623,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      * @param o1 a term.
      * @param o2 another term.
      * @return Less than 0, greater than 0, or 0 if o1's term frequency is,
-     * respectively, lower than, higher than, or equal to o2's term
-     * frequency.
+     * respectively, lower than, higher than, or equal to o2's term frequency.
      */
     public int compare(Object o1, Object o2) {
         return ((QueryEntry) o1).getN() - ((QueryEntry) o2).getN();
