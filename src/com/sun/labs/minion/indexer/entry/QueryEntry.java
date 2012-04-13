@@ -111,9 +111,10 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
     public Postings getPostings() {
         if(post == null) {
             try {
-            readPostings();
-            } catch (IOException ex) {
-                logger.log(Level.SEVERE, String.format("Error reading postings!"), ex);
+                readPostings();
+            } catch(IOException ex) {
+                logger.log(Level.SEVERE,
+                           String.format("Error reading postings!"), ex);
             }
         }
         return post;
@@ -127,6 +128,7 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
      * @return An iterator for the postings.  Returns null if there are no
      * postings.
      */
+    @Override
     public PostingsIterator iterator(PostingsIteratorFeatures features) {
         if (post == null) {
             QueryStats qs = features == null ? null : features.getQueryStats();

@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  */
 public class ActiveFile {
 
-    private static Logger logger = Logger.getLogger(ActiveFile.class.getName());
+    private static final Logger logger = Logger.getLogger(ActiveFile.class.getName());
 
     private File activeFile;
 
@@ -84,7 +84,9 @@ public class ActiveFile {
                 active = new RandomAccessFile(activeFile, "rw");
                 active.writeInt(nParts);
                 active.close();
-                logger.fine("Created active file: " + activeFile);
+                if(logger.isLoggable(Level.FINEST)) {
+                    logger.finest(String.format("Created active file: %s", activeFile));
+                }
                 return ret;
             } finally {
                 if(releaseNeeded) {
@@ -129,8 +131,8 @@ public class ActiveFile {
         }
         active.close();
 
-        if(logger.isLoggable(Level.FINER)) {
-            logger.finer("Read AL: " + ret);
+        if(logger.isLoggable(Level.FINEST)) {
+            logger.finest(String.format("Read AL: %s", ret));
         }
 
         //
@@ -163,13 +165,15 @@ public class ActiveFile {
             releaseNeeded = true;
         }
 
-        logger.finer("Writing AL: " + parts);
+        if(logger.isLoggable(Level.FINEST)) {
+            logger.finer(String.format("Writing AL: %s", parts));
+        }
 
-        RandomAccessFile active = null;
+        RandomAccessFile active;
 
         //
         // We want to write partition numbers in order.
-        List<Integer> sort = getPartNumbers(parts);
+        List<Integer> sort = getPartitionNumbers(parts);
 
         try {
             //
@@ -202,7 +206,7 @@ public class ActiveFile {
      * @param parts the partitions for which we want the numbers
      * @return an list of the active partition numbers, in increasing order.
      */
-    public static List<Integer> getPartNumbers(Collection<DiskPartition> parts) {
+    public static List<Integer> getPartitionNumbers(Collection<DiskPartition> parts) {
         List<Integer> ret = new ArrayList<Integer>();
         for(DiskPartition dp : parts) {
             ret.add(dp.getPartitionNumber());
@@ -211,6 +215,7 @@ public class ActiveFile {
         return ret;
     }
 
+    @Override
     public String toString() {
         return activeFile.toString();
     }

@@ -372,7 +372,7 @@ public class InvFileDiskPartition extends DiskPartition {
             long fieldOffset = mergeState.partOut.getPartitionDictionaryOutput().position();
             
             if(merger == null) {
-                logger.fine(String.format("No merger for %s", fi.getName()));
+                logger.finer(String.format("No merger for %s", fi.getName()));
                 fieldOffset = -1;
             } else {
                 mergeState.info = fi;

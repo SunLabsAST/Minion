@@ -590,7 +590,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
 
         List<Integer> add = activeFile.read();
-        List<Integer> currList = ActiveFile.getPartNumbers(activeParts);
+        List<Integer> currList = ActiveFile.getPartitionNumbers(activeParts);
         List<Integer> close = new ArrayList<Integer>(currList);
 
         //

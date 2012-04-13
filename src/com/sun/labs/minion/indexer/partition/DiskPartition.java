@@ -486,7 +486,7 @@ public class DiskPartition extends Partition implements Closeable {
      * the number of undeleted documents.
      * @see DelMap#getDelMap
      */
-    protected int[] getDocIDMap(ReadableBuffer del) {
+    public int[] getDocIDMap(ReadableBuffer del) {
         if(del == null) {
             return null;
         }

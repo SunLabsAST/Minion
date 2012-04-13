@@ -23,20 +23,17 @@
  */
 package com.sun.labs.minion.indexer.postings.io;
 
-import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.Postings.Type;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-
-
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A postings input that can be used when streaming through a lot of
- * postings sequentially as when merging or evaluating field queries.
- * Random access is not supported, but sequential access should work well.
+ * A postings input that can be used when streaming through a lot of postings
+ * sequentially as when merging or evaluating field queries. Random access is
+ * not supported, but sequential access should work well.
  */
 public class StreamPostingsInput implements PostingsInput {
 
@@ -60,30 +57,33 @@ public class StreamPostingsInput implements PostingsInput {
      */
     protected byte[] b;
 
-    private static final Logger logger = Logger.getLogger(StreamPostingsInput.class.getName());
+    private static final Logger logger = Logger.getLogger(StreamPostingsInput.class.
+            getName());
 
     /**
      * Creates a stream postings input.
+     *
      * @param postFile The file from which the postings should be read.
      * @param buffSize The size of the buffer to use.
      * @throws java.io.IOException If there is any error reading the postings.
      */
     public StreamPostingsInput(RandomAccessFile postFile,
-            int buffSize)
+                               int buffSize)
             throws java.io.IOException {
         this(postFile, 0, buffSize);
     } // StreamPostingsInput constructor
 
     /**
      * Creates a stream postings input.
+     *
      * @param postFile The file from which the postings should be read.
      * @param offset The offset at which the postings start.
      * @param buffSize The size of the buffer to use.
      * @throws java.io.IOException If there is any error reading the postings.
      */
     public StreamPostingsInput(RandomAccessFile postFile,
-            long offset,
-            int buffSize)
+                               long offset,
+                               int buffSize)
             throws java.io.IOException {
         raf = postFile;
         b = new byte[buffSize];
@@ -92,9 +92,10 @@ public class StreamPostingsInput implements PostingsInput {
 
     /**
      * Reads some bytes from the stream.
-     * @param off The offset in the file from which the bytes should be
-     * read.
-     * @throws java.io.IOException If there is any error reading from the stream.
+     *
+     * @param off The offset in the file from which the bytes should be read.
+     * @throws java.io.IOException If there is any error reading from the
+     * stream.
      * @return The number of bytes read.
      */
     protected int read(long off) throws java.io.IOException {
@@ -109,11 +110,10 @@ public class StreamPostingsInput implements PostingsInput {
 
     /**
      * Returns a buffer constructed from our internal buffer.
-     * @param offset The offset in the input at which the postings can be
-     * found.
+     *
+     * @param offset The offset in the input at which the postings can be found.
      * @param size The number of bytes to read to get the postings.
-     * @throws java.io.IOException if there is any error reading the
-     * postings.
+     * @throws java.io.IOException if there is any error reading the postings.
      * @return A readable buffer containing the postings.
      */
     @Override
@@ -175,5 +175,4 @@ public class StreamPostingsInput implements PostingsInput {
         ret.limit(size);
         return ret;
     }
-
 } // StreamPostingsInput
