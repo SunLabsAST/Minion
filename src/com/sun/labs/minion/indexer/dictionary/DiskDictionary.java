@@ -1214,13 +1214,11 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         if(postIn == null) {
             return null;
         }
-        PostingsInput[] buffChans =
-                new PostingsInput[postIn.length];
+        PostingsInput[] buffChans = new PostingsInput[postIn.length];
         for(int i = 0; i < postFiles.length; i++) {
             try {
-                buffChans[i] =
-                        new StreamPostingsInput(postFiles[i],
-                                                dh.postStart[i], buffSize);
+                buffChans[i] = new StreamPostingsInput(postFiles[i],
+                                                       dh.postStart[i], buffSize);
             } catch(java.io.IOException ioe) {
                 logger.log(Level.SEVERE,
                            "Error creating postings stream for iterator", ioe);
@@ -1330,13 +1328,13 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @throws java.io.IOException when there is an error during the merge.
      */
     public static int[][] merge(File indexDir,
-            NameEncoder encoder,
-                         DiskDictionary[] dicts,
-                         EntryMapper[] mappers,
-                         int[] starts,
-                         int[][] postIDMaps, 
-                         DictionaryOutput dictOut,
-                         PostingsOutput[] postOut, boolean appendPostings)
+                                NameEncoder encoder,
+                                DiskDictionary[] dicts,
+                                EntryMapper[] mappers,
+                                int[] starts,
+                                int[][] postIDMaps,
+                                DictionaryOutput dictOut,
+                                PostingsOutput[] postOut, boolean appendPostings)
             throws java.io.IOException {
         
             //
@@ -1374,6 +1372,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Where we'll write the dictionary.
         dictOut.start(null, encoder, MemoryDictionary.Renumber.NONE, keepIDToPosn, postOut.length);
+        DictionaryHeader mdh = dictOut.getHeader();
+        for(int i = 0; i < postOut.length; i++) {
+            mdh.postStart[i] = postOut[i].position();
+        }
         
         int[] mapped = new int[idMaps.length];
 
@@ -1384,8 +1386,6 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             Arrays.fill(starts, 1);
         }
 
-        //
-        // The number of entries in the new dictionary.
         while(h.size() > 0) {
 
             HE top = h.peek();
