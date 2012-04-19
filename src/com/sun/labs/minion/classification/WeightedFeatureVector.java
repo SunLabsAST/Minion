@@ -23,12 +23,12 @@
  */
 package com.sun.labs.minion.classification;
 
+import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
-import com.sun.labs.minion.util.Util;
 import java.util.logging.Logger;
 
 /**
@@ -478,6 +478,7 @@ public class WeightedFeatureVector {
         return ret;
     }
 
+    @Override
     public String toString() {
         return toString(0);
     }

@@ -23,15 +23,13 @@
  */
 package com.sun.labs.minion.util.buffer;
 
+import com.sun.labs.minion.util.ChannelUtil;
+import com.sun.labs.util.NanoWatch;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.OutputStream;
-
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
-
-import com.sun.labs.minion.util.ChannelUtil;
-import com.sun.labs.util.NanoWatch;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -362,6 +360,13 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         for(int i = 0; i < b.limit(); i++) {
             units[i] = (byte) (b.get(i) ^ units[i]);
         }
+        return this;
+    }
+
+    @Override
+    public WriteableBuffer clear() {
+        Arrays.fill(units, (byte) 0);
+        position(0);
         return this;
     }
 

@@ -27,9 +27,7 @@ package com.sun.labs.minion.util.buffer;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.OutputStream;
-
 import java.nio.ByteBuffer;
-
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.Charset;
 

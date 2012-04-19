@@ -24,19 +24,16 @@
 
 package com.sun.labs.minion.retrieval;
 
-import java.util.Collection;
+import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.HashSet;
-import java.util.Comparator;
-
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
-
-import com.sun.labs.minion.util.Util;
-
-import com.sun.labs.minion.QueryConfig;
 
 /**
  * MultiDictTerm provides the implementation of the TOR operator.
@@ -70,6 +67,7 @@ public class MultiDictTerm extends DictTerm
     /** 
      * Set the query config for all the sub-terms.
      */
+    @Override
     public void setQueryConfig(QueryConfig qc) {
         super.setQueryConfig(qc);
 
@@ -87,6 +85,7 @@ public class MultiDictTerm extends DictTerm
      * 
      * @param part the partition that we will be evaluating against
      */
+    @Override
     public void setPartition(DiskPartition part) {
         //
         // First, call up to setPartition up the inheritance chain.
@@ -113,10 +112,12 @@ public class MultiDictTerm extends DictTerm
         Util.sort(dictEntries, (Comparator)this);
     }
 
+    @Override
     public String getName() {
         return "MultiDictTerm";
     }
     
+    @Override
     public String toString() {
         String res = "";
         for (Iterator it = terms.iterator(); it.hasNext();) {
@@ -126,6 +127,7 @@ public class MultiDictTerm extends DictTerm
         return res;
     }
 
+    @Override
     public String toString(String prefix) {
         String res = super.toString(prefix) + "\n";
         for (Iterator it = terms.iterator(); it.hasNext();) {

@@ -23,8 +23,7 @@
  */
 package com.sun.labs.minion.lexmorph;
 
-import com.sun.labs.minion.util.BitBuffer; // make sure steve's beans are in classpath
-
+import com.sun.labs.minion.util.BitBuffer;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
@@ -40,23 +39,16 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.HashSet;
-
-//  pre-jdk1.4 version
-import java.util.Hashtable; // need this for morphCache waw 24feb05
-// JDK1.4 and forward uses fast concurrent version
-// import com.sun.labs.minion.util.ConcurrentHashtable;
-import java.util.concurrent.ConcurrentHashMap;
-
-
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
-// import java.util.Properties; //pmartin 10oct01
 import java.util.Stack;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -3944,6 +3936,7 @@ public class Lexicon {
 
 
     // Comparator interface:
+    @Override
     public boolean equals(Object obj) {
         return (this == obj);
     }

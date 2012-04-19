@@ -24,8 +24,8 @@
 
 package com.sun.labs.minion.retrieval;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Not extends UnaryOperator {
     public Not(QueryElement operand) {
@@ -35,6 +35,7 @@ public class Not extends UnaryOperator {
     /**
      * Evaluates this operator, returning the results.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
         QueryElement operand = (QueryElement) operands.get(0);
         operand.strictEval = true;
@@ -45,6 +46,7 @@ public class Not extends UnaryOperator {
         return neg;
     }
 
+    @Override
     public List getQueryTerms() {
         return new ArrayList();
     }

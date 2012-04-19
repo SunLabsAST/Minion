@@ -24,10 +24,6 @@
 
 package com.sun.labs.minion.retrieval;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 /**
  * A class implementing the <code>if</code> query operator.  This operator
  * takes a single argument and returns a strict boolean results set.
@@ -45,6 +41,7 @@ public class If extends UnaryOperator {
     /**
      * Evaluates this operator, returning the results.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
         QueryElement operand = (QueryElement) operands.get(0);
         operand.strictEval = true;

@@ -23,11 +23,7 @@
  */
 package com.sun.labs.minion.pipeline;
 
-import java.util.HashSet;
-
-import com.sun.labs.minion.FieldInfo;
 import java.util.Set;
-
 import java.util.logging.Logger;
 
 /**

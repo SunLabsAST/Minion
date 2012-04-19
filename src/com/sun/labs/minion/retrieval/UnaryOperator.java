@@ -39,6 +39,7 @@ public abstract class UnaryOperator extends Operator {
      * Estimates the size of the results set. This is simply the estimated
      * size of the set that will be produced by the single operand.
      */
+    @Override
     protected int calculateEstimatedSize() {
         return ((QueryElement) operands.get(0)).estimateSize();
     }

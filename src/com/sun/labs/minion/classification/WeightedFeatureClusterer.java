@@ -24,11 +24,11 @@
 
 package com.sun.labs.minion.classification;
 
-import java.util.HashMap;
-import java.util.Map;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.cache.DocCache;
 import com.sun.labs.minion.util.PorterStemmer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -43,21 +43,26 @@ public class WeightedFeatureClusterer implements FeatureClusterer {
         m = new HashMap<String,FeatureCluster>();
     }
 
+    @Override
     public FeatureClusterer newInstance() {
         return new WeightedFeatureClusterer();
     }
 
+    @Override
     public FeatureCluster newCluster() {
         return new WeightedFeatureCluster();
     }
 
+    @Override
     public Feature newFeature() {
         return new WeightedFeature();
     }
 
+    @Override
     public void setField(String field) {
     }
 
+    @Override
     public void setDocCache(DocCache dc) {
     }
     
@@ -77,6 +82,7 @@ public class WeightedFeatureClusterer implements FeatureClusterer {
         }
     }
     
+    @Override
     public FeatureClusterSet cluster(ResultSetImpl s) {
         return new FeatureClusterSet(m.values());
     }

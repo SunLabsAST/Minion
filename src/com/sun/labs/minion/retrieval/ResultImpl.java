@@ -24,12 +24,9 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.Document;
-import com.sun.labs.minion.HLPipeline;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
@@ -41,6 +38,9 @@ import com.sun.labs.minion.engine.DocumentImpl;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class ResultImpl implements Result, Comparable<Result>, Cloneable,

@@ -76,6 +76,7 @@ public class SimpleNode implements Node, Cloneable {
  * related to this node's place in the tree.
  * 
  */
+    @Override
     public Object clone() {
         SimpleNode other = new SimpleNode(parser, id);
         other.operator = operator;
@@ -104,15 +105,20 @@ public class SimpleNode implements Node, Cloneable {
         }
     */
 
+    @Override
     public void jjtOpen() {
     }
 
+    @Override
     public void jjtClose() {
     }
   
+    @Override
     public void jjtSetParent(Node n) { parent = n; }
+    @Override
     public Node jjtGetParent() { return parent; }
 
+    @Override
     public void jjtAddChild(Node n, int i) {
         if (children == null) {
             children = new ArrayList(i + 1);
@@ -126,6 +132,7 @@ public class SimpleNode implements Node, Cloneable {
         children.set(i, n);
     }
 
+    @Override
     public Node jjtGetChild(int i) {
         return (Node)(children.get(i));
     }
@@ -138,6 +145,7 @@ public class SimpleNode implements Node, Cloneable {
         }
     }
 
+    @Override
     public int jjtGetNumChildren() {
         return (children == null) ? 0 : children.size();
     }
@@ -148,6 +156,7 @@ public class SimpleNode implements Node, Cloneable {
        toString(String), otherwise overriding toString() is probably all
        you need to do. */
 
+    @Override
     public String toString() {
         if (parser instanceof WebParser) {
             return WebParserTreeConstants.jjtNodeName[id] + (value!=""?" val: " + value:"");

@@ -26,7 +26,6 @@ package com.sun.labs.minion;
 
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.query.Element;
-import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -371,6 +370,7 @@ public interface SearchEngine extends Searcher {
      * @throws com.sun.labs.minion.SearchEngineException if there is any error during
      * the search.
      */
+    @Override
     public ResultSet search(String query, String sortOrder,
                             Searcher.Operator defaultOperator,
                             Searcher.Grammar grammar)

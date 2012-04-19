@@ -67,6 +67,7 @@ public class CompositeResultsFilter implements ResultsFilter, Serializable {
         filters.add(rf);
     }
     
+    @Override
     public boolean filter(ResultAccessor ra) {
         nTested++;
         for(ResultsFilter rf : filters) {
@@ -78,10 +79,12 @@ public class CompositeResultsFilter implements ResultsFilter, Serializable {
         return true;
     }
     
+    @Override
     public int getTested() {
         return nTested;
     }
     
+    @Override
     public int getPassed() {
         return nPassed;
     }

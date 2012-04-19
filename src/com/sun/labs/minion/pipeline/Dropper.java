@@ -24,7 +24,6 @@
 package com.sun.labs.minion.pipeline;
 
 import java.text.DecimalFormat;
-
 import java.util.logging.Logger;
 
 /**
@@ -81,6 +80,7 @@ public class Dropper extends StageAdapter {
      *
      * @param t The token to process.
      */
+    @Override
     public void token(Token t) {
         nTokens++;
     }

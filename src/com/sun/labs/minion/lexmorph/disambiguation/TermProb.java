@@ -38,6 +38,7 @@ public class TermProb implements Comparable<TermProb> {
         this.prob = prob;
     }
     
+    @Override
     public int compareTo(TermProb o) {
         if(prob < o.prob) {
             return -1;
@@ -49,6 +50,7 @@ public class TermProb implements Comparable<TermProb> {
         return term.compareTo(o.term);
     }
     
+    @Override
     public String toString() {
         return String.format("%s %.3f", term, prob);
     }

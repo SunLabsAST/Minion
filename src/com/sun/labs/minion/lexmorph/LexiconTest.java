@@ -24,17 +24,16 @@
 package com.sun.labs.minion.lexmorph;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-import java.util.Map;
 import java.util.TreeSet;
-
 import java.util.logging.Logger;
 
 /**

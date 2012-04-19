@@ -27,11 +27,10 @@ package com.sun.labs.minion.lexmorph;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.Vector;
-import java.util.Hashtable;
 
 /**
  * This is a German version of LiteMorph
@@ -103,6 +102,7 @@ public class LiteMorph_de extends LiteMorph{
      * function for declaring arguments to computeMorph for author mode checking
      * redefined from dummy method in parent class LiteMorph.
      */
+    @Override
   protected String[] computeMorphArgs() { //legal values for arg in computeMorph
       String[] args = {"regVerb", "irrVerb"};
       return args;
@@ -113,6 +113,7 @@ public class LiteMorph_de extends LiteMorph{
      * redefined from dummy method in parent class LiteMorph.
      */
 
+    @Override
     protected String[] computeMorph(String input, String arg, int depth,
                                     String prefix, String suffix) {
         String paradigm = (String)paradigms.get(input);
@@ -404,6 +405,7 @@ public class LiteMorph_de extends LiteMorph{
      *  initialize(exceptions, exceptionTable);
      *  initialize(paradigms, paradigmTable);
      */
+    @Override
     protected void intialize() {
         if (rulesTable != null) {
             return;
@@ -1810,6 +1812,7 @@ public class LiteMorph_de extends LiteMorph{
         }
     }
 
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

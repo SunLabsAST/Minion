@@ -51,6 +51,7 @@ public class Undefined extends UnaryOperator {
      * return quickly is the number of documents in the partition.  This will
      * pretty much ensure that this operator is always evaluated last.
      */
+    @Override
     protected int calculateEstimatedSize() {
         return part.getNDocs();
     }
@@ -59,6 +60,7 @@ public class Undefined extends UnaryOperator {
      * Evaluates the operator, returning a set of documents with no defined
      * field values.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
         
         NameTerm field = (NameTerm) operands.get(0);

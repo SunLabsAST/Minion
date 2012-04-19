@@ -23,6 +23,13 @@
  */
 package com.sun.labs.minion.test;
 
+import com.sun.labs.minion.ResultSet;
+import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.SearchEngineFactory;
+import com.sun.labs.minion.Searcher;
+import com.sun.labs.minion.util.Getopt;
+import com.sun.labs.util.StopWatch;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -36,15 +43,6 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import com.sun.labs.minion.util.Getopt;
-
-import com.sun.labs.minion.ResultSet;
-import com.sun.labs.minion.SearchEngine;
-import com.sun.labs.minion.SearchEngineException;
-import com.sun.labs.minion.SearchEngineFactory;
-import com.sun.labs.minion.Searcher;
-import com.sun.labs.util.StopWatch;
 import java.util.logging.Logger;
 
 /**
@@ -416,6 +414,7 @@ public class QueryRunner implements Runnable {
      * queue, parse it and evaluate it against the search engine.
      * @see java.lang.Runnable#run()
      */
+    @Override
     public void run() {
         String query = null;
         try {
@@ -524,6 +523,7 @@ public class QueryRunner implements Runnable {
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
         return "MQR-" + id;
     }

@@ -24,10 +24,9 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.IOException;
 import java.io.OutputStream;
-
-import com.sun.labs.minion.util.buffer.WriteableBuffer;
 
 /**
  * A postings output that writes the postings to an output stream.  This stream

@@ -23,12 +23,11 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import java.util.Iterator;
-import java.util.NoSuchElementException;
-
-import java.util.PriorityQueue;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.PriorityQueue;
 
 /**
  * A class that will iterate through all of the saved values in a set of

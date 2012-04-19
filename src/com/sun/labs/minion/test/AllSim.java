@@ -109,6 +109,7 @@ public class AllSim {
             this.score = score;
         }
 
+        @Override
         public int compareTo(ScoredArtist o) {
             if(score < o.score) {
                 return 1;
@@ -120,6 +121,7 @@ public class AllSim {
             return 0;
         }
 
+        @Override
         public String toString() {
             return String.format("<%s,%.3f>", name, score);
         }

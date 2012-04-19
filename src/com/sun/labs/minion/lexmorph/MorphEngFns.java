@@ -135,6 +135,7 @@ public abstract class MorphEngFns extends MorphEngFrame {
    * to see if a word has the property 'guessed'.
    */
 
+    @Override
   protected boolean isGuessedWord (Word x) {
    if (x.getdict(atom_guessed) != null)
      return true;
@@ -146,6 +147,7 @@ public abstract class MorphEngFns extends MorphEngFrame {
    * Method for checking for special forms before attempting morph rules.
    */
 
+    @Override
   public Word morphPrecheck(Word word) {
     //does the precheck tests
     //tbd finish this

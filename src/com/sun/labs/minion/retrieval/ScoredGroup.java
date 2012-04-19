@@ -23,16 +23,12 @@
  */
 
 package com.sun.labs.minion.retrieval;
-import java.util.Arrays;
-
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
-
 import com.sun.labs.minion.util.Util;
-
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -206,6 +202,7 @@ public class ScoredGroup extends ArrayGroup {
     /**
      * Gets a scored group from this group, which just returns this group.
      */
+    @Override
     public ScoredGroup getScored() {
         return this;
     }
@@ -379,6 +376,7 @@ public class ScoredGroup extends ArrayGroup {
      * Unions a statically type array group with this group.  We'll use the
      * method from <code>ArrayGroup</code> to do this.
      */
+    @Override
     protected ArrayGroup agUnion(ArrayGroup ag) {
         return ag.union(this);
     }
@@ -391,6 +389,7 @@ public class ScoredGroup extends ArrayGroup {
      * @return The result of unioning the given group with this group.  An
      * instance of <code>ScoredGroup</code> is returned.
      */
+    @Override
     public ArrayGroup union(ScoredGroup ag) {
         
         ScoredGroup ret = new ScoredGroup(size + ag.size);
@@ -447,6 +446,7 @@ public class ScoredGroup extends ArrayGroup {
      * @return The result of intersecting the given group with this group.
      * An instance of <code>ScoredGroup</code> is returned.
      */
+    @Override
     public ArrayGroup agIntersect(ArrayGroup ag) {
         return ag.intersect(this);
     }
@@ -458,6 +458,7 @@ public class ScoredGroup extends ArrayGroup {
      * @return The result of intersecting the given group with this group.
      * An instance of <code>ScoredGroup</code> will be returned.
      */
+    @Override
     public ArrayGroup intersect(ScoredGroup ag) {
         
         //
@@ -541,6 +542,7 @@ public class ScoredGroup extends ArrayGroup {
      * @return A group where the multiplier has been applied.  The current
      * group is not affected.
      */
+    @Override
     public ArrayGroup mult(float m) {
         ScoredGroup ret = (ScoredGroup) this.clone();
         return ret.destructiveMult(m);
@@ -557,6 +559,7 @@ public class ScoredGroup extends ArrayGroup {
     /**
      * Gets an iterator for the documents in this group.
      */
+    @Override
     public DocIterator iterator() {
         return new ScoredDocIterator();
     }

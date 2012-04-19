@@ -23,15 +23,14 @@
  */
 package com.sun.labs.minion.util;
 
+import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-
-import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
-import java.io.File;
-import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**

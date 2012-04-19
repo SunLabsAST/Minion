@@ -1,12 +1,11 @@
 package com.sun.labs.minion.util;
 
-import java.util.logging.Logger;
-
-import javax.management.MBeanServer;
-import java.lang.management.ManagementFactory;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.management.MBeanServer;
 
 public class HeapDumper {
     // This is the name of the HotSpot Diagnostic MBean

@@ -26,7 +26,6 @@ package com.sun.labs.minion.util;
 
 import java.io.DataInput;
 import java.io.DataOutput;
-
 import java.util.Arrays;
 import java.util.logging.Logger;
 

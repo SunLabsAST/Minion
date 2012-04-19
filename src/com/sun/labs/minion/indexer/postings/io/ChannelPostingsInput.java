@@ -24,18 +24,13 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
-import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.Postings.Type;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import java.nio.channels.FileChannel;
-
 import com.sun.labs.minion.util.ChannelUtil;
-
 import com.sun.labs.minion.util.buffer.ChannelReadableBuffer;
 import com.sun.labs.minion.util.buffer.NIOBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 /**
  * A class for reading postings from a channel.

@@ -34,8 +34,8 @@ import com.sun.labs.util.props.ConfigurationManager;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -165,6 +165,7 @@ public class PipelineFactory implements Configurable {
         this.name = name;
     }
 
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         name = ps.getInstanceName();
         cm = ps.getConfigurationManager();

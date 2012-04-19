@@ -23,19 +23,16 @@
  */
 package com.sun.labs.minion.util.buffer;
 
+import com.sun.labs.minion.util.ChannelUtil;
+import com.sun.labs.util.LabsLogFormatter;
 import java.io.DataOutput;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
-
-import com.sun.labs.minion.util.ChannelUtil;
-import com.sun.labs.minion.util.Util;
-import com.sun.labs.util.LabsLogFormatter;
-import java.io.FileOutputStream;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.logging.Handler;

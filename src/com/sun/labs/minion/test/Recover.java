@@ -23,18 +23,16 @@
  */
 package com.sun.labs.minion.test;
 
+import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-
 import java.util.logging.Handler;
 import java.util.logging.Logger;
-import com.sun.labs.minion.util.Getopt;
-import java.io.IOException;
 
 /**
  * A class that can be used to recover an index, removing partitions that are

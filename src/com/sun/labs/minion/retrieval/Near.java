@@ -64,6 +64,7 @@ public class Near extends Proximity {
      * our list of operands, so this is simply the size of the first
      * element of that list.
      */
+    @Override
     protected int calculateEstimatedSize() {
         return operands.size() > 0 ?
             ((QueryElement) operands.get(0)).estimateSize() :
@@ -73,6 +74,7 @@ public class Near extends Proximity {
     /**
      * Evaluates this proximity operator, returning the results.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
 
         //
@@ -91,5 +93,6 @@ public class Near extends Proximity {
         return evalTerms(candidates, tl);
     }
 
+    @Override
     public String toStringMod() {return " (maxWin: " + maxWindow + ") "; }
 }

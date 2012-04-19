@@ -25,11 +25,11 @@
 package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.Document;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import com.sun.labs.minion.engine.DocumentImpl;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * An iterator for all of the documents in a set of partitions.

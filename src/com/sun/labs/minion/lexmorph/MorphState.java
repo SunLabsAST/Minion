@@ -24,8 +24,8 @@
 
 package com.sun.labs.minion.lexmorph;
 
-import java.util.Vector;
 import java.util.Hashtable;
+import java.util.Vector;
 //import MorphEngine;
 //import Lexicon;
 

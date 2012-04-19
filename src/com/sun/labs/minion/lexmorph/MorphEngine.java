@@ -24,10 +24,10 @@
 
 package com.sun.labs.minion.lexmorph;
 
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.util.Hashtable;
-import java.util.HashMap;
 
 //import Lexicon;
 

@@ -25,11 +25,11 @@
 package com.sun.labs.minion.lexmorph;
 
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.util.Hashtable;
 
 /**
  * A Rule typically matches a pattern at the right end of a word, removes
@@ -1160,6 +1160,7 @@ public class LiteMorphRule {
         }
     }
 
+    @Override
     public synchronized String toString() {
       return name;
     }

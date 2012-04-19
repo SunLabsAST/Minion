@@ -24,8 +24,6 @@
 
 package com.sun.labs.minion.util;
 
-import java.io.*;
-
 /**
  * Some char utilities.
  */

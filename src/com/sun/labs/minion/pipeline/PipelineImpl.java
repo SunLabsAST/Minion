@@ -25,8 +25,8 @@ package com.sun.labs.minion.pipeline;
 
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.indexer.Field;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -58,6 +58,7 @@ public class PipelineImpl implements Pipeline {
         }
     }
 
+    @Override
     public void addStage(Stage s) {
         if(stages == null) {
             stages = new ArrayList<Stage>();
@@ -74,16 +75,19 @@ public class PipelineImpl implements Pipeline {
         head = stages.get(0);
     }
 
+    @Override
     public Stage getHead() {
         return head;
     }
 
+    @Override
     public void process(String text) {
         if(head != null) {
             head.process(text);
         }
     }
 
+    @Override
     public void reset() {
         if(head != null) {
             head.reset();
@@ -91,10 +95,12 @@ public class PipelineImpl implements Pipeline {
     }
 
     
+    @Override
     public Field getField() {
         return field;
     }
 
+    @Override
     public void setField(Field field) {
         this.field = field;
     }

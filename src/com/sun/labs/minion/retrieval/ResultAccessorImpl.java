@@ -2,9 +2,7 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultAccessor;
-import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
-import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import java.util.ArrayList;

@@ -96,6 +96,7 @@ public interface FeatureCluster extends Comparable<FeatureCluster>, Iterable<Fea
      *
      * @return an iterator for the contents of this cluster.
      */
+    @Override
     public Iterator<Feature> iterator();
 
     /**
@@ -126,6 +127,7 @@ public interface FeatureCluster extends Comparable<FeatureCluster>, Iterable<Fea
     public static Comparator<FeatureCluster> weightComparator =
             new Comparator<FeatureCluster>() {
 
+        @Override
                 public int compare(FeatureCluster o1,
                         FeatureCluster o2) {
                     if(o1.getWeight() < o2.getWeight()) {
@@ -138,6 +140,7 @@ public interface FeatureCluster extends Comparable<FeatureCluster>, Iterable<Fea
                     return 0;
                 }
 
+        @Override
                 public boolean equals(Object o) {
                     return false;
                 }

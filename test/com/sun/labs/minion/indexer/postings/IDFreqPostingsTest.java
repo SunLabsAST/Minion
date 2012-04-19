@@ -81,10 +81,12 @@ public class IDFreqPostingsTest implements PostingsTest {
         }
     }
 
+    @Override
     public Postings getPostings() {
         return new IDFreqPostings();
     }
 
+    @Override
     public Postings getPostings(PostingsInput[] postIn, long[] offsets, int[] sizes) throws IOException {
         return new IDFreqPostings(postIn, offsets, sizes);
     }
@@ -169,6 +171,7 @@ public class IDFreqPostingsTest implements PostingsTest {
         simple.iteration(p, true, false);
     }
 
+    @Override
     public void checkPostingsEncoding(Postings p, TestData testData, long[] offsets, int[] sizes) throws IOException {
 
         IDFreqPostings idp = (IDFreqPostings) p;

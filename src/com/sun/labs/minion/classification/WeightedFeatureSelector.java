@@ -25,9 +25,9 @@
 package com.sun.labs.minion.classification;
 
 import com.sun.labs.minion.SearchEngine;
-import java.util.PriorityQueue;
 import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.retrieval.WeightingComponents;
+import java.util.PriorityQueue;
 
 /**
  * Selects the highest weighted features.
@@ -39,9 +39,11 @@ public class WeightedFeatureSelector implements FeatureSelector {
      */
     protected StopWords stopWords;
 
+    @Override
     public void setHumanSelected(HumanSelected hs) {
     }
 
+    @Override
     public FeatureClusterSet select(FeatureClusterSet set,
             WeightingComponents wc, int numTrainingDocs, int numFeatures,
             SearchEngine engine) {
@@ -89,6 +91,7 @@ public class WeightedFeatureSelector implements FeatureSelector {
         return false;
     }
 
+    @Override
     public void setStopWords(StopWords stopWords) {
         this.stopWords = stopWords;
     }

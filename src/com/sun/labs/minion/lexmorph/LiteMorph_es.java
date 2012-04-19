@@ -75,6 +75,7 @@ public class LiteMorph_es extends LiteMorph{
      // function for declaring arguments to computeMorph for author mode checking
      // redefined from dummy method in parent class LiteMorph.
    
+    @Override
   protected String[] computeMorphArgs() { //legal values for arg in computeMorph
       String[] args = {"irrVerb"};
       return args;
@@ -83,6 +84,7 @@ public class LiteMorph_es extends LiteMorph{
     // function for computing morphological variants of irregular verbs
     // redefined from dummy method in parent class LiteMorph.
 
+    @Override
     protected String[] computeMorph(String input, String arg, int depth,
                             String prefix, String suffix) {
 
@@ -238,6 +240,7 @@ public class LiteMorph_es extends LiteMorph{
      *  initialize(paradigms, paradigmTable);
      */
 
+    @Override
     protected void intialize() {
         if (rulesTable != null) {
             return;
@@ -2228,6 +2231,7 @@ public class LiteMorph_es extends LiteMorph{
         }
     }
 
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

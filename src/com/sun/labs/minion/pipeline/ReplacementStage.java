@@ -59,6 +59,7 @@ public class ReplacementStage extends StageAdapter implements Configurable {
      *
      * @param t The token to process.
      */
+    @Override
     public void token(Token t) {
         String r = replace.get(t.getToken());
         if(r != null) {
@@ -67,6 +68,7 @@ public class ReplacementStage extends StageAdapter implements Configurable {
         downstream.token(t);
     }
 
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         String replacementFile = ps.getString(PROP_REPLACEMENT_FILE);
         if(replacementFile != null) {

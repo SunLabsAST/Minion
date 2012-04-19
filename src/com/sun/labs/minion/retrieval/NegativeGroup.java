@@ -64,6 +64,7 @@ public class NegativeGroup extends ArrayGroup {
      *
      * @return A strict group containing the same documents as this group.
      */
+    @Override
     public ArrayGroup getStrict() {
         return new ArrayGroup(this);
     }
@@ -75,6 +76,7 @@ public class NegativeGroup extends ArrayGroup {
      * positive.  We return an instance of <code>ArrayGroup</code>, since
      * there are no scores associated with the documents in a negative set.
      */
+    @Override
     public ArrayGroup getNegative() {
         return new ArrayGroup(this);
     }
@@ -82,6 +84,7 @@ public class NegativeGroup extends ArrayGroup {
     /**
      * Returns the size of this set.
      */
+    @Override
     public int getSize() {
         return part.getNDocs() - size;
     }
@@ -95,6 +98,7 @@ public class NegativeGroup extends ArrayGroup {
      * The static type of the result is determined by a combination of the
      * types of the groups being combined and the current query status.
      */
+    @Override
     public ArrayGroup intersect(QueryTerm t) {
 
         //
@@ -111,6 +115,7 @@ public class NegativeGroup extends ArrayGroup {
      * Intersects a postings iterator with this group, destructively.  This
      * needs to switch the polarity of the group.
      */
+    @Override
     public ArrayGroup destructiveIntersect(PostingsIterator pi) {
         ArrayGroup ag = new ArrayGroup(pi);
         return ag.intersect(this);
@@ -122,6 +127,7 @@ public class NegativeGroup extends ArrayGroup {
      * @param ag The scored group to union with this group.
      * @return The result of unioning the given group with this group.
      */
+    @Override
     public ArrayGroup agUnion(ArrayGroup ag) {
         return ag.union(this);
     }
@@ -133,6 +139,7 @@ public class NegativeGroup extends ArrayGroup {
      * @param ag The scored group to union with this group.
      * @return The result of unioning the given group with this group.
      */
+    @Override
     public ArrayGroup union(ScoredGroup ag) {
         return getStrict().intersect(ag.getNegative()).getNegative();
     }	
@@ -144,6 +151,7 @@ public class NegativeGroup extends ArrayGroup {
      * @param ag The scored group to union with this group.
      * @return The result of unioning the given group with this group.
      */
+    @Override
     public ArrayGroup union(NegativeGroup ag) {
         return getStrict().intersect(ag.getStrict()).getNegative();
     }
@@ -156,6 +164,7 @@ public class NegativeGroup extends ArrayGroup {
      * @return The result of intersecting the given group with this group.
      * An instance of <code>StrictGroup</code> is returned.
      */
+    @Override
     public ArrayGroup agIntersect(ArrayGroup ag) {
         return ag.intersect(this);
     }
@@ -168,6 +177,7 @@ public class NegativeGroup extends ArrayGroup {
      * @return The result of intersecting the given group with this group.
      * An instance of <code>ScoredGroup</code> is returned.
      */
+    @Override
     public ArrayGroup intersect(ScoredGroup ag) {
         return ag.intersect(this);
     }	
@@ -180,6 +190,7 @@ public class NegativeGroup extends ArrayGroup {
      * @return The result of intersecting the given group with this group.
      * An instance of <code>NegativeGroup</code> is returned.
      */
+    @Override
     public ArrayGroup intersect(NegativeGroup ag) {
         return getStrict().union(ag.getStrict()).getNegative();
     }
@@ -188,6 +199,7 @@ public class NegativeGroup extends ArrayGroup {
     /**
      * Gets an iterator that will return each document in the set.
      */
+    @Override
     public DocIterator iterator() {
         return new NegativeDocIterator();
     }
@@ -200,6 +212,7 @@ public class NegativeGroup extends ArrayGroup {
      * @return <code>true</code> if the groups contain the same documents,
      * <code>false</code> otherwise.
      */
+    @Override
     public boolean equals(Object o) {
         if(!(o instanceof NegativeGroup)) {
             return false;
@@ -207,6 +220,7 @@ public class NegativeGroup extends ArrayGroup {
         return super.equals(o);
     }
     
+    @Override
     public String toString() {
         return super.toString() + " (negative)";
     }
@@ -240,6 +254,7 @@ public class NegativeGroup extends ArrayGroup {
          * @return <code>true</code> if there is a next position,
          * <code>false</code> otherwise.
          */
+        @Override
         public boolean next() {
             currDoc++;
             
@@ -279,6 +294,7 @@ public class NegativeGroup extends ArrayGroup {
         /**
          * Gets the document at the head of the iterator.
          */
+        @Override
         public int getDoc() {
             return currDoc;
         }

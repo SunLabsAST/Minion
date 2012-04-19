@@ -27,8 +27,6 @@ import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
-
-
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.retrieval.ScoredGroup;
@@ -253,10 +251,12 @@ public class TermCacheElement {
             p = -1;
         }
 
+        @Override
         public PostingsIteratorFeatures getFeatures() {
             return feat;
         }
 
+        @Override
         public int getN() {
             return n;
         }
@@ -276,11 +276,13 @@ public class TermCacheElement {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        @Override
         public boolean next() {
             p++;
             return p < n;
         }
 
+        @Override
         public boolean findID(int id) {
             int start = 0; // p > 0 && id > ids[p] ? p : 0;
             int pos = Util.binarySearch(ids, start, n - 1, id);
@@ -294,22 +296,27 @@ public class TermCacheElement {
             }
         }
 
+        @Override
         public void reset() {
             p = -1;
         }
 
+        @Override
         public int getID() {
             return ids[p];
         }
 
+        @Override
         public float getWeight() {
             return weights[p];
         }
 
+        @Override
         public int getFreq() {
             return counts[p];
         }
 
+        @Override
         public int compareTo(PostingsIterator o) {
             return getID() - o.getID();
         }

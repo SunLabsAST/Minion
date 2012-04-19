@@ -229,6 +229,7 @@ public class Token implements Occurrence {
      *
      * @return the ID for the term.
      */
+    @Override
     public int getID() {
         return id;
     }
@@ -236,6 +237,7 @@ public class Token implements Occurrence {
     /**
      * Sets the ID for this token.
      */
+    @Override
     public void setID(int id) {
         this.id = id;
     }
@@ -245,6 +247,7 @@ public class Token implements Occurrence {
      *
      * @return the number of occurrences.
      */
+    @Override
     public int getCount() {
         return count;
     }
@@ -261,6 +264,7 @@ public class Token implements Occurrence {
      *
      * @param count the number of occurrences.
      */
+    @Override
     public void setCount(int count) {
         this.count = count;
     }
@@ -270,6 +274,7 @@ public class Token implements Occurrence {
      *
      * @return the position where the occurrence was found.
      */
+    @Override
     public int getPosition() {
         return wordNum;
     }

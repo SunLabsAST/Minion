@@ -25,9 +25,9 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.entry.EntryFactory;
-import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.Partition;
+import java.io.RandomAccessFile;
 import java.util.LinkedHashMap;
 import java.util.Map;
 

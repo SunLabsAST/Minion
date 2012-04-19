@@ -116,6 +116,7 @@ import java.util.Vector;
       name = newName;
     }
 
+    @Override
     public synchronized String toString() {
       return name;
     }

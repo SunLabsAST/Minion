@@ -916,6 +916,7 @@ public class ArrayGroup implements Cloneable {
          * Gets the score at the head of the iterator.  In this case,
          * always returns 1.
          */
+        @Override
         public float getScore() {
             return 1;
         }
@@ -931,6 +932,7 @@ public class ArrayGroup implements Cloneable {
          * Compares this iterator to another.  The comparison is done by
          * document ID.
          */
+        @Override
         public int compareTo(DocIterator o) {
             return getDoc() - o.getDoc();
         }
@@ -939,6 +941,7 @@ public class ArrayGroup implements Cloneable {
         // Implementation of ResultAccessor
         private Map<String, Fetcher> fetchers;
 
+        @Override
         public String getKey() {
             return part.getDocumentDictionary().getByID(docs[pos]).getName().toString();
         }
@@ -952,6 +955,7 @@ public class ArrayGroup implements Cloneable {
             return f;
         }
 
+        @Override
         public List<Object> getField(String field) {
             Fetcher f = getFetcher(field);
             return f == null ? Collections.emptyList() : f.fetch(docs[pos]);
@@ -963,6 +967,7 @@ public class ArrayGroup implements Cloneable {
             return f == null ? Collections.emptyList() : f.fetch(docs[pos], l);
         }
 
+        @Override
         public Object getSingleFieldValue(String field) {
             Fetcher f = getFetcher(field);
             return f == null ? null : f.fetchOne(docs[pos]);

@@ -23,12 +23,12 @@
  */
 package com.sun.labs.minion.lexmorph.disambiguation;
 
-import java.util.HashMap;
-import java.util.Map;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**

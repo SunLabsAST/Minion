@@ -163,6 +163,7 @@ public class Relation extends Element implements Serializable {
         return value;
     }
 
+    @Override
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         return new FieldTerm(field, operator, value);
     }

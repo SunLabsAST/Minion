@@ -23,17 +23,14 @@
  */
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.ArrayList;
-
-import com.sun.labs.minion.QueryConfig;
-
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-
 import java.util.logging.Logger;
 
 public abstract class Operator extends QueryElement {
@@ -58,6 +55,7 @@ public abstract class Operator extends QueryElement {
     /**
      * Sets the partition that we will be operating on.
      */
+    @Override
     public void setPartition(DiskPartition part) {
 
         //
@@ -79,6 +77,7 @@ public abstract class Operator extends QueryElement {
     /**
      * Sets the current query configuration.
      */
+    @Override
     public void setQueryConfig(QueryConfig qc) {
         super.setQueryConfig(qc);
         for(Iterator i = operands.iterator(); i.hasNext();) {
@@ -107,6 +106,7 @@ public abstract class Operator extends QueryElement {
      * Sets the current weighting function.  This should be propagated to
      * any components of the query element.
      */
+    @Override
     protected void setWeightingFunction(WeightingFunction wf) {
         super.setWeightingFunction(wf);
         for(Iterator i = operands.iterator(); i.hasNext();) {
@@ -118,6 +118,7 @@ public abstract class Operator extends QueryElement {
      * Sets the current weighting components.  This should be propagated to
      * any components of the query element.
      */
+    @Override
     protected void setWeightingComponents(WeightingComponents wc) {
         super.setWeightingComponents(wc);
         for(Iterator i = operands.iterator(); i.hasNext();) {
@@ -130,6 +131,7 @@ public abstract class Operator extends QueryElement {
      *
      * @param fieldName the name of the field
      */
+    @Override
     public void addSearchFieldName(String fieldName) {
         super.addSearchFieldName(fieldName);
         for(Iterator i = operands.iterator(); i.hasNext();) {
@@ -137,6 +139,7 @@ public abstract class Operator extends QueryElement {
         }
     }
 
+    @Override
     public List getQueryTerms(Comparator c) {
         List terms = new ArrayList();
         List subs = new ArrayList();
@@ -154,10 +157,12 @@ public abstract class Operator extends QueryElement {
         return terms;
     }
 
+    @Override
     public String toString() {
         return toString("");
     }
 
+    @Override
     public String toString(String prefix) {
         StringBuffer mine = new StringBuffer();
         mine.append(super.toString(prefix) + toStringMod() + " estSize: " +

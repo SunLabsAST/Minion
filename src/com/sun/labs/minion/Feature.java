@@ -25,7 +25,6 @@
 package com.sun.labs.minion;
 
 import com.sun.labs.minion.indexer.postings.Occurrence;
-
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 

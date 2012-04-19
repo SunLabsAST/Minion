@@ -23,15 +23,15 @@
  */
 package com.sun.labs.minion;
 
+import com.sun.labs.util.props.ConfigEnum;
+import com.sun.labs.util.props.ConfigEnumSet;
+import com.sun.labs.util.props.ConfigString;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import com.sun.labs.util.props.ConfigEnum;
-import com.sun.labs.util.props.ConfigEnumSet;
-import com.sun.labs.util.props.ConfigString;
 import java.io.RandomAccessFile;
 import java.util.Date;
 import java.util.EnumSet;

@@ -27,12 +27,8 @@ package com.sun.labs.minion.retrieval.cache;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.indexer.DiskField;
-
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
-import com.sun.labs.minion.util.LRACache;
 
 /**
  * A cache of document vectors.
@@ -59,6 +55,7 @@ public class DocCache implements CacheValueComputer<String, DocCacheElement> {
         this.wc = qc.getWeightingComponents();
     } // TermCache constructor
 
+    @Override
     public DocCacheElement compute(String key) {
         return new DocCacheElement(key, df, wf, wc);
     }

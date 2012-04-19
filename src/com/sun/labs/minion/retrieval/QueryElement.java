@@ -313,6 +313,7 @@ public abstract class QueryElement implements Comparable {
      * This can be used to sort elements for more efficient processing.
      * Note that 
      */
+    @Override
     public int compareTo(Object o) {
         return estimateSize() - ((QueryElement) o).estimateSize();
     }
@@ -324,6 +325,7 @@ public abstract class QueryElement implements Comparable {
         return new ArrayGroup(0);
     }
 
+    @Override
     public String toString() {
         return toString("");
     }

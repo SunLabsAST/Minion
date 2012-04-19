@@ -82,10 +82,12 @@ public class IDPostingsTest implements PostingsTest {
         }
     }
 
+    @Override
     public Postings getPostings() {
         return new IDPostings();
     }
 
+    @Override
     public Postings getPostings(PostingsInput[] postIn, long[] offsets, int[] sizes) throws IOException {
         return new IDPostings(postIn, offsets, sizes);
     }
@@ -160,6 +162,7 @@ public class IDPostingsTest implements PostingsTest {
         simple.addData(this);
     }
 
+    @Override
     public void checkPostingsEncoding(Postings p, TestData testData, long[] offsets, int[] sizes) throws IOException {
         
         IDPostings idp = (IDPostings) p;

@@ -62,6 +62,7 @@ public class And extends Operator implements Serializable {
         super(elements);
     }
 
+    @Override
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         List<QueryElement> operands = new ArrayList();
         for(Element e : elements) {
@@ -76,6 +77,7 @@ public class And extends Operator implements Serializable {
     }
 
 
+    @Override
     public String toString() {
         return "(And " + strict + " " + elements + ")";
     }

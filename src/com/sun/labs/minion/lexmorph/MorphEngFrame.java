@@ -24,10 +24,10 @@
 
 package com.sun.labs.minion.lexmorph;
 
-import java.util.Vector;
-import java.util.Hashtable;
-import java.util.HashSet;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.Vector;
 //import Lexicon;
 
 /*
@@ -549,6 +549,7 @@ public abstract class MorphEngFrame extends MorphEngine {
      * don't require the full generality of the more general method.
      */
 
+    @Override
     public Vector match(String wordString, MorphRule thisRule, MorphState state,
                            int depth, int skipnum) {
         int killRight = state.rule.killnum;
@@ -749,6 +750,7 @@ public abstract class MorphEngFrame extends MorphEngine {
 
 // method for processing catSense entries in recordResults:
 
+    @Override
   protected void processCatSense(Word word, Category thisCat,
                                               Word thisRoot,
                                               Value[] features,

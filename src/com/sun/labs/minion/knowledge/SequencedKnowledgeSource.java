@@ -25,14 +25,13 @@
 package com.sun.labs.minion.knowledge;
 
 import com.sun.labs.util.props.ConfigComponentList;
+import com.sun.labs.util.props.PropertyException;
+import com.sun.labs.util.props.PropertySheet;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-
-import com.sun.labs.util.props.PropertyException;
-import com.sun.labs.util.props.PropertySheet;
 
 /**
  * This class encapsulates a policy whereby the first non-null variants of the 
@@ -54,6 +53,7 @@ public class SequencedKnowledgeSource implements CompositeKnowledgeSource {
     /* (non-Javadoc)
 	 * @see com.sun.labs.minion.knowledge.CompositeKnowledgeSource#addSource(com.sun.labs.minion.knowledge.KnowledgeSource)
 	 */
+    @Override
     public void addSource(KnowledgeSource aSource) {
         sources.add(aSource);
     }
@@ -61,6 +61,7 @@ public class SequencedKnowledgeSource implements CompositeKnowledgeSource {
     /**
 	 * Return the variants of the first knowledge source that has any
 	 */
+    @Override
     public Set<String> variantsOf(String term) {
         Set<String> allVariants = new HashSet<String>();
         for (Iterator<KnowledgeSource> sourceIt = sources.iterator(); sourceIt.hasNext();) {
@@ -77,6 +78,7 @@ public class SequencedKnowledgeSource implements CompositeKnowledgeSource {
     /* (non-Javadoc)
      * @see com.sun.labs.util.props.Configurable#newProperties(com.sun.labs.util.props.PropertySheet)
      */
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         List sources = ps.getComponentList(PROP_KNOWLEDGE_SOURCES);
         for (Iterator iter = sources.iterator(); iter.hasNext();) {

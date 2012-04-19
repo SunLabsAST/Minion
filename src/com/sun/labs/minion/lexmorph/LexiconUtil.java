@@ -23,13 +23,11 @@
  */
 package com.sun.labs.minion.lexmorph;
 
+import com.sun.labs.minion.util.BitBuffer;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
-
 import java.util.concurrent.ConcurrentHashMap;
-
-import com.sun.labs.minion.util.BitBuffer;
 import java.util.logging.Logger;
 
 /**

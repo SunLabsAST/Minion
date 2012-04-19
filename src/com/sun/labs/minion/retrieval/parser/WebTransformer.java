@@ -24,20 +24,18 @@
 package com.sun.labs.minion.retrieval.parser;
 
 import com.sun.labs.minion.QueryPipeline;
-import java.text.ParseException;
-
-import com.sun.labs.minion.pipeline.TokenCollectorStage;
-
 import com.sun.labs.minion.Searcher;
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.minion.pipeline.QueryPipelineImpl;
 import com.sun.labs.minion.pipeline.Stage;
+import com.sun.labs.minion.pipeline.TokenCollectorStage;
 import com.sun.labs.minion.retrieval.And;
 import com.sun.labs.minion.retrieval.DictTerm;
 import com.sun.labs.minion.retrieval.Not;
 import com.sun.labs.minion.retrieval.Or;
 import com.sun.labs.minion.retrieval.PAnd;
 import com.sun.labs.minion.retrieval.QueryElement;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -98,6 +96,7 @@ public class WebTransformer extends Transformer {
      * defined in the {@link com.sun.labs.minion.Searcher} interface
      * @return the root node of a tree describing a query
      */
+    @Override
     public QueryElement transformTree(
             SimpleNode root,
             Searcher.Operator defaultOperator,

@@ -51,6 +51,7 @@ public class MTQuery implements Runnable {
         nw = new NanoWatch();
     }
 
+    @Override
     public void run() {
         int iter = 0;
         while(System.currentTimeMillis() < stop) {

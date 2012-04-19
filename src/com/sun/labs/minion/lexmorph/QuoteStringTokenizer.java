@@ -69,10 +69,12 @@ public class QuoteStringTokenizer extends Object implements Enumeration{
     public boolean hasMoreTokens(){
 	return (peeked || sTok.hasMoreTokens());
     }
+    @Override
     public boolean hasMoreElements(){
 	return this.hasMoreTokens();
     }
 
+    @Override
     public Object nextElement(){
 	return this.nextToken();
     }

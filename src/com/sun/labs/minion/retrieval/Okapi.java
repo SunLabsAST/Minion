@@ -34,12 +34,14 @@ public class Okapi implements WeightingFunction {
 
     protected static String logTag = "OK";
 
+    @Override
     public float initTerm(WeightingComponents wc) {
         wc.wt = (float) Math.log(((2 * wc.N) - wc.ft + 0.5f) /
                 (wc.ft + 0.5f));
         return wc.wt;
     }
 
+    @Override
     public float termWeight(WeightingComponents wc) {
         return wc.wt * (wc.fdt /
                 ((1.2f * (0.25f + 0.75f * (wc.ld / wc.avgDocLen))) +

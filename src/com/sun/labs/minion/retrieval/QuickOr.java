@@ -27,7 +27,6 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;

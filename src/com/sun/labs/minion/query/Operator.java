@@ -86,6 +86,7 @@ public abstract class Operator extends Element implements Iterable<Element>, Ser
         return elements.size();
     }
 
+    @Override
     public Iterator<Element> iterator() {
         return elements.iterator();
     }

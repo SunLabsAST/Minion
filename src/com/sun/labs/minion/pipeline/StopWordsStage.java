@@ -23,9 +23,9 @@
  */
 package com.sun.labs.minion.pipeline;
 
+import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.util.props.ConfigComponent;
 import java.util.logging.Logger;
 
 /**

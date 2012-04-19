@@ -23,9 +23,8 @@
  */
 package com.sun.labs.minion.pipeline;
 
-import java.text.DecimalFormat;
-
 import com.sun.labs.minion.IndexConfig;
+import java.text.DecimalFormat;
 
 public class StatStage extends StageAdapter {
 

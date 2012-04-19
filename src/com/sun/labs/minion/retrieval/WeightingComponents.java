@@ -27,7 +27,6 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
-
 import java.util.logging.Logger;
 
 /**

@@ -24,13 +24,10 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
-import com.sun.labs.minion.indexer.postings.Postings;
-import com.sun.labs.minion.indexer.postings.Postings.Type;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-
 import com.sun.labs.minion.util.buffer.FileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 /**
  * A postings input that extends a file backed buffer.  The postings that

@@ -25,12 +25,12 @@ package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.indexer.postings.io.PostingsInput;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
-import java.util.Arrays;
+import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.Buffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

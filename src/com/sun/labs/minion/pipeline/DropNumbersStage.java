@@ -42,6 +42,7 @@ public class DropNumbersStage extends StageAdapter {
      *
      * @param t The token to process.
      */
+    @Override
     public void token(Token t) {
         String val = t.getToken();
         char[] chars = val.toCharArray();

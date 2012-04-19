@@ -23,31 +23,25 @@
  */
 package com.sun.labs.minion.indexer.dictionary;
 
-import java.io.RandomAccessFile;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-
-import com.sun.labs.minion.retrieval.ArrayGroup;
-import com.sun.labs.minion.retrieval.ScoredGroup;
-import com.sun.labs.minion.retrieval.ScoredQuickOr;
-
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.EntrySizeComparator;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.MergeState;
 import com.sun.labs.minion.indexer.partition.Partition;
-
 import com.sun.labs.minion.indexer.postings.Postings.Type;
-import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
-
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.retrieval.ArrayGroup;
+import com.sun.labs.minion.retrieval.ScoredGroup;
+import com.sun.labs.minion.retrieval.ScoredQuickOr;
 import com.sun.labs.minion.util.CharUtils;
+import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 public class DiskBiGramDictionary extends DiskDictionary {
 

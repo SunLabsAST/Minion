@@ -24,11 +24,9 @@
 
 package com.sun.labs.minion.retrieval.resources;
 
-import java.util.ListResourceBundle;
-
 import com.sun.labs.minion.document.tokenizer.Tokenizer;
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
-import com.sun.labs.minion.pipeline.TokenCollectorStage;
+import java.util.ListResourceBundle;
 
   /**
    * French locale resources for the Commpass LocalQueryReader.
@@ -46,6 +44,7 @@ import com.sun.labs.minion.pipeline.TokenCollectorStage;
 
 public class ReaderResources_zh extends ListResourceBundle {
 
+    @Override
   public Object[][] getContents() {
     return contents;
   }

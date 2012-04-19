@@ -23,14 +23,11 @@
  */
 package com.sun.labs.minion.retrieval;
 
-import java.util.Arrays;
-
 import com.sun.labs.minion.Passage;
 import com.sun.labs.minion.PassageHighlighter;
-
 import com.sun.labs.minion.pipeline.Token;
-
 import com.sun.labs.minion.util.Util;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 public class PassageImpl implements Passage, Comparable {
@@ -263,6 +260,7 @@ public class PassageImpl implements Passage, Comparable {
         return null;
     }
 
+    @Override
     public String highlight(PassageHighlighter highlighter,
             boolean htmlEncode) {
         StringBuffer b = new StringBuffer();
@@ -557,6 +555,7 @@ public class PassageImpl implements Passage, Comparable {
      * passage string that was returned earlier.  This really only makes
      * sense if you didn't ask for highlighting!
      */
+    @Override
     public int[] getWordPositions() {
         return posns;
     // 	return pass.getPassageWordPositions();
@@ -570,6 +569,7 @@ public class PassageImpl implements Passage, Comparable {
      * document.  If an element of the array is <code>null</code>, then
      * that means that a term is missing from the passage.
      */
+    @Override
     public String[] getMatchingTerms() {
         return mt;
     }
@@ -584,6 +584,7 @@ public class PassageImpl implements Passage, Comparable {
      * term. This information can be used if it is necessary to highlight
      * the actual document for display.
      */
+    @Override
     public int[] getMatchStart() {
         if(tokenStarts != null) {
             return tokenStarts;
@@ -602,6 +603,7 @@ public class PassageImpl implements Passage, Comparable {
      * last character in the word.  This information can be used if it is
      * necessary to highlight the actual document for display.
      */
+    @Override
     public int[] getMatchEnd() {
         if(tokenEnds != null) {
             return tokenEnds;
@@ -610,6 +612,7 @@ public class PassageImpl implements Passage, Comparable {
         }
     }
 
+    @Override
     public int compareTo(Object o) {
         PassageImpl pi = (PassageImpl) o;
         if(penalty < pi.penalty) {
@@ -623,6 +626,7 @@ public class PassageImpl implements Passage, Comparable {
         return 0;
     }
 
+    @Override
     public String toString() {
         return Util.toString(tokenStarts) + " " + Util.toString(
                 tokenEnds);

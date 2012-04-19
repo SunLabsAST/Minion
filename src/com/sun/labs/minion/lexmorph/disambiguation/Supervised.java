@@ -27,6 +27,9 @@ import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultsCluster;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.postings.PostingsIterator;
+import com.sun.labs.minion.retrieval.ResultImpl;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,9 +39,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.postings.PostingsIterator;
-import com.sun.labs.minion.retrieval.ResultImpl;
 import java.util.logging.Logger;
 
 /**
@@ -234,6 +234,7 @@ public class Supervised implements Serializable {
         return term;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Supervised disambiguator for: " + term);

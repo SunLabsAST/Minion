@@ -27,7 +27,6 @@ import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**

@@ -24,30 +24,21 @@
 
 package com.sun.labs.minion.retrieval.parser;
 
-import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.QueryPipeline;
-import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.Searcher;
+import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
+import com.sun.labs.minion.pipeline.QueryPipelineImpl;
+import com.sun.labs.minion.pipeline.Stage;
+import com.sun.labs.minion.pipeline.TokenCollectorStage;
+import com.sun.labs.minion.retrieval.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.StringReader;
-
 import java.text.ParseException;
-
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
-
-import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
-
-import com.sun.labs.minion.pipeline.TokenCollectorStage;
-
-import com.sun.labs.minion.retrieval.*;
-
-import com.sun.labs.minion.Searcher;
-import com.sun.labs.minion.pipeline.QueryPipelineImpl;
-import com.sun.labs.minion.pipeline.Stage;
 import java.util.LinkedList;
-import java.util.logging.Level;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -114,6 +105,7 @@ public class LuceneTransformer extends Transformer
      * defined in the {@link com.sun.labs.minion.Searcher} interface
      * @return the root node of a tree describing a query
      */
+    @Override
     public QueryElement transformTree(
             SimpleNode root,
             Searcher.Operator defaultOperator,

@@ -23,9 +23,8 @@
  */
 package com.sun.labs.minion.pipeline;
 
-import java.util.Iterator;
-import com.sun.labs.minion.util.Util;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -112,6 +111,7 @@ public class TokenCollectorStage extends StageAdapter {
     /**
      * Resets the stage.
      */
+    @Override
     public void reset() {
         for(int i = 0; i < nRanges; i++) {
             ranges[i].nTokens = 0;
@@ -333,10 +333,12 @@ public class TokenCollectorStage extends StageAdapter {
                 curr = 0;
             }
 
+            @Override
             public boolean hasNext() {
                 return curr < nTokens;
             }
 
+            @Override
             public Object next() {
 
                 if(curr >= nTokens) {
@@ -346,6 +348,7 @@ public class TokenCollectorStage extends StageAdapter {
                 return tokens[curr++];
             }
 
+            @Override
             public void remove() {
                 throw new UnsupportedOperationException(
                         "Not supported for RangeIterator");

@@ -25,7 +25,6 @@ package com.sun.labs.minion.retrieval.cache;
 
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.indexer.DiskField;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import java.util.List;
 import java.util.logging.Level;
@@ -115,6 +114,7 @@ public class TermCache implements CacheValueComputer<TermCacheKey, TermCacheElem
         cache.close();
     }
 
+    @Override
     public String toString() {
         return String.format("cache: %d items %d hits %d misses %.3f ratio",
                 cache.size(), cache.getHits(), cache.getMisses(),

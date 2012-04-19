@@ -35,6 +35,7 @@ package com.sun.labs.minion.lexmorph;
    }
 
 
+    @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1000  =  "BoolRule"  +  ":<" ;

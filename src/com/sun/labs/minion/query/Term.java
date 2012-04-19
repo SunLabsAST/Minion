@@ -23,9 +23,7 @@
  */
 package com.sun.labs.minion.query;
 
-import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.QueryPipeline;
-import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.retrieval.DictTerm;
 import com.sun.labs.minion.retrieval.Phrase;
 import com.sun.labs.minion.retrieval.QueryElement;
@@ -33,8 +31,6 @@ import com.sun.labs.minion.util.CharUtils;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A class for a search term.  Various modifiers can be applied to a term to

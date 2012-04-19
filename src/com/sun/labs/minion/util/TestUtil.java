@@ -24,9 +24,9 @@
 
 package com.sun.labs.minion.util;
 
-import java.util.Random;
-import java.util.HashMap;
 import java.io.*;
+import java.util.HashMap;
+import java.util.Random;
 
 /**
  * This class defines a set of utilities that will be used

@@ -24,10 +24,9 @@
 
 package com.sun.labs.minion.document.tokenizer;
 
-import java.util.Iterator;
-
 import com.sun.labs.minion.pipeline.Token;
 import com.sun.labs.minion.pipeline.TokenCollectorStage;
+import java.util.Iterator;
 
 /**
  * A helper class to tokenize strings and return an iterator for the

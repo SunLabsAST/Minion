@@ -79,6 +79,7 @@ public interface Stage extends Configurable, PipelineStage {
     /**
      * Processes text, passing the results downstream.
      */
+    @Override
     public void process(String text);
     
     /**

@@ -46,6 +46,7 @@ public class StemStage extends StageAdapter {
      *
      * @param t The token to process.
      */
+    @Override
     public void token(Token t) {
         if(downstream == null) {
             return;

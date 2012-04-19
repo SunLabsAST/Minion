@@ -63,15 +63,20 @@ class Atom implements Value, Comparable {
       }
     }
 
+    @Override
     public boolean listp() { //tells whether this value is a list
       return false;}
 
+    @Override
     public boolean wordp() {return false;}
 
+    @Override
     public boolean categoryp() {return false;}
 
+    @Override
     public boolean phrasep() {return false;}
 
+    @Override
     public Number numericalValue() {return numericalValue;}
 
     public  boolean numeralp(){return (numericalValue != null);}
@@ -79,37 +84,46 @@ class Atom implements Value, Comparable {
     public Lexicon lexicon() {return this.lexicon;}
 
     // tweaked pmartin 18 Aug 99 to use the static method
+    @Override
     public boolean isInArray (Value[] array) { //tests if atom is in an array
       return LexiconUtil.isMembOfArray(this, array);
     }
 
+    @Override
     public boolean eq(Value obj) { //tells whether this value is eq another
       return (this == obj);}
 
+    @Override
     public boolean equal(Value obj) { //tells whether this value is eq another
       return (this == obj);}
 
+    @Override
     public int compareTo(Object other){ //pm 27aug02
       String otherStr = ((Atom)other).wordstring;
       return wordstring.compareTo(otherStr);
     }
 
+    @Override
     public synchronized String toString () {
       return "ATOM:"+wordstring;
     }
 
+    @Override
     public synchronized String printString () {
       return wordstring;
     }
 
+    @Override
     public synchronized String phraseNameString () {
       return wordstring;
     }
 
+    @Override
     public synchronized String getWordString () {
       return wordstring;
     }
 
+    @Override
     public synchronized String safePrintString () { // no unsafe atoms!
       return wordstring;
     }

@@ -23,6 +23,8 @@
  */
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.pipeline.StageAdapter;
+import com.sun.labs.minion.pipeline.Token;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,12 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.sun.labs.minion.FieldInfo;
-
-import com.sun.labs.minion.pipeline.StageAdapter;
-import com.sun.labs.minion.pipeline.Token;
-
 import java.util.logging.Logger;
 
 /**

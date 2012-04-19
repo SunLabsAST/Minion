@@ -24,9 +24,9 @@
 
 package com.sun.labs.minion.lexmorph;
 
+import java.util.Hashtable;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.util.Hashtable;
 //import Lexicon;
 
 /*
@@ -236,6 +236,7 @@ import java.util.Hashtable;
         actions = MorphEngine.makeActions(actionString);
     }
 
+    @Override
     public synchronized String toString() {
       return name;
     }

@@ -68,6 +68,7 @@ public class FindSimilar implements Runnable {
         logger = Logger.getLogger(getClass().getName());
     }
 
+    @Override
     public void run() {
         for(int i = 0; i < reps; i++) {
             for(String key : keys) {

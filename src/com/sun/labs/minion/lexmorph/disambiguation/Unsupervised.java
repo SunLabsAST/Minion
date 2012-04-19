@@ -28,6 +28,9 @@ import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.retrieval.ResultImpl;
+import com.sun.labs.minion.util.LogMath;
+import com.sun.labs.util.StopWatch;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,9 +38,6 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Random;
-import com.sun.labs.minion.retrieval.ResultImpl;
-import com.sun.labs.minion.util.LogMath;
-import com.sun.labs.util.StopWatch;
 import java.util.logging.Logger;
 
 /**
@@ -522,6 +522,7 @@ public class Unsupervised {
             return false;
         }
 
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append("log likelihood: " + ll + "\n");
@@ -552,6 +553,7 @@ public class Unsupervised {
             PriorityQueue<TermProb> probs = new PriorityQueue<TermProb>(J,
                     new Comparator<TermProb>() {
 
+                @Override
                         public int compare(TermProb o1, TermProb o2) {
                             return -1 * o1.compareTo(o2);
                         }

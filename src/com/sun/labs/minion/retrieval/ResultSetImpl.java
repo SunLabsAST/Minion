@@ -25,9 +25,6 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.HLPipeline;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
@@ -35,16 +32,16 @@ import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.SearchEngine;
-
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.PriorityQueue;
-
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.PriorityQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -389,6 +386,7 @@ public class ResultSetImpl implements ResultSet {
      * @throws SearchEngineException if there is some error getting the
      * results.
      */
+    @Override
     public List<Result> getResults(int start, int n) throws SearchEngineException {
         return getResults(start, n, null);
     }
@@ -519,6 +517,7 @@ public class ResultSetImpl implements ResultSet {
      * an arbitrary order.
      * @return A list of all the results in the set.
      */
+    @Override
     public List<Result> getAllResults(boolean sorted) throws SearchEngineException {
         return getAllResults(sorted, null);
     }
@@ -536,6 +535,7 @@ public class ResultSetImpl implements ResultSet {
      * be applied.
      * @return A list of all the results in the set.
      */
+    @Override
     public List<Result> getAllResults(boolean sorted, ResultsFilter rf) throws SearchEngineException {
 
         //
@@ -592,6 +592,7 @@ public class ResultSetImpl implements ResultSet {
         this.qs = qs;
     }
 
+    @Override
     public QueryStats getQueryStats() {
         return qs;
     }
@@ -602,6 +603,7 @@ public class ResultSetImpl implements ResultSet {
      * @return <code>true</code> if there was such an error,
      * <code>false</code> otherwise.
      */
+    @Override
     public boolean querySyntaxError() {
         return false;
     }
@@ -614,6 +616,7 @@ public class ResultSetImpl implements ResultSet {
      * @return The number of documents matching the query.
      * @see #querySyntaxError
      */
+    @Override
     public int size() {
         int size = 0;
         for(Iterator i = results.iterator(); i.hasNext();) {
@@ -635,6 +638,7 @@ public class ResultSetImpl implements ResultSet {
     /**
      * Gets the number of documents that are in the whole index.
      */
+    @Override
     public int getNumDocs() {
         return e.getNDocs();
     }
@@ -643,6 +647,7 @@ public class ResultSetImpl implements ResultSet {
      * Gets the amount of time that it took to evaluate the query, in
      * milliseconds.
      */
+    @Override
     public long getQueryTime() {
         return (long) qs.queryW.getTimeMillis();
     }
@@ -659,6 +664,7 @@ public class ResultSetImpl implements ResultSet {
         return new AGDocs(ag);
     }
 
+    @Override
     public ResultSet weight(float w) {
         ResultSetImpl ret = new ResultSetImpl(this.e, this.qc, null);
         ret.results = new ArrayList();
@@ -668,6 +674,7 @@ public class ResultSetImpl implements ResultSet {
         return ret;
     }
 
+    @Override
     public ResultSet intersect(ResultSet rs) {
         ResultSetImpl ret = new ResultSetImpl(this.e, this.qc, null);
         ret.sortSpec = sortSpec;
@@ -687,6 +694,7 @@ public class ResultSetImpl implements ResultSet {
         return ret;
     }
 
+    @Override
     public ResultSet union(ResultSet rs) {
         ResultSetImpl ret = new ResultSetImpl(this.e, this.qc, null);
         ret.results = new ArrayList();
@@ -705,6 +713,7 @@ public class ResultSetImpl implements ResultSet {
         return ret;
     }
 
+    @Override
     public ResultSet difference(ResultSet rs) {
         ResultSetImpl ret = new ResultSetImpl(this.e, this.qc, null);
         ret.results = new ArrayList();

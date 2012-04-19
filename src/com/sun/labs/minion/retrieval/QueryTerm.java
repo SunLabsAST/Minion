@@ -90,6 +90,7 @@ public abstract class QueryTerm extends QueryElement {
      * Sets the query configuration for this term.  At this point we can
      * figure out about case matching.
      */
+    @Override
     public void setQueryConfig(QueryConfig qc) {
         super.setQueryConfig(qc);
 
@@ -113,6 +114,7 @@ public abstract class QueryTerm extends QueryElement {
      * evaluating the term against the given group.  The static type of the
      * returned group depends on the query status parameter.
      */
+    @Override
     public abstract ArrayGroup eval(ArrayGroup ag);
 
 
@@ -140,6 +142,7 @@ public abstract class QueryTerm extends QueryElement {
         doExpand = exp;
     }
 
+    @Override
     public String toString(String prefix) {
         String mods = "";
         if (matchCase) { mods = mods + "MATCH "; }

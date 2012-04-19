@@ -42,6 +42,7 @@ public class SimpleHighlighter implements PassageHighlighter {
     /**
      * Starts the context for the passage.
      */
+    @Override
     public String startContext() {
         return "";
     }
@@ -49,6 +50,7 @@ public class SimpleHighlighter implements PassageHighlighter {
     /**
      * Ends the context for the passage.
      */
+    @Override
     public String endContext() {
         return "";
     }
@@ -59,6 +61,7 @@ public class SimpleHighlighter implements PassageHighlighter {
      * @return The code for highlighting the start of the passage.  This
      * element will be added to the output passage.
      */
+    @Override
     public String startPassage() {
         return passageStartTag;
     }
@@ -69,6 +72,7 @@ public class SimpleHighlighter implements PassageHighlighter {
      * @return The code for ending the highlight of the passage.  This
      * element will be added to the output passage.
      */
+    @Override
     public String endPassage() {
         return passageEndTag;
     }
@@ -78,6 +82,7 @@ public class SimpleHighlighter implements PassageHighlighter {
      * text from overly long passages.
      * @return the string to use to indicate an ellipsis in a passage.
      */
+    @Override
     public String ellipsis() {
         return " #...# ";
     }
@@ -90,6 +95,7 @@ public class SimpleHighlighter implements PassageHighlighter {
      * @param sb a buffer into which we will encode the term
      * @return The code for highlighting the term, including the term!
      */
+    @Override
     public StringBuffer highlightMatching(String term, int pos,
                                           StringBuffer sb, boolean htmlEncode) {
         if(htmlEncode) {

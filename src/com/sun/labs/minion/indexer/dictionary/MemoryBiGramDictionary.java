@@ -27,7 +27,6 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
-
 import com.sun.labs.minion.indexer.postings.OccurrenceImpl;
 import java.util.logging.Logger;
 

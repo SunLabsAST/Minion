@@ -23,15 +23,13 @@
  */
 package com.sun.labs.minion.indexer.partition;
 
-import java.io.File;
-import java.io.RandomAccessFile;
-
 import com.sun.labs.minion.util.FileLock;
-
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.Buffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.File;
+import java.io.RandomAccessFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

@@ -23,10 +23,9 @@
  */
 
 package com.sun.labs.minion.lexmorph;
+import com.sun.labs.minion.util.CharUtils;
 import java.util.HashSet;
 import java.util.Iterator;
-
-import com.sun.labs.minion.util.CharUtils;
 
 /**
  * A class encapsulating all of our knowledge about a given token.  We use
@@ -128,6 +127,7 @@ public class WordToken  {
         return word;
     }
 
+    @Override
     public String toString() {
         return token + " " + lcToken + " " + capCode + " " + equal;
     }

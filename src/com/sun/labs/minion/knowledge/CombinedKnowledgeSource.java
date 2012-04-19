@@ -25,13 +25,12 @@
 package com.sun.labs.minion.knowledge;
 
 import com.sun.labs.util.props.ConfigComponentList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Iterator;
-
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * This class encapsulates a policy whereby the union of variants of all
@@ -51,6 +50,7 @@ public class CombinedKnowledgeSource implements CompositeKnowledgeSource {
     /* (non-Javadoc)
 	 * @see com.sun.labs.minion.knowledge.CompositeKnowledgeSource#addSource()
 	 */
+    @Override
     public void addSource(KnowledgeSource aSource) {
         sources.add(aSource);
 
@@ -59,6 +59,7 @@ public class CombinedKnowledgeSource implements CompositeKnowledgeSource {
     /**
 	 * Combine the variants of all the knowledge sources (eliminating duplicates)
 	 */
+    @Override
     public Set<String> variantsOf(String term) {
         Set<String> allVariants = new HashSet<String>();
         for (Iterator<KnowledgeSource> sourceIt = sources.iterator(); sourceIt.hasNext();) {
@@ -73,6 +74,7 @@ public class CombinedKnowledgeSource implements CompositeKnowledgeSource {
     /* (non-Javadoc)
      * @see com.sun.labs.util.props.Configurable#newProperties(com.sun.labs.util.props.PropertySheet)
      */
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         List sources = ps.getComponentList(PROP_KNOWLEDGE_SOURCES);
         for (Iterator iter = sources.iterator(); iter.hasNext();) {

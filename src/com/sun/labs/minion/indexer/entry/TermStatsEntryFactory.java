@@ -2,7 +2,6 @@ package com.sun.labs.minion.indexer.entry;
 
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.Postings.Type;
-import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 
 /**

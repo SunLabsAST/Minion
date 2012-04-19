@@ -26,9 +26,8 @@ package com.sun.labs.minion.retrieval.parser;
 
 import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.Searcher;
-import java.text.ParseException;
-
 import com.sun.labs.minion.retrieval.QueryElement;
+import java.text.ParseException;
 
 /**
  * This class transforms the output of JavaCC into a tree of

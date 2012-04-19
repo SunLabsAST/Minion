@@ -26,7 +26,6 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
-
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import java.util.Collection;
 

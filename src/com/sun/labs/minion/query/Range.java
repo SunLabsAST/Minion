@@ -115,6 +115,7 @@ public class Range extends Element implements Serializable {
         return leftVal;
     }
 
+    @Override
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         return new FieldTerm(field,
                 leftVal, leftOp == Operator.GEQ,
@@ -128,6 +129,7 @@ public class Range extends Element implements Serializable {
         field, rightOp.getRep(), rightVal);
     }
     
+    @Override
     public String toString() {
         return "(Range " +
                 "(" + leftOp.getRep() + " " + leftVal +

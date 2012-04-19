@@ -25,12 +25,12 @@
 package com.sun.labs.minion.classification;
 
 import java.util.Collection;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * A set of feature clusters.  The set is sorted based on cluster
@@ -191,6 +191,7 @@ public class FeatureClusterSet implements Iterable<FeatureCluster> {
      *
      * @return an iterator over FeatureCluster
      */
+    @Override
     public Iterator<FeatureCluster> iterator() {
         return contents.iterator();
     }
@@ -249,6 +250,7 @@ public class FeatureClusterSet implements Iterable<FeatureCluster> {
         return fcs;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (FeatureCluster fc : contents) {

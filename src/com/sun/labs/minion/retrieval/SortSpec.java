@@ -23,12 +23,12 @@
  */
 package com.sun.labs.minion.retrieval;
 
-import java.util.StringTokenizer;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 /**

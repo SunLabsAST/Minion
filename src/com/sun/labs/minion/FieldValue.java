@@ -68,6 +68,7 @@ public class FieldValue implements Comparable<FieldValue> {
      * on whether this field value is, respectively, smaller than, equal to, or greater
      * than the other value.
      */
+    @Override
     public int compareTo(FieldValue o) {
         if(score < o.score) {
             return -1;

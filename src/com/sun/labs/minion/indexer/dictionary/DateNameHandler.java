@@ -24,10 +24,9 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
-import java.util.Date;
-
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.util.Date;
 
 public class DateNameHandler implements NameEncoder<Date>, NameDecoder<Date> {
     

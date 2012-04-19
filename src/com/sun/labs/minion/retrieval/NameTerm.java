@@ -49,18 +49,22 @@ public class NameTerm extends QueryElement {
         return name;
     }
 
+    @Override
     protected int calculateEstimatedSize() {
         return 0;
     }
 
+    @Override
     protected List getQueryTerms(Comparator c) {
         return Collections.EMPTY_LIST;
     }
 
+    @Override
     public String toString() {
         return toString("");
     }
 
+    @Override
     public String toString(String prefix) {
         return super.toString(prefix) + " " + getName();
     }

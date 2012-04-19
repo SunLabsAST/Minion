@@ -24,12 +24,10 @@
 
 package com.sun.labs.minion.indexer.dictionary;
 
+import com.sun.labs.minion.util.ChannelUtil;
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
-
 import java.nio.channels.FileChannel;
-
-import com.sun.labs.minion.util.ChannelUtil;
 
 public class FieldStoreHeader {
 

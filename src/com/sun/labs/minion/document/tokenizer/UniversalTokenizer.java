@@ -26,14 +26,13 @@ package com.sun.labs.minion.document.tokenizer;
 import com.sun.labs.minion.pipeline.PrintStage;
 import com.sun.labs.minion.pipeline.Stage;
 import com.sun.labs.minion.pipeline.Token;
-
 import com.sun.labs.util.props.ConfigString;
-import java.util.Arrays;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -208,6 +207,7 @@ public class UniversalTokenizer extends Tokenizer {
     /**
      * A factory method to get a tokenizer.
      */
+    @Override
     public Tokenizer getTokenizer(Stage s, boolean sp) {
         return new UniversalTokenizer(s, sp);
     }

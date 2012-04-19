@@ -24,15 +24,14 @@
 
 package com.sun.labs.minion.test;
 
+import com.sun.labs.minion.lexmorph.LiteMorph;
+import com.sun.labs.minion.lexmorph.LiteMorphRule;
+import com.sun.labs.minion.lexmorph.LiteMorph_de;
+import com.sun.labs.minion.lexmorph.LiteMorph_en;
+import java.io.*;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
-import java.io.*;
-
-import com.sun.labs.minion.lexmorph.LiteMorph;
-import com.sun.labs.minion.lexmorph.LiteMorph_en;
-import com.sun.labs.minion.lexmorph.LiteMorph_de;
-import com.sun.labs.minion.lexmorph.LiteMorphRule;
 
 /**
  ** This class can be used to test the rules and behavior of LiteMorph.

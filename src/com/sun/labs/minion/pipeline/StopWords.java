@@ -89,6 +89,7 @@ public class StopWords implements Configurable {
         return stopwords.size();
     }
 
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         List<String> swf = ps.getStringList(PROP_STOPWORDS_FILES);
         for(String stopwordsFile : swf) {

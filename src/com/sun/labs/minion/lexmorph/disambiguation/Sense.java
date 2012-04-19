@@ -24,6 +24,7 @@
 package com.sun.labs.minion.lexmorph.disambiguation;
 
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.util.LogMath;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import com.sun.labs.minion.util.LogMath;
 import java.util.logging.Logger;
 
 /**
@@ -170,10 +170,12 @@ public class Sense implements Serializable {
         return cterms > 0 ? ret : Double.NEGATIVE_INFINITY;
     }
 
+    @Override
     public String toString() {
         PriorityQueue<Map.Entry<String, Float>> pq = new PriorityQueue<Map.Entry<String, Float>>(pvs.size(),
                 new Comparator<Map.Entry<String, Float>>() {
 
+            @Override
                     public int compare(Map.Entry<String, Float> o1,
                             Map.Entry<String, Float> o2) {
                         if(o1.getValue() < o2.getValue()) {

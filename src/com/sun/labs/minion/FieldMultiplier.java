@@ -56,6 +56,7 @@ public class FieldMultiplier implements Configurable {
         return value;
     }
 
+    @Override
     public void newProperties(PropertySheet ps)
             throws PropertyException {
         name = ps.getString(PROP_MULTIPLIER_NAME);

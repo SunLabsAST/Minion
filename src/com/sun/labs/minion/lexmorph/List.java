@@ -88,18 +88,22 @@ class List implements Value {
         contents = nva;
     }
 
+    @Override
     public boolean listp() {
         return true; //tells whether this value is a list
     }
 
+    @Override
     public boolean phrasep() {
         return false;
     }
 
+    @Override
     public boolean wordp() {
         return false;
     }
 
+    @Override
     public boolean categoryp() {
         return false;
     }
@@ -111,6 +115,7 @@ class List implements Value {
         return false;
     }
 
+    @Override
     public Number numericalValue() { // for recursion mostly .. pmartin 17may01
         if((contents == null) || (contents.length < 1)) {
             return null;
@@ -119,6 +124,7 @@ class List implements Value {
         }
     }
 
+    @Override
     public boolean isInArray(Value[] array) { //tests if this node is in an array
         return LexiconUtil.isMembOfArray(this, array);
     }
@@ -160,10 +166,12 @@ class List implements Value {
         return false;
     }
 
+    @Override
     public boolean eq(Value obj) { //tells whether this value is eq another
         return (this == obj);
     }
 
+    @Override
     public boolean equal(Value obj) {
         if((obj == null) || (!obj.listp())) {
             return false; //lists can only equal lists
@@ -220,6 +228,7 @@ class List implements Value {
         return oops;
     }
 
+    @Override
     public synchronized String toString() {
         if(contents == null) {
             return "List:null";
@@ -242,6 +251,7 @@ class List implements Value {
         return val + ")";
     }
 
+    @Override
     public synchronized String printString() {
         if(contents == null) {
             return "null";
@@ -264,6 +274,7 @@ class List implements Value {
         return val + ")";
     }
 
+    @Override
     public synchronized String getWordString() {
         if((contents == null) || (contents.length == 0)) {
             return "";
@@ -279,10 +290,12 @@ class List implements Value {
         return val + ")";
     }
 
+    @Override
     public String phraseNameString() {
         return getWordString();
     }
 
+    @Override
     public synchronized String safePrintString() {
         if(contents == null) {
             return "null";

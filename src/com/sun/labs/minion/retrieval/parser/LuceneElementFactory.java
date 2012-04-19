@@ -24,12 +24,10 @@
 
 package com.sun.labs.minion.retrieval.parser;
 
-import java.util.*;
-import java.text.ParseException;
-
-import com.sun.labs.minion.retrieval.*;
-
 import com.sun.labs.minion.Searcher;
+import com.sun.labs.minion.retrieval.*;
+import java.text.ParseException;
+import java.util.*;
 
 /**
  * Creates QueryElements based on SimpleNodes generated from the parser

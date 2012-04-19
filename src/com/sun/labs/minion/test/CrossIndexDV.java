@@ -162,15 +162,18 @@ public class CrossIndexDV {
 
     public class ArtistFilter implements ResultsFilter {
 
+        @Override
         public boolean filter(ResultAccessor ra) {
             String v = (String) ra.getSingleFieldValue("aura-type");
             return v != null && v.equalsIgnoreCase("artist");
         }
 
+        @Override
         public int getTested() {
             return 0;
         }
 
+        @Override
         public int getPassed() {
             return 0;
         }

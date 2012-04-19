@@ -25,6 +25,10 @@ package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
+import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.PartitionManager;
+import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.io.BufferedReader;
 import java.io.File;
@@ -33,16 +37,12 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
-import com.sun.labs.minion.engine.SearchEngineImpl;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.partition.PartitionManager;
-import com.sun.labs.minion.util.Getopt;
-import java.util.Collection;
 
 /**
  * A class to test deletions in partitions while those partitions are

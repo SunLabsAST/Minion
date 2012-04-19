@@ -24,14 +24,12 @@
 
 package com.sun.labs.minion.engine;
 
+import com.sun.labs.minion.MetaDataStore;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
 import java.util.Properties;
-
-import com.sun.labs.minion.MetaDataStore;
 
 /**
  * The MetaDataStore provides a mechanism to store name/value pairs

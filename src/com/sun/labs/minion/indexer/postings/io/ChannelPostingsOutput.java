@@ -24,13 +24,11 @@
 
 package com.sun.labs.minion.indexer.postings.io;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
-import java.nio.channels.FileChannel;
-
 import com.sun.labs.minion.util.ChannelUtil;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 /**
  * An implementation of <code>PostingsOutput</code> that buffers the

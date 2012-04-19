@@ -23,14 +23,13 @@
  */
 package com.sun.labs.minion.lexmorph;
 
+import com.sun.labs.minion.util.BitBuffer;
+import com.sun.labs.minion.util.Stack;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
-
-import com.sun.labs.minion.util.BitBuffer;
-import com.sun.labs.minion.util.Stack;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
@@ -144,22 +143,27 @@ public class Word implements Value {
         return this;
     }
 
+    @Override
     public boolean listp() {
         return false;
     }
 
+    @Override
     public boolean wordp() {
         return true;
     }
 
+    @Override
     public boolean categoryp() {
         return false;
     }
 
+    @Override
     public boolean phrasep() {
         return false;
     }
 
+    @Override
     public Number numericalValue() {
         WordEntry we = getWordEntry();
         if(we == null) {
@@ -2949,6 +2953,7 @@ public class Word implements Value {
         return this;
     }
 
+    @Override
     public String getWordString() {
         return wordstring;
     }
@@ -3225,32 +3230,39 @@ public class Word implements Value {
     }
 
     // miscellaneous methods:
+    @Override
     public boolean eq(Value obj) { //tells whether this value is eq another
         return (this == obj);
     }
 
+    @Override
     public boolean equal(Value obj) { //tells whether this value is eq another
         return (this == obj);
     }
 
     /* copied from (my altered versions of) Atom ..PMartin 2 July  */
+    @Override
     public boolean isInArray(Value[] array) { //tests if this word is in an array
         return LexiconUtil.isMembOfArray(this, array);
     }
 
+    @Override
     public synchronized String toString() {
         return "WORD:" + wordstring;
     }
 
+    @Override
     public synchronized String printString() {
         return wordstring;
     }
 
+    @Override
     public synchronized String phraseNameString() {
         // for nesting inside phrase printing
         return wordstring;
     }
 
+    @Override
     public synchronized String safePrintString() {
         if(dangerousChars.length > 0) {
             for(int i = 0; i < dangerousChars.length; i++) {

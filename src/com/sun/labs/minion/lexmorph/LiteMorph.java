@@ -23,16 +23,15 @@
  */
 package com.sun.labs.minion.lexmorph;
 
+import com.sun.labs.minion.knowledge.KnowledgeSource;
+import com.sun.labs.minion.util.CharUtils;
 import java.io.PrintWriter;
+import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
-import java.util.Hashtable;
-import java.util.Enumeration;
-
-import com.sun.labs.minion.knowledge.KnowledgeSource;
-import com.sun.labs.minion.util.CharUtils;
 import java.util.logging.Logger;
 
 /**
@@ -261,6 +260,7 @@ public abstract class LiteMorph implements KnowledgeSource {
      * 
      * @see com.sun.labs.minion.knowledge.KnowledgeSource#variantsOf(java.lang.String)
      */
+    @Override
     public Set<String> variantsOf(String word) {
 
         // Go get the morphological variants of the word.

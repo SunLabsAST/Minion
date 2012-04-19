@@ -83,6 +83,7 @@ public class IndexableMap implements Indexable {
      * Gets the key for this document.
      * @return The key for this document
      */
+    @Override
     public String getKey() {
         return key;
     }
@@ -91,6 +92,7 @@ public class IndexableMap implements Indexable {
      * Gets the map from field names to field values
      * @return the map from field names to field values.
      */
+    @Override
     public Map<String, Object> getMap() {
         return map;
     }

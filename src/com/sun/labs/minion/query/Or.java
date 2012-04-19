@@ -48,6 +48,7 @@ public class Or extends Operator implements Serializable {
         super(elements);
     }
     
+    @Override
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         List<QueryElement> operands = new ArrayList();
         for(Element e : elements) {
@@ -61,6 +62,7 @@ public class Or extends Operator implements Serializable {
         return Operator.getInfixOperatorQueryString("<or>", elements, fields, strict);
     }
 
+    @Override
     public String toString() {
         return "(Or " + strict + " " + elements + ")";
     }

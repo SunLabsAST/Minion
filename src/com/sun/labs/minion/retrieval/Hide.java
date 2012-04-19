@@ -24,14 +24,15 @@
 
 package com.sun.labs.minion.retrieval;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class Hide extends UnaryOperator {
     public Hide(QueryElement qe) {
         super(qe);
     } // Hide constructor
 
+    @Override
     public List getQueryTerms() {
         return new ArrayList();
     }

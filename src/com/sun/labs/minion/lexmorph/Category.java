@@ -23,10 +23,9 @@
  */
 package com.sun.labs.minion.lexmorph;
 
+import com.sun.labs.minion.util.BitBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
-
-import com.sun.labs.minion.util.BitBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,10 +50,12 @@ public class Category extends Atom {
         super(lexicon, namestring);
     }
 
+    @Override
     public synchronized String toString() {
         return "CATEGORY:" + super.wordstring;
     }
 
+    @Override
     public boolean categoryp() {
         return true;
     }
@@ -76,10 +77,12 @@ public class Category extends Atom {
         return newIdx;
     }
 
+    @Override
     public BitBuffer encode() { // encode Category
         return encode(new BitBuffer());
     }
 
+    @Override
     public BitBuffer encode(BitBuffer bb) { // encode Category
         LexiconUtil.encodeNumber(bb, numericalValue);
         LexiconUtil.encodeValueHash(bb, props);

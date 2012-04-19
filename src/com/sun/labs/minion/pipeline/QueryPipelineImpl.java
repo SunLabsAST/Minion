@@ -55,6 +55,7 @@ public class QueryPipelineImpl extends PipelineImpl implements QueryPipeline {
      * 
      * @return String versions of collected Tokens
      */
+    @Override
     public String[] getTokens() {
         Token[] tokens = tcs.getTokens();
         String[] terms = new String[tokens.length];

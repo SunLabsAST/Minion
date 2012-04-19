@@ -25,18 +25,18 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary.BufferType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary.PostingsInputType;
-import com.sun.labs.util.props.ConfigInteger;
-import com.sun.labs.util.props.Configurable;
-import com.sun.labs.util.props.PropertyException;
-import com.sun.labs.util.props.PropertySheet;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import com.sun.labs.minion.indexer.entry.EntryFactory;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigEnum;
+import com.sun.labs.util.props.ConfigInteger;
+import com.sun.labs.util.props.Configurable;
+import com.sun.labs.util.props.PropertyException;
+import com.sun.labs.util.props.PropertySheet;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.logging.Logger;
 
 /**

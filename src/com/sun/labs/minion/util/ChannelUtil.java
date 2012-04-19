@@ -24,7 +24,6 @@
 package com.sun.labs.minion.util;
 
 import java.nio.ByteBuffer;
-
 import java.nio.channels.FileChannel;
 import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ReadableByteChannel;

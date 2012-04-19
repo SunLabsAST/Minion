@@ -65,6 +65,7 @@ public class MultiDV implements Callable<List<Result>> {
         this.dv = dv;
     }
 
+    @Override
     public List<Result> call() throws Exception {
         dv.setEngine(engine);
         return dv.findSimilar("-score").getResults(0, 10);

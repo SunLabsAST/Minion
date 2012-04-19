@@ -24,13 +24,12 @@
 
 package com.sun.labs.minion.retrieval;
 
-import java.util.List;
+import com.sun.labs.minion.query.Relation;
 import java.util.ArrayList;
-import java.util.ListIterator;
 import java.util.HashMap;
 import java.util.Iterator;
-
-import com.sun.labs.minion.query.Relation;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * The QueryOptimizer steps through a query, looking for

@@ -24,10 +24,9 @@
 
 package com.sun.labs.minion.lexmorph;
 
-import java.util.Vector;
-import java.util.Hashtable;
 import java.util.HashSet;
-
+import java.util.Hashtable;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 //import Lexicon;
@@ -84,6 +83,7 @@ public class Morph_en extends MorphEngFns {
    * Method for returning the first set of morphological rules to start with.
    */
 
+    @Override
   public MorphRule[] getFirstRuleSet() { //returns the rule set to start with
     return rootRules;
     }
@@ -92,6 +92,7 @@ public class Morph_en extends MorphEngFns {
    * Method for returning the set of prefix rules.
    */
 
+    @Override
   public MorphRule[] getPrefixRuleSet() { //returns the prefix rule set
     return prefixDispatch;
     }
@@ -100,6 +101,7 @@ public class Morph_en extends MorphEngFns {
 
   private static ConcurrentHashMap prefixRuleSetMap = null;
 
+    @Override
   public MorphRule[] getPrefixRuleSet(Atom ruleSetName) {
     // Returns the specified prefix rule set (specified by name as an atom).
     // hacked pmartin 11apr04 to maintain concurrency but show better speed
@@ -168,6 +170,7 @@ public class Morph_en extends MorphEngFns {
    * Method for returning the Lexicon associated with this MorphEngine.
    */
 
+    @Override
   public Lexicon getMorphDict() { //returns the language-specific dictionary
     return dict;
     }
@@ -30459,6 +30462,7 @@ protected void act1667(MorphState state) {
 addRight("&able", state);
 }
 
+    @Override
 protected void doNumberedAction (int clauseNumber, MorphState state) {
  switch (clauseNumber) {
  case 1 : act1(state);
@@ -33810,6 +33814,7 @@ protected void doNumberedAction (int clauseNumber, MorphState state) {
    * Method for initializing this MorphEngine with a Lexicon to use.
    */
 
+    @Override
   public void initialize(Lexicon dictionary) {
 
     if (dict != null) { //already initialized

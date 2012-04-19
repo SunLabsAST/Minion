@@ -24,24 +24,19 @@
 
 package com.sun.labs.minion.test;
 
-import java.util.Vector;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStreamReader;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
-import java.lang.OutOfMemoryError;
-
 import com.sun.labs.minion.lexmorph.Lexicon;
-import com.sun.labs.minion.lexmorph.MorphState;
 import com.sun.labs.minion.lexmorph.MorphEngine;
 import com.sun.labs.minion.lexmorph.MorphRule;
+import com.sun.labs.minion.lexmorph.MorphState;
 import com.sun.labs.minion.lexmorph.Morph_en;
 import com.sun.labs.minion.lexmorph.Word;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 /*
 ; copyright (c) by W.A. Woods.  All rights reserved.

@@ -24,14 +24,10 @@
 
 package com.sun.labs.minion.retrieval.parser;
 
-import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.QueryPipeline;
-import com.sun.labs.minion.SearchEngineException;
-import java.util.*;
-import java.text.ParseException;
-import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
 import com.sun.labs.minion.retrieval.*;
-import java.util.logging.Level;
+import java.text.ParseException;
+import java.util.*;
 import java.util.logging.Logger;
 
 

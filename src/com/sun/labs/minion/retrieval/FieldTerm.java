@@ -23,23 +23,21 @@
  */
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.indexer.postings.PostingsIterator;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
+import com.sun.labs.minion.query.Relation.Operator;
+import com.sun.labs.minion.util.CDateParser;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
-import java.util.ArrayList;
-
-import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.indexer.DiskField;
-import com.sun.labs.minion.indexer.postings.PostingsIterator;
-import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-
-import com.sun.labs.minion.util.CDateParser;
-import com.sun.labs.minion.query.Relation.Operator;
 import java.util.logging.Logger;
 
 /**
@@ -389,6 +387,7 @@ public class FieldTerm extends QueryTerm {
     /**
      * Estimates the size of the results set for the given term.
      */
+    @Override
     protected int calculateEstimatedSize() {
         if(iter == null) {
             if(pi == null) {
@@ -413,6 +412,7 @@ public class FieldTerm extends QueryTerm {
      * instance of <code>StrictGroup</code>, since there are no weights
      * associated with the values.
      */
+    @Override
     public ArrayGroup eval(ArrayGroup ag) {
 
         if(op == Operator.SIMILAR) {
@@ -526,6 +526,7 @@ public class FieldTerm extends QueryTerm {
         return og;
     }
 
+    @Override
     public List getQueryTerms(Comparator c) {
         return new ArrayList();
     }

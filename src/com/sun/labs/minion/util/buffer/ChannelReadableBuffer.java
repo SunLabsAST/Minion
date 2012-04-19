@@ -24,10 +24,8 @@
 package com.sun.labs.minion.util.buffer;
 
 import java.io.RandomAccessFile;
-
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

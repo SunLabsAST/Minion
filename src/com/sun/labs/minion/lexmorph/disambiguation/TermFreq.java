@@ -59,10 +59,12 @@ public class TermFreq implements Comparable<TermFreq> {
         this.freq += tf.freq;
     }
     
+    @Override
     public int compareTo(TermFreq o) {
         return freq - o.freq;
     }
     
+    @Override
     public String toString() {
         return term + " " + freq;
     }

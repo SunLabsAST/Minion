@@ -52,10 +52,12 @@ public class FieldFrequency implements Comparable<FieldFrequency>, Serializable 
         this.freq = freq;
     }
 
+    @Override
     public int compareTo(FieldFrequency o) {
         return freq - o.freq;
     }
 
+    @Override
     public String toString() {
         return String.format("%s %d", val, freq);
     }

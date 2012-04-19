@@ -24,8 +24,6 @@
 
 package com.sun.labs.minion.retrieval;
 
-import com.sun.labs.minion.retrieval.TFIDF;
-
 /**
  * A subclass of TFIDF that uses simple term frequencies rather than log
  * term frequencies when calculating term weights.
@@ -38,6 +36,7 @@ public class TFIDFCount extends TFIDF {
      *
      * @return the weight of the given term in the given document.
      */
+    @Override
     public float termWeight(WeightingComponents wc) {
         return wc.wt * wc.fdt;
     }

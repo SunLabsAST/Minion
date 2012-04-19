@@ -24,8 +24,6 @@
 
 package com.sun.labs.minion.util;
 
-import java.io.*;
-
 public class Getopt {
     
     String argList[]	= null;	    // the argument List to be parsed

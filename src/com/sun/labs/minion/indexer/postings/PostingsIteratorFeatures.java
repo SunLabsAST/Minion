@@ -25,8 +25,6 @@
 package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.QueryStats;
-
-
 import com.sun.labs.minion.retrieval.WeightingComponents;
 import com.sun.labs.minion.retrieval.WeightingFunction;
 

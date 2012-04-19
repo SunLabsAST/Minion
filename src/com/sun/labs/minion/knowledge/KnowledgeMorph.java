@@ -24,18 +24,14 @@
 
 package com.sun.labs.minion.knowledge;
 
-import com.sun.labs.util.props.ConfigString;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Set;
-
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
-
+import com.sun.labs.util.props.ConfigString;
 import com.sun.labs.util.props.Configurable;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.util.props.PropertySheet.PropertyType;
-import java.rmi.registry.Registry;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Set;
 
 /**
  * A KnowledgeMorph is a wrapper around a LiteMorph, given that there's no way
@@ -73,6 +69,7 @@ public class KnowledgeMorph implements Configurable, KnowledgeSource {
     /* (non-Javadoc)
      * @see com.sun.labs.util.props.Configurable#newProperties(com.sun.labs.util.props.PropertySheet)
      */
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         String liteMorphClassName = ps.getString(PROP_LITEMORPH_CLASS);
         if (liteMorphClassName == null) {
@@ -149,6 +146,7 @@ public class KnowledgeMorph implements Configurable, KnowledgeSource {
     /* (non-Javadoc)
      * @see com.sun.labs.minion.knowledge.KnowledgeSource#variantsOf(java.lang.String)
      */
+    @Override
     public Set<String> variantsOf(String term) {
         KnowledgeSource ks = getKnowledgeSource();
         if (ks == null) {

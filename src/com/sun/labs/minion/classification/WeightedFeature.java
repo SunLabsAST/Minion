@@ -24,11 +24,11 @@
 
 package com.sun.labs.minion.classification;
 
-import java.io.Serializable;
-import java.util.Comparator;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.Serializable;
+import java.util.Comparator;
 
 public class WeightedFeature implements Feature, Serializable {
 
@@ -115,6 +115,7 @@ public class WeightedFeature implements Feature, Serializable {
             return o2.freq - o1.freq;
         }
 
+        @Override
         public boolean equals(Object o) {
             return this == o;
         }
@@ -150,6 +151,7 @@ public class WeightedFeature implements Feature, Serializable {
      *
      * @param name the name of the feature.
      */
+    @Override
     public void setName(String name) {
         this.name = name;
     }
@@ -159,6 +161,7 @@ public class WeightedFeature implements Feature, Serializable {
      *
      * @return the name of the feature.
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -194,6 +197,7 @@ public class WeightedFeature implements Feature, Serializable {
      * @param b a buffer onto which the feature's information can be
      * encoded.
      */
+    @Override
     public void encode(WriteableBuffer b) {
         b.byteEncode(Float.floatToIntBits(weight), 4);
     }
@@ -204,6 +208,7 @@ public class WeightedFeature implements Feature, Serializable {
      * @param b a buffer from which the feature's information can be
      * decoded.
      */
+    @Override
     public void decode(ReadableBuffer b) {
         weight = Float.intBitsToFloat(b.byteDecode(4));
     }
@@ -213,6 +218,7 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * Sets the ID associated with this feature.
      */
+    @Override
     public void setID(int id) {
         this.id = id;
     }
@@ -220,6 +226,7 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * Gets the ID associated with an occurrence.
      */
+    @Override
     public int getID() {
         return id;
     }
@@ -242,6 +249,7 @@ public class WeightedFeature implements Feature, Serializable {
      *
      * @return the number of occurrences, which is always 1 in this case
      */
+    @Override
     public int getCount() {
         return 1;
     }
@@ -251,6 +259,7 @@ public class WeightedFeature implements Feature, Serializable {
      *
      * @param count the number of occurrences.
      */
+    @Override
     public void setCount(int count) {
         freq = count;
     }
@@ -266,6 +275,7 @@ public class WeightedFeature implements Feature, Serializable {
     /**
      * Compares two features on the basis of their names.
      */
+    @Override
     public int compareTo(Feature o) {
         return name.compareTo(o.getName());
     }
@@ -294,6 +304,7 @@ public class WeightedFeature implements Feature, Serializable {
      * @param o the object to compare to this one
      * @return true if the names of the features are the same
      */
+    @Override
     public boolean equals(Object o) {
         try {
             return name.equals(((WeightedFeature) o).getName());
@@ -302,6 +313,7 @@ public class WeightedFeature implements Feature, Serializable {
         }
     }
 
+    @Override
     public String toString() {
         return String.format("%s %.6f", name, weight);
     }

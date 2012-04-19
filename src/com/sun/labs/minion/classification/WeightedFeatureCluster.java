@@ -48,48 +48,59 @@ public class WeightedFeatureCluster implements FeatureCluster {
         quick = new HashMap<String,WeightedFeature>();
     }
     
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getHumanReadableName() {
         return name;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public SortedSet getContents() {
         return contents;
     }
 
+    @Override
     public float getWeight() {
         return weight;
     }
 
+    @Override
     public void setWeight(float weight) {
         this.weight = weight;
     }
 
+    @Override
     public Feature get(String name) {
         return quick.get(name);
     }
 
+    @Override
     public Feature get(int id) {
         return null;
     }
 
+    @Override
     public Iterator<Feature> iterator() {
         return contents.iterator();
     }
 
+    @Override
     public void add(Feature f) {
         contents.add(f);
         quick.put(f.getName(), (WeightedFeature) f);
         weight += ((WeightedFeature) f).getWeight();
     }
 
+    @Override
     public FeatureCluster copy() {
         WeightedFeatureCluster wfc = new WeightedFeatureCluster();
         wfc.setName(name);
@@ -99,13 +110,16 @@ public class WeightedFeatureCluster implements FeatureCluster {
         return wfc;
     }
 
+    @Override
     public void merge(FeatureCluster other) {
     }
 
+    @Override
     public int size() {
         return contents.size();
     }
 
+    @Override
     public int compareTo(FeatureCluster o) {
         float ow = ((WeightedFeatureCluster) o).getWeight();
         if(weight < ow) {

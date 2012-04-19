@@ -24,11 +24,11 @@
 
 package com.sun.labs.minion.indexer.entry;
 
-import java.io.IOException;
 import com.sun.labs.minion.indexer.postings.Occurrence;
 import com.sun.labs.minion.indexer.postings.io.PostingsOutput;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import java.io.IOException;
 
 /**
  * An entry for the global term statistics dictionary.

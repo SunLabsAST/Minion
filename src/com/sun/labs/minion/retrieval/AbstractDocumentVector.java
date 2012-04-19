@@ -425,6 +425,7 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
         return res;
     }
     
+    @Override
     public String toString() {
         getFeatures();
         StringBuilder sb = new StringBuilder();

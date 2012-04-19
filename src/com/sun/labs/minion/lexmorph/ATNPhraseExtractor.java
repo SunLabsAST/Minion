@@ -27,13 +27,11 @@ package com.sun.labs.minion.lexmorph;  // gotta have this for Pipe hookup
 //import com.sun.labs.minion.pipeline.DocumentEvent;
 //import com.sun.labs.minion.pipeline.Pipe;
 import com.sun.labs.minion.pipeline.Stage;
-
+import java.io.PrintStream;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.StringTokenizer;
 import java.util.Vector;
-
-import java.io.PrintStream;
 
 
 // can't import stuff that is covered by package
@@ -9860,6 +9858,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1000  =  "AdjPhrase"  +  ":<" ;
@@ -9871,6 +9870,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1001  =  "AdjPhrase"  +  ":<" ;
@@ -9911,6 +9911,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1002  =  "AdvPhrase"  +  ":<" ;
@@ -9922,6 +9923,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1003  =  "AdvPhrase"  +  ":<" ;
@@ -9968,6 +9970,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1004  =  "DatePhrase"  +  ":<" ;
@@ -9985,6 +9988,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1005  =  "DatePhrase"  +  ":<" ;
@@ -10025,6 +10029,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1006  =  "NounPhrase"  +  ":<" ;
@@ -10042,6 +10047,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1007  =  "NounPhrase"  +  ":<" ;
@@ -10094,6 +10100,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1008  =  "PossPhrase"  +  ":<" ;
@@ -10105,6 +10112,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1009  =  "PossPhrase"  +  ":<" ;
@@ -10135,6 +10143,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1010  =  "PrepPhrase"  +  ":<" ;
@@ -10148,6 +10157,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1011  =  "PrepPhrase"  +  ":<" ;
@@ -10182,6 +10192,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1012  =  "NpStackElt"  +  ":<" ;
@@ -10249,6 +10260,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1014  =  "WordQElt"  +  ":<" ;
@@ -10318,6 +10330,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1016  =  "TimePhrase"  +  ":<" ;
@@ -10335,6 +10348,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1017  =  "TimePhrase"  +  ":<" ;
@@ -10375,6 +10389,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1018  =  "TimeSpecPhrase"  +  ":<" ;
@@ -10392,6 +10407,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1019  =  "TimeSpecPhrase"  +  ":<" ;
@@ -10434,6 +10450,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1020  =  "NamePhrase"  +  ":<" ;
@@ -10453,6 +10470,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1021  =  "NamePhrase"  +  ":<" ;
@@ -10495,6 +10513,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1022  =  "CityPhrase"  +  ":<" ;
@@ -10512,6 +10531,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1023  =  "CityPhrase"  +  ":<" ;
@@ -10550,6 +10570,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1024  =  "PlaceNamePhrase"  +  ":<" ;
@@ -10565,6 +10586,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1025  =  "PlaceNamePhrase"  +  ":<" ;
@@ -10599,6 +10621,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String toString() {
      /* automatic jmap-generated struct Printer for toString method */
        String  tempString1026  =  "VerbPhrase"  +  ":<" ;
@@ -10612,6 +10635,7 @@ public void simplePhraseLexSetup() {
    }
 
 
+        @Override
    public synchronized String printString() {
      /* automatic jmap-generated struct Printer for printString method */
        String  tempString1027  =  "VerbPhrase"  +  ":<" ;

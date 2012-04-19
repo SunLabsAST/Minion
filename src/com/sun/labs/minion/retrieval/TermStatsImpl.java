@@ -106,6 +106,7 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
     /**
      * Gets the name of the term whose stats we're holding.
      */
+    @Override
     public String getName() {
         return name;
     }
@@ -119,6 +120,7 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
      *
      * @return the number of documents in the collection that contain the term.
      */
+    @Override
     public int getDocFreq() {
         return ft;
     }
@@ -133,6 +135,7 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
      * @return the total number of occurrences of the term in all documents
      * in the collection.
      */
+    @Override
     public int getTotalOccurrences() {
         return (int) Math.min(Ft, Integer.MAX_VALUE);
     }
@@ -141,6 +144,7 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
         this.Ft = Ft;
     }
     
+    @Override
     public int getMaxFDT() {
         return maxfdt;
     }
@@ -161,6 +165,7 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
         maxfdt = b.byteDecode();
     }
     
+    @Override
     public String toString() {
         return String.format("name: %s doc freq: %d total freq: %d max term freq: %d", name, ft, Ft, maxfdt);
     }
@@ -172,6 +177,7 @@ public class TermStatsImpl implements TermStats, Comparable<TermStatsImpl> {
                 maxfdt == tsi.maxfdt;
     }
 
+    @Override
     public int compareTo(TermStatsImpl o) {
        return name.compareTo(o.name);
     }

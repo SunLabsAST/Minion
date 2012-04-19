@@ -31,26 +31,32 @@ public class TextHighlighter implements PassageHighlighter {
 
     public TextHighlighter() {}
 
+    @Override
     public String startContext() {
         return "";
     }
 
+    @Override
     public String endContext() {
         return "";
     }
 
+    @Override
     public String startPassage() {
         return ">>";
     }
 
+    @Override
     public String endPassage() {
         return "<<";
     }
 	
+    @Override
     public String ellipsis() {
         return " ... ";
     }
 
+    @Override
     public StringBuffer highlightMatching(String t, int p,
                                           StringBuffer sb, boolean htmlEncode) {
         sb.append("**" + t + "**");

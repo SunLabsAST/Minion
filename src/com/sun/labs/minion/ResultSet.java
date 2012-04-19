@@ -25,7 +25,6 @@
 package com.sun.labs.minion;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * A class that holds the results of a search.

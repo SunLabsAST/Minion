@@ -23,11 +23,11 @@
  */
 package com.sun.labs.minion.document.tokenizer;
 
+import com.sun.labs.minion.pipeline.Stage;
+import com.sun.labs.minion.pipeline.StageAdapter;
+import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
-import com.sun.labs.minion.pipeline.Stage;
-import com.sun.labs.util.props.ConfigBoolean;
-import com.sun.labs.minion.pipeline.StageAdapter;
 import java.util.logging.Logger;
 
 public abstract class Tokenizer extends StageAdapter implements

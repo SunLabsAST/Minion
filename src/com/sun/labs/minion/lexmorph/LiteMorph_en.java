@@ -87,6 +87,7 @@ public class LiteMorph_en extends LiteMorph{
      * Create the exceptions HashTable for the size needed.
      * the call intialize(String []).
      */
+    @Override
     protected void intialize() {
 	if (exceptions != null) {
 	    return;
@@ -1403,6 +1404,7 @@ public class LiteMorph_en extends LiteMorph{
         }
     }
 
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

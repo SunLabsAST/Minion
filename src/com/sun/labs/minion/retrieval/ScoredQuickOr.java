@@ -25,7 +25,6 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
-
 import com.sun.labs.minion.util.Util;
 import java.util.Arrays;
 import java.util.logging.Logger;

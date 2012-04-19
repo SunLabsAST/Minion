@@ -143,6 +143,7 @@ public class DictionaryAndPostingsTest {
             this.freq = freq;
         }
 
+        @Override
         public int compareTo(WordFreq o) {
             return (int) (freq - o.freq);
         }

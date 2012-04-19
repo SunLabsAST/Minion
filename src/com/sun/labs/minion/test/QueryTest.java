@@ -24,32 +24,6 @@
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.Document;
-import com.sun.labs.minion.engine.SearchEngineImpl;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.StringTokenizer;
-import java.util.TreeSet;
-
-import com.sun.labs.minion.indexer.entry.Entry;
-import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.partition.DiskPartition;
-import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-import com.sun.labs.minion.indexer.partition.PartitionManager;
-import com.sun.labs.minion.lexmorph.LiteMorph;
-import com.sun.labs.minion.lexmorph.LiteMorph_en;
-import com.sun.labs.minion.retrieval.ResultImpl;
-import com.sun.labs.minion.util.CharUtils;
-import com.sun.labs.minion.util.Getopt;
-import com.sun.labs.minion.util.Util;
-
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.IndexableFile;
@@ -69,24 +43,47 @@ import com.sun.labs.minion.SimpleHighlighter;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.TextHighlighter;
 import com.sun.labs.minion.WeightedFeature;
+import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
-import java.io.File;
-import java.net.URL;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
+import com.sun.labs.minion.indexer.entry.Entry;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.Postings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
+import com.sun.labs.minion.lexmorph.LiteMorph;
+import com.sun.labs.minion.lexmorph.LiteMorph_en;
 import com.sun.labs.minion.retrieval.AbstractDocumentVector;
+import com.sun.labs.minion.retrieval.ResultImpl;
+import com.sun.labs.minion.util.CharUtils;
+import com.sun.labs.minion.util.Getopt;
+import com.sun.labs.minion.util.Util;
 import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.command.CommandInterface;
 import com.sun.labs.util.command.CommandInterpreter;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -321,6 +318,7 @@ public class QueryTest extends SEMain {
         
         shell.add("q", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 //
                 // Run a query.
@@ -334,6 +332,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "Run a query";
             }
@@ -371,6 +370,7 @@ public class QueryTest extends SEMain {
                 return String.format("Query op set to %s", queryOp);
             }
 
+            @Override
             public String getHelp() {
                 return String.format("qop - Set the default query operator values: %s", 
                         Arrays.toString(Searcher.Operator.values()));
@@ -379,6 +379,7 @@ public class QueryTest extends SEMain {
         
         shell.add("deff", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     return "Must specify default fields";
@@ -391,6 +392,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "field [field]...Set the default search fields";
             }
@@ -398,11 +400,13 @@ public class QueryTest extends SEMain {
         
         shell.add("qstats", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 queryStats();
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "Get the combined query stats for this session";
             }
@@ -410,10 +414,12 @@ public class QueryTest extends SEMain {
         
         shell.add("nd", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 return String.format("%d docs", engine.getNDocs());
             }
 
+            @Override
             public String getHelp() {
                 return "Get the number of documents in the engine";
             }
@@ -421,6 +427,7 @@ public class QueryTest extends SEMain {
         
         shell.add("ts", "Terms", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 
                 TermStatsDiskDictionary tsd = manager.getTermStatsDict();
@@ -452,6 +459,7 @@ public class QueryTest extends SEMain {
                 return sb.toString();
             }
 
+            @Override
             public String getHelp() {
                 return "Get the overall term statistics for one or more terms";
             }
@@ -459,6 +467,7 @@ public class QueryTest extends SEMain {
         
         shell.add("n", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     return "Need to specify the number of hits";
@@ -467,6 +476,7 @@ public class QueryTest extends SEMain {
                 return String.format("Set number of hits to %d", nHits);
             }
 
+            @Override
             public String getHelp() {
                 return "num - Set the number of hits to return";
             }
@@ -474,11 +484,13 @@ public class QueryTest extends SEMain {
         
         shell.add("sort", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 sortSpec = join(args, 1, args.length, " ");
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "sortspec - Set the sorting spec";
             }
@@ -486,11 +498,13 @@ public class QueryTest extends SEMain {
         
         shell.add("display", "Query", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 displaySpec.setDisplayFields(Arrays.copyOfRange(args, 1, args.length));
                 return String.format("Display spec is %s", displaySpec);
             }
 
+            @Override
             public String getHelp() {
                 return "Set the display specification for hits";
             }
@@ -843,6 +857,7 @@ public class QueryTest extends SEMain {
         
         shell.add("post", "Info", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 3) {
                     return getHelp();
@@ -869,6 +884,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "field term [term...] - Get a short description of the postings associated with a term in a given field";
             }
@@ -876,6 +892,7 @@ public class QueryTest extends SEMain {
         
         shell.add("vpost", "Info", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 3) {
                     return getHelp();
@@ -903,6 +920,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "field term [term...] - Get a verbose description of the postings associated with a term in a given field";
             }
@@ -910,6 +928,7 @@ public class QueryTest extends SEMain {
         
         shell.add("dpost", "Info", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 4) {
                     return getHelp();
@@ -949,6 +968,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "field docID term [term...] - Get all of the postings associated with a term in a particular document, in a given field";
             }
@@ -1021,11 +1041,13 @@ public class QueryTest extends SEMain {
 
         shell.add("rts", "Maintenance", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 manager.generateTermStats();
                 return "Term stats recalculated";
             }
 
+            @Override
             public String getHelp() {
                 return "Recalculate global term statistics";
             }
@@ -1033,11 +1055,13 @@ public class QueryTest extends SEMain {
 
         shell.add("rvl", "Maintenance", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 manager.recalculateVectorLengths();
                 return "Vector lengths recalculated";
             }
 
+            @Override
             public String getHelp() {
                 return "Recalculate vector lengths for all partitions";
             }
@@ -1045,12 +1069,14 @@ public class QueryTest extends SEMain {
 
         shell.add("fields", "Info", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 MetaFile mf = manager.getMetaFile();
                 shell.out.println(mf.toString());
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "Print the defined fields";
             }
@@ -1058,6 +1084,7 @@ public class QueryTest extends SEMain {
         
         shell.add("del", "Maintenance", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length == 1) {
                     return "Must specify keys to delete";
@@ -1073,6 +1100,7 @@ public class QueryTest extends SEMain {
                 return sb.toString();
             }
 
+            @Override
             public String getHelp() {
                 return "key [key]... Delete a document by key";
             }
@@ -1080,6 +1108,7 @@ public class QueryTest extends SEMain {
         
         shell.add("delq", "Maintenance", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 String q = join(args, 1, args.length, " ");
                 try {
@@ -1108,6 +1137,7 @@ public class QueryTest extends SEMain {
                 return "Deleted documents";
             }
 
+            @Override
             public String getHelp() {
                 return "Delete documents that match a given query";
             }
@@ -1115,6 +1145,7 @@ public class QueryTest extends SEMain {
         
         shell.add("deld", "Maintenance", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
 
                 if(args.length < 3) {
@@ -1137,6 +1168,7 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
+            @Override
             public String getHelp() {
                 return "Delete documents from a numbered partition by document ID";
             }
@@ -1304,6 +1336,7 @@ public class QueryTest extends SEMain {
         
         shell.add("log", "Other", new CommandInterface() {
 
+            @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 3) {
                     return "Must specify class name an level";
@@ -1319,6 +1352,7 @@ public class QueryTest extends SEMain {
                 return args[1] + " " + Logger.getLogger(args[1]).getLevel();
             }
 
+            @Override
             public String getHelp() {
                 return "class logLevel - Set the log level for a given class";
             }

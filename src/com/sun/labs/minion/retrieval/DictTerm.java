@@ -619,6 +619,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      * <code>true</code> if this comparator is the same class as the other,
      * <code>false</code> otherwise.
      */
+    @Override
     public boolean equals(Object object) {
         return object.getClass() == this.getClass();
     }
@@ -631,10 +632,12 @@ public class DictTerm extends QueryTerm implements Comparator {
      * @return Less than 0, greater than 0, or 0 if o1's term frequency is,
      * respectively, lower than, higher than, or equal to o2's term frequency.
      */
+    @Override
     public int compare(Object o1, Object o2) {
         return ((QueryEntry) o1).getN() - ((QueryEntry) o2).getN();
     }
 
+    @Override
     public List getQueryTerms(java.util.Comparator c) {
         List l = new ArrayList();
         l.add(this);
@@ -649,10 +652,12 @@ public class DictTerm extends QueryTerm implements Comparator {
         return val;
     }
 
+    @Override
     public String toString() {
         return toString("");
     }
 
+    @Override
     public String toString(String prefix) {
         return super.toString(prefix) + " " + val + " estSize: " + estSize
                 + " order: " + order;
