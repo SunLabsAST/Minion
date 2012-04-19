@@ -13,6 +13,7 @@ public abstract class AbstractPostingsOutput implements PostingsOutput {
     
     private ArrayBuffer tempBuffer = new ArrayBuffer(1024);
 
+    @Override
     public WriteableBuffer getTempBuffer() {
         return tempBuffer.clear();
     }

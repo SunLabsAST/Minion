@@ -176,6 +176,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * Returns the number of bytes remaining to be read in the buffer.
      * @return The number of bytes remaining in the buffer.
      */
+    @Override
     public long remaining() {
         return be - pos;
     }
@@ -188,6 +189,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * buffers are backed by the same underlying file, but they have
      * different in-memory buffers and positions.
      */
+    @Override
     public ReadableBuffer duplicate() {
         return new FileReadableBuffer(raf, bs, be - bs, buff.length);
     }
@@ -204,6 +206,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * buffer.  The first position in the sliced buffer is the given
      * position, and the limit on the sliced buffer is the given size.
      */
+    @Override
     public ReadableBuffer slice(long p, long s) {
         return new FileReadableBuffer(raf, bs + p, s, buff.length);
     }
@@ -212,6 +215,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * Gets the limit of this buffer, i.e., the last readable position.
      * @return The last readable position in this buffer.
      */
+    @Override
     public long limit() {
         return be - bs;
     }
@@ -220,6 +224,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * Sets the limit of this buffer, i.e., the last readable position.
      * @param l The limit that we wish to set for the buffer.
      */
+    @Override
     public void limit(long l) {
         be = bs + l;
     }
@@ -229,6 +234,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * @param i The position from which we wish to get a byte.
      * @return The byte at the given position.
      */
+    @Override
     public byte get(long i) {
         return buff[checkBounds(i + bs)];
     }
@@ -238,6 +244,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * @return The byte at the current buffer position.  This will advance
      * the current position.
      */
+    @Override
     public byte get() {
         return buff[checkBounds(pos++)];
     }
@@ -246,6 +253,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * Gets the position of the buffer.
      * @return The current position in the buffer.
      */
+    @Override
     public long position() {
         return pos - bs;
     }
@@ -254,6 +262,7 @@ public class FileReadableBuffer extends StdReadableImpl {
      * Positions the buffer.
      * @param position The position to which we should set the buffer.
      */
+    @Override
     public void position(long position) {
         this.pos = bs + position;
     }

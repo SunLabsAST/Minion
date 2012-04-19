@@ -66,6 +66,7 @@ public class RAMPostingsOutput extends AbstractPostingsOutput {
         return new RAMPostingsInput(buff);
     }
 
+    @Override
     public void cleanUp() {
         buff.clear();
     }

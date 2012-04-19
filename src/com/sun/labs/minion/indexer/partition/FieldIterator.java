@@ -68,6 +68,7 @@ public class FieldIterator implements Iterator {
      * Unsupported operation.
      *
      */
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("Can't remove field values");
     }
@@ -78,6 +79,7 @@ public class FieldIterator implements Iterator {
      *
      * @return The next field value.
      */
+    @Override
     public Object next() {
         freq = 0;
         if(h.isEmpty()) {
@@ -106,6 +108,7 @@ public class FieldIterator implements Iterator {
      * @return <code>true</code> if there is another value to return,
      * <code>false</code> otherwise.
      */
+    @Override
     public boolean hasNext() {
         return !h.isEmpty();
     }
@@ -161,6 +164,7 @@ public class FieldIterator implements Iterator {
             return freq;
         }
 
+        @Override
         public int compareTo(HE o) {
             return ((Comparable) value).compareTo(o.value);
         }

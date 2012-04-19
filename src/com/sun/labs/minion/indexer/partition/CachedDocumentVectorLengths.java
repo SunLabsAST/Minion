@@ -57,6 +57,7 @@ public class CachedDocumentVectorLengths extends DocumentVectorLengths {
      * @param fieldID the ID of the field that the scores were computed from and that
      * should be used for normalization.
      */
+    @Override
     public void normalize(int[] docs, float[] scores, int p, float qw) {
         for(int i = 0; i < p; i++) {
             scores[i] /= (cachedLens[docs[i]] * qw);

@@ -57,14 +57,17 @@ public class MetaDataStoreImpl implements MetaDataStore
         }
     }
 
+    @Override
     public synchronized void setProperty(String name, String value) {
         prop.setProperty(name, value);
     }
 
+    @Override
     public String getProperty(String name) {
         return prop.getProperty(name);
     }
 
+    @Override
     public String getProperty(String name, String defaultValue) {
         return prop.getProperty(name, defaultValue);
     }

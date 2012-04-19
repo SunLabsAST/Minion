@@ -188,6 +188,7 @@ public class Marshaller implements Configurable {
 
     }
 
+    @Override
     public void newProperties(PropertySheet ps)
             throws PropertyException {
 
@@ -249,6 +250,7 @@ public class Marshaller implements Configurable {
      */
     class MarshallThread implements Runnable {
 
+        @Override
         public void run() {
             while(!marshallerDone) {
                 try {
@@ -333,6 +335,7 @@ public class Marshaller implements Configurable {
         
         private NanoWatch nw = new NanoWatch();
 
+        @Override
         public void run() {
             while(!flushDone) {
                 try {

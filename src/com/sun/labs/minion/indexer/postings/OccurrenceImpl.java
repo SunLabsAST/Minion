@@ -49,6 +49,7 @@ public class OccurrenceImpl implements Occurrence {
         count = 1;
     } // OccurrenceImpl constructor
 
+    @Override
     public int getID() {
         return id;
     }
@@ -58,6 +59,7 @@ public class OccurrenceImpl implements Occurrence {
      *
      * @param id the ID.
      */
+    @Override
     public void setID(int id) {
         this.id = id;
     }
@@ -67,6 +69,7 @@ public class OccurrenceImpl implements Occurrence {
      *
      * @return the number of occurrences.
      */
+    @Override
     public int getCount() {
         return count;
     }
@@ -76,10 +79,12 @@ public class OccurrenceImpl implements Occurrence {
      *
      * @param count the number of occurrences.
      */
+    @Override
     public void setCount(int count) {
         this.count = count;
     }
 
+    @Override
     public int getPosition() {
         return position;
     }

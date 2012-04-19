@@ -67,6 +67,8 @@ public class SortSpec {
      * decreasing direction.
      */
     protected boolean[] directions;
+    
+    protected boolean justScoreSort;
 
     /**
      * Creates a sorting specification from the given string description.
@@ -95,7 +97,7 @@ public class SortSpec {
         fields = new FieldInfo[size];
         directions = new boolean[size];
         for(int i = 0; i < size; i++) {
-            String fieldSpec = tok.nextToken();
+            String fieldSpec = tok.nextToken().trim();
             String fn;
             char dc = fieldSpec.charAt(0);
             if(dc == '+' || dc == '-') {
@@ -116,6 +118,11 @@ public class SortSpec {
                 }
             }
         }
+        
+        //
+        // Are we just sorting by score?
+        justScoreSort = fields.length == 1 && fields[0].getName() == null &&
+                directions[0] == false;
     } // SortSpec constructor
 
     /**
@@ -125,6 +132,7 @@ public class SortSpec {
     public SortSpec(SortSpec ss, InvFileDiskPartition part) {
         spec = ss.spec;
         size = ss.size;
+        justScoreSort = ss.justScoreSort;
         fields = (FieldInfo[]) ss.fields.clone();
         directions = (boolean[]) ss.directions.clone();
         fetchers = new Fetcher[size];
@@ -135,10 +143,15 @@ public class SortSpec {
         }
     }
 
+    public boolean isJustScoreSort() {
+        return justScoreSort;
+    }
+
     public boolean getDirection(int i) {
         return directions[i];
     }
 
+    @Override
     public String toString() {
         return spec;
     }

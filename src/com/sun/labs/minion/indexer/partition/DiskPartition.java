@@ -266,6 +266,7 @@ public class DiskPartition extends Partition implements Closeable {
      *
      * @param currTime the current time
      */
+    @Override
     public synchronized boolean close(long currTime) {
 
         //
@@ -290,10 +291,12 @@ public class DiskPartition extends Partition implements Closeable {
         return true;
     }
 
+    @Override
     public void setClosed() {
         closed = true;
     }
 
+    @Override
     public boolean isClosed() {
         return closed;
     }

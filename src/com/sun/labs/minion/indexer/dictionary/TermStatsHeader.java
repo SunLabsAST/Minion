@@ -62,6 +62,7 @@ public class TermStatsHeader implements Iterable<Map.Entry<Integer, Long>> {
         offsets.clear();
     }
 
+    @Override
     public Iterator<Entry<Integer, Long>> iterator() {
         return offsets.entrySet().iterator();
     }

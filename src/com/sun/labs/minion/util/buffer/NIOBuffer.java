@@ -115,6 +115,7 @@ public class NIOBuffer extends StdBufferImpl {
      *
      * @return The position in the buffer.
      */
+    @Override
     public long position() {
         return units.position();
     }
@@ -125,6 +126,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @param position The point to which the buffer's position should be
      * set.
      */
+    @Override
     public void position(long position) {
         if(position >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("NIOBuffer can only hold Integer.MAX_VALUE bytes");
@@ -136,6 +138,7 @@ public class NIOBuffer extends StdBufferImpl {
      * Gets the amount of space remaining in the buffer.
      * @return The number of bytes remaining in the buffer.
      */
+    @Override
     public long remaining() {
         return units.remaining();
     }
@@ -149,6 +152,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @param n The number of bytes that the buffer must be able to store.
      * @return The buffer, for chained invocations.
      */
+    @Override
     public WriteableBuffer capacity(long n) {
         if(n >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("NIOBuffer can only hold Integer.MAX_VALUE bytes");
@@ -173,6 +177,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @param b The byte to put on the buffer
      * @return This buffer, allowing chained invocations.
      */
+    @Override
     public WriteableBuffer put(byte b) {
         checkBounds(units.position()+1);
         units.put(b);
@@ -185,12 +190,14 @@ public class NIOBuffer extends StdBufferImpl {
      * @param b The byte to put on the buffer
      * @return This buffer, allowing chained invocations.
      */
+    @Override
     public WriteableBuffer put(long p, byte b) {
         checkBounds(p);
         units.put((int) p, b);
         return this;
     }
 
+    @Override
     public WriteableBuffer put(byte[] bytes) {
         checkBounds(units.position() + bytes.length);
         units.put(bytes);
@@ -244,6 +251,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @param b The buffer to or with this one.
      * @return The buffer, to allow chained invocations.
      */
+    @Override
     public WriteableBuffer or(ReadableBuffer b) {
         checkBounds(b.limit());
         for(int i = 0; i < b.limit(); i++) {
@@ -258,6 +266,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @param b The buffer to or with this one.
      * @return The buffer, to allow chained invocations.
      */
+    @Override
     public WriteableBuffer xor(ReadableBuffer b) {
         checkBounds(b.limit());
         for(int i = 0; i < b.limit(); i++) {
@@ -271,6 +280,7 @@ public class NIOBuffer extends StdBufferImpl {
      * our internal representation.
      * @param b The buffer to which we will write our data.
      */
+    @Override
     public void write(ByteBuffer b) {
         b.put((ByteBuffer) units.flip());
     }
@@ -280,11 +290,13 @@ public class NIOBuffer extends StdBufferImpl {
      * @param chan The channel to which the buffer should be written.
      * @throws java.io.IOException If there is any error during writing.
      */
+    @Override
     public void write(WritableByteChannel chan)
         throws java.io.IOException {
         write(chan, 0, units.position());
     }
 
+    @Override
     public void write(WritableByteChannel chan, long start, long end) throws IOException {
         ByteBuffer dup = units.duplicate();
         dup.position((int) start);
@@ -292,6 +304,7 @@ public class NIOBuffer extends StdBufferImpl {
         ChannelUtil.writeFully(chan, dup);
     }
 
+    @Override
     public void write(WriteableBuffer b) {
         b.append(getReadableBuffer());
     }
@@ -315,6 +328,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @param o The output to which the buffer should be written.
      * @throws java.io.IOException If there is any error writing the buffer.
      */
+    @Override
     public void write(DataOutput o)
         throws java.io.IOException {
 
@@ -331,6 +345,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @param os The stream to which the buffer should be written.
      * @throws java.io.IOException If there is any error writing the data.
      */
+    @Override
     public void write(OutputStream os)
         throws java.io.IOException {
         int pos = units.position();
@@ -342,6 +357,7 @@ public class NIOBuffer extends StdBufferImpl {
      * will share the representation with the buffer that generated it.
      * @return A new readable buffer that shares the representation of the data.
      */
+    @Override
     public ReadableBuffer getReadableBuffer() {
         NIOBuffer ret = new NIOBuffer();
         ret.units = units.duplicate();
@@ -358,6 +374,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @return A new buffer that shares the data representation with this buffer, but has an
      * independent position.
      */
+    @Override
     public ReadableBuffer duplicate() {
         NIOBuffer ret = new NIOBuffer();
         ret.units = units.duplicate();
@@ -372,6 +389,7 @@ public class NIOBuffer extends StdBufferImpl {
      * starting position for the new buffer is the given position and the sliced buffer 
      * will contain the given number of bytes.
      */
+    @Override
     public ReadableBuffer slice(long p, long l) {
         if(p >= Integer.MAX_VALUE || l >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("NIOBuffer can only hold Integer.MAX_VALUE bytes");
@@ -389,6 +407,7 @@ public class NIOBuffer extends StdBufferImpl {
      * Gets the limit of this buffer, i.e., the last readable position.
      * @return This buffer, for chained invocations.
      */
+    @Override
     public long limit() {
         return units.limit();
     }
@@ -397,6 +416,7 @@ public class NIOBuffer extends StdBufferImpl {
      * Sets the limit of this buffer, i.e., the last readable position.
      * @param l The limit for the buffer.
      */
+    @Override
     public void limit(long l) {
         if(l >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("NIOBuffer can only hold Integer.MAX_VALUE bytes");
@@ -408,6 +428,7 @@ public class NIOBuffer extends StdBufferImpl {
      * Gets a byte from this buffer.
      * @return Gets the next byte in this buffer, advancing the current position by one.
      */
+    @Override
     public byte get() {
         return units.get();
     }
@@ -417,6 +438,7 @@ public class NIOBuffer extends StdBufferImpl {
      * @param position The position from which we wish to get a byte.
      * @return The byte at the given position.
      */
+    @Override
     public byte get(long position) {
         if(position >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("NIOBuffer can only hold Integer.MAX_VALUE bytes");

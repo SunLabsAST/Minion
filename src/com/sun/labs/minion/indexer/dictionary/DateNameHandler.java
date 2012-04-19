@@ -37,16 +37,19 @@ public class DateNameHandler implements NameEncoder<Date>, NameDecoder<Date> {
      */
     private LongNameHandler lnh = new LongNameHandler();
     
+    @Override
     public void encodeName(Date prev, Date curr, WriteableBuffer b) {
         Long d1 = prev == null ? null : prev.getTime();
         lnh.encodeName(d1, curr.getTime(), b);
     }
 
+    @Override
     public Date decodeName(Date prev, ReadableBuffer b) {
         Long d1 = prev == null ? null : prev.getTime();
         return new Date(lnh.decodeName(d1, b));
     }
 
+    @Override
     public boolean startsWith(Date n, Date m) {
         return n.equals(m);
     }

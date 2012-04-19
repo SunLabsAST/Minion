@@ -1250,6 +1250,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         List<DiskPartition> parts = new ArrayList<DiskPartition>(activeParts);
         Collections.sort(parts,
                 new Comparator<DiskPartition>() {
+            @Override
                     public int compare(DiskPartition o1, DiskPartition o2) {
                         return o1.getMaxDocumentID() - o2.getMaxDocumentID();
                     }
@@ -1934,6 +1935,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         Collections.sort(parts,
                 new Comparator<DiskPartition>() {
 
+            @Override
                     public int compare(DiskPartition o1, DiskPartition o2) {
                         return o1.getMaxDocumentID() - o2.getMaxDocumentID();
                     }
@@ -2610,6 +2612,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             }
         }
 
+        @Override
         public String toString() {
             return toMerge.toString();
         }

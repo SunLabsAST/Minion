@@ -371,6 +371,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         bst = new BinarySearchTree(256);
     }
 
+    @Override
     public String[] getPostingsChannelNames() {
         return factory.getPostingsChannelNames();
     }
@@ -1041,6 +1042,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         Comparator<Entry> levComp =
                 new Comparator<Entry>() {
 
+            @Override
                     public int compare(Entry e1, Entry e2) {
                         double d1 = dist.get(e1.getName());
                         double d2 = dist.get(e2.getName());
@@ -1053,6 +1055,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                         return 1;
                     }
 
+            @Override
                     public boolean equals(Object o) {
                         if(o == this) {
                             return true;
@@ -1171,6 +1174,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      *
      * @return the number of entries in the dictionary.
      */
+    @Override
     public int size() {
         return (int) dh.size;
     }
@@ -1179,6 +1183,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * Gets the partition to which this dictionary belongs.
      * @return the partition
      */
+    @Override
     public Partition getPartition() {
         return part;
     }
@@ -1612,6 +1617,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                         public void setCount(int count) {
                         }
 
+                        @Override
                         public int getPosition() {
                             return 1;
                         }
@@ -1676,6 +1682,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                                int[] postIDMap) {
     }
 
+    @Override
     public String toString() {
         return String.format("%s (%s) %s size: %d bst nodes: %d",
                              part, getClass().getSimpleName(), name, size(),

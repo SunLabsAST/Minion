@@ -1144,6 +1144,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     return false;
                 }
 
+                @Override
                 public int compareTo(HE o) {
                     return ((Comparable) curr.getName()).compareTo(o.curr.getName());
                 }

@@ -348,6 +348,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         deletionsBuffer.clear();
     }
 
+    @Override
     public void close() throws IOException {
         if(partDictOut != null) {
             partDictOut.close();

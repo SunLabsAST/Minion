@@ -127,6 +127,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @return <CODE>Integer.MAX_VALUE</CODE>, since the underlying
      * representation is a file. 
      */
+    @Override
     public long limit() {
         return Long.MAX_VALUE;
     }
@@ -135,6 +136,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * Sets the limit of this buffer, i.e., the last readable position.
      * @param l The limit to set.  This has no effect on this buffer.
      */
+    @Override
     public void limit(long l) {
     }
 
@@ -142,6 +144,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * Gets the current position.
      * @return The current position.
      */
+    @Override
     public long position() {
         return pos;
     }
@@ -152,6 +155,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * was started.
      * @param position The position.
      */
+    @Override
     public void position(long position) {
         flush();
         try {
@@ -166,6 +170,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * Returns the number of bytes remaining in the buffer, which is nonsense.
      * @return <CODE>Integer.MAX_VALUE</CODE>, since the file may contain that much data.
      */
+    @Override
     public long remaining() {
         return Long.MAX_VALUE - pos;
     }
@@ -192,6 +197,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param n The capacity that we want.
      * @return This buffer, for chained invocations.
      */
+    @Override
     public WriteableBuffer capacity(long n) {
         return this;
     }
@@ -201,6 +207,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param b The byte to put on the buffer
      * @return This buffer, allowing chained invocations.
      */
+    @Override
     public WriteableBuffer put(byte b) {
         if(bPos >= buff.length) {
             flush();
@@ -210,6 +217,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         return this;
     }
 
+    @Override
     public WriteableBuffer put(byte[] bytes) {
 
         if(bPos + bytes.length >= buff.length) {
@@ -294,6 +302,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @return the number of bytes used to encode the number.
      * @param n The number to encode.
      */
+    @Override
     public int byteEncode(long n) {
         if(n < 0) {
             throw new ArithmeticException(String.format(
@@ -323,6 +332,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @return the number of bytes used to encode the float, which is
      * always 4.
      */
+    @Override
     public WriteableBuffer encode(float f) {
         return byteEncode(Float.floatToRawIntBits(f), 4);
     }
@@ -332,6 +342,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @return The buffer, to allow chained invocations.
      * @param b The buffer that we wish to append onto this buffer.
      */
+    @Override
     public WriteableBuffer append(ReadableBuffer b) {
         return append(b, b.remaining());
     }
@@ -343,6 +354,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param b The buffer that we wish to append onto this buffer.
      * @param n The number of bytes to append onto this buffer.
      */
+    @Override
     public WriteableBuffer append(ReadableBuffer b, long n) {
         for(long i = 0; i < n; i++) {
             put(b.get());
@@ -356,6 +368,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param b The buffer to or with this one.
      * @return The buffer, to allow chained invocations.
      */
+    @Override
     public WriteableBuffer or(ReadableBuffer b) {
         return this;
     }
@@ -366,6 +379,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param b The buffer to or with this one.
      * @return The buffer, to allow chained invocations.
      */
+    @Override
     public WriteableBuffer xor(ReadableBuffer b) {
         return this;
     }
@@ -378,6 +392,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param s The character sequence to encode.
      * @return This buffer, allowing chained invocations.
      */
+    @Override
     public WriteableBuffer encode(CharSequence s) {
 
         int l = StdBufferImpl.sizeUTF8(s);
@@ -650,6 +665,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
      * @param o The output to which the buffer should be written.
      * @throws java.io.IOException If there is an error writing the data.
      */
+    @Override
     public void write(DataOutput o)
             throws java.io.IOException {
         if(o instanceof RandomAccessFile) {

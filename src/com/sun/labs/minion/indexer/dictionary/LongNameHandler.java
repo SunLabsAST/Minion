@@ -38,6 +38,7 @@ public class LongNameHandler implements NameEncoder<Long>, NameDecoder<Long> {
      * @param b The buffer onto which the name of the term should be
      * encoded.
      */
+    @Override
     public void encodeName(Long prev, Long curr, WriteableBuffer b) {
 
         int shared = 0;
@@ -67,6 +68,7 @@ public class LongNameHandler implements NameEncoder<Long>, NameDecoder<Long> {
      * encoded.
      * @return The decoded name.
      */
+    @Override
     public Long decodeName(Long prev, ReadableBuffer b) {
         //
         // Get the shared context and the remaining bytes.
@@ -95,6 +97,7 @@ public class LongNameHandler implements NameEncoder<Long>, NameDecoder<Long> {
      * Determines whether one long starts with another, which is true only
      * if they are equal!
      */
+    @Override
     public boolean startsWith(Long n, Long m) {
         return n.equals(m);
     }

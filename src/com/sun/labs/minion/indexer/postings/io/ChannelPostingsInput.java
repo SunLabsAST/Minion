@@ -81,6 +81,7 @@ public class ChannelPostingsInput implements PostingsInput {
      * @return A readable buffer containing the postings.
      * @see com.sun.labs.minion.util.buffer.ReadableBuffer
      */
+    @Override
     public ReadableBuffer read(long offset, int size)
         throws java.io.IOException {
         if(full) {

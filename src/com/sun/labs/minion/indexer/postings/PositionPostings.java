@@ -710,10 +710,12 @@ public class PositionPostings implements Postings {
             ourN = nIDs;
         }
 
+        @Override
         public int getN() {
             return ourN;
         }
 
+        @Override
         public boolean next() {
             boolean ret = ourN != 0 && ++currPos < ourN;
             if(ret && gettingPositions) {
@@ -724,6 +726,7 @@ public class PositionPostings implements Postings {
             return ret;
         }
 
+        @Override
         public boolean findID(int id) {
             currPos = Arrays.binarySearch(ids, 0, ourN, id);
             boolean ret = false;
@@ -745,19 +748,23 @@ public class PositionPostings implements Postings {
             return ret;
         }
 
+        @Override
         public void reset() {
             currPos = -1;
             currPosnPos = 0;
         }
 
+        @Override
         public int getID() {
             return ids[currPos];
         }
 
+        @Override
         public int getFreq() {
             return freqs[currPos];
         }
 
+        @Override
         public float getWeight() {
             if(wf == null) {
                 return getFreq();
@@ -766,6 +773,7 @@ public class PositionPostings implements Postings {
             return wf.termWeight(wc);
         }
 
+        @Override
         public int[] getPositions() {
             int f = freqs[currPos];
             if(f >= currPosns.length) {

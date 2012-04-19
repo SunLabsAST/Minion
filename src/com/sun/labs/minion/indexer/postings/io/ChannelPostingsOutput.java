@@ -80,6 +80,7 @@ public class ChannelPostingsOutput extends AbstractPostingsOutput {
      * @param b The buffer to write.
      * @throws java.io.IOException If there is any error writing the postings.
      */
+    @Override
     public int write(WriteableBuffer b) throws java.io.IOException {
 
         long size = b.position();
@@ -110,6 +111,7 @@ public class ChannelPostingsOutput extends AbstractPostingsOutput {
      * @throws java.io.IOException If there is any error writing the postings.
      * @return The number of bytes written.
      */
+    @Override
     public int write(WriteableBuffer [] b) throws java.io.IOException {
         return write(b, 0, b.length);
     }
@@ -140,6 +142,7 @@ public class ChannelPostingsOutput extends AbstractPostingsOutput {
      * @throws java.io.IOException If there is any error getting the position.
      * @return The current position of the postings output.
      */
+    @Override
     public long position() throws java.io.IOException {
         return chan.position() + buff.position();
     }
@@ -148,6 +151,7 @@ public class ChannelPostingsOutput extends AbstractPostingsOutput {
      * Flushes the buffer to the channel.
      * @throws java.io.IOException If there is any error writing data to the channel.
      */
+    @Override
     public void flush() throws java.io.IOException {
         if(buff.position() > 0) {
             ChannelUtil.writeFully(chan,
@@ -156,6 +160,7 @@ public class ChannelPostingsOutput extends AbstractPostingsOutput {
         buff.clear();
     }
 
+    @Override
     public void cleanUp() {
     }
     

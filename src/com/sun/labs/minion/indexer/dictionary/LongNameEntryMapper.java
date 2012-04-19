@@ -78,6 +78,7 @@ public class LongNameEntryMapper implements EntryMapper {
      * not be included in a merged dictionary.  It is up to classes using
      * the entry mapper to account for this case!
      */
+    @Override
     public Entry map(Entry e) {
 
         int name = ((Long) e.getName()).intValue();

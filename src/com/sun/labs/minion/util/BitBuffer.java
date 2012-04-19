@@ -188,6 +188,7 @@ public class BitBuffer implements Cloneable, IntEncoder {
      * Get the number of bytes that it will take to store this
      * <code>BitBuffer</code> in a file.
      */
+    @Override
     public int getNBytes() {
 	if(currBit > 0) {
 	    return((currUnit * 4) + 4);
@@ -389,6 +390,7 @@ public class BitBuffer implements Cloneable, IntEncoder {
      *
      * @return a clone of this bit buffer.
      */
+    @Override
     public Object clone() {
 	BitBuffer result = null;
 	try {
@@ -1279,6 +1281,7 @@ public class BitBuffer implements Cloneable, IntEncoder {
      * would completly fill an int would take 5 bytes to encode.  The hope
      * is that we won't get numbers this big.
      */
+    @Override
     public final int byteEncode(int n) {
 
 	//
@@ -1315,6 +1318,7 @@ public class BitBuffer implements Cloneable, IntEncoder {
      * @return the decoded integer.
      * @see #byteEncode
      */
+    @Override
     public final int byteDecode() {
 
 	//
@@ -2309,6 +2313,7 @@ public class BitBuffer implements Cloneable, IntEncoder {
 	return out.toString();
     }
 
+    @Override
     public String toString() {
 	return toLogicalString() + " (" + length() +
 	    ", " + head + ", " + currUnit + ", " + currBit +

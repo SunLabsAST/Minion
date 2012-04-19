@@ -201,6 +201,7 @@ public class PostingsIteratorFeatures implements Cloneable {
     /**
      * Clones this set of features.
      */
+    @Override
     public Object clone() {
         PostingsIteratorFeatures result = null;
         try {

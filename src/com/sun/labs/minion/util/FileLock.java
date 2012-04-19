@@ -319,6 +319,7 @@ public class FileLock {
      * Gets a string describing the lock.
      * @return A string describing the lock.
      */
+    @Override
     public String toString() {
         return lockState.toString();
     }

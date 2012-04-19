@@ -66,6 +66,7 @@ public class LRACache<K,V> extends LinkedHashMap<K,V> {
      * @return <CODE>true</CODE> if this entry should be removed, which
      * will happen when the size of the map exceeds our cache size.
      */
+    @Override
     protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
         return lraSize > 0 && size() > lraSize;
     }

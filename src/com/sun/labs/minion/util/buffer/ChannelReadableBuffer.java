@@ -176,6 +176,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * Gets the number of bytes remaining to be read.
      * @return The number of bytes remaining to be read.
      */
+    @Override
     public long remaining() {
         return be - pos;
     }
@@ -187,6 +188,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * @return A new buffer that is backed by the same channel.  The in-memory buffer and
      * position are independent in the new buffer.
      */
+    @Override
     public ReadableBuffer duplicate() {
         return new ChannelReadableBuffer(chan, bs, be - bs, buff.capacity());
     }
@@ -202,6 +204,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * will be the given position and the new buffer will contain the given number 
      * of bytes.
      */
+    @Override
     public ReadableBuffer slice(long p, long s) {
         return new ChannelReadableBuffer(chan, bs + p, s, buff.capacity());
     }
@@ -210,6 +213,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * Gets the limit of this buffer, i.e., the last readable position.
      * @return The last readable position in the buffer.
      */
+    @Override
     public long limit() {
         return be - bs;
     }
@@ -218,6 +222,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * Sets the limit of this buffer, i.e., the last readable position.
      * @param l The limit to set.
      */
+    @Override
     public void limit(long l) {
         be = bs + l;
     }
@@ -227,6 +232,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * @param i The position from which we want to get a byte.
      * @return The byte at the given position.
      */
+    @Override
     public byte get(long i) {
         return buff.get(checkBounds(i + bs));
     }
@@ -235,6 +241,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * Gets the next byte in the buffer.
      * @return Gets the byte at the current position and advances the current position.
      */
+    @Override
     public byte get() {
         return buff.get(checkBounds(pos++));
     }
@@ -243,6 +250,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * Gets the position of the buffer.
      * @return The current position of the buffer.
      */
+    @Override
     public long position() {
         return pos - bs;
     }
@@ -251,6 +259,7 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * Positions the buffer.
      * @param i The position to which we want to set the buffer.
      */
+    @Override
     public void position(long i) {
         this.pos = bs + i;
     }

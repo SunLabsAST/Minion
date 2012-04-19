@@ -27,20 +27,17 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultAccessor;
 import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
-
 import com.sun.labs.minion.util.Util;
-
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -260,7 +257,7 @@ public class ArrayGroup implements Cloneable {
         System.arraycopy(docs, 0, ret, 0, size);
         return ret;
     }
-
+    
     /** 
      * Gets the docId at a particular index
      *
@@ -825,6 +822,7 @@ public class ArrayGroup implements Cloneable {
      *
      * @return a clone of this group.  We will clone the internal arrays.
      */
+    @Override
     public Object clone() {
         ArrayGroup result = null;
         try {

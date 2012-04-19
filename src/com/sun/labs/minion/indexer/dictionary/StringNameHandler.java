@@ -37,6 +37,7 @@ public class StringNameHandler implements NameEncoder<String>, NameDecoder<Strin
      * @param b The buffer onto which the name of the term should be
      * encoded.
      */
+    @Override
     public void encodeName(String prev, String curr, WriteableBuffer b) {
         if(prev == null) {
             b.byteEncode(0);
@@ -57,6 +58,7 @@ public class StringNameHandler implements NameEncoder<String>, NameDecoder<Strin
      * encoded.
      * @return The decoded name.
      */
+    @Override
     public String decodeName(String prev, ReadableBuffer b) {
         if(prev == null) {
             b.byteDecode();
@@ -71,6 +73,7 @@ public class StringNameHandler implements NameEncoder<String>, NameDecoder<Strin
      * Determines whether one string name starts with another.
      * 
      */
+    @Override
     public boolean startsWith(String n, String m) {
         return m.startsWith(n);
     }

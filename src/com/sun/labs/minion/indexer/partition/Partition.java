@@ -108,6 +108,7 @@ public abstract class Partition implements Comparable<Partition> {
      * Compares two partitions by their partition numbers.
      * @param p the partition to compare to.
      */
+    @Override
     public int compareTo(Partition p) {
         return partNumber - p.partNumber;
     }

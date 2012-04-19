@@ -259,6 +259,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.append(b);
     }
 
+    @Override
     public void flush(RandomAccessFile file) throws IOException {
         if(started && !finished) {
             throw new IllegalStateException("Can't flush a set of dictionaries before the last one has been flushed");
@@ -268,6 +269,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.clear();
     }
     
+    @Override
     public void close() throws java.io.IOException {
         if(started && !finished) {
             throw new IllegalStateException("Can't close dictionary output while it's being used!");
@@ -276,6 +278,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
 
     //
     // Implementation of WriteableBuffer
+    @Override
     public WriteableBuffer byteEncode(long val, int n) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -284,6 +287,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return this;
     }
 
+    @Override
     public String toString(long start, long end, DecodeMode decode) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -291,6 +295,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.toString(start, end, decode);
     }
 
+    @Override
     public String toString(Portion portion, DecodeMode decode) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -298,6 +303,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.toString(portion, decode);
     }
 
+    @Override
     public long remaining() {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -305,6 +311,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.remaining();
     }
 
+    @Override
     public void position(long position) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -312,6 +319,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.position(position);
     }
 
+    @Override
     public void limit(long l) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -319,6 +327,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.limit(l);
     }
 
+    @Override
     public long limit() {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -326,6 +335,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.limit();
     }
 
+    @Override
     public byte get(long i) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -333,6 +343,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.get(i);
     }
 
+    @Override
     public long countBits() {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -340,6 +351,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.countBits();
     }
 
+    @Override
     public WriteableBuffer xor(ReadableBuffer b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -347,6 +359,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.xor(b);
     }
 
+    @Override
     public void write(OutputStream os) throws IOException {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -354,6 +367,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.write(os);
     }
 
+    @Override
     public void write(DataOutput o) throws IOException {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -361,6 +375,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.write(o);
     }
 
+    @Override
     public void write(WritableByteChannel chan, long start, long end) throws IOException {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -368,6 +383,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.write(chan, start, end);
     }
 
+    @Override
     public void write(WritableByteChannel chan) throws IOException {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -375,6 +391,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.write(chan);
     }
 
+    @Override
     public void write(WriteableBuffer b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -382,6 +399,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.write(b);
     }
 
+    @Override
     public void write(ByteBuffer b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -389,6 +407,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         completed.write(b);
     }
 
+    @Override
     public WriteableBuffer set(long bitIndex) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -396,6 +415,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.set(bitIndex);
     }
 
+    @Override
     public WriteableBuffer put(long p, byte b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -403,6 +423,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.put(p, b);
     }
 
+    @Override
     public WriteableBuffer put(byte b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -410,6 +431,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.put(b);
     }
 
+    @Override
     public WriteableBuffer put(byte[] bytes) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -417,6 +439,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.put(bytes);
     }
 
+    @Override
     public WriteableBuffer or(ReadableBuffer b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -424,10 +447,12 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.or(b);
     }
 
+    @Override
     public ReadableBuffer getReadableBuffer() {
         return completed.getReadableBuffer();
     }
 
+    @Override
     public WriteableBuffer encode(CharSequence s) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -435,6 +460,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.encode(s);
     }
 
+    @Override
     public WriteableBuffer encodeAsBytes(String s, Charset cs) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -442,6 +468,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.encodeAsBytes(s, cs);
     }
 
+    @Override
     public WriteableBuffer encode(float f) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -449,6 +476,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.encode(f);
     }
 
+    @Override
     public WriteableBuffer clear() {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -456,6 +484,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.clear();
     }
 
+    @Override
     public WriteableBuffer capacity(long n) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -463,6 +492,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.capacity(n);
     }
 
+    @Override
     public int byteEncode(long n) throws ArithmeticException {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -470,6 +500,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.byteEncode(n);
     }
 
+    @Override
     public WriteableBuffer byteEncode(long pos, long n, int nBytes) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -477,6 +508,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.byteEncode(pos, n, nBytes);
     }
 
+    @Override
     public WriteableBuffer append(ReadableBuffer b, long n) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");
@@ -484,6 +516,7 @@ public abstract class AbstractDictionaryOutput implements DictionaryOutput {
         return completed.append(b, n);
     }
 
+    @Override
     public WriteableBuffer append(ReadableBuffer b) {
         if(started && !finished) {
             throw new IllegalStateException("Can't encode to a buffer when writing a dictionary.");

@@ -75,6 +75,7 @@ public class StreamPostingsOutput extends AbstractPostingsOutput {
      * postings.
      * @return The number of bytes written.
      */
+    @Override
     public int write(WriteableBuffer b) throws java.io.IOException {
         long size = b.position();
         b.write(stream);
@@ -89,6 +90,7 @@ public class StreamPostingsOutput extends AbstractPostingsOutput {
      * postings.
      * @return The number of bytes written.
      */
+    @Override
     public int write(WriteableBuffer [] b) throws java.io.IOException {
         return write(b, 0, b.length);
     }
@@ -119,6 +121,7 @@ public class StreamPostingsOutput extends AbstractPostingsOutput {
      * @throws java.io.IOException if there is any error.
      * @return The current position of the output.
      */
+    @Override
     public long position() throws java.io.IOException {
         return offset;
     }
@@ -129,10 +132,12 @@ public class StreamPostingsOutput extends AbstractPostingsOutput {
      * @throws java.io.IOException if there is any error flushing the
      * postings.
      */
+    @Override
     public void flush() throws java.io.IOException {
         stream.flush();
     }
 
+    @Override
     public void cleanUp() {
     }
 

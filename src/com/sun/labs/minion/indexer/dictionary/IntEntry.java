@@ -44,6 +44,7 @@ public class IntEntry implements Comparable<IntEntry> {
         this.e = e;
     }
 
+    @Override
     public int compareTo(IntEntry o) {
         int diff = i - o.i;
         return diff == 0 ? e.compareTo(o.e) : diff;

@@ -17,6 +17,7 @@ public class RAMPostingsInput implements PostingsInput {
         this.buff = buff;
     }
 
+    @Override
     public ReadableBuffer read(long offset, int size) throws IOException {
         return buff.slice(offset, size);
     }

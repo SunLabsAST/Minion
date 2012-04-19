@@ -100,6 +100,7 @@ public class CharArrayReader extends Reader {
      *
      * @exception   IOException  If an I/O error occurs
      */
+    @Override
     public int read() throws IOException {
         if (pos >= count)
             return -1;
@@ -117,6 +118,7 @@ public class CharArrayReader extends Reader {
      *
      * @exception   IOException  If an I/O error occurs
      */
+    @Override
     public int read(char b[], int off, int len) throws IOException {
         if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
@@ -151,6 +153,7 @@ public class CharArrayReader extends Reader {
      * @return       The number of characters actually skipped
      * @exception  IOException If the stream is closed, or an I/O error occurs
      */
+    @Override
     public long skip(long n) throws IOException {
         if (pos + n > count) {
             n = count - pos;
@@ -168,6 +171,7 @@ public class CharArrayReader extends Reader {
      *
      * @exception  IOException  If an I/O error occurs
      */
+    @Override
     public boolean ready() throws IOException {
         return (count - pos) > 0;
     }
@@ -175,6 +179,7 @@ public class CharArrayReader extends Reader {
     /**
      * Tells whether this stream supports the mark() operation, which it does.
      */
+    @Override
     public boolean markSupported() {
         return true;
     }
@@ -191,6 +196,7 @@ public class CharArrayReader extends Reader {
      *
      * @exception  IOException  If an I/O error occurs
      */
+    @Override
     public void mark(int readAheadLimit) throws IOException {
         markedPos = pos;
     }
@@ -201,6 +207,7 @@ public class CharArrayReader extends Reader {
      *
      * @exception  IOException  If an I/O error occurs
      */
+    @Override
     public void reset() throws IOException {
         pos = markedPos;
     }
@@ -230,6 +237,7 @@ public class CharArrayReader extends Reader {
      * mark(), reset(), or skip() invocations will throw an IOException.
      * Closing a previously closed stream has no effect.
      */
+    @Override
     public void close() {
     }
 }

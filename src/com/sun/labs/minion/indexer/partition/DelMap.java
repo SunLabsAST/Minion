@@ -381,6 +381,7 @@ public class DelMap implements Cloneable {
     /**
      * Clones this map.
      */
+    @Override
     public synchronized Object clone() {
         DelMap result = null;
         try {

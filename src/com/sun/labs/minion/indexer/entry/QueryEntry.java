@@ -166,6 +166,7 @@ public class QueryEntry<N extends Comparable> extends Entry<N> implements
         this.postIn = postIn;
     }
 
+    @Override
     public Object clone() {
         try {
             QueryEntry qe = (QueryEntry) super.clone();

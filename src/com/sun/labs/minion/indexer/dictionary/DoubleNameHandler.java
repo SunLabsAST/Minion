@@ -38,6 +38,7 @@ public class DoubleNameHandler implements NameEncoder<Double>, NameDecoder<Doubl
      * @param b The buffer onto which the name of the term should be
      * encoded.
      */
+    @Override
     public void encodeName(Double prev, Double curr, WriteableBuffer b) {
 
         int shared = 0;
@@ -74,6 +75,7 @@ public class DoubleNameHandler implements NameEncoder<Double>, NameDecoder<Doubl
      * encoded.
      * @return The decoded name.
      */
+    @Override
     public Double decodeName(Double prev, ReadableBuffer b) {
 
         //
@@ -102,6 +104,7 @@ public class DoubleNameHandler implements NameEncoder<Double>, NameDecoder<Doubl
      * Determines whether one double starts with another, which is true
      * only if they are equal!
      */
+    @Override
     public boolean startsWith(Double n, Double m) {
         return n.equals(m);
     }

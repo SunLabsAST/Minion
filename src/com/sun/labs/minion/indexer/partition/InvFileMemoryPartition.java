@@ -223,6 +223,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         }
     }
 
+    @Override
     public void clear() {
         super.clear();
         for(MemoryField mf : fields) {

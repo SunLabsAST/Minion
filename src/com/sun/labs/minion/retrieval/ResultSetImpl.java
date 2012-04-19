@@ -409,6 +409,7 @@ public class ResultSetImpl implements ResultSet {
      * @throws SearchEngineException if there is some error getting the
      * results.
      */
+    @Override
     public List<Result> getResults(int start, int n, ResultsFilter rf) throws SearchEngineException {
 
         //

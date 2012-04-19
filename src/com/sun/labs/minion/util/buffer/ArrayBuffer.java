@@ -171,6 +171,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      *
      * @return The position in the buffer.
      */
+    @Override
     public long position() {
         return pos - off;
     }
@@ -181,6 +182,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param position The point to which the buffer's position should be
      * set.
      */
+    @Override
     public void position(long position) {
         if(position + off >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("ArrayBuffer can't hold more than Integer.MAX_VALUE bytes");
@@ -193,6 +195,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * of the buffer minus the current position.
      * @return The number of bytes remaining in the buffer.
      */
+    @Override
     public long remaining() {
         return lim + off - pos;
     }
@@ -205,6 +208,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param n The number of bytes that the buffer must be able to store.
      * @return The buffer, for chained invocations.
      */
+    @Override
     public WriteableBuffer capacity(long n) {
         if(n >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("ArrayBuffer can't hold more than Integer.MAX_VALUE bytes");
@@ -222,6 +226,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param b The byte to put on the buffer
      * @return This buffer, to allow chained invocations.
      */
+    @Override
     public WriteableBuffer put(byte b) {
         return put(pos++, b);
     }
@@ -232,6 +237,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param b The byte to put on the buffer
      * @return This buffer, to allow chained invocations.
      */
+    @Override
     public WriteableBuffer put(long p, byte b) {
         checkBounds(p + 1);
         units[(int) p] = b;
@@ -287,6 +293,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         return this;
     }
 
+    @Override
     public WriteableBuffer put(byte[] bytes) {
         return put(bytes, 0, bytes.length);
     }
@@ -334,6 +341,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param b The buffer to or with this one.
      * @return The buffer, to allow chained invocations.
      */
+    @Override
     public WriteableBuffer or(ReadableBuffer b) {
         checkBounds(b.limit());
         for(int i = 0; i < b.limit(); i++) {
@@ -348,6 +356,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param b The buffer to or with this one.
      * @return The buffer, to allow chained invocations.
      */
+    @Override
     public WriteableBuffer xor(ReadableBuffer b) {
         checkBounds(b.limit());
         for(int i = 0; i < b.limit(); i++) {
@@ -454,6 +463,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @return A new readable buffer that shares the underlying
      * representation with this buffer.
      */
+    @Override
     public ReadableBuffer slice(long p, long s) {
         if(p + off >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("ArrayBuffer can only hold Integer.MAX_VALUE bytes");
@@ -471,6 +481,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @return The position of the last byte that can be read from or
      * written to this buffer.
      */
+    @Override
     public long limit() {
         return lim;
     }
@@ -479,6 +490,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * Sets the limit of this buffer, i.e., the last readable position.
      * @param l The limit that we wish to set.
      */
+    @Override
     public void limit(long l) {
         if(l >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("ArrayBuffer can't hold more than Integer.MAX_VALUE bytes");
@@ -490,6 +502,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * Gets the next byte from this buffer.
      * @return The byte at the current position.  The position will then be advanced.
      */
+    @Override
     public byte get() {
         return units[pos++];
     }
@@ -501,6 +514,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
      * @param i The position from which we would like to get the byte.
      * @return The byte at the given position.
      */
+    @Override
     public byte get(long i) {
         if(off + i >= Integer.MAX_VALUE) {
             throw new IllegalArgumentException("Can't fetch bytes from ArrayBuffer at positions greater than Integer.MAX_VALUE");

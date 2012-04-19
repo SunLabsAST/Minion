@@ -78,6 +78,7 @@ public class DiskPartitionFactory implements Configurable {
     public DiskPartitionFactory() {
     }
     
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         entryFactory = (EntryFactory) ps.getComponent(PROP_ENTRY_FACTORY);
         mergeBuffSize = ps.getInt(PROP_MERGE_BUFF_SIZE);

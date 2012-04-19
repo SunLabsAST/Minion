@@ -85,6 +85,7 @@ public final class LogMath implements Configurable {
      *
      * @see edu.cmu.sphinx.util.props.Configurable#newProperties(edu.cmu.sphinx.util.props.PropertySheet)
      */
+    @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
         logger = ps.getLogger();
         logBase = ps.getFloat(PROP_LOG_BASE);

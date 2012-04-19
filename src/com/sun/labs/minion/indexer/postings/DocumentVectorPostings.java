@@ -152,6 +152,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
         EntryFreq[] se = new EntryFreq[entries.size()];
         entries.values().toArray(se);
         Util.sort(se, new Comparator<EntryFreq>() {
+            @Override
             public int compare(EntryFreq o1, EntryFreq o2) {
                 return o1.e.getID() - o2.e.getID();
             }

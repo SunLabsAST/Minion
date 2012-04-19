@@ -62,6 +62,7 @@ public class DocumentIterator implements Iterator<Document> {
         partIter = parts.iterator();
     }
 
+    @Override
     public boolean hasNext() {
         
         hasNextCalled = true;
@@ -133,6 +134,7 @@ public class DocumentIterator implements Iterator<Document> {
         return true;
     }
 
+    @Override
     public Document next() {
         if(!hasNextCalled) {
             hasNext();
@@ -146,6 +148,7 @@ public class DocumentIterator implements Iterator<Document> {
         return new DocumentImpl(currEntry);
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("Cannot remove from document dictionary");
     }

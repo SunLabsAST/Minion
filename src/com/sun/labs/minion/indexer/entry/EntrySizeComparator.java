@@ -46,6 +46,7 @@ public class EntrySizeComparator implements Comparator {
      * @return <code>true</code> if the terms contain the same number of
      * IDs, <code>false</code> otherwise.
      */
+    @Override
     public boolean equals(Object object) {
         return this == object;
     }
@@ -59,6 +60,7 @@ public class EntrySizeComparator implements Comparator {
      * @return A value less than, greater than, or equal to 0 if
      * <code>o1</code> has less, more, or the same number of terms 
      */
+    @Override
     public int compare(Object o1, Object o2) {
         return ((Entry) o1).getN() - ((Entry) o2).getN();
     }

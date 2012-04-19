@@ -106,10 +106,12 @@ public class DocumentImpl implements Document {
         e = (SearchEngineImpl) p.getPartitionManager().getEngine();
     }
 
+    @Override
     public String getKey() {
         return key;
     }
 
+    @Override
     public void setKey(String key) {
         this.key = key;
     }
@@ -137,6 +139,7 @@ public class DocumentImpl implements Document {
         }
     }
 
+    @Override
     public List<Object> getSavedField(String field) {
         checkSaved(field);
         initSF();
@@ -147,6 +150,7 @@ public class DocumentImpl implements Document {
         return new ArrayList(l);
     }
 
+    @Override
     public Iterator<Map.Entry<String, List>> getSavedFields() {
         initSF();
         Map<String, List> x = new LinkedHashMap<String, List>();
@@ -156,6 +160,7 @@ public class DocumentImpl implements Document {
         return x.entrySet().iterator();
     }
 
+    @Override
     public void setSavedField(String field, List values) {
         checkSaved(field);
         initSF();
@@ -211,6 +216,7 @@ public class DocumentImpl implements Document {
         return ret;
     }
 
+    @Override
     public List<Posting> getPostings(String field) {
         checkVectored(field);
         initVF();
@@ -222,6 +228,7 @@ public class DocumentImpl implements Document {
         return ret;
     }
 
+    @Override
     public Iterator<Map.Entry<String, List<Posting>>> getPostings() {
         initVF();
         Map<String, List<Posting>> ret =
@@ -232,6 +239,7 @@ public class DocumentImpl implements Document {
         return ret.entrySet().iterator();
     }
 
+    @Override
     public void setPostings(String field, List<Posting> postings) {
         checkVectored(field);
         initVF();
@@ -329,6 +337,7 @@ public class DocumentImpl implements Document {
         o.format("</document>\n");
     }
 
+    @Override
     public String toString() {
         return dke.getName() + " " + dke.getPartition() + " " + dke.getID();
     }

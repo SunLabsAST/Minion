@@ -87,6 +87,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param n The number to encode.
      * @param nBytes The number of bytes to use in the encoding.
      */
+    @Override
     public WriteableBuffer byteEncode(long n, int nBytes) {
         for(int shift = 8 * (nBytes-1); shift >= 0; shift -= 8) {
             put((byte) ((n >>> shift) & 0xFF));
@@ -103,6 +104,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param n The number to encode.
      * @param nBytes The number of bytes to use in the encoding.
      */
+    @Override
     public WriteableBuffer byteEncode(long pos, long n, int nBytes) {
         for(int shift = 8 * (nBytes-1); shift >= 0; shift -= 8) {
             put(pos++, (byte) ((n >>> shift) & 0xFF));
@@ -121,6 +123,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @return the number of bytes used to encode the number.
      * @param n The number to encode.
      */
+    @Override
     public int byteEncode(long n) {
         if(n < 0) {
             throw new ArithmeticException(String.format("Negative value %d cannot by byte encoded", n));
@@ -149,6 +152,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @return the number of bytes used to encode the float, which is
      * always 4.
      */
+    @Override
     public WriteableBuffer encode(float f) {
         return byteEncode(Float.floatToRawIntBits(f), 4);
     }
@@ -180,6 +184,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @return The buffer, to allow chained invocations.
      * @param b The buffer that we wish to append onto this buffer.
      */
+    @Override
     public WriteableBuffer append(ReadableBuffer b) {
         return append(b, b.remaining());
     }
@@ -191,6 +196,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param b The buffer that we wish to append onto this buffer.
      * @param n The number of bytes from the given buffer to append onto this buffer.
      */
+    @Override
     public WriteableBuffer append(ReadableBuffer b, long n) {
 
         //
@@ -211,6 +217,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param s The sequence that we wish to encode.
      * @return This buffer, for chained invocations.
      */
+    @Override
     public WriteableBuffer encode(CharSequence s) {
 
         int l = sizeUTF8(s);
@@ -237,6 +244,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
         return this;
     }
 
+    @Override
     public WriteableBuffer encodeAsBytes(String s, Charset cs) {
         byte[] bytes = s.getBytes(cs);
         byteEncode(bytes.length, 4);
@@ -249,6 +257,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param bitIndex the index of the bit to set to 1.
      * @return This buffer, for chained invocations.
      */
+    @Override
     public WriteableBuffer set(long bitIndex) {
         long i = bitIndex >>> 3;
         capacity(i+1);
@@ -264,6 +273,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * position to 0.
      * @return This buffer, for chained invocations.
      */
+    @Override
     public WriteableBuffer clear() {
         position(0);
         return this;
@@ -280,6 +290,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param nBytes The number of bytes to use.
      * @return the decoded number.
      */
+    @Override
     public int byteDecode(int nBytes) {
         return (int) byteDecodeLong(nBytes);
     }
@@ -292,6 +303,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param nBytes The number of bytes to use.
      * @return the decoded number.
      */
+    @Override
     public int byteDecode(long pos, int nBytes) {
         return (int) byteDecodeLong(pos, nBytes);
     }
@@ -303,6 +315,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @return the decoded number.
      * @param nBytes The number of bytes to use.
      */
+    @Override
     public long byteDecodeLong(int nBytes) {
         long ret = 0;
         for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
@@ -319,6 +332,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @param pos The position to decode from.
      * @param nBytes The number of bytes to use.
      */
+    @Override
     public long byteDecodeLong(long pos, int nBytes) {
         long ret = 0;
         for(int i = 0, shift = (nBytes - 1) * 8; i < nBytes; i++, shift -= 8) {
@@ -332,6 +346,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @return the decoded integer.
      * @see #byteEncode
      */
+    @Override
     public int byteDecode() {
         return (int) byteDecodeLong();
     }
@@ -341,6 +356,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * @return the decoded long.
      * @see #byteEncode
      */
+    @Override
     public long byteDecodeLong() {
 
         byte 	curr  = (byte) 0x80;
@@ -360,6 +376,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      *
      * @return the decoded float.
      */
+    @Override
     public float decodeFloat() {
         return Float.intBitsToFloat(byteDecode(4));
     }
@@ -369,6 +386,7 @@ public abstract class StdBufferImpl implements WriteableBuffer, ReadableBuffer {
      * decoding it.
      * @return the number of bytes skipped.
      */
+    @Override
     public int skipByteEncoded() {
         long init = position();
         while((get() & 0x80) != 0);
