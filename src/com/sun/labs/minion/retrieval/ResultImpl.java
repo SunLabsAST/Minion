@@ -139,17 +139,15 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         this.score = score;
         this.sortSpec = sortSpec;
 
-        if(ag.part instanceof InvFileDiskPartition) {
+        if(sortSpec != null && ag != null && ag.part instanceof InvFileDiskPartition) {
 
-            if(sortSpec != null) {
-                //
-                // Fill in the field values that we're sorting on.
-                if(fields == null) {
-                    fields = new Object[sortSpec.size];
-                } else {
-                    for(int i = 0; i < fields.length; i++) {
-                        fields[i] = null;
-                    }
+            //
+            // Fill in the field values that we're sorting on.
+            if(fields == null) {
+                fields = new Object[sortSpec.size];
+            } else {
+                for(int i = 0; i < fields.length; i++) {
+                    fields[i] = null;
                 }
             }
         }

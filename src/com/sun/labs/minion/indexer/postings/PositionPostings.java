@@ -451,9 +451,9 @@ public class PositionPostings implements Postings {
         // any skips, but adding the documents will take these postings past
         // a skip boundary (estimated), then we should add a skip.
         if(other.nSkips == 0 && nIDs > 0) {
-            int csm = nSkips % skipSize;
-            int osm = (nIDs + other.nIDs) % skipSize;
-            if(osm > csm) {
+            int csm = nIDs / skipSize;
+            int osm = (nIDs + other.nIDs) / skipSize;
+            if(osm > nSkips) {
 //                logger.fine(String.format("Adding a skip because it got big"));
                 addSkip(newID, idOffset, mPosnOffset);
             }
@@ -631,28 +631,38 @@ public class PositionPostings implements Postings {
     @Override
     public String describe(boolean verbose) {
         StringBuilder b = new StringBuilder();
+        decodeSkipTable();
         b.append(getType()).append(' ').append("N: ").append(nIDs);
         b.append(" nSkips: ").append(nSkips).append(' ');
         if(verbose) {
+            for(int i = 0; i < skipID.length; i++) {
+                b.append("\nskipID ").append(skipID[i]).append(" IDOffset ").append(skipIDOffsets[i])
+                        .append(" posnOffset ").append(skipPosnOffsets[i]);
+            }
+            b.append('\n');
             PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
             feat.setPositions(true);
             PostingsIteratorWithPositions pi = (PostingsIteratorWithPositions) iterator(feat);
-            boolean first = true;
+            long idfposn = ((CompressedIterator) pi).ridf.position();
+            long posnposn = ((CompressedIterator) pi).rPosn.position();
+            
             while(pi.next()) {
-                if(!first) {
-                    b.append(' ');
-                }
-                first = false;
                 int freq = pi.getFreq();
-                b.append('<').append(pi.getID()).append(',').append(pi.getFreq()).append(" [");
+                b.append('<')
+                        .append("idp ")
+                        .append(idfposn).append(", pp ").append(posnposn)
+                        .append(' ')
+                        .append(pi.getID()).append(", ").append(pi.getFreq()).append(" [");
                 int[] pp = pi.getPositions();
                 for(int i = 0; i < freq; i++) {
                     if(i > 0) {
-                        b.append(',');
+                        b.append(", ");
                     }
                     b.append(pp[i]);
                 }
-                b.append("]>,");
+                b.append("]>\n");
+                idfposn = ((CompressedIterator) pi).ridf.position();
+                posnposn = ((CompressedIterator) pi).rPosn.position();
             }
         }
         return b.toString();
@@ -661,11 +671,29 @@ public class PositionPostings implements Postings {
     
     @Override
     public String toString() {
+        decodeSkipTable();
+        StringBuilder sb = new StringBuilder();
         if(idBuff != null) {
-            return String.format("dataStart: %d\n%s", dataStart, idBuff.toString(Buffer.Portion.ALL, Buffer.DecodeMode.BYTE_ENCODED));
-        } else {
+            sb.append(
+                    String.format(
+                    "idBuff dataStart: %d skipTableOffset: %d nSkips: %d\n%s",
+                                  dataStart,
+                                  skipTableOffset,
+                                  nSkips,
+                                  idBuff.toString(Buffer.Portion.ALL,
+                                                  Buffer.DecodeMode.BYTE_ENCODED)));
+        }
+    
+        if(posnBuff != null) {
+            sb.append(
+                    String.format("\nposnBuff:\n%s",
+                                  posnBuff.
+                        toString(Buffer.Portion.ALL, Buffer.DecodeMode.BYTE_ENCODED)));
+        }
+        if(sb.length() == 0) {
             return null;
         }
+        return sb.toString();
     }
     
     /**
@@ -830,7 +858,7 @@ public class PositionPostings implements Postings {
         /**
          * The current offset into the position postings.
          */
-        protected int currOffset;
+        protected int currPositionOffset;
         
         /**
          * The positions for this entry in the current ID.
@@ -931,38 +959,41 @@ public class PositionPostings implements Postings {
          * @param id The ID to use for that document, if we've skipped to
          * this point. If id is less than 0, we will use the ID as it was
          * decoded.
+         * @param idOffset the offset in the ID and frequency buffer where
+         * we'll find the data for this ID.
+         * @param positionOffset the offset in the position buffer where we'll find 
+         * the position information for this ID.
          * @return <code>true</code> if there is a next ID,
          * <code>false</code> otherwise.
          */
-        protected boolean next(int pos, int id, int offset) {
+        protected boolean next(int id, int idOffset, int positionOffset) {
             if(done) {
                 return false;
             }
-
+            
             //
             // If we were given a position, then we position there.
-            if(pos > 0) {
-                ridf.position(pos);
-
+            if(idOffset > 0) {
+                ridf.position(idOffset);
                 if(id > -1) {
                     //
                     // We'll use the offset and id that were passed in, likely
                     // from a skip table, and ignore the decode values for those
                     // elements.
                     currID = id;
-                    currOffset = offset;
+                    currPositionOffset = positionOffset;
                     ridf.byteDecode();
                     currFreq = ridf.byteDecode();
                     ridf.byteDecode();
                 } else {
                     currID += ridf.byteDecode();
                     currFreq = ridf.byteDecode();
-                    currOffset += ridf.byteDecode();
+                    currPositionOffset += ridf.byteDecode();
                 }
             } else {
                 currID += ridf.byteDecode();
                 currFreq = ridf.byteDecode();
-                currOffset += ridf.byteDecode();
+                currPositionOffset += ridf.byteDecode();
             }
 
             done = currID == lastID;
@@ -973,7 +1004,7 @@ public class PositionPostings implements Postings {
         @Override
         public int[] getPositions() {
             if(rPosn != null) {
-                rPosn.position(currOffset);
+                rPosn.position(currPositionOffset);
                 if(currPosns == null || currFreq >= currPosns.length) {
                     currPosns = new int[currFreq];
                 }
@@ -1009,7 +1040,7 @@ public class PositionPostings implements Postings {
             if(nSkips == 0) {
                 if(id < currID) {
                     currID = 0;
-                    next(dataStart, -1, -1);
+                    next(-1, dataStart, -1);
                 }
             } else {
                 //
@@ -1041,9 +1072,10 @@ public class PositionPostings implements Postings {
                         // skip, which means we start at the beginning of the
                         // entry, just as we do when there are no skips.
                         currID = 0;
-                        next(dataStart, -1, -1);
+                        currPositionOffset = 0;
+                        next(-1, dataStart, -1);
                     } else {
-                        next(skipIDOffsets[p], skipID[p], skipPosnOffsets[p]);
+                        next(skipID[p], skipIDOffsets[p], skipPosnOffsets[p]);
                     }
                 }
             }
@@ -1065,7 +1097,7 @@ public class PositionPostings implements Postings {
         public void reset() {
             ridf.position(dataStart);
             currID = 0;
-            currOffset = 0;
+            currPositionOffset = 0;
             done = nIDs == 0;
         }
 

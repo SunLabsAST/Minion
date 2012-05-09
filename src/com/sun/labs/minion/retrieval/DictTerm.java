@@ -136,6 +136,7 @@ public class DictTerm extends QueryTerm implements Comparator {
         }
         
         if(searchFields == null || searchFields.length == 0) {
+            dictEntries = new QueryEntry[0];
             return;
         }
 
@@ -267,7 +268,7 @@ public class DictTerm extends QueryTerm implements Comparator {
      */
     @Override
     public ArrayGroup eval(ArrayGroup ag) {
-
+        
         if(ag == null) {
 
             QuickOr or = strictEval
@@ -570,6 +571,7 @@ public class DictTerm extends QueryTerm implements Comparator {
             //
             // Get the positions for this document.
             if(termPI.findID(d)) {
+                try {
                 int[] termPosns = termPI.getPositions();
                 int n = termPI.getFreq();
                 if(n == 0) {
@@ -603,6 +605,12 @@ public class DictTerm extends QueryTerm implements Comparator {
                     throw ex;
                 }
                 fposn[0] += n;
+                } catch (RuntimeException ex) {
+                    logger.log(Level.SEVERE, String.format("Error getting postings for %d in %s for %s from %s", 
+                                                           d, part, dictEntries[i].getName(), 
+                                                           dictEntries[i].getField().getName()), ex);
+                    throw(ex);
+                }
             }
         }
 

@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.retrieval;
 
+import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.QueryConfig;
@@ -36,6 +37,7 @@ import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.util.QueuableIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,6 +46,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.naming.directory.SearchResult;
 
 /**
  * An implementation of the results set interface.
@@ -586,6 +589,52 @@ public class ResultSetImpl implements ResultSet {
         }
 
         return fres;
+    }
+    
+    public List<Facet> getFacets(String fieldName) throws SearchEngineException {
+        FieldInfo field = e.getFieldInfo(fieldName);
+        if(field == null) {
+            throw new SearchEngineException("Can't facet on unknown field " + fieldName);
+        }
+        if(!field.hasAttribute(FieldInfo.Attribute.SAVED)) {
+            throw new SearchEngineException("Can only facet on saved fields");
+        }
+        
+        //
+        // Queue up the results from each partition.
+        PriorityQueue<QueuableIterator<LocalFacet>> q = new PriorityQueue(results.size());
+        for(ArrayGroup ag : results) {
+            List<LocalFacet> l = ((InvFileDiskPartition) ag.part).getDF(field).getFacets(ag.docs, ag.size);
+            QueuableIterator<LocalFacet> qi = new QueuableIterator(l.iterator());
+            if(qi.hasNext()) {
+                qi.next();
+                q.add(qi);
+            }
+        }
+        List<Facet> ret = new ArrayList<Facet>();
+        //
+        // Build facets as we go.
+        while(!q.isEmpty()) {
+            QueuableIterator<LocalFacet> top = q.peek();
+            FacetImpl f = new FacetImpl(field, 
+                    (Comparable) top.getCurrent().getFacetValue());
+            logger.info(String.format("top: %s", f.getValue()));
+            while(q.peek().getCurrent().getFacetValue().equals(f.getValue())) {
+                QueuableIterator<LocalFacet> qi = q.poll();
+                LocalFacet lf = qi.getCurrent();
+                List<Integer> docIDs = lf.getDocIDs();
+                for(int docID : docIDs) {
+                    f.add(new ResultImpl(this, null, null, docID, 1));
+                }
+                if(qi.hasNext()) {
+                    qi.next();
+                    q.add(qi);
+                }
+                
+            }
+            ret.add(f);
+        }
+        return ret;
     }
 
     public void setQueryStats(QueryStats qs) {

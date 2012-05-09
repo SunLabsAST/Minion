@@ -10,7 +10,7 @@ import java.util.logging.Logger;
 /**
  * An abstract base class for fields.
  */
-public abstract class Field {
+public abstract class Field<N extends Comparable> {
 
     private static final Logger logger = Logger.getLogger(Field.class.getName());
 

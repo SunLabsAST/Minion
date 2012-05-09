@@ -524,7 +524,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
     public QueryEntry<N> getByID(int id) {
         return get(id, getLookupState());
     }
-
+    
     /**
      * Gets a entry from the dictionary, given the ID for the entry.
      *
@@ -533,7 +533,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return The block, or <code>null</code> if the ID doesn't occur in
      * our dictionary.
      */
-    protected QueryEntry<N> get(int id, LookupState lus) {
+    public QueryEntry<N> get(int id, LookupState<N> lus) {
 
         //
         // We need to map from the given ID to a position in the
@@ -734,6 +734,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * Finds the entry at the given position in this dictionary.
      * @return The entry at the given position, or <code>null</code> if
      * there is no entry at that position in this block.
+     * @param posn the position in the dictionary that we want to find.
      * @param lus the current state of the lookup
      */
     protected QueryEntry<N> find(int posn, LookupState<N> lus) {
@@ -1246,6 +1247,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
 
     public LightIterator<N> literator() {
         return new LightDiskDictionaryIterator();
+    }
+    
+    public LightIterator literator(LookupState<N> lus) {
+        return new LightDiskDictionaryIterator(lus);
     }
     
     /**
@@ -2143,7 +2148,11 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         protected int stepSize = 512;
         
         public LightDiskDictionaryIterator() {
-            lus = new LookupState<N>(DiskDictionary.this);
+            this(new LookupState<N>(DiskDictionary.this));
+        } 
+        
+        public LightDiskDictionaryIterator(LookupState<N> lus) {
+            this.lus = lus;
             lus.setQueryStats(new QueryStats());
             posn = -1;
             lus.localNames.position(0);
@@ -2180,14 +2189,46 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             return stepsTaken;
         }
 
+        /**
+         * Advances the iterator to the given id, without decoding any
+         * entries.
+         * @param id the id that we want to advance to.
+         */
+        public void simpleAdvance(int id) {
+            int newPosn = id - 1;
+            if(lus.localIDToPosn != null) {
+                lus.localIDToPosn.position(newPosn *4);
+                newPosn = lus.localIDToPosn.byteDecode();
+            }
+            
+            int n;
+            if(posn == -1 || newPosn < posn || newPosn - posn > 3) {
+                //
+                // We need to go to the nearest uncompressed term.
+                int ui = posn / 4;
+                n = posn % 4;
+                lus.decodedName = getUncompressedName(ui, lus);
+            } else {
+                n = newPosn - posn;
+            }
+            //
+            // Walk up to the new id.
+            for(int i = 0; i < n; i++) {
+                lus.decodedName = decoder.decodeName(lus.decodedName,
+                                                     lus.localNames);
+            }
+            posn = newPosn;
+        }
+
         @Override
-        public void advanceTo(int id) {
+        public QueryEntry<N> advanceTo(int id) {
             QueryEntry<N> e = find(id - 1, lus);
             if(e == null) {
                 posn = (int) dh.size;
             } else {
                 posn = id - 1;
             }
+            return e;
         }
 
         @Override
@@ -2299,6 +2340,15 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         @Override
         public N getName() {
             return lus.decodedName;
+        }
+
+        @Override
+        public int getID() {
+            if(lus.localIDToPosn != null) {
+                throw new UnsupportedOperationException("Not working right now.");
+            } else {
+                return posn + 1;
+            }
         }
  
         @Override

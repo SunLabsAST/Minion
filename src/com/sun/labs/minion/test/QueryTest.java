@@ -25,6 +25,7 @@ package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.Document;
 import com.sun.labs.minion.DocumentVector;
+import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
@@ -64,6 +65,7 @@ import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
 import com.sun.labs.minion.retrieval.AbstractDocumentVector;
 import com.sun.labs.minion.retrieval.ResultImpl;
+import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.Util;
@@ -162,6 +164,8 @@ public class QueryTest extends SEMain {
     protected boolean ttyInput = true;
 
     private SimpleHighlighter shigh;
+    
+    private ResultSetImpl lastResultSet;
 
     public QueryTest(URL cmFile, String indexDir, String engineType,
             String inputFile,
@@ -326,6 +330,7 @@ public class QueryTest extends SEMain {
                 try {
                     ResultSet r = searcher.search(q, sortSpec, queryOp, grammar);
                     displayResults(r);
+                    lastResultSet = (ResultSetImpl) r;
                 } catch(Exception ex) {
                     logger.log(Level.SEVERE, String.format("Error running search"), ex);
                 }
@@ -339,6 +344,63 @@ public class QueryTest extends SEMain {
         });
         
         shell.addAlias("q", "Query");
+        
+        shell.add("last", "Query", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] strings)
+                    throws Exception {
+                if(lastResultSet == null) {
+                    return "No previous query";
+                }
+                
+                try {
+                    displayResults(lastResultSet);
+                } catch(Exception ex) {
+                    logger.log(Level.SEVERE, String.format(
+                            "Error displaying results"), ex);
+                }
+                
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "Display the results of the last search query";
+            }
+        });
+        
+        shell.add("facet", "Query", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                
+                if(args.length < 2) {
+                    return getHelp();
+                }
+                
+                if(lastResultSet == null) {
+                    return "No previous query";
+                }
+                
+                List<Facet> lf = lastResultSet.getFacets(args[1]);
+                
+                ci.out.format("Found %d facets for %s in %d hits\n", 
+                              lf.size(), args[1], lastResultSet.size());
+                for(Facet f : lf) {
+                    ci.out.print("  ");
+                    ci.out.print(f);
+                }
+                
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field - Get the facets for a particular field from the last set of search results";
+            }
+        });
         
         shell.add("stats", "Info", new CommandInterface() {
 
@@ -890,6 +952,94 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add("postfinds", "Info", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                if(args.length < 5) {
+                    return getHelp();
+                }
+
+                String field = args[1];
+                FieldInfo fi = manager.getFieldInfo(field);
+                int partNum = Integer.parseInt(args[2]);
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    if(p.getPartitionNumber() != partNum) {
+                        continue;
+                    }
+                    DiskField df = ((InvFileDiskPartition) p).getDF(fi);
+                    QueryEntry qe = df.getTerm(args[3], false);
+                    if(qe == null) {
+                        continue;
+                    }
+                    PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
+                    feat.setPositions(true);
+
+                    PostingsIterator pi = qe.iterator(feat);
+                    for(int i = 4; i < args.length; i++) {
+                        int docID = Integer.parseInt(args[i]);
+                        if(pi.findID(docID)) {
+                            shell.out.format("Found %d\n", docID);
+                            if(pi instanceof PostingsIteratorWithPositions) {
+                                int[] posn = ((PostingsIteratorWithPositions) pi).getPositions();
+                                shell.out.format("%d %s\n", pi.getFreq(), Arrays.toString(posn));
+                            }
+                        } else {
+                            shell.out.format("Didn't find %d\n", docID);
+                        }
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "- field partNum term doc [doc...] Finds docs in a given postings list";
+            }
+        });
+        
+        shell.add("postbuff", "Info", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                if(args.length < 3) {
+                    return getHelp();
+                }
+
+                String field = args[1];
+                FieldInfo fi = manager.getFieldInfo(field);
+                List<DiskPartition> parts = manager.getActivePartitions();
+                for(int i = 2; i < args.length; i++) {
+                    for(DiskPartition p : parts) {
+                        DiskField df = ((InvFileDiskPartition) p).getDF(fi);
+                        QueryEntry qe = df.getTerm(args[i], false);
+                        if(qe == null) {
+                            continue;
+                        }
+                        PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
+                        feat.setPositions(true);
+                        
+                        PostingsIterator  pi = qe.iterator(feat);
+                        Postings post = qe.getPostings();
+                        if(post != null) {
+                            shell.out.format(
+                                    "Postings for %s (%d) from %s in %s\n",
+                                             args[i], qe.getN(), field, p);
+                            shell.out.println(post.toString());
+                        }
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field term [term...] - print the buffers for the postings associated with a term in a given field";
+            }
+        });
+        
         shell.add("vpost", "Info", new CommandInterface() {
 
             @Override
@@ -900,7 +1050,6 @@ public class QueryTest extends SEMain {
                 
                 String field = args[1];
                 FieldInfo fi = manager.getFieldInfo(field);
-                logger.info(String.format("field: %s", fi));
                 List<DiskPartition> parts = manager.getActivePartitions();
                 for(int i = 2; i < args.length; i++) {
                     for(DiskPartition p : parts) {
@@ -923,6 +1072,54 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "field term [term...] - Get a verbose description of the postings associated with a term in a given field";
+            }
+        });
+        
+        shell.add("vdpost", "Info", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 4) {
+                    return getHelp();
+                }
+                
+                String field = args[1];
+                FieldInfo fi = manager.getFieldInfo(field);
+                int docID = Integer.parseInt(args[2]);
+                List<DiskPartition> parts = manager.getActivePartitions();
+                for(int i = 3; i < args.length; i++) {
+                    for(DiskPartition p : parts) {
+                        DiskField df = ((InvFileDiskPartition) p).getDF(fi);
+                        QueryEntry qe = df.getTerm(args[i], false);
+                        if(qe == null) {
+                            continue;
+                        }
+                        Postings post = qe.getPostings();
+                        PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
+                        feat.setPositions(true);
+                        if(post != null) {
+                            PostingsIteratorWithPositions pi = (PostingsIteratorWithPositions) post.iterator(feat);
+                            pi.findID(docID);
+                            shell.out.format("Postings for %s (%d) from %s in %s\n",
+                                    args[i], docID, field, p);
+                            shell.out.format("<%d, %d, [", pi.getID(), pi.getFreq());
+                            int[] posns = pi.getPositions();
+                            for(int pos = 0; pos < pi.getFreq(); pos++) {
+                                if(pos > 0) {
+                                    shell.out.print(", ");
+                                }
+                                shell.out.print(posns[pos]);
+                            }
+                            shell.out.print("]>\n");
+                        }
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field docID term [term...] - Get a verbose description of the postings associated with a term in a given field";
             }
         });
         

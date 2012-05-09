@@ -1102,8 +1102,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
             DiskField df = ((InvFileDiskPartition) dp).getDF(fi);
             if(df != null) {
-                for(QueryEntry qe : df.getMatching(pattern, true,
-                        -1, -1)) {
+                List<QueryEntry> lqe = df.getMatching(pattern, true, -1, -1);
+                for(QueryEntry qe : lqe) {
                     String n = qe.getName().toString();
                     ret.add(new FieldValue(n, l / n.length()));
                 }

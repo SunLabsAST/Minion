@@ -142,13 +142,18 @@ public class QuickOr {
     }
     
     public void addFields(FieldInfo[] fields) {
+        if(fields == null) {
+            return;
+        }
         for(FieldInfo field : fields) {
             this.fields.add(field);
         }
     }
     
     public void addFields(Collection<FieldInfo> fields) {
-        this.fields.addAll(fields);
+        if(fields != null) {
+            this.fields.addAll(fields);
+        }
     }
 
     /**

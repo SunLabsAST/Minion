@@ -161,6 +161,10 @@ public abstract class Proximity extends Operator {
      */
     protected ArrayGroup evalTerms(ArrayGroup candidates, List<DictTerm> terms) {
 
+        if(searchFields == null) {
+            return new ArrayGroup();
+        }
+        
         float maxScore = Float.MIN_VALUE;
         int nPerfect = 0;
 
@@ -273,7 +277,7 @@ public abstract class Proximity extends Operator {
                 if(doFields[f] == 0) {
                     continue;
                 }
-
+                
                 //
                 // Zero out the column lengths.
                 Arrays.fill(lens, 0);
@@ -287,6 +291,12 @@ public abstract class Proximity extends Operator {
                     //
                     // Get the positions for this field for this term.
                     int[] fposns = fieldPosns[j][f];
+                    
+                    //
+                    // No positions!
+                    if(fposns == null) {
+                        continue;
+                    }
                     int nPosns = fposns[0];
 
                     //

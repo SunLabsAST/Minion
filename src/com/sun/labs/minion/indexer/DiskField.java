@@ -1,6 +1,7 @@
 package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
@@ -12,6 +13,7 @@ import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
 import com.sun.labs.minion.indexer.partition.MergeState;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.retrieval.ArrayGroup;
+import com.sun.labs.minion.retrieval.LocalFacet;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import java.io.RandomAccessFile;
 import java.util.List;
@@ -21,11 +23,11 @@ import java.util.logging.Logger;
 /**
  * A field on-disk
  */
-public class DiskField extends Field {
+public class DiskField<N extends Comparable> extends Field<N> {
 
     static final Logger logger = Logger.getLogger(DiskField.class.getName());
 
-    private DiskDictionaryBundle bundle;
+    private DiskDictionaryBundle<N> bundle;
 
     public DiskField(DiskPartition partition,
             FieldInfo info,
@@ -310,6 +312,11 @@ public class DiskField extends Field {
 
     public void calculateVectorLengths(PartitionOutput partOut) throws java.io.IOException {
         bundle.calculateVectorLengths(partOut);
+    }
+    
+    public List<LocalFacet<N>> getFacets(int[] docs, int p) throws
+            SearchEngineException {
+        return bundle.getFacets(docs, p);
     }
 
     /**

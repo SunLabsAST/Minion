@@ -1,6 +1,7 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
@@ -10,6 +11,7 @@ import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsIndexEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentVectorLengths;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.MergeState;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.indexer.postings.Postings;
@@ -17,6 +19,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
+import com.sun.labs.minion.retrieval.LocalFacet;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
@@ -33,7 +36,9 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1242,6 +1247,47 @@ public class DiskDictionaryBundle<N extends Comparable> {
     public DiskDictionary getDictionary(Type type) {
         return dicts[type.ordinal()];
     }
+    
+    /**
+     * Gets a list of local facets for this field.
+     * @param docs the IDs of the documents for which we want facets.
+     * @param p the number of IDs in the array
+     * @return a list of the facets for this partition.
+     * @throws SearchEngineException 
+     */
+    public List<LocalFacet<N>> getFacets(int[] docs, int p) throws SearchEngineException {
+        Map<Integer, LocalFacet<N>> m = new HashMap<Integer, LocalFacet<N>>();
+        Fetcher fetcher = getFetcher();
+        int[] valIDs = new int[16];
+        for(int i = 0; i < p; i++) {
+            valIDs = fetcher.fetch(docs[i], valIDs);
+            for(int j = 1; j <= valIDs[0]; j++) {
+                int valID = valIDs[j];
+                LocalFacet facet = m.get(valID);
+                if(facet == null) {
+                    facet = new LocalFacet((InvFileDiskPartition) field.getPartition(), 
+                            info, valID);
+                    m.put(valID, facet);
+                }
+                facet.add(docs[i]);
+            }
+        }
+        
+        List<LocalFacet<N>> ret = new ArrayList<LocalFacet<N>>(m.values());
+        logger.info(String.format("%s got %d facets", field.getPartition(), m.size()));
+        if(!ret.isEmpty()) {
+            //
+            // Sort the facets by ID and set the name values all at once, which
+            // will let us stream through the dictionary.
+            Collections.sort(ret);
+            DiskDictionary<N>.LightDiskDictionaryIterator lit = (DiskDictionary.LightDiskDictionaryIterator) fetcher.literator();
+            for(LocalFacet<N> facet : ret) {
+                lit.simpleAdvance(facet.getFacetValueID());
+                facet.setFacetValue(lit.getName());
+            }
+        }
+        return ret;
+    }
 
     /**
      * A class that can be used when you want to get a lot of field values for
@@ -1259,15 +1305,26 @@ public class DiskDictionaryBundle<N extends Comparable> {
          * A local copy of the docs-to-vals buffer.
          */
         private ReadableBuffer ldtv;
+        
+        DiskDictionary<N> rawSaved;
 
-        DiskDictionary rawSaved;
+        DiskDictionary.LookupState<N> lus;
 
-        public Fetcher(DiskDictionary rawSaved,
+        public Fetcher(DiskDictionary<N> rawSaved,
                 ReadableBuffer dtvOffsets,
                 ReadableBuffer dtvData) {
             this.rawSaved = rawSaved;
+            lus = rawSaved.getLookupState();
             ldtvo = dtvOffsets.duplicate();
             ldtv = dtvData.duplicate();
+        }
+        
+        public N get(int valID) {
+            QueryEntry<N> e = rawSaved.get(valID, lus);
+            if(e == null) {
+                return null;
+            }
+            return e.getName();
         }
 
         /**
@@ -1276,13 +1333,29 @@ public class DiskDictionaryBundle<N extends Comparable> {
          * @return the value for the given document.  If no value is stored for
          * that document, then <code>null</code> is returned.
          */
-        public Object fetchOne(int docID) {
+        public N fetchOne(int docID) {
             ldtv.position(ldtvo.byteDecode(4 * (docID - 1), 4));
             int n = ldtv.byteDecode();
             if(n == 0) {
                 return null;
             }
-            return rawSaved.getByID(ldtv.byteDecode()).getName();
+            return rawSaved.get(ldtv.byteDecode(), lus).getName();
+        }
+        
+        /**
+         * Fetches the IDs stored for the document.
+         */
+        public int[] fetch(int docID, int[] vals) {
+            ldtv.position(ldtvo.byteDecode(4 * (docID - 1), 4));
+            int n = ldtv.byteDecode();
+            if(vals == null || vals.length < n+1) {
+                vals = new int[n+1];
+            }
+            vals[0] = n;
+            for(int i = 1; i <= n; i++) {
+                vals[i] = ldtv.byteDecode();
+            }
+            return vals;
         }
 
         /**
@@ -1291,17 +1364,21 @@ public class DiskDictionaryBundle<N extends Comparable> {
          * @param docID
          * @return
          */
-        public List<Object> fetch(int docID) {
+        public List<N> fetch(int docID) {
             return fetch(docID, new ArrayList());
         }
 
-        public List<Object> fetch(int docID, List l) {
+        public List<N> fetch(int docID, List l) {
             ldtv.position(ldtvo.byteDecode(4 * (docID - 1), 4));
             int n = ldtv.byteDecode();
             for(int i = 0; i < n; i++) {
-                l.add(rawSaved.getByID(ldtv.byteDecode()).getName());
+                l.add(rawSaved.get(ldtv.byteDecode(), lus).getName());
             }
             return l;
+        }
+        
+        public LightIterator<N> literator() {
+            return rawSaved.literator(lus);
         }
     }
 }

@@ -96,12 +96,14 @@ public class QueryEvaluator {
             }
             qe.setPartition(p);
             ArrayGroup ag = qe.eval(null);
-            ag.part = p;
-            ag.queryTerms = qe.getQueryTerms();
-            qe.qs.normW.start();
-            ag.normalize();
-            qe.qs.normW.stop();
-            ret.add(ag);
+            if(ag != null) {
+                ag.part = p;
+                ag.queryTerms = qe.getQueryTerms();
+                qe.qs.normW.start();
+                ag.normalize();
+                qe.qs.normW.stop();
+                ret.add(ag);
+            }
         }
         return ret;
     }

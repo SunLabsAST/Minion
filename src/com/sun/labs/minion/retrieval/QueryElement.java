@@ -41,6 +41,9 @@ import java.util.logging.Logger;
  */
 public abstract class QueryElement implements Comparable {
 
+    protected static final Logger logger = Logger.getLogger(QueryElement.class.
+            getName());
+
     /**
      * A partition upon which retrieval will be performed.
      */
@@ -111,8 +114,6 @@ public abstract class QueryElement implements Comparable {
      * per-partition.
      */
     protected float[] fieldMultipliers;
-
-    protected static Logger logger = Logger.getLogger(QueryElement.class.getName());
 
     /**
      * Sets the current partition, and makes sure that we have valid search
