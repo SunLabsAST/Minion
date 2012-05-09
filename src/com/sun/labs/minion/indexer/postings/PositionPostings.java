@@ -635,9 +635,12 @@ public class PositionPostings implements Postings {
         b.append(getType()).append(' ').append("N: ").append(nIDs);
         b.append(" nSkips: ").append(nSkips).append(' ');
         if(verbose) {
-            for(int i = 0; i < skipID.length; i++) {
-                b.append("\nskipID ").append(skipID[i]).append(" IDOffset ").append(skipIDOffsets[i])
-                        .append(" posnOffset ").append(skipPosnOffsets[i]);
+            if(nSkips > 0) {
+                for(int i = 0; i < skipID.length; i++) {
+                    b.append("\nskipID ").append(skipID[i]).append(" IDOffset ").
+                            append(skipIDOffsets[i]).append(" posnOffset ").
+                            append(skipPosnOffsets[i]);
+                }
             }
             b.append('\n');
             PostingsIteratorFeatures feat = new PostingsIteratorFeatures();
@@ -1040,6 +1043,7 @@ public class PositionPostings implements Postings {
             if(nSkips == 0) {
                 if(id < currID) {
                     currID = 0;
+                    currPositionOffset = 0;
                     next(-1, dataStart, -1);
                 }
             } else {
