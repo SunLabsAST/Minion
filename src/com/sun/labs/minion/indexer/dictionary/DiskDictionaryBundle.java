@@ -1096,8 +1096,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // the entries and copy out the data, so no need for messing with the heap.
         int nMerged = 0;
         int tsid = 1;
-        termStatsDictOut.start(null, new StringNameHandler(), MemoryDictionary.Renumber.RENUMBER, false, 0);
-
         if(bundles.length == 1) {
             DictionaryIterator di = null;
             if(bundles[0].dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
@@ -1108,6 +1106,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
             if(di == null) {
                 return false;
             }
+            termStatsDictOut.start(null, new StringNameHandler(),
+                                   MemoryDictionary.Renumber.RENUMBER, false, 0);
             while(di.hasNext()) {
                 QueryEntry qe = (QueryEntry) di.next();
                 //
@@ -1126,6 +1126,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             if(nMerged % 50000 != 0 && logger.isLoggable(Level.FINER)) {
                 logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
             }
+            termStatsDictOut.finish();
         } else {
 
             //
@@ -1170,7 +1171,14 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     h.offer(el);
                 }
             }
+            
+            if(h.isEmpty()) {
+                return false;
+            }
 
+            termStatsDictOut.start(null, new StringNameHandler(),
+                                   MemoryDictionary.Renumber.RENUMBER, false,
+                                   0);
             while(h.size() > 0) {
                 HE top = h.peek();
                 TermStatsIndexEntry tse = new TermStatsIndexEntry((String) top.curr.getName(), tsid++);
@@ -1194,8 +1202,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
             if(nMerged % 100000 != 0 && logger.isLoggable(Level.FINER)) {
                 logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
             }
+            termStatsDictOut.finish();
         }
-        termStatsDictOut.finish();
         return nMerged > 0;
     }
 
