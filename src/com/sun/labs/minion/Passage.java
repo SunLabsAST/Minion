@@ -30,7 +30,7 @@ package com.sun.labs.minion;
  * used to get highlighted and un-highlighted versions of the passage for
  * display.
  */
-public interface Passage {
+public interface Passage extends Comparable<Passage> {
 
     /**
      * The types of passage that we will return.

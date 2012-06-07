@@ -57,7 +57,7 @@
     </component>
 
     <!-- A stage used when highlighting documents. -->
-    <component name="highlight_stage" type="com.sun.labs.minion.retrieval.HighlightStage"/>
+    <component name="highlight_stage" type="com.sun.labs.minion.pipeline.HighlightStage"/>
 
     <!-- A stage that collects processed query terms -->
     <component name="query_collector_stage" type="com.sun.labs.minion.pipeline.TokenCollectorStage"/>

@@ -23,7 +23,6 @@
  */
 package com.sun.labs.minion.pipeline;
 
-import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.SearchEngine;
@@ -86,8 +85,8 @@ public class PipelineFactory implements Configurable {
      * Gets a highlighting pipeline configured according to the configuration.
      *
      */
-    public HLPipeline getHLPipeline() {
-        return new HLPipelineImpl(getPipeline(hlStages));
+    public Pipeline getHLPipeline() {
+        return new PipelineImpl(getPipeline(hlStages));
     }
 
     /**
@@ -170,7 +169,22 @@ public class PipelineFactory implements Configurable {
         name = ps.getInstanceName();
         cm = ps.getConfigurationManager();
         stages = (List<Stage>) ps.getComponentList(PROP_STAGES);
+        if(stages.isEmpty()) {
+            throw new PropertyException(ps.getInstanceName(), PROP_STAGES, 
+                    "No stages in pipeline");
+        }
+        
         hlStages = (List<Stage>) ps.getComponentList(PROP_HL_STAGES);
+        if(stages.isEmpty()) {
+            throw new PropertyException(ps.getInstanceName(), PROP_HL_STAGES,
+                                        "No stages in highlighting pipeline");
+        }
+        Stage s = hlStages.get(hlStages.size() - 1);
+        if(!(s instanceof HighlightStage)) {
+            throw new PropertyException(ps.getInstanceName(), PROP_HL_STAGES,
+                                        "Last stage in highlighting pipeline is "
+                    + "not a highlight stage");
+        }
         queryStages = ps.getComponentList(PROP_QUERY_STAGES);
     }
     @ConfigComponentList(type = com.sun.labs.minion.pipeline.Stage.class)

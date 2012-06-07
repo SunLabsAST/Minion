@@ -42,6 +42,8 @@ public class PipelineImpl implements Pipeline {
     private List<Stage> stages;
 
     private Stage head;
+    
+    private Stage tail;
 
     private Field field;
 
@@ -55,6 +57,7 @@ public class PipelineImpl implements Pipeline {
         }
         for(Stage s : stages) {
             s.setPipeline(this);
+            tail = s;
         }
     }
 
@@ -73,11 +76,17 @@ public class PipelineImpl implements Pipeline {
 
         stages.add(s);
         head = stages.get(0);
+        tail = s;
     }
 
     @Override
     public Stage getHead() {
         return head;
+    }
+
+    @Override
+    public Stage getTail() {
+        return tail;
     }
 
     @Override

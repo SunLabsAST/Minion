@@ -767,13 +767,13 @@ public class ArrayGroup implements Cloneable {
         pass[field].add(pos, newPass, penalty);
     }
 
-    public Map getPassages(int doc) {
+    public PassageStore getPassages(int doc, FieldInfo info) {
         Map ret = new HashMap();
 
         //
         // No passages!
         if(pass == null) {
-            return ret;
+            return null;
         }
 
         int pos = Util.binarySearch(docs, 0, size, doc);
@@ -781,19 +781,10 @@ public class ArrayGroup implements Cloneable {
         //
         // The document isn't in the set!
         if(pos < 0) {
-            return ret;
+            return null;
         }
 
-        for(int i = 0; i < pass.length; i++) {
-            if(pass[i] == null) {
-                continue;
-            }
-            if(part instanceof InvFileDiskPartition) {
-//                ret.put(((InvFileDiskPartition) part).getFieldStore().
-//                        getFieldName(i), pass[i]);
-            }
-        }
-        return ret;
+        return pass[info.getID()];
     }
 
     /**

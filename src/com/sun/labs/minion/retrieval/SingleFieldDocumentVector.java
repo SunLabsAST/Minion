@@ -105,7 +105,8 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             QueryEntry<String> key, 
             FieldInfo field) {
         this(e, key, field, e.getQueryConfig().getWeightingFunction(),
-                e.getQueryConfig().getWeightingComponents());
+             e.getQueryConfig().getWeightingComponents());
+        logger.info(String.format("field: %s", field));
     }
 
     public SingleFieldDocumentVector(SearchEngine e,
@@ -151,6 +152,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
         DiskField df = e.getPM().getField(key, field);
         if(df == null) {
             v = new WeightedFeature[0];
+            return;
         }
 
         //

@@ -1516,12 +1516,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 throw (ex);
             }
             
-            Logger.getLogger(PositionPostings.class.getName()).setLevel(Level.INFO);
-
-            if(logger.isLoggable(Level.FINE)) {
-                if(dictOut.getHeader().size % 10000 == 0) {
-                    logger.fine(String.format(" Merged %d entries", dictOut.getHeader().size));
-                }
+            if(logger.isLoggable(Level.FINER) && 
+                    dictOut.getHeader().size % 100000 == 0) {
+                logger.fine(String.format(" Merged %d entries", dictOut.
+                        getHeader().size));
             }
         }
 
@@ -1536,6 +1534,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         // Finish of the writing of the entries to the merged dictionary.
         dictOut.finish();
         
+        if(logger.isLoggable(Level.FINER) && dictOut.getHeader().size % 100000 != 0) {
+            logger.fine(String.format("Merged %d entries",
+                                      dictOut.getHeader().size));
+        }
         //
         // Return the maps from old to new IDs.
         return idMaps;

@@ -82,60 +82,23 @@ public interface PassageBuilder {
                                 int context, int maxSize,
                                 boolean doSort);
 
-   /**
-     * Gets the highlighted passages that were specified using
-     * <code>addPassageField</code>.
-     *
-     * @param document A map representing a list of field names and
-     * values.
-     * @return A <code>Map</code> that maps from field names to a
-     * <code>List</code> of instances of <code>Passage</code> that are
-     * associated with the field.  The key <code>null</code> maps to
-     * passages that did not occur in any field.
-     *
-     * @see com.sun.labs.minion.SearchEngine#index
-     * @see #addPassageField
-     */
-    public Map<String,List<Passage>> getPassages(Map document);
-
-   /**
-     * Gets the highlighted passages that were specified using
-     * <code>addPassageField</code>.
-     *
-     * @param document A map representing a list of field names and
-     * values.
-     * @param context the amount of context that will be used around
-     * passages in fields that were not explicitly added.
-     * @param maxSize the maximum size of passage to return, in characters,
-     * for fields that were not explicitly added.  -1 means any size is OK.
-     * @param doSort If <code>true</code>, passages from any fields not
-     * explictly added will be sorted by score before being returned.
-     *
-     * @return A <code>Map</code> that maps from field names to a
-     * <code>List</code> of instances of <code>Passage</code> that are
-     * associated with the field.  The key <code>null</code> maps to
-     * passages that did not occur in any field and to passages from fields
-     * that were not explicitly added.
-     *
-     * @see com.sun.labs.minion.SearchEngine#index
-     * @see #addPassageField
-     */
-    public Map<String,List<Passage>>  getPassages(Map document,
-                           int context, int maxSize, boolean doSort);
-
     /**
-     * Gets all of the passages in the document as a list.
-     *
-     * @param document A map representing a list of field names and
-     * values.
-     * @param context The size of the surrounding context to put in the passage,
-     * in words. -1 means take an entire field value as context.
-     * @param maxSize The maximum size of passage to return, in characters.  -1
-     * means any size is OK.
-     *
-     * @return a list of <code>Passage</code>s.
+     * Processes the given document, extracting passages that match those
+     * specified by the {@link #addPassageField} methods
+     * 
+     * @param doc the document to highlight.
      */
-    public List<Passage> getPassages(Map document,
-                            int context, int maxSize);
-    
+    public void process(Indexable doc);
+            
+            /**
+     * Gets the highlighted passages that were specified using
+     * <code>addPassageField</code>.
+     *
+     * @return A <code>Map</code> that maps from field names to a
+     * <code>List</code> of instances of <code>Passage</code> that are
+     * associated with the field.
+     *
+     * @see #addPassageField
+     */
+    public Map<String,List<Passage>> getPassages();
 }// PassageBuilder

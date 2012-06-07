@@ -23,10 +23,8 @@
  */
 package com.sun.labs.minion.pipeline;
 
-import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.retrieval.ArrayGroup;
-import com.sun.labs.minion.retrieval.HighlightStage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +33,7 @@ import java.util.Map;
 /**
  * A pipeline that can be used for highlighting documents.
  */
-public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
+public class HLPipelineImpl extends PipelineImpl  {
 
     private HighlightStage hlStage;
 
@@ -49,24 +47,21 @@ public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
     /**
      * Sets up for processing a new document.
      */
-    @Override
     public void reset(ArrayGroup ag, int doc, String[] qt) {
         hlStage.reset(ag, doc, qt);
     }
 
-    @Override
     public void addPassageField(String fieldName) {
         addPassageField(fieldName, com.sun.labs.minion.Passage.Type.JOIN,
                 -1, -1, false);
     }
 
-    @Override
     public void addPassageField(String fieldName,
             com.sun.labs.minion.Passage.Type type,
             int context, int maxSize,
             boolean doSort) {
-        hlStage.addField(fieldName, type, context,
-                maxSize, doSort);
+//        hlStage.addField(fieldName, type, context,
+//                maxSize, doSort);
     }
 
     /**
@@ -83,7 +78,6 @@ public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
      * @see com.sun.labs.minion.SearchEngine#index
      * @see #addPassageField
      */
-    @Override
     public Map getPassages(Map document) {
         return getPassages(document, false, -1, -1, false);
     }
@@ -110,7 +104,6 @@ public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
      * @see com.sun.labs.minion.SearchEngine#index
      * @see #addPassageField
      */
-    @Override
     public Map getPassages(Map document,
             int context, int maxSize, boolean doSort) {
         return getPassages(document, true, context, maxSize, doSort);
@@ -172,7 +165,6 @@ public class HLPipelineImpl extends PipelineImpl implements HLPipeline {
      *
      * @return a list of <code>Passage</code>s.
      */
-    @Override
     public List getPassages(Map document,
             int context, int maxSize) {
         hlStage.resetPassages();

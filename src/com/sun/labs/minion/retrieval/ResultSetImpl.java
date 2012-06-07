@@ -25,7 +25,6 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
@@ -34,6 +33,7 @@ import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
@@ -44,9 +44,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.naming.directory.SearchResult;
 
 /**
  * An implementation of the results set interface.
@@ -99,11 +99,7 @@ public class ResultSetImpl implements ResultSet {
      */
     protected List<ArrayGroup> results;
 
-    /**
-     * A pipeline that can be used for highlighting documents from this
-     * set.
-     */
-    protected HLPipeline hlp;
+    private HighlightDocumentProcessor docProcessor;
 
     /**
      * The time spent parsing and evaluating the query, in milliseconds.
@@ -183,7 +179,7 @@ public class ResultSetImpl implements ResultSet {
         cs = parent.cs;
         sortSpec = parent.sortSpec;
         rf = parent.rf;
-        hlp = parent.hlp;
+        docProcessor = parent.docProcessor;
         queryTime = parent.queryTime;
 
         results = new ArrayList();
@@ -675,15 +671,17 @@ public class ResultSetImpl implements ResultSet {
     }
 
     /**
-     * Gets the highlighting pipeline.
+     * Gets a document processor that can be used to do search results 
+     * highlighting.
      */
-    public HLPipeline getHLPipeline() {
-        if(hlp == null) {
-            hlp = e.getHLPipeline();
+    public HighlightDocumentProcessor getHighlightProcessor() {
+        if(docProcessor == null) {
+            docProcessor = new HighlightDocumentProcessor(e);
         }
-        return hlp;
+        return docProcessor;
     }
-
+    
+    
     /**
      * Gets the number of documents that are in the whole index.
      */

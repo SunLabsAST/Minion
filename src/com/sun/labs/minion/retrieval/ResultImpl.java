@@ -26,7 +26,6 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.Document;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.HLPipeline;
 import com.sun.labs.minion.PassageBuilder;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
@@ -35,12 +34,14 @@ import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedField;
 import com.sun.labs.minion.engine.DocumentImpl;
+import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class ResultImpl implements Result, Comparable<Result>, Cloneable,
@@ -213,7 +214,17 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      */
     @Override
     public DocumentVector getDocumentVector() {
-        return new SingleFieldDocumentVector(this, null);
+        Set<FieldInfo> defaultFields = set.getEngine().getQueryConfig().getDefaultFields();
+        if(defaultFields.size() == 1) {
+            return new SingleFieldDocumentVector(this, defaultFields.iterator().next());
+        } else {
+            WeightedField[] wf = new WeightedField[defaultFields.size()];
+            int i = 0;
+            for(FieldInfo fi : defaultFields) {
+                wf[i] = new WeightedField(fi, 1f);
+            }
+            return new MultiFieldDocumentVector(this, wf);
+        }
     }
 
     /**
@@ -323,21 +334,21 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         // Go ahead and eval it.
         ArrayGroup pa = pass.eval(doc);
         pa.part = ag.part;
-        List queryTerms = pass.getQueryTerms();
+        List<QueryTerm> queryTerms = pass.getQueryTerms();
 
         //
         // Fetch out the query terms.
-        String[] qt = new String[queryTerms.size()];
+        String[] qts = new String[queryTerms.size()];
         int p = 0;
-        for(Iterator i = queryTerms.iterator(); i.hasNext();) {
-            qt[p++] = ((DictTerm) i.next()).val;
+        for(QueryTerm qt : queryTerms) {
+            qts[p++] = ((DictTerm) qt).getName();
         }
 
         //
-        // Get a pipeline that can highlight these passages.
-        HLPipeline hlp = ((ResultSetImpl) set).getHLPipeline();
-        hlp.reset(pa, doc, qt);
-        return hlp;
+        // Get a processor for highlighting these passages.
+        HighlightDocumentProcessor hdp = ((ResultSetImpl) set).getHighlightProcessor();
+        hdp.reset(pa, doc, qts);
+        return hdp;
     }
 
     /**

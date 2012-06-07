@@ -36,6 +36,9 @@ import java.util.logging.Logger;
  */
 public abstract class Proximity extends Operator {
 
+    private static final Logger logger = Logger.getLogger(Proximity.class.
+            getName());
+
     /**
      * The maximum number of terms that may be missing from a qualifying
      * passage.
@@ -82,8 +85,6 @@ public abstract class Proximity extends Operator {
      * Whether we need to store passages or no.
      */
     protected boolean storePassages;
-
-    static final Logger logger = Logger.getLogger(Proximity.class.getName());
 
     /**
      * Builds a proximity operator from a list of operands.

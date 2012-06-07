@@ -30,6 +30,7 @@ import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.minion.util.buffer.NIOFileReadableBuffer;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import com.sun.labs.util.NanoWatch;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -778,6 +779,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
         //
         // Merge the types of dictionaries.  This loop is a bit gross, but 
         // most of the merge is the same across the dictionaries.
+        NanoWatch dw = new NanoWatch();
+
         for(Type type : Type.values()) {
 
             //
@@ -804,6 +807,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
             if(!foundDict) {
                 mergeHeader.dictOffsets[ord] = -1;
+                logger.finer(String.format("No dicts for %s", type));
                 continue;
             }
 
@@ -896,12 +900,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     continue;
             }
 
-            logger.fine(String.format(" Merging %s", type));
+            if(logger.isLoggable(Level.FINER)) {
+                dw.start();
+            }
 
             try {
-//                if(type == Type.UNCASED_TOKENS && mergeState.info.getName().equals("title")) {
-//                    Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINE);
-//                }
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                         encoder,
                         mDicts,
@@ -911,14 +914,21 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         fieldDictOut,
                         mergeState.partOut.getPostingsOutput(),
                         true);
-//                Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.INFO);
             } catch(RuntimeException ex) {
                 logger.log(Level.SEVERE, String.format("Exception merging %s of field %s",
                         type, mergeState.info.getName()));
                 throw (ex);
             }
-        }
+            
+            if(logger.isLoggable(Level.FINER)) {
+                dw.stop();
+                logger.finer(String.format("Merging %s took %.2fms", type, dw.
+                        getTimeMillis()));
+                dw.reset();
+            }
 
+        }
+        
         //
         // Merge the docs to values data, if we wrote and dictionaries!
         if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED) && entryIDMaps[Type.RAW_SAVED.ordinal()] != null) {
@@ -937,8 +947,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
             FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(
                     dtvOffsetRAF, 1 << 16);
 
-            logger.fine(String.format("Merging docs to values"));
-
+            if(logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("Merging docs to values"));
+                dw.start();
+            }
             for(int i = 0; i < bundles.length; i++) {
 
                 //
@@ -1006,6 +1018,12 @@ public class DiskDictionaryBundle<N extends Comparable> {
             mdtvOffsetBuff.write(fieldDictOut);
             dtvOffsetRAF.close();
             dtvOffsetFile.delete();
+            
+            if(logger.isLoggable(Level.FINER)) {
+                dw.stop();
+                logger.fine(String.format("Merging d2v took %.2fms", dw.getTimeMillis()));
+                dw.reset();
+            }
         }
 
 
@@ -1013,8 +1031,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // Calculate document vector lengths.
         if(mergeState.info.hasAttribute(FieldInfo.Attribute.INDEXED)
                 && !mergeState.partOut.isLongIndexingRun()) {
-
-            logger.fine(String.format("Calculating document vector lengths"));
 
             //
             // Calculate document vector lengths.  We need an iterator for the 
@@ -1038,6 +1054,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     mPostRAF[i] = new RandomAccessFile(postOutFiles[i], "rw");
                 }
                 try {
+                    if(logger.isLoggable(Level.FINER)) {
+                        dw.start();
+                    }
+
                     WriteableBuffer vlb = mergeState.partOut.getVectorLengthsBuffer();
                     mergeHeader.vectorLengthOffset = vlb.position();
                     fieldDictOut.position(mdp);
@@ -1057,6 +1077,12 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         mprf.close();
                     }
                     fieldDictOut.position(mdsp);
+                    if(logger.isLoggable(Level.FINER)) {
+                        dw.stop();
+                        logger.fine(String.format("Calculating doc vec lens took %.2fms", dw.getTimeMillis()));
+                        dw.reset();
+                    }
+
                 } catch(RuntimeException ex) {
                     logger.log(Level.SEVERE, String.format(
                             "Exception computing vectors for merged partition on field %s using %s", 
@@ -1090,7 +1116,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
      */
     public static boolean generateTermStats(DiskDictionaryBundle[] bundles,
             DictionaryOutput termStatsDictOut) {
-
+        
         //
         // Special case of a single partition, we just need to iterate through
         // the entries and copy out the data, so no need for messing with the heap.

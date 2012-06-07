@@ -69,6 +69,7 @@ import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.Util;
+import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.command.CommandInterface;
 import com.sun.labs.util.command.CommandInterpreter;
@@ -1409,6 +1410,9 @@ public class QueryTest extends SEMain {
                 if(args.length == 1) {
                     ci.out.println("Merging all partitions");
                     manager.mergeAll();
+                    logger.info(String.format("FWB writes: %.2fms",
+                                              FileWriteableBuffer.ww.
+                            getTimeMillis()));
                     return "Merged all partitions";
                 } else {
                     ArrayList<Integer> parts = new ArrayList<Integer>();
@@ -1418,6 +1422,9 @@ public class QueryTest extends SEMain {
 
                     PartitionManager.Merger merger = manager.getMergerFromNumbers(parts);
                     merger.merge();
+                    logger.info(String.format("FWB writes: %.2fms",
+                                              FileWriteableBuffer.ww.
+                            getTimeMillis()));
                     return "Merged " + parts;
                 }
             }
@@ -1481,12 +1488,12 @@ public class QueryTest extends SEMain {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
-                if(args.length < 3) {
-                    return "Must specify fields and document key";
+                if(args.length < 2) {
+                    return "Must specify document key";
                 }
                 
-                String[] fields = args[1].split(",");
-                String key = args[2];
+                String key = args[1];
+                String[] fields = args.length > 2 ? args[2].split(",") : null;
                 double skim = args.length > 3 ? Double.parseDouble(args[3]) : 1.0;
                 DocumentVector dv = engine.getDocumentVector(key, fields);
                 if(dv != null) {
@@ -1500,7 +1507,37 @@ public class QueryTest extends SEMain {
 
             @Override
             public String getHelp() {
-                return "fields key [skim] Find documents similar to the given one, using comma-separated field list";
+                return "key [fields] [skim] Find documents similar to the given one, using comma-separated field list";
+            }
+        });
+        
+        shell.add("rf", "Query", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 2) {
+                    return "Must specify query";
+                }
+                
+                String query = join(args, 1, args.length, " ");
+                ResultSet rs = engine.search(query);
+                if(rs.size() == 0) {
+                    return "No hits for search";
+                }
+                Result r = rs.getResults(0, 1).get(0);
+                DocumentVector dv = r.getDocumentVector();
+                if(dv != null) {
+                    rs = dv.findSimilar("-score", 0.25);
+                    displayResults(rs);
+                } else {
+                    return "No document vector?";
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "[fields] query Find documents similar to the best hit for this query, using comma separated field list";
             }
         });
         
@@ -1879,7 +1916,7 @@ public class QueryTest extends SEMain {
                                    true);
                 pb.addPassageField("h1", Passage.Type.JOIN, -1, 256, true);
                 pb.addPassageField("h2", Passage.Type.JOIN, -1, 256, true);
-                Map mp = pb.getPassages(doc.getMap(), 10, 256, true);
+                Map mp = pb.getPassages();
 
                 for(Iterator i = mp.entrySet().iterator(); i.hasNext();) {
                     Map.Entry me = (Map.Entry) i.next();
@@ -1906,26 +1943,26 @@ public class QueryTest extends SEMain {
                     }
                 }
             } else {
-                List p = pb.getPassages(doc.getMap(), 10, 512);
-                int n = 0;
-                for(Iterator i = p.iterator(); i.hasNext() && n < 4;) {
-                    Passage pass = (Passage) i.next();
-                    pass.highlight(shigh, true);
-                    String[] mTerms = pass.getMatchingTerms();
-                    shell.out.format("  %.3f", pass.getScore());
-                    for(int l = 0; l < mTerms.length; l++) {
-                        shell.out.print(" " + mTerms[l]);
-                    }
-                    shell.out.println("");
-                    String hp = pass.getHLValue(true);
-                    hp = reformat(hp.replace('\n', ' '), "   ", 72);
-                    shell.out.println(hp);
-                    n++;
-                }
-
-                if(n < p.size()) {
-                    shell.out.println("  " + (p.size() - n) + " passages not shown");
-                }
+//                List p = pb.
+//                int n = 0;
+//                for(Iterator i = p.iterator(); i.hasNext() && n < 4;) {
+//                    Passage pass = (Passage) i.next();
+//                    pass.highlight(shigh, true);
+//                    String[] mTerms = pass.getMatchingTerms();
+//                    shell.out.format("  %.3f", pass.getScore());
+//                    for(int l = 0; l < mTerms.length; l++) {
+//                        shell.out.print(" " + mTerms[l]);
+//                    }
+//                    shell.out.println("");
+//                    String hp = pass.getHLValue(true);
+//                    hp = reformat(hp.replace('\n', ' '), "   ", 72);
+//                    shell.out.println(hp);
+//                    n++;
+//                }
+//
+//                if(n < p.size()) {
+//                    shell.out.println("  " + (p.size() - n) + " passages not shown");
+//                }
             }
         }
 

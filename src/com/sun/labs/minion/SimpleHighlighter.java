@@ -31,6 +31,11 @@ import com.sun.labs.minion.util.Util;
  * start/end tags for the passage and matching terms.
  */
 public class SimpleHighlighter implements PassageHighlighter {
+    String passageStartTag;
+    String passageEndTag;
+    String matchingStartTag;
+    String matchingEndTag;
+
     public SimpleHighlighter(String pst, String pet,
                              String wst, String wet) {
         passageStartTag  = pst;
@@ -92,22 +97,18 @@ public class SimpleHighlighter implements PassageHighlighter {
      *
      * @param term The matching term.
      * @param pos The position of the matching term.
-     * @param sb a buffer into which we will encode the term
      * @return The code for highlighting the term, including the term!
      */
     @Override
-    public StringBuffer highlightMatching(String term, int pos,
-                                          StringBuffer sb, boolean htmlEncode) {
+    public StringBuilder highlightMatching(String term, int pos, StringBuilder sb, boolean htmlEncode) {
         if(htmlEncode) {
             sb.append(matchingStartTag);
             Util.htmlEncode(term, sb);
             sb.append(matchingEndTag);
         } else {
-            sb.append(matchingStartTag + term + matchingEndTag);
+            sb.append(matchingStartTag).append(term).append(matchingEndTag);
         }
         return sb;
     }
 
-    String passageStartTag, passageEndTag;
-    String matchingStartTag, matchingEndTag;
 } // SimpleHighlighter

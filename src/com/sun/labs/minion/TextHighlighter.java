@@ -57,10 +57,8 @@ public class TextHighlighter implements PassageHighlighter {
     }
 
     @Override
-    public StringBuffer highlightMatching(String t, int p,
-                                          StringBuffer sb, boolean htmlEncode) {
-        sb.append("**" + t + "**");
-        return sb;
+    public StringBuilder highlightMatching(String t, int p, StringBuilder sb, boolean htmlEncode) {
+        return sb.append("**").append(t).append("**");
     }
 } // TextHighlighter
 

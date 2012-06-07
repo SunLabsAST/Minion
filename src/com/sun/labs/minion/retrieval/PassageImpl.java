@@ -30,7 +30,10 @@ import com.sun.labs.minion.util.Util;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
-public class PassageImpl implements Passage, Comparable {
+public class PassageImpl implements Passage {
+
+    private static final Logger logger = Logger.getLogger(PassageImpl.class.
+            getName());
 
     /**
      * The penalty score associated with this passage.
@@ -133,8 +136,6 @@ public class PassageImpl implements Passage, Comparable {
      */
     protected String elidedUnHLValue;
 
-    private static final Logger logger = Logger.getLogger(PassageImpl.class.getName());
-
     /**
      * Creates a passage for the given set of positions.
      *
@@ -214,7 +215,7 @@ public class PassageImpl implements Passage, Comparable {
      *
      * @param t The token to try to add.
      */
-    protected boolean add(Token t) {
+    public boolean add(Token t) {
 
         //
         // If we're done collecting, then we're done.
@@ -263,7 +264,7 @@ public class PassageImpl implements Passage, Comparable {
     @Override
     public String highlight(PassageHighlighter highlighter,
             boolean htmlEncode) {
-        StringBuffer b = new StringBuffer();
+        StringBuilder b = new StringBuilder();
 
         //
         // See if this is a passage that we collected, even though we
@@ -418,7 +419,7 @@ public class PassageImpl implements Passage, Comparable {
         int[] sp = new int[n];
         int[] before = new int[n];
         int[] after = new int[n];
-        StringBuffer[] chunks = new StringBuffer[n];
+        StringBuilder[] chunks = new StringBuilder[n];
         int currSize = 0;
 
         //
@@ -436,7 +437,7 @@ public class PassageImpl implements Passage, Comparable {
         // Start up by highlighting the matching terms.
         for(int i = 0; i < sp.length; i++) {
             Token t = tokens[sp[i]];
-            chunks[i] = new StringBuffer();
+            chunks[i] = new StringBuilder();
             if(ph != null) {
                 if(i == 0) {
                     chunks[i].append(ph.startPassage());
@@ -613,13 +614,13 @@ public class PassageImpl implements Passage, Comparable {
     }
 
     @Override
-    public int compareTo(Object o) {
-        PassageImpl pi = (PassageImpl) o;
-        if(penalty < pi.penalty) {
+    public int compareTo(Passage o) {
+        
+        if(penalty < o.getScore()) {
             return -1;
         }
 
-        if(penalty > pi.penalty) {
+        if(penalty > o.getScore()) {
             return 1;
         }
 

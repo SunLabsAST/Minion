@@ -130,7 +130,7 @@ public class PassageStore {
      * Gets all of the passages associated with a document as a single
      * array of int.
      */
-    protected int[] getAllPassages(int doc) {
+    public int[] getAllPassages(int doc) {
 
         int pos = Util.binarySearch(ag.docs, 0, ag.size, doc);
 
@@ -144,7 +144,7 @@ public class PassageStore {
         return ret;
     }
 
-    protected float getPenalty(int doc) {
+    public float getPenalty(int doc) {
         int pos = Util.binarySearch(ag.docs, 0, ag.size, doc);
         if(pos < 0 || passStartPosns[pos] < 0) {
             return 0;
@@ -152,7 +152,7 @@ public class PassageStore {
         return penalties[passStartPosns[pos] / width];
     }
 
-    protected int[][] getUniquePassages(int doc) {
+    public int[][] getUniquePassages(int doc) {
         
         int pos = Util.binarySearch(ag.docs, 0, ag.size, doc);
 
@@ -169,7 +169,7 @@ public class PassageStore {
         return ret;
     }
 
-    protected float[] getPenalties(int doc) {
+    public float[] getPenalties(int doc) {
         int pos = Util.binarySearch(ag.docs, 0, ag.size, doc);
 
         if(pos < 0 || passStartPosns[pos] < 0) {

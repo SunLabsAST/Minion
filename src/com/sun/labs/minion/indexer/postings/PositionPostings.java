@@ -393,13 +393,6 @@ public class PositionPostings implements Postings {
         other.readPositions();
         other.decodeSkipTable();
         
-//        if(logger.isLoggable(Level.FINE)) {
-//            logger.fine(String.format("Other: nIDs: %d nSkips: %d skipTableOff: %d\n%s", 
-//                    other.nIDs,
-//                    other.nSkips, other.skipTableOffset,
-//                    other.idBuff.toString(Buffer.Portion.ALL, Buffer.DecodeMode.BYTE_ENCODED)));
-//        }
-        
         //
         // Check for empty postings on the other side.
         if(other.nIDs == 0) {
@@ -442,10 +435,6 @@ public class PositionPostings implements Postings {
         nb += ((WriteableBuffer) idBuff).byteEncode(mPosnOffset - lastPosnOffset);
         adj = nb - adj;
         
-//        if(logger.isLoggable(Level.FINE)) {
-//            logger.fine(String.format("firstID: %d newID: %d adj: %d", firstID, newID, adj));
-//        }
-
         //
         // A quick digression about skips: if the other postings don't have 
         // any skips, but adding the documents will take these postings past
@@ -454,7 +443,6 @@ public class PositionPostings implements Postings {
             int csm = nIDs / skipSize;
             int osm = (nIDs + other.nIDs) / skipSize;
             if(osm > nSkips) {
-//                logger.fine(String.format("Adding a skip because it got big"));
                 addSkip(newID, idOffset, mPosnOffset);
             }
         }
@@ -507,24 +495,7 @@ public class PositionPostings implements Postings {
                        other.skipPosnOffsets[i] + mPosnOffset);
             }
             
-        } else {
-//            logger.fine(String.format("Adding no skips"));
         }
-        
-//        if(logger.isLoggable(Level.FINE)) {
-//            if(logger.isLoggable(Level.FINE)) {
-//                logger.fine(String.format("Added %d skips:\nids: %s\noffsets: %s", other.nSkips, Arrays.toString(skipID),
-//                        Arrays.toString(skipIDOffsets)));
-//            }
-//
-//            logger.fine(String.format("after append nSkips: %d\nids: %s\noffsets: %s\nidBuff:\n%s",
-//                    nSkips,
-//                    Arrays.toString(skipID),
-//                    Arrays.toString(skipIDOffsets),
-//                    idBuff.toString(Buffer.Portion.BEGINNING_TO_POSITION,
-//                    Buffer.DecodeMode.BYTE_ENCODED)));
-//        }
-
     }
 
     @Override
@@ -897,12 +868,15 @@ public class PositionPostings implements Postings {
                 wf = features.getWeightingFunction();
                 wc = features.getWeightingComponents();
                 if(features.positions) {
-                    if(posnBuff == null) {
-                        logger.log(Level.SEVERE, String.format("Unable to get positions"));
-                    } else {
-                        rPosn = ((ReadableBuffer) posnBuff).duplicate();
-                    }
+                    ensurePositions();
                 }
+            }
+        }
+        
+        private void ensurePositions() {
+            if(rPosn == null) {
+                readPositions();
+                rPosn = ((ReadableBuffer) posnBuff).duplicate();
             }
         }
         
@@ -1006,17 +980,19 @@ public class PositionPostings implements Postings {
 
         @Override
         public int[] getPositions() {
-            if(rPosn != null) {
-                rPosn.position(currPositionOffset);
-                if(currPosns == null || currFreq >= currPosns.length) {
-                    currPosns = new int[currFreq];
-                }
-                int prevPosn = 0;
-                for(int i = 0; i < currFreq; i++) {
-                    prevPosn += rPosn.byteDecode();
-                    currPosns[i] = prevPosn;
-                }
+            if(rPosn == null) {
+                ensurePositions();
             }
+            rPosn.position(currPositionOffset);
+            if(currPosns == null || currFreq >= currPosns.length) {
+                currPosns = new int[currFreq];
+            }
+            int prevPosn = 0;
+            for(int i = 0; i < currFreq; i++) {
+                prevPosn += rPosn.byteDecode();
+                currPosns[i] = prevPosn;
+            }
+
             return currPosns;
         }
 

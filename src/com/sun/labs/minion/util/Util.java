@@ -480,10 +480,11 @@ public class Util {
 
     /**
      * Encodes <>"'& characters
+     *
      * @param s string to be html encoded
      * @param sb string buffer to hold results
      */
-    public static StringBuffer htmlEncode(String s, StringBuffer sb) {
+    public static StringBuilder htmlEncode(String s, StringBuilder sb) {
         for(int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
             switch(c) {

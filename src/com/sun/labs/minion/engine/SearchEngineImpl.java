@@ -24,6 +24,7 @@
 package com.sun.labs.minion.engine;
 
 import com.sun.labs.minion.*;
+import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.*;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
@@ -1318,14 +1319,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return new Indexer();
     }
 
-    /**
-     * Gets a pipeline that can be used for highlighting.
-     * @return An instance of <code>Pipeline</code> that can be used to highlight passages in
-     * documents returned by a search.
-     */
     @Override
-    public HLPipeline getHLPipeline() {
-        return pipelineFactory.getHLPipeline();
+    public HighlightDocumentProcessor getHighlightProcessor() {
+        return new HighlightDocumentProcessor(this);
     }
 
     /**

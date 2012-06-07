@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion;
 
+import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.query.Element;
 import java.util.Collection;
@@ -683,11 +684,11 @@ public interface SearchEngine extends Searcher {
     public SimpleIndexer getSimpleIndexer();
 
     /**
-     * Gets a pipeline that can be used for highlighting.
-     * @return an indexing pipeline that can be used for highlighting 
+     * Gets a processor that can be used for highlighting.
+     * @return an processor that can be used for highlighting 
      * hit documents.
      */
-    public HLPipeline getHLPipeline();
+    public HighlightDocumentProcessor getHighlightProcessor();
 
     /**
      * Gets the partition manager for this search engine.  This is for

@@ -51,6 +51,11 @@ public interface Pipeline {
      * @return the stage at the head of the pipeline.
      */
     public Stage getHead();
+    
+    /**
+     * Gets the tail of the pipeline.
+     */
+    public Stage getTail();
 
     /**
      * Adds a stage to the end of the pipeline.

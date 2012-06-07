@@ -25,6 +25,7 @@ package com.sun.labs.minion.util.buffer;
 
 import com.sun.labs.minion.util.ChannelUtil;
 import com.sun.labs.util.LabsLogFormatter;
+import com.sun.labs.util.NanoWatch;
 import java.io.DataOutput;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -550,9 +551,11 @@ public class FileWriteableBuffer implements WriteableBuffer {
         }
     }
 
+    public static NanoWatch ww = new NanoWatch();
     @Override
     public void write(WriteableBuffer b) {
         if(b instanceof FileWriteableBuffer) {
+            ww.start();
             FileWriteableBuffer fwb = (FileWriteableBuffer) b;
             fwb.flush();
             try {
@@ -561,6 +564,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
                 throw new RuntimeException("Error writing to file-backed buffer", ex);
             }
             fwb.pos += pos;
+            ww.stop();
         } else {
             b.append(getReadableBuffer());
         }
@@ -590,6 +594,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
         // starts.
         long buffPos = pos - bPos;
         if(chan instanceof FileChannel) {
+            ww.start();
             FileChannel mychan = raf.getChannel();
             
             //
@@ -619,6 +624,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
                 }
                 ChannelUtil.writeFully((FileChannel) chan, buffToWrite);
             }
+            ww.stop();
         } else {
             
             //

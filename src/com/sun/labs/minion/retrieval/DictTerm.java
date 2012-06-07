@@ -577,6 +577,10 @@ public class DictTerm extends QueryTerm implements Comparator {
                 if(n == 0) {
                     continue;
                 }
+                
+                if(n != 0 && termPosns == null) {
+                    logger.info(String.format("Weird: n = %d termPosns is null for %d in term %s", n, d, dictEntries[i]));
+                }
 
                 //
                 // What field is this term drawn from?
