@@ -33,14 +33,17 @@ import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.ScoreCombiner;
 import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.util.QueuableIterator;
+import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -586,8 +589,16 @@ public class ResultSetImpl implements ResultSet {
 
         return fres;
     }
-    
+    @Override
     public List<Facet> getFacets(String fieldName) throws SearchEngineException {
+        return getFacets(fieldName, null, null);
+    }
+    
+    @Override
+    public List<Facet> getFacets(String fieldName,
+                                 Comparator<Facet> comparer,
+                                 ScoreCombiner combiner) throws
+            SearchEngineException {
         FieldInfo field = e.getFieldInfo(fieldName);
         if(field == null) {
             throw new SearchEngineException("Can't facet on unknown field " + fieldName);
@@ -597,27 +608,38 @@ public class ResultSetImpl implements ResultSet {
         }
         
         //
-        // Queue up the results from each partition.
+        // Queue up the results from each partition, using the provided comparer.
         PriorityQueue<QueuableIterator<LocalFacet>> q = new PriorityQueue(results.size());
         for(ArrayGroup ag : results) {
-            List<LocalFacet> l = ((InvFileDiskPartition) ag.part).getDF(field).getFacets(ag.docs, ag.size);
-            logger.info(String.format("%s: %d facets", ag.part, l.size()));
+            
+            float[] scores = null;
+            if(ag instanceof ScoredGroup) {
+                scores = ((ScoredGroup) ag).scores;
+            }
+            List<LocalFacet> l = 
+                    ((InvFileDiskPartition) ag.part)
+                    .getDF(field)
+                    .getFacets(ag.docs, scores, ag.size, combiner);
             QueuableIterator<LocalFacet> qi = new QueuableIterator(l.iterator());
             if(qi.hasNext()) {
                 qi.next();
                 q.add(qi);
             }
         }
+        
         List<Facet> ret = new ArrayList<Facet>();
         //
         // Build facets as we go.
         while(!q.isEmpty()) {
             QueuableIterator<LocalFacet> top = q.peek();
             FacetImpl f = new FacetImpl(field, 
-                    (Comparable) top.getCurrent().getFacetValue());
-            while(top != null && top.getCurrent().getFacetValue().equals(f.getValue())) {
+                    (Comparable) top.getCurrent().getValue());
+            while(top != null && top.getCurrent().getValue().equals(f.getValue())) {
                 top = q.poll();
                 f.add(top.getCurrent().size());
+                if(combiner != null) {
+                    f.setScore(combiner.combine(f.getScore(), top.getCurrent().getScore()));
+                }
                 if(top.hasNext()) {
                     top.next();
                     q.offer(top);
@@ -625,6 +647,10 @@ public class ResultSetImpl implements ResultSet {
                 top = q.peek();
             }
             ret.add(f);
+        }
+        
+        if(comparer != null) {
+            Collections.sort(ret, comparer);
         }
         return ret;
     }

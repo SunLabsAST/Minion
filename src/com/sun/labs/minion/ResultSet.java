@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion;
 
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -201,50 +202,33 @@ public interface ResultSet {
      * milliseconds
      */
     public long getQueryTime();
-    
-    /**
-     * Clusters the results into this set into a number of clusters.  The 
-     * algorithm used depends on how the engine that generated this set of 
-     * results is configured.
-     *
-     * @param k the maximum number of clusters to return
-     * @return a set of clusters containing the results in this set.  The number of clusters
-     * returned may be less than or equal to <code>k</code>
-     * @throws SearchEngineException if there are any errors generating the clusters
-     * @see ResultsCluster
-     */
-//    public Set<ResultsCluster> cluster(int k) throws SearchEngineException;
-    
-    /**
-     * Clusters the results into this set into a number of clusters.  The 
-     * algorithm used depends on how the engine that generated this set of 
-     * results is configured.
-     *
-     * @param field the name of a vectored field upon which the clustering 
-     * should be based.  A value of <code>null</code> indicates that all vectored
-     * fields should be considered, while an empty string indicates that data
-     * in no explicit field should be considered.
-     * @param k the maximum number of clusters to return
-     * @return a set of clusters containing the results in this set.  The number of clusters
-     * returned may be less than or equal to <code>k</code>
-     * @throws SearchEngineException if there are any errors generating the clusters
-     * @see ResultsCluster
-     */
-//    public Set<ResultsCluster> cluster(String field, int k) throws SearchEngineException;
-    
-    /**
-     * Groups the results in this set into a number of clusters.  The results are
-     * broken into groups based on the values in the given field.  If a result
-     * has more than one value for this field, then it will appear in the group
-     * for each field.
-     *
-     * @param field the name of the field for which we wish to group the results
-     * @param ignoreCase if <code>true</code> case will not be taken into account when
-     * grouping the results.  Clearly, this only makes sense for string fields.
-     * @return a set of clusters grouped by the values of the given field
-     * @throws SearchEngineException if there are any errors grouping the
-     * results
-     */
-//    public Set<ResultsCluster> groupBy(String field, boolean ignoreCase) throws SearchEngineException;
 
+    /**
+     * Gets the facets associated with a field name, returning the facets in 
+     * order according to the count of occurrence of the facet and computing 
+     * facet scores by taking the max score of individual documents making up 
+     * the facets.
+     * @param fieldName the name of the saved field for which we want facets
+     * @return the list of facets associated with this field.
+     * @throws SearchEngineException if there is an error building the facets.
+     */
+    public List<Facet> getFacets(String fieldName) throws SearchEngineException;
+    
+    /**
+     * Gets the facets for this result set associated with a field name, returning
+     * the facets in order according to the provided comparator and computing
+     * facet scores using the given weight combiner across the scores of the
+     * individual documents from this set making up the facets.
+     * @param fieldName the name of the saved field for which we want facets.
+     * @param comparer a comparator that will be used to order the returned 
+     * facets.
+     * @param combiner a combiner that will combine the scores from each document
+     * making up a facet
+     * @return the list of facets associated with this field, ordered according 
+     * to <code>comparer</code>
+     * @throws SearchEngineException if there is an error building the facets.
+     */
+    public List<Facet> getFacets(String fieldName, 
+                                 Comparator<Facet> comparer, 
+                                 ScoreCombiner combiner) throws SearchEngineException;
 } // ResultSet

@@ -1,5 +1,6 @@
 package com.sun.labs.minion.util;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.logging.Logger;
 
@@ -14,8 +15,15 @@ public class QueuableIterator<N extends Comparable> implements Iterator<N>, Comp
     
     private N current;
     
+    private Comparator<N> comparator;
+    
     public QueuableIterator(Iterator<N> i) {
+       this(i, null); 
+    }
+    
+    public QueuableIterator(Iterator<N> i, Comparator<N> comparator) {
         this.i = i;
+        this.comparator = comparator;
     }
 
     @Override
@@ -40,6 +48,9 @@ public class QueuableIterator<N extends Comparable> implements Iterator<N>, Comp
 
     @Override
     public int compareTo(QueuableIterator<N> o) {
+        if(comparator != null) {
+            return comparator.compare(current, o.current);
+        }
         return current.compareTo(o.current);
     }
 }

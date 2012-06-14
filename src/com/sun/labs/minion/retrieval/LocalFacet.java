@@ -1,10 +1,9 @@
 package com.sun.labs.minion.retrieval;
 
 
+import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-import java.util.Comparator;
-import java.util.logging.Logger;
 
 /**
  * A facet that is local to a single partition.  This is used while building
@@ -15,80 +14,42 @@ import java.util.logging.Logger;
  * The default comparison compares partition facets based on the ID of the value
  * that the represent.
  */
-public class LocalFacet<N> implements Comparable<LocalFacet> {
+public class LocalFacet<T extends Comparable> extends FacetImpl<T> {
 
-    private static final Logger logger = Logger.getLogger(LocalFacet.class.getName());
-    
     InvFileDiskPartition part;
     
     /**
-     * The field from which the facet has been drawn.
+     * The ID of the value in the given field in this partition for this facet.
      */
-    FieldInfo field;
-    
-    /**
-     * The ID of the value in the given field for this facet.
-     */
-    int facetValueID;
-    
-    /**
-     * The value of the facet.
-     */
-    N facetValue;
-
-    /**
-     * The size of the facet.
-     */
-    int size;
-    
-    /**
-     * A comparator that will compare local facets by the name of the facet.
-     */
-    public static final Comparator<LocalFacet> NAME_COMPARATOR = new Comparator<LocalFacet>() {
-        @Override
-        public int compare(LocalFacet o1, LocalFacet o2) {
-            return ((Comparable) o1.getFacetValue()).compareTo(o2.getFacetValue());
-        }
-    };
+    int valueID;
     
     public LocalFacet(InvFileDiskPartition part, FieldInfo field, int facetValueID) {
+        super(field, null);
         this.part = part;
-        this.field = field;
-        this.facetValueID = facetValueID;
+        this.valueID = facetValueID;
     }
     
-    public void add(int size) {
-        this.size += size;
-    }
-    
-    public int size() {
-        return size;
-    }
-
-    public N getFacetValue() {
-        return facetValue;
-    }
-
-    public void setFacetValue(N facetValue) {
-        this.facetValue = facetValue;
-    }
-
-    public int getFacetValueID() {
-        return facetValueID;
-    }
-
-    public FieldInfo getField() {
-        return field;
+    public int getValueID() {
+        return valueID;
     }
 
     @Override
-    public int compareTo(LocalFacet o) {
-        return facetValueID - o.facetValueID;
+    public int compareTo(Facet<T> o) {
+        if(o instanceof LocalFacet) {
+            return valueID - ((LocalFacet) o).valueID;
+        } else {
+            return value.compareTo(o.getValue());
+        }
     }
+    
+    public int compareTo(LocalFacet o) {
+        return valueID - o.valueID;
+    }
+
 
     @Override
     public String toString() {
-        return "LocalFacet{" + "facetValueID=" + facetValueID + ", facetValue=" +
-                facetValue + ", size=" + size + '}';
+        return "LocalFacet{" + "facetValueID=" + valueID + ", value=" +
+                value + ", size=" + size + '}';
     }
 }

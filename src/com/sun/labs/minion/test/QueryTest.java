@@ -37,6 +37,7 @@ import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
+import com.sun.labs.minion.ScoreCombiner;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.Searcher;
@@ -385,7 +386,7 @@ public class QueryTest extends SEMain {
                     return "No previous query";
                 }
                 
-                List<Facet> lf = lastResultSet.getFacets(args[1]);
+                List<Facet> lf = lastResultSet.getFacets(args[1], Facet.FACET_REVERSE_SCORE_COMPARATOR, ScoreCombiner.MAX_WEIGHT_COMBINER);
                 
                 ci.out.format("Found %d facets for %s in %d hits\n", 
                               lf.size(), args[1], lastResultSet.size());

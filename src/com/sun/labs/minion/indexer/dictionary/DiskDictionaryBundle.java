@@ -2,6 +2,7 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.ScoreCombiner;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
@@ -1289,12 +1290,18 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @return a list of the facets for this partition.
      * @throws SearchEngineException 
      */
-    public List<LocalFacet<N>> getFacets(int[] docs, int p) throws SearchEngineException {
+    public List<LocalFacet<N>> getFacets(int[] docs, float[] scores, int p, ScoreCombiner combiner) throws SearchEngineException {
         Map<Integer, LocalFacet<N>> m = new HashMap<Integer, LocalFacet<N>>();
         Fetcher fetcher = getFetcher();
         int[] valIDs = new int[16];
+        boolean useScores = scores != null && combiner != null;
         for(int i = 0; i < p; i++) {
             valIDs = fetcher.fetch(docs[i], valIDs);
+            float score = 0;
+            if(useScores) {
+                score = scores[i];
+            }
+            
             for(int j = 1; j <= valIDs[0]; j++) {
                 int valID = valIDs[j];
                 LocalFacet facet = m.get(valID);
@@ -1304,6 +1311,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     m.put(valID, facet);
                 }
                 facet.add(1);
+                if(useScores) {
+                    facet.setScore(combiner.combine(facet.getScore(), score));
+                }
             }
         }
         
@@ -1316,8 +1326,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
             DiskDictionary<N>.LightDiskDictionaryIterator lit = 
                     (DiskDictionary.LightDiskDictionaryIterator) fetcher.literator();
             for(LocalFacet<N> facet : ret) {
-                lit.simpleAdvance(facet.getFacetValueID());
-                facet.setFacetValue(lit.getName());
+                lit.simpleAdvance(facet.getValueID());
+                facet.setValue(lit.getName());
             }
         }
         return ret;

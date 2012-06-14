@@ -15,17 +15,22 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     /**
      * The field that we are a facet of.
      */
-    private FieldInfo field;
+    protected FieldInfo field;
     
     /**
      * The value of the facet.
      */
-    private T value;
+    protected T value;
     
     /**
      * The size of the facet.
      */
-    private int size;
+    protected int size;
+    
+    /**
+     * The score of the facet.
+     */
+    protected float score;
     
     /**
      * Creates a facet for the given field.
@@ -45,8 +50,21 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     public int size() {
         return size;
     }
-    
-    protected void add(int n) {
+
+    @Override
+    public float getScore() {
+        return score;
+    }
+
+    public void setValue(T value) {
+        this.value = value;
+    }
+
+    public void setScore(float score) {
+        this.score = score;
+    }
+
+    public void add(int n) {
         size += n;
     }
 
@@ -62,6 +80,6 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
 
     @Override
     public String toString() {
-        return value + " (" + size() + ')';
+        return String.format("%s %.2f (%d)", value, score, size);
     }
 }
