@@ -54,7 +54,7 @@ import java.util.logging.Logger;
 public class ResultSetImpl implements ResultSet {
 
     /**
-     * The query, as provided by tmhe user.
+     * The query, as provided by the user.
      */
     protected QueryElement query;
 
@@ -601,6 +601,7 @@ public class ResultSetImpl implements ResultSet {
         PriorityQueue<QueuableIterator<LocalFacet>> q = new PriorityQueue(results.size());
         for(ArrayGroup ag : results) {
             List<LocalFacet> l = ((InvFileDiskPartition) ag.part).getDF(field).getFacets(ag.docs, ag.size);
+            logger.info(String.format("%s: %d facets", ag.part, l.size()));
             QueuableIterator<LocalFacet> qi = new QueuableIterator(l.iterator());
             if(qi.hasNext()) {
                 qi.next();
@@ -614,19 +615,14 @@ public class ResultSetImpl implements ResultSet {
             QueuableIterator<LocalFacet> top = q.peek();
             FacetImpl f = new FacetImpl(field, 
                     (Comparable) top.getCurrent().getFacetValue());
-            logger.info(String.format("top: %s", f.getValue()));
-            while(q.peek().getCurrent().getFacetValue().equals(f.getValue())) {
-                QueuableIterator<LocalFacet> qi = q.poll();
-                LocalFacet lf = qi.getCurrent();
-                List<Integer> docIDs = lf.getDocIDs();
-                for(int docID : docIDs) {
-                    f.add(new ResultImpl(this, null, null, docID, 1));
+            while(top != null && top.getCurrent().getFacetValue().equals(f.getValue())) {
+                top = q.poll();
+                f.add(top.getCurrent().size());
+                if(top.hasNext()) {
+                    top.next();
+                    q.offer(top);
                 }
-                if(qi.hasNext()) {
-                    qi.next();
-                    q.add(qi);
-                }
-                
+                top = q.peek();
             }
             ret.add(f);
         }

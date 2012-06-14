@@ -1303,18 +1303,18 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             info, valID);
                     m.put(valID, facet);
                 }
-                facet.add(docs[i]);
+                facet.add(1);
             }
         }
         
         List<LocalFacet<N>> ret = new ArrayList<LocalFacet<N>>(m.values());
-        logger.info(String.format("%s got %d facets", field.getPartition(), m.size()));
         if(!ret.isEmpty()) {
             //
             // Sort the facets by ID and set the name values all at once, which
             // will let us stream through the dictionary.
             Collections.sort(ret);
-            DiskDictionary<N>.LightDiskDictionaryIterator lit = (DiskDictionary.LightDiskDictionaryIterator) fetcher.literator();
+            DiskDictionary<N>.LightDiskDictionaryIterator lit = 
+                    (DiskDictionary.LightDiskDictionaryIterator) fetcher.literator();
             for(LocalFacet<N> facet : ret) {
                 lit.simpleAdvance(facet.getFacetValueID());
                 facet.setFacetValue(lit.getName());

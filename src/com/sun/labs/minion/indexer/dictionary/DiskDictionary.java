@@ -2203,16 +2203,19 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 newPosn = lus.localIDToPosn.byteDecode();
             }
             
-            int n;
-            if(posn == -1 || newPosn < posn || newPosn - posn > 3) {
+            //
+            // How far will we have to go to get to the position for the 
+            // id we just asked for?
+            int n = newPosn - posn;
+            if(posn == -1 || n < 0 || n > 3) {
                 //
-                // We need to go to the nearest uncompressed term.
-                int ui = posn / 4;
-                n = posn % 4;
+                // Far enough that we need to jump to the nearest uncompressed 
+                // term and advance from there.
+                int ui = newPosn / 4;
+                n = newPosn % 4;
                 lus.decodedName = getUncompressedName(ui, lus);
-            } else {
-                n = newPosn - posn;
             }
+            
             //
             // Walk up to the new id.
             for(int i = 0; i < n; i++) {

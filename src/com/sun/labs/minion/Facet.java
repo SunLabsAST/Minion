@@ -25,10 +25,4 @@ public interface Facet<T extends Comparable> extends Comparable<Facet<T>> {
      */
     public int size();
     
-    /**
-     * Gets the results that make up this facet.
-     * @return the results in this facet.
-     */ 
-    public List<Result> getResults();
-    
 }

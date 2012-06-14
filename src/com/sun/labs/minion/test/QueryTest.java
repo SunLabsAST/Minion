@@ -391,7 +391,7 @@ public class QueryTest extends SEMain {
                               lf.size(), args[1], lastResultSet.size());
                 for(Facet f : lf) {
                     ci.out.print("  ");
-                    ci.out.print(f);
+                    ci.out.println(f);
                 }
                 
                 return "";

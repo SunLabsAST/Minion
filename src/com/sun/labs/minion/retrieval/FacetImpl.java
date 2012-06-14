@@ -3,9 +3,6 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.Result;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -26,10 +23,10 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     private T value;
     
     /**
-     * The results in this facet.
+     * The size of the facet.
      */
-    private List<Result> results;
-
+    private int size;
+    
     /**
      * Creates a facet for the given field.
      * @param field 
@@ -37,16 +34,6 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     public FacetImpl(FieldInfo field, T value) {
         this.field = field;
         this.value = value;
-        results = new ArrayList<Result>();
-    }
-    
-    public void add(Result r) {
-        results.add(r);
-    }
-
-    @Override
-    public FieldInfo getField() {
-        return field;
     }
 
     @Override
@@ -56,14 +43,18 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
 
     @Override
     public int size() {
-        return results.size();
+        return size;
     }
     
-    @Override
-    public List<Result> getResults() {
-        return results;
+    protected void add(int n) {
+        size += n;
     }
 
+    @Override
+    public FieldInfo getField() {
+        return field;
+    }
+    
     @Override
     public int compareTo(Facet<T> o) {
         return value.compareTo(o.getValue());

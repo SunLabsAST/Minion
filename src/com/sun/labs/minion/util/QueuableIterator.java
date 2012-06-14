@@ -1,11 +1,10 @@
 package com.sun.labs.minion.util;
 
-
 import java.util.Iterator;
 import java.util.logging.Logger;
 
 /**
- * A wrapper for an iterator that 
+ * A wrapper for an iterator that can be put into a priority queue.
  */
 public class QueuableIterator<N extends Comparable> implements Iterator<N>, Comparable<QueuableIterator<N>> {
 
