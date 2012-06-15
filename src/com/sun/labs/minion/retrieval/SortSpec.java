@@ -87,11 +87,18 @@ public class SortSpec {
      * information for each of the named fields.
      */
     public SortSpec(PartitionManager manager, String spec) {
-        if(spec != null) {
-            this.spec = spec;
-        } else {
-            this.spec = "";
+        if(spec != null ) {
+            this.spec = spec.trim();
+            if(this.spec.isEmpty()) {
+                this.spec = null;
+            }
+        } 
+        
+        if(this.spec == null)  {
+            justScoreSort = true;
+            return;
         }
+        
         StringTokenizer tok = new StringTokenizer(spec, ",");
         size = tok.countTokens();
         fields = new FieldInfo[size];
@@ -133,8 +140,8 @@ public class SortSpec {
         spec = ss.spec;
         size = ss.size;
         justScoreSort = ss.justScoreSort;
-        fields = (FieldInfo[]) ss.fields.clone();
-        directions = (boolean[]) ss.directions.clone();
+        fields = ss.fields;
+        directions = ss.directions;
         fetchers = new Fetcher[size];
         for(int i = 0; i < size; i++) {
             if(fields[i] != null && fields[i].getID() != 0) {

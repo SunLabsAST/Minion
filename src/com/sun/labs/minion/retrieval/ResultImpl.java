@@ -56,6 +56,11 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * The array group containing this result.
      */
     protected ArrayGroup ag;
+    
+    /**
+     * The partition backing this result.
+     */
+    protected DiskPartition partition;
 
     /**
      * The query that generated this result.
@@ -136,11 +141,14 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
             float score) {
         this.set = set;
         this.ag = ag;
+        if(ag != null) {
+            partition = ag.getPartition();
+        }
         this.doc = doc;
         this.score = score;
         this.sortSpec = sortSpec;
 
-        if(sortSpec != null && ag != null && ag.part instanceof InvFileDiskPartition) {
+        if(sortSpec != null && ag != null && partition instanceof InvFileDiskPartition) {
 
             //
             // Fill in the field values that we're sorting on.
@@ -155,11 +163,19 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     }
 
     /**
+     * Sets the partition for this result.
+     * @param partition the partition that generated this result.
+     */
+    public void setPartition(DiskPartition partition) {
+        this.partition = partition;
+    }
+
+    /**
      * Gets the document key entry associated with this document.
      * @return the doc key entry
      */
     public QueryEntry getKeyEntry() {
-        return ag.part.getDocumentDictionary().getByID(doc);
+        return partition.getDocumentDictionary().getByID(doc);
     }
 
     /**
@@ -168,7 +184,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      */
     @Override
     public String getKey() {
-        return (String) ag.part.getDocumentDictionary().getByID(doc).getName();
+        return (String) partition.getDocumentDictionary().getByID(doc).getName();
     }
 
     /**
@@ -178,33 +194,31 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      */
     @Override
     public List getField(String name) {
-        return (List) ((InvFileDiskPartition) ag.part).getSavedFieldData(name,
+        return (List) ((InvFileDiskPartition) partition).getSavedFieldData(name,
                 doc, true);
     }
 
     @Override
     public Object getSingleFieldValue(String name) {
-        return ((InvFileDiskPartition) ag.part).getSavedFieldData(name, doc,
+        return ((InvFileDiskPartition) partition).getSavedFieldData(name, doc,
                 false);
     }
 
     @Override
     public Document getDocument() {
-        QueryEntry dke = ag.part.getDocumentDictionary().getByID(doc);
+        QueryEntry dke = partition.getDocumentDictionary().getByID(doc);
 
         //
         // If there's no such key, then return
         // null, since we don't have this document.
         if(dke == null) {
-            logger.severe("No document term for result: " + ag.part + " " + doc);
-
+            logger.severe(String.format("No document term for result: %s (docid: %d)", partition, doc));
             return null;
         }
 
         //
         // Back the existing document with the index.
         return new DocumentImpl(dke);
-
     }
 
     /**
@@ -276,11 +290,11 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     }
 
     public int getPartNum() {
-        return ag.part.getPartitionNumber();
+        return partition.getPartitionNumber();
     }
 
     public DiskPartition getPart() {
-        return ag.part;
+        return (DiskPartition) partition;
     }
 
     /**
@@ -321,7 +335,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         Passage pass = new Passage(ag.queryTerms);
         pass.setQueryConfig(((ResultSetImpl) set).e.getQueryConfig());
         pass.setQueryStats(new QueryStats());
-        pass.setPartition(ag.part);
+        pass.setPartition(partition);
         pass.setStorePassages(true);
 
         //
@@ -333,7 +347,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         //
         // Go ahead and eval it.
         ArrayGroup pa = pass.eval(doc);
-        pa.part = ag.part;
+        pa.part = partition;
         List<QueryTerm> queryTerms = pass.getQueryTerms();
 
         //
@@ -357,7 +371,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * @param i The index of the field in our sort specification whose
      * value we want to retrieve.
      */
-    protected void getFieldValue(int i) {
+    protected void getSortFieldValue(int i) {
 
         //
         // A field with a zero ID indicates that we're sorting by score.
@@ -383,7 +397,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
 
     protected void setFields() {
         for(int i = 0; i < fields.length; i++) {
-            getFieldValue(i);
+            getSortFieldValue(i);
         }
     }
 
@@ -391,12 +405,12 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     public int compareTo(Result o) {
 
         ResultImpl r = (ResultImpl) o;
-        if(fields == null) {
+        if(fields == null || (sortSpec != null && sortSpec.isJustScoreSort())) {
             if(score < r.score) {
-                return 1;
+                return -1;
             }
             if(score > r.score) {
-                return -1;
+                return 1;
             }
             return 0;
         }
@@ -408,11 +422,11 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
             //
             // Make sure we have this field value in both results.
             if(fields[i] == null) {
-                getFieldValue(i);
+                getSortFieldValue(i);
             }
 
             if(r.fields[i] == null) {
-                r.getFieldValue(i);
+                r.getSortFieldValue(i);
             }
 
             //
@@ -447,13 +461,13 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         }
 
         ResultImpl other = (ResultImpl) o;
-        return ag.part == other.ag.part && doc == other.doc;
+        return partition == other.partition && doc == other.doc;
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("(").append(ag.part).append(", ").append(doc).append(", ").append(score).append(", [");
+        sb.append("(").append(partition).append(", ").append(doc).append(", ").append(score).append(", [");
         for(int i = 0; i < fields.length; i++) {
             if(i > 0) {
                 sb.append(", ");

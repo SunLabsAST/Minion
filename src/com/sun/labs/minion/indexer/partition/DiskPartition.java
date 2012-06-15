@@ -223,7 +223,7 @@ public class DiskPartition extends Partition implements Closeable {
      * @return an iterator for the entries in the document dictionary,
      * which have the document keys as their names.
      */
-    public Iterator getDocumentIterator() {
+    public Iterator<Entry<String>> getDocumentIterator() {
         return docDict.iterator();
     }
 
@@ -239,7 +239,7 @@ public class DiskPartition extends Partition implements Closeable {
      * @return an iterator for the entries in the document dictionary,
      * which have the document keys as their names.
      */
-    protected Iterator getDocumentIterator(int begin, int end) {
+    protected Iterator<Entry<String>> getDocumentIterator(int begin, int end) {
         return docDict.iterator(begin, end);
     }
 

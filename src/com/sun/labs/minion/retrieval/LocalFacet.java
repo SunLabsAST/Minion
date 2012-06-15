@@ -4,7 +4,9 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.util.Pair;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -16,9 +18,9 @@ import java.util.List;
  * The default comparison compares partition facets based on the ID of the value
  * that the represent.
  */
-public class LocalFacet<T extends Comparable> extends FacetImpl<T> {
+public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements Iterable<Pair<Integer,Float>> {
 
-    InvFileDiskPartition part;
+    InvFileDiskPartition partition;
     
     /**
      * The ID of the value in the given field in this partition for this facet.
@@ -26,18 +28,13 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> {
     int valueID;
 
     /**
-     * The documents that contributed to this facet.
+     * The documents that contributed to this facet and their associated scored.
      */
-    List<Integer> docs = new ArrayList<Integer>(3);
-    
-    /**
-     * The scores that contributed to this facet.
-     */
-    List<Float> scores = new ArrayList<Float>(3);
+    List<Pair<Integer,Float>> docs = new ArrayList<Pair<Integer,Float>>(3);
     
     public LocalFacet(InvFileDiskPartition part, FieldInfo field, int facetValueID) {
-        super(field, null);
-        this.part = part;
+        super(field, null, null);
+        this.partition = part;
         this.valueID = facetValueID;
     }
     
@@ -46,8 +43,16 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> {
     }
     
     public void add(int doc, float score) {
-        docs.add(doc);
-        scores.add(score);
+        docs.add(new Pair<Integer,Float>(doc, score));
+    }
+
+    public InvFileDiskPartition getPartition() {
+        return partition;
+    }
+
+    @Override
+    public Iterator<Pair<Integer, Float>> iterator() {
+        return docs.iterator();
     }
 
     @Override

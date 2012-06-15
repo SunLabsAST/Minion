@@ -278,6 +278,15 @@ public class QueryTest extends SEMain {
 
         shell.out.println(results.size() + "/" + set.size() + "/"
                        + set.getNumDocs());
+        
+        displayResults(prefix, results);
+    }
+    
+    public void displayResults(List<Result> results) {
+        displayResults("", results);
+    }
+    
+    public void displayResults(String prefix, List<Result> results) {
 
         for(Iterator i = results.iterator(); i.hasNext();) {
 
@@ -408,6 +417,8 @@ public class QueryTest extends SEMain {
                 for(Facet f : lf) {
                     ci.out.print("  ");
                     ci.out.println(f);
+                    List<Result> lr = f.getResults(1, null);
+                    displayResults("   ", lr);
                 }
                 
                 return "";

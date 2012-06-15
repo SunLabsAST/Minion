@@ -422,10 +422,10 @@ public class ResultSetImpl implements ResultSet {
         //
         // Quick check for someone asking for everything.
         if(start + n >= size()) {
-            List<Result> l = getAllResults(true, rf);
-            if(start > l.size()) {
+            if(start > size()) {
                 return new ArrayList<Result>();
             }
+            List<Result> l = getAllResults(true, rf);
             return l.subList(start, l.size());
         }
 
@@ -630,15 +630,14 @@ public class ResultSetImpl implements ResultSet {
         PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(n > 0 ? n : 1, comparer);
         
         if(n > 0 && comparer == null) {
-            comparer = Facet.FACET_SCORE_COMPARATOR;
+            comparer = Facet.FACET_SIZE_COMPARATOR;
         }
         
         //
         // Build facets as we go.
         while(!q.isEmpty()) {
             QueuableIterator<LocalFacet> top = q.peek();
-            FacetImpl f = new FacetImpl(field,
-                                        (Comparable) top.getCurrent().getValue());
+            FacetImpl f = new FacetImpl(field, (Comparable) top.getCurrent().getValue(), this);
             while(top != null && top.getCurrent().getValue().
                     equals(f.getValue())) {
                 top = q.poll();

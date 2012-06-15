@@ -1,15 +1,14 @@
 package com.sun.labs.minion;
 
+import com.sun.labs.minion.retrieval.SortSpec;
 import java.util.Comparator;
-import java.util.logging.Logger;
+import java.util.List;
 
 /**
  * A single facet built from a set of documents.
  */
 public interface Facet<T extends Comparable> extends Comparable<Facet<T>> {
     
-    public static final Logger logger = Logger.getLogger(Facet.class.getName());
-
     /**
      * Gets the field from which the facet was generated.
      *
@@ -37,6 +36,14 @@ public interface Facet<T extends Comparable> extends Comparable<Facet<T>> {
      * @return the score associated with this facet.
      */
     public float getScore();
+    
+    /**
+     * Gets the top results in this facet, sorted by the given sorting specification.
+     * @param n the number of results to get.
+     * @param ss a sorting specification to use for the results.
+     */
+    public List<Result> getResults(int n, SortSpec ss);
+    
     /**
      * A comparator that will return facets in increasing order of size.
      *
