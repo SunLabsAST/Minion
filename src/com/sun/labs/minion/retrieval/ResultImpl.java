@@ -68,7 +68,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     protected int doc;
 
     /**
-     * The score the docuemnt received.
+     * The score the document received.
      */
     protected float score;
 
@@ -129,7 +129,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * @param doc The document ID for the hit.
      * @param score The score the document received.
      */
-    protected void init(ResultSet set,
+    protected final void init(ResultSet set,
             ArrayGroup ag,
             SortSpec sortSpec,
             int doc,

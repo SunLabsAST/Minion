@@ -81,6 +81,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -386,7 +387,21 @@ public class QueryTest extends SEMain {
                     return "No previous query";
                 }
                 
-                List<Facet> lf = lastResultSet.getFacets(args[1], Facet.FACET_REVERSE_SCORE_COMPARATOR, ScoreCombiner.MAX_WEIGHT_COMBINER);
+                Comparator<Facet> comparer = Facet.FACET_SCORE_COMPARATOR;
+                
+                if(args.length >= 3) {
+                    if(args[2].equalsIgnoreCase("size")) {
+                        comparer = Facet.FACET_SIZE_COMPARATOR;
+                        logger.info(String.format("using size"));
+                    } else if(args[2].equalsIgnoreCase("name")) {
+                        comparer = Facet.FACET_NAME_COMPARATOR;
+                    }
+                }
+                
+                List<Facet> lf = lastResultSet.getTopFacets(args[1], 
+                                                            comparer,
+                                                            ScoreCombiner.MAX_WEIGHT_COMBINER, 
+                                                            nHits);
                 
                 ci.out.format("Found %d facets for %s in %d hits\n", 
                               lf.size(), args[1], lastResultSet.size());

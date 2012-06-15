@@ -1296,8 +1296,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
         int[] valIDs = new int[16];
         boolean useScores = scores != null && combiner != null;
         for(int i = 0; i < p; i++) {
-            valIDs = fetcher.fetch(docs[i], valIDs);
+            int doc = docs[i];
             float score = 0;
+            valIDs = fetcher.fetch(doc, valIDs);
             if(useScores) {
                 score = scores[i];
             }
@@ -1310,7 +1311,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             info, valID);
                     m.put(valID, facet);
                 }
-                facet.add(1);
+                facet.addCount(1);
+                facet.add(doc, score);
                 if(useScores) {
                     facet.setScore(combiner.combine(facet.getScore(), score));
                 }

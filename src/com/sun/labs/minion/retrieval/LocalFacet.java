@@ -4,6 +4,8 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A facet that is local to a single partition.  This is used while building
@@ -22,6 +24,16 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> {
      * The ID of the value in the given field in this partition for this facet.
      */
     int valueID;
+
+    /**
+     * The documents that contributed to this facet.
+     */
+    List<Integer> docs = new ArrayList<Integer>(3);
+    
+    /**
+     * The scores that contributed to this facet.
+     */
+    List<Float> scores = new ArrayList<Float>(3);
     
     public LocalFacet(InvFileDiskPartition part, FieldInfo field, int facetValueID) {
         super(field, null);
@@ -31,6 +43,11 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> {
     
     public int getValueID() {
         return valueID;
+    }
+    
+    public void add(int doc, float score) {
+        docs.add(doc);
+        scores.add(score);
     }
 
     @Override

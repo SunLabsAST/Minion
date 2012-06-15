@@ -212,7 +212,7 @@ public interface ResultSet {
      * @return the list of facets associated with this field.
      * @throws SearchEngineException if there is an error building the facets.
      */
-    public List<Facet> getFacets(String fieldName) throws SearchEngineException;
+    public List<Facet> getTopFacets(String fieldName, int n) throws SearchEngineException;
     
     /**
      * Gets the facets for this result set associated with a field name, returning
@@ -221,14 +221,14 @@ public interface ResultSet {
      * individual documents from this set making up the facets.
      * @param fieldName the name of the saved field for which we want facets.
      * @param comparer a comparator that will be used to order the returned 
-     * facets.
+     * facets.  The comparer should provide the natural order for the facets (i.e., 
+     * an increasing order) this method will ensure that the top facets (i.e., the
+     * ones with the highest value) are returned according to that ordering.
      * @param combiner a combiner that will combine the scores from each document
      * making up a facet
      * @return the list of facets associated with this field, ordered according 
      * to <code>comparer</code>
      * @throws SearchEngineException if there is an error building the facets.
      */
-    public List<Facet> getFacets(String fieldName, 
-                                 Comparator<Facet> comparer, 
-                                 ScoreCombiner combiner) throws SearchEngineException;
+    public List<Facet> getTopFacets(String fieldName, Comparator<Facet> comparer, ScoreCombiner combiner, int n) throws SearchEngineException;
 } // ResultSet

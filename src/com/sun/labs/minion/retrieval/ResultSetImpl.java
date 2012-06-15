@@ -590,14 +590,12 @@ public class ResultSetImpl implements ResultSet {
         return fres;
     }
     @Override
-    public List<Facet> getFacets(String fieldName) throws SearchEngineException {
-        return getFacets(fieldName, null, null);
+    public List<Facet> getTopFacets(String fieldName, int n) throws SearchEngineException {
+        return getTopFacets(fieldName, null, null, n);
     }
     
     @Override
-    public List<Facet> getFacets(String fieldName,
-                                 Comparator<Facet> comparer,
-                                 ScoreCombiner combiner) throws
+    public List<Facet> getTopFacets(String fieldName, Comparator<Facet> comparer, ScoreCombiner combiner, int n) throws
             SearchEngineException {
         FieldInfo field = e.getFieldInfo(fieldName);
         if(field == null) {
@@ -626,19 +624,29 @@ public class ResultSetImpl implements ResultSet {
                 q.add(qi);
             }
         }
+
+        //
+        // A min heap to sort our answers.
+        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(n > 0 ? n : 1, comparer);
         
-        List<Facet> ret = new ArrayList<Facet>();
+        if(n > 0 && comparer == null) {
+            comparer = Facet.FACET_SCORE_COMPARATOR;
+        }
+        
         //
         // Build facets as we go.
         while(!q.isEmpty()) {
             QueuableIterator<LocalFacet> top = q.peek();
-            FacetImpl f = new FacetImpl(field, 
-                    (Comparable) top.getCurrent().getValue());
-            while(top != null && top.getCurrent().getValue().equals(f.getValue())) {
+            FacetImpl f = new FacetImpl(field,
+                                        (Comparable) top.getCurrent().getValue());
+            while(top != null && top.getCurrent().getValue().
+                    equals(f.getValue())) {
                 top = q.poll();
-                f.add(top.getCurrent().size());
+                f.addLocalFacet(top.getCurrent());
+                f.addCount(top.getCurrent().size());
                 if(combiner != null) {
-                    f.setScore(combiner.combine(f.getScore(), top.getCurrent().getScore()));
+                    f.setScore(combiner.combine(f.getScore(), top.getCurrent().
+                            getScore()));
                 }
                 if(top.hasNext()) {
                     top.next();
@@ -646,12 +654,23 @@ public class ResultSetImpl implements ResultSet {
                 }
                 top = q.peek();
             }
-            ret.add(f);
+
+            if(n < 0 || pq.size() < n) {
+                pq.offer(f);
+            } else {
+                
+                FacetImpl curr = pq.peek();
+                if(comparer.compare(f, curr) > 0) {
+                    pq.poll();
+                    pq.offer(f);
+                }
+            }
         }
-        
-        if(comparer != null) {
-            Collections.sort(ret, comparer);
+        List<Facet> ret = new ArrayList<Facet>(pq.size());
+        while(!pq.isEmpty()) {
+            ret.add(pq.poll());
         }
+        Collections.reverse(ret);
         return ret;
     }
 

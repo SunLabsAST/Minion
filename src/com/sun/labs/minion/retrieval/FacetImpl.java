@@ -3,6 +3,8 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -32,6 +34,8 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
      */
     protected float score;
     
+    protected List<LocalFacet> localFacets = new ArrayList<LocalFacet>(2);
+    
     /**
      * Creates a facet for the given field.
      * @param field 
@@ -55,6 +59,10 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     public float getScore() {
         return score;
     }
+    
+    public void addLocalFacet(LocalFacet localFacet) {
+        localFacets.add(localFacet);
+    }
 
     public void setValue(T value) {
         this.value = value;
@@ -64,7 +72,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
         this.score = score;
     }
 
-    public void add(int n) {
+    public void addCount(int n) {
         size += n;
     }
 
