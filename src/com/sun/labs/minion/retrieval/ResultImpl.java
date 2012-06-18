@@ -81,6 +81,11 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * The sorting specification for this result.
      */
     protected SortSpec sortSpec;
+    
+    /**
+     * Whether we're sorting local to a partition or global to an index.
+     */
+    protected boolean localSort;
 
     /**
      * A map from field names to the passage stores for those fields.  Used
@@ -89,10 +94,16 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     protected Map passages;
 
     /**
-     * The field values used to sort this document.
+     * The actual field values used to sort this document.
      */
-    protected Object[] fields;
-
+    protected Object[] sortFieldValues;
+    
+    /**
+     * The IDs of the field values used to sort.  These can be used to sort
+     * more quickly at the local partition.
+     */
+    protected int[] sortFieldIDs;
+    
     /**
      * A set of query statistics.
      */
@@ -112,15 +123,18 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * @param set The set of results to which this result belongs.
      * @param ag the array group to which this result belongs
      * @param sortSpec the sort order being applied to the result set
+     * @param localSort if true, we're computing sort criteria that are local to
+     * a single partition so that sorting can be done on IDs.
      * @param doc The document ID for the hit.
      * @param score The score the document received.
      */
     public ResultImpl(ResultSet set,
             ArrayGroup ag,
             SortSpec sortSpec,
+            boolean localSort,
             int doc,
             float score) {
-        init(set, ag, sortSpec, doc, score);
+        init(set, ag, sortSpec, localSort, doc, score);
     }
 
     /**
@@ -131,12 +145,15 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * @param set The set of results to which this result belongs.
      * @param ag the array group to which this result belongs
      * @param sortSpec the sort order being applied to the result set
+     * @param localSort if <code>true</code> then we're doing a sort on a local
+     * partition only, so we just have to consider the IDs of the saved values.
      * @param doc The document ID for the hit.
      * @param score The score the document received.
      */
     protected final void init(ResultSet set,
             ArrayGroup ag,
             SortSpec sortSpec,
+            boolean localSort,
             int doc,
             float score) {
         this.set = set;
@@ -144,19 +161,29 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         if(ag != null) {
             partition = ag.getPartition();
         }
+        this.sortSpec = sortSpec;
+        this.localSort = localSort;
         this.doc = doc;
         this.score = score;
-        this.sortSpec = sortSpec;
+        
 
         if(sortSpec != null && ag != null && partition instanceof InvFileDiskPartition) {
 
             //
-            // Fill in the field values that we're sorting on.
-            if(fields == null) {
-                fields = new Object[sortSpec.size];
+            // Fill in the field IDs or values that we're sorting on.
+            if(localSort) {
+                if(sortFieldIDs == null) {
+                    sortFieldIDs = new int[sortSpec.size];
+                }
+                for(int i = 0; i < sortFieldIDs.length; i++) {
+                     getSortFieldID(i);   
+                }
             } else {
-                for(int i = 0; i < fields.length; i++) {
-                    fields[i] = null;
+                if(sortFieldValues == null) {
+                    sortFieldValues = new Object[sortSpec.size];
+                }
+                for(int i = 0; i < sortFieldValues.length; i++) {
+                    sortFieldValues[i] = null;
                 }
             }
         }
@@ -376,28 +403,54 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         //
         // A field with a zero ID indicates that we're sorting by score.
         if(sortSpec.fields[i] != null && sortSpec.fields[i].getID() == 0) {
-            fields[i] = new Float(score);
+            sortFieldValues[i] = new Float(score);
             return;
         }
 
         //
         // Get a single field value to use for the sort.
         if(sortSpec.fetchers[i] != null) {
-            fields[i] = sortSpec.fetchers[i].fetchOne(doc);
+            sortFieldValues[i] = sortSpec.fetchers[i].fetchOne(doc);
         } else {
-            fields[i] = null;
+            sortFieldValues[i] = null;
         }
 
         //
         // Get the default value for the field.
-        if(fields[i] == null) {
-            fields[i] = sortSpec.fields[i].getDefaultSavedValue();
+        if(sortFieldValues[i] == null) {
+            sortFieldValues[i] = sortSpec.fields[i].getDefaultSavedValue();
         }
     }
 
-    protected void setFields() {
-        for(int i = 0; i < fields.length; i++) {
-            getSortFieldValue(i);
+    protected void getSortFieldID(int i) {
+
+        //
+        // A field with a zero ID indicates that we're sorting by score.
+        if(sortSpec.fields[i] != null && sortSpec.fields[i].getID() == 0) {
+            sortFieldIDs[i] = 0;
+            return;
+        }
+
+        //
+        // Get a single field value to use for the sort.
+        if(sortSpec.fetchers[i] != null) {
+            sortFieldIDs[i] = sortSpec.fetchers[i].fetchLowID(doc);
+        } else {
+            sortFieldIDs[i] = -1;
+        }
+
+    }
+
+
+    protected void setSortFieldValues() {
+        localSort = false;
+        if(sortSpec != null) {
+            if(sortFieldValues == null) {
+                sortFieldValues = new Object[sortSpec.size];
+            }
+            for(int i = 0; i < sortFieldValues.length; i++) {
+                getSortFieldValue(i);
+            }
         }
     }
 
@@ -405,7 +458,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     public int compareTo(Result o) {
 
         ResultImpl r = (ResultImpl) o;
-        if(fields == null || (sortSpec != null && sortSpec.isJustScoreSort())) {
+        if(sortFieldValues == null || (sortSpec != null && sortSpec.isJustScoreSort())) {
             if(score < r.score) {
                 return -1;
             }
@@ -414,37 +467,52 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
             }
             return 0;
         }
-
+        
         //
-        // Do the sort based on the fields.
-        for(int i = 0; i < fields.length; i++) {
+        // If we're local to a partition, sort based on the field IDs.
+        if(localSort) {
+            for(int i = 0; i < sortFieldIDs.length; i++) {
+                int cmp = sortFieldIDs[i] - r.sortFieldIDs[i];
+                if(cmp != 0) {
+                    return sortSpec.directions[i] ? -cmp : cmp;
+                }
+            } 
+        } else {
 
             //
-            // Make sure we have this field value in both results.
-            if(fields[i] == null) {
-                getSortFieldValue(i);
+            // We're sorting globally, which means that we need the values.
+            for(int i = 0; i < sortFieldValues.length; i++) {
+
+                //
+                // Make sure we have this field value in both results.
+                if(sortFieldValues[i] == null) {
+                    getSortFieldValue(i);
+                }
+
+                if(r.sortFieldValues[i] == null) {
+                    r.getSortFieldValue(i);
+                }
+
+                //
+                // Compare the field values.
+                int cmp = ((Comparable) sortFieldValues[i]).
+                        compareTo(r.sortFieldValues[i]);
+
+                //
+                // No decision...
+                if(cmp == 0) {
+                    continue;
+                }
+
+                //
+                // If this field is increasing, we can just use the comparison
+                // that we just got.
+                return sortSpec.directions[i] ? -cmp : cmp;
             }
-
-            if(r.fields[i] == null) {
-                r.getSortFieldValue(i);
-            }
-
-            //
-            // Compare the field values.
-            int cmp = ((Comparable) fields[i]).compareTo(r.fields[i]);
-
-            //
-            // No decision...
-            if(cmp == 0) {
-                continue;
-            }
-
-            //
-            // If this field is increasing, we can just use the comparison
-            // that we just got.
-            return sortSpec.directions[i] ? -cmp : cmp;
         }
-
+        
+        //
+        // They're the same.
         return 0;
     }
 
@@ -468,11 +536,20 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("(").append(partition).append(", ").append(doc).append(", ").append(score).append(", [");
-        for(int i = 0; i < fields.length; i++) {
-            if(i > 0) {
-                sb.append(", ");
+        if(localSort) {
+            for(int i = 0; i < sortFieldIDs.length; i++) {
+                if(i > 0) {
+                    sb.append(", ");
+                }
+                sb.append(sortFieldIDs[i]);
             }
-            sb.append(fields[i].toString());
+        } else {
+            for(int i = 0; i < sortFieldValues.length; i++) {
+                if(i > 0) {
+                    sb.append(", ");
+                }
+                sb.append(sortFieldValues[i].toString());
+            }
         }
         sb.append("]");
         return sb.toString();
@@ -490,8 +567,12 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         return sortSpec.directions;
     }
 
-    public Object[] getSortVals() {
-        return fields;
+    public Object[] getSortFieldValues() {
+        return sortFieldValues;
+    }
+    
+    public int[] getSortFieldIDs() {
+        return sortFieldIDs;
     }
 
     /**

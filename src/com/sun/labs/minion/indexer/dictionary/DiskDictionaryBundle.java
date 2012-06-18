@@ -1403,6 +1403,22 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
             return vals;
         }
+        
+        /**
+         * Fetches the lowest ID stored for the document.
+         */
+        public int fetchLowID(int docID) {
+            ldtv.position(ldtvo.byteDecode(4 * (docID - 1), 4));
+            int n = ldtv.byteDecode();
+            if(n == 0) {
+                return 0;
+            }
+            int lowID = Integer.MAX_VALUE;
+            for(int i = 1; i <= n; i++) {
+                lowID = Math.min(lowID, ldtv.byteDecode());
+            }
+            return lowID;
+        }
 
         /**
          * Fetches all of the values stored in the field for the given document.

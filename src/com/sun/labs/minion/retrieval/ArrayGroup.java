@@ -25,6 +25,7 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultAccessor;
+import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -32,12 +33,14 @@ import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -768,8 +771,6 @@ public class ArrayGroup implements Cloneable {
     }
 
     public PassageStore getPassages(int doc, FieldInfo info) {
-        Map ret = new HashMap();
-
         //
         // No passages!
         if(pass == null) {
@@ -795,12 +796,75 @@ public class ArrayGroup implements Cloneable {
     }
 
     /**
-     * Sets the partitoin for this group.
+     * Sets the partition for this group.
      */
     public void setPartition(DiskPartition part) {
         this.part = part;
     }
+    
+    /**
+     * Gets the top 10 documents from this group according to the provided 
+     * sorting specification.  We do this here because we know that we're only
+     * in a single partition, so sorting by field values can be done based on the
+     * IDs of the values.
+     * 
+     * @param sortSpec the sorting specification.  If this is null, the sorting is
+     * purely score based.
+     * @param n the number of hits to retrieve.
+     */
+    public List<ResultImpl> getTopDocuments(SortSpec sortSpec, int n, ResultsFilter rf) {
+        
+        PriorityQueue<ResultImpl>  sorter = new PriorityQueue<ResultImpl>();
+        ResultImpl curr = new ResultImpl();
+        ArrayGroup.DocIterator iter = iterator();
+        while(iter.next()) {
 
+            //
+            // Fill in our result from the iterator.
+            curr.init(null,
+                      this,
+                      sortSpec,
+                      true,
+                      iter.getDoc(),
+                      iter.getScore());
+
+            //
+            // If we don't have enough results, just put this on the
+            // heap.
+            if(sorter.size() < n) {
+                if(rf == null || rf.filter(iter)) {
+                    sorter.offer(curr);
+                    curr = new ResultImpl();
+                }
+            } else {
+
+                //
+                // See if this one is larger than the one on the heap.
+                // If it is, *then* run the filter, so that we only run
+                // the filter for the ones that need it.
+                ResultImpl top = sorter.peek();
+                if(curr.compareTo(top) > 0) {
+                    if(rf == null || rf.filter(iter)) {
+
+                        //
+                        // It is.  Replace the top and use the old top the
+                        // next time around the loop.
+                        top = sorter.poll();
+                        sorter.offer(curr);
+                        curr = top;
+                    }
+                }
+            }
+        }
+        
+        List<ResultImpl> ret = new ArrayList<ResultImpl>(sorter.size());
+        while(!sorter.isEmpty()) {
+            ret.add(sorter.poll());
+        }
+        Collections.reverse(ret);
+        return ret;
+    }
+    
     /**
      * Gets an iterator that will return each document in the set.
      */

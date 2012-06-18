@@ -93,6 +93,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
             for(Iterator<Pair<Integer, Float>> i = lf.iterator(); i.hasNext();) {
                 Pair<Integer, Float> doc = i.next();
                 ResultImpl curr = new ResultImpl(set, null, lss,
+                                                 false,
                                                  doc.getA(), doc.getB());
                 curr.setPartition(lf.getPartition());
                 if(sorter.size() < n) {

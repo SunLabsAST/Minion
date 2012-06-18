@@ -320,7 +320,7 @@ public class ResultSetImpl implements ResultSet {
                     //
                     // Fill in our result from the iterator and use the score
                     // we found.
-                    curr.init(this, ag, null, iter.getDoc(), score);
+                    curr.init(this, ag, null, false, iter.getDoc(), score);
 
                     //
                     // If we don't have enough results, just put this on the
@@ -423,7 +423,7 @@ public class ResultSetImpl implements ResultSet {
         // Quick check for someone asking for everything.
         if(start + n >= size()) {
             if(start > size()) {
-                return new ArrayList<Result>();
+                return Collections.emptyList();
             }
             List<Result> l = getAllResults(true, rf);
             return l.subList(start, l.size());
@@ -435,54 +435,18 @@ public class ResultSetImpl implements ResultSet {
             // information for one hit.
             PriorityQueue<ResultImpl> sorter =
                     new PriorityQueue<ResultImpl>(start + n);
-            ResultImpl curr = new ResultImpl();
-            curr.setQueryStats(qs);
 
             for(Iterator i = results.iterator(); i.hasNext();) {
                 ArrayGroup ag = (ArrayGroup) i.next();
                 ag.setScoreModifier(sm);
-                SortSpec pss = new SortSpec(sortSpec,
+                SortSpec partSortSpec = new SortSpec(sortSpec,
                         (InvFileDiskPartition) ag.part);
-                ArrayGroup.DocIterator iter = ag.iterator();
-                while(iter.next()) {
-
-                    //
-                    // Fill in our result from the iterator.
-                    curr.init(this,
-                            ag,
-                            pss,
-                            iter.getDoc(),
-                            iter.getScore());
-
-                    //
-                    // If we don't have enough results, just put this on the
-                    // heap.
-                    if(sorter.size() < start + n) {
-                        if(rf == null || rf.filter(iter)) {
-                            curr.setFields();
-                            sorter.offer(curr);
-                            curr = new ResultImpl();
-                        }
-                    } else {
-
-                        //
-                        // See if this one is larger than the one on the heap.
-                        // If it is, *then* run the filter, so that we only run
-                        // the filter for the ones that need it.
-                        ResultImpl top = sorter.peek();
-                        if(curr.compareTo(top) > 0) {
-                            if(rf == null || rf.filter(iter)) {
-
-                                //
-                                // It is.  Replace the top and use the old top the
-                                // next time around the loop.
-                                curr.setFields();
-                                top = sorter.poll();
-                                sorter.offer(curr);
-                                curr = top;
-                            }
-                        }
-                    }
+                //
+                // Get the top documents for this partition.
+                List<ResultImpl> agResults = ag.getTopDocuments(partSortSpec, n+start, rf);
+                for(ResultImpl ri : agResults) {
+                    ri.setSortFieldValues();
+                    sorter.offer(ri);
                 }
             }
 
@@ -496,14 +460,10 @@ public class ResultSetImpl implements ResultSet {
             Collections.reverse(ret);
 
             //
-            // Advance to the starting postion.
-            for(int i = 0; ret.size() > 0 && i < start; i++) {
-                ret.remove(0);
-            }
+            // We likely have more hits than we need at this point, so select
+            // out the ones we want.
+            return ret.subList(start, Math.min(start+n, ret.size()));
 
-            //
-            // Return the rest.
-            return ret;
         } catch(Exception ex) {
             throw new SearchEngineException("Error getting search results", ex);
         }
@@ -553,22 +513,20 @@ public class ResultSetImpl implements ResultSet {
         Collection<Result> ret =
                 sorted ? new PriorityQueue<Result>() : new ArrayList<Result>();
 
-        for(Iterator i = results.iterator(); i.hasNext();) {
-            ArrayGroup ag = (ArrayGroup) i.next();
+        for(ArrayGroup ag : results) {
             if(sm != null) {
                 ag.setScoreModifier(sm);
             }
-            SortSpec pss =
-                    new SortSpec(sortSpec, (InvFileDiskPartition) ag.part);
-            ArrayGroup.DocIterator iter = ag.iterator();
-            while(iter.next()) {
-                ResultImpl ri = new ResultImpl(this, ag, pss,
-                        iter.getDoc(),
-                        iter.getScore());
-                if(rf == null || rf.filter(iter)) {
-                    ri.setFields();
-                    ret.add(ri);
-                }
+            SortSpec partSortSpec = null;
+            if(sortSpec != null) {
+                partSortSpec = new SortSpec(sortSpec,
+                                            (InvFileDiskPartition) ag.part);
+            }
+            List<ResultImpl> agResults = ag.getTopDocuments(partSortSpec, ag.size,
+                                                            rf);
+            for(ResultImpl ri : agResults) {
+                ri.setSortFieldValues();
+                ret.add(ri);
             }
         }
 
@@ -577,7 +535,7 @@ public class ResultSetImpl implements ResultSet {
         List<Result> fres;
         if(sorted) {
             fres = new ArrayList<Result>();
-            while(ret.size() > 0) {
+            while(!ret.isEmpty()) {
                 fres.add(((PriorityQueue<Result>) ret).poll());
             }
             //
