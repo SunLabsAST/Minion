@@ -402,7 +402,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
 
         //
         // A field with a zero ID indicates that we're sorting by score.
-        if(sortSpec.fields[i] != null && sortSpec.fields[i].getID() == 0) {
+        if(sortSpec.fields[i] == null) {
             sortFieldValues[i] = new Float(score);
             return;
         }
@@ -426,7 +426,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
 
         //
         // A field with a zero ID indicates that we're sorting by score.
-        if(sortSpec.fields[i] != null && sortSpec.fields[i].getID() == 0) {
+        if(sortSpec.fields[i] == null) {
             sortFieldIDs[i] = 0;
             return;
         }
@@ -472,7 +472,18 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         // If we're local to a partition, sort based on the field IDs.
         if(localSort) {
             for(int i = 0; i < sortFieldIDs.length; i++) {
-                int cmp = sortFieldIDs[i] - r.sortFieldIDs[i];
+                int cmp;
+                if(sortSpec.fields[i] == null) {
+                    if(score < r.score) {
+                        cmp = -1;
+                    } else if(score > r.score) {
+                        cmp = 1;
+                    } else {
+                        cmp = 0;
+                    }
+                } else {
+                    cmp = sortFieldIDs[i] - r.sortFieldIDs[i];
+                }
                 if(cmp != 0) {
                     return sortSpec.directions[i] ? -cmp : cmp;
                 }

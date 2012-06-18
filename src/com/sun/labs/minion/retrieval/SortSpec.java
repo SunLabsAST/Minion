@@ -114,8 +114,8 @@ public class SortSpec {
                 fn = fieldSpec;
                 directions[i] = true;
             }
-            if(fn.equals("score")) {
-                fields[i] = new FieldInfo();
+            if(fn.equalsIgnoreCase("score")) {
+                fields[i] = null;
             } else {
                 fields[i] = manager.getFieldInfo(fn);
                 if(fields[i] == null) {
@@ -128,7 +128,7 @@ public class SortSpec {
         
         //
         // Are we just sorting by score?
-        justScoreSort = fields.length == 1 && fields[0].getName() == null &&
+        justScoreSort = fields.length == 1 && fields[0] == null &&
                 directions[0] == false;
     } // SortSpec constructor
 
@@ -144,7 +144,7 @@ public class SortSpec {
         directions = ss.directions;
         fetchers = new Fetcher[size];
         for(int i = 0; i < size; i++) {
-            if(fields[i] != null && fields[i].getID() != 0) {
+            if(fields[i] != null) {
                 fetchers[i] = part.getDF(fields[i]).getFetcher();
             }
         }
