@@ -67,7 +67,7 @@ public interface Searcher {
      * Runs a query against the engines, returning a set of results.
      *
      * @param query The query to run, in our query syntax.
-     * @param sortOrder How the results should be sorted.  This is a set of
+     * @param sortSpec How the results should be sorted.  This is a set of
      * comma-separated field names, each preceeded by a <code>+</code> (for
      * increasing order) or by a <code>-</code> (for decreasing order).
      * @param defaultOperator the operator to use between terms when
@@ -75,7 +75,7 @@ public interface Searcher {
      * @param grammar specifies the grammar to use to parse the query.  Valid values
      * are defined in the {@link com.sun.labs.minion.Searcher} interface
      */
-    public ResultSet search(String query, String sortOrder,
+    public ResultSet search(String query, String sortSpec,
                              Operator defaultOperator, Grammar grammar)
             throws SearchEngineException;
 
@@ -102,7 +102,7 @@ public interface Searcher {
      * Runs a query against the engines, returning a set of results.
      *
      * @param query The query to run, in our query syntax.
-     * @param sortOrder How the results should be sorted.  This is a set of
+     * @param sortSpec How the results should be sorted.  This is a set of
      * comma-separated field names, each preceeded by a <code>+</code> (for
      * increasing order) or by a <code>-</code> (for decreasing order).
      * @param defaultOperator the operator to use between terms when
@@ -111,7 +111,7 @@ public interface Searcher {
      * are defined in the {@link com.sun.labs.minion.Searcher} interface
      */
     @Deprecated
-    public ResultSet search(String query, String sortOrder,
+    public ResultSet search(String query, String sortSpec,
                             int defaultOperator, int grammar)
             throws SearchEngineException;
 }// Searcher

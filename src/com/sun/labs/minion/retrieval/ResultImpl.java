@@ -176,7 +176,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
                     sortFieldIDs = new int[sortSpec.size];
                 }
                 for(int i = 0; i < sortFieldIDs.length; i++) {
-                     getSortFieldID(i);   
+                    sortSpec.getSortFieldID(i, sortFieldIDs, doc);
                 }
             } else {
                 if(sortFieldValues == null) {
@@ -393,138 +393,30 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     }
 
     /**
-     * Gets a single field value, suitable for use in sorting results.
-     *
-     * @param i The index of the field in our sort specification whose
-     * value we want to retrieve.
+     * Gets all of the sort field values, and sets the flag that says that's 
+     * what we're comparing by.
      */
-    protected void getSortFieldValue(int i) {
-
-        //
-        // A field with a zero ID indicates that we're sorting by score.
-        if(sortSpec.fields[i] == null) {
-            sortFieldValues[i] = new Float(score);
-            return;
-        }
-
-        //
-        // Get a single field value to use for the sort.
-        if(sortSpec.fetchers[i] != null) {
-            sortFieldValues[i] = sortSpec.fetchers[i].fetchOne(doc);
-        } else {
-            sortFieldValues[i] = null;
-        }
-
-        //
-        // Get the default value for the field.
-        if(sortFieldValues[i] == null) {
-            sortFieldValues[i] = sortSpec.fields[i].getDefaultSavedValue();
-        }
-    }
-
-    protected void getSortFieldID(int i) {
-
-        //
-        // A field with a zero ID indicates that we're sorting by score.
-        if(sortSpec.fields[i] == null) {
-            sortFieldIDs[i] = 0;
-            return;
-        }
-
-        //
-        // Get a single field value to use for the sort.
-        if(sortSpec.fetchers[i] != null) {
-            sortFieldIDs[i] = sortSpec.fetchers[i].fetchLowID(doc);
-        } else {
-            sortFieldIDs[i] = -1;
-        }
-
-    }
-
-
     protected void setSortFieldValues() {
         localSort = false;
-        if(sortSpec != null) {
-            if(sortFieldValues == null) {
-                sortFieldValues = new Object[sortSpec.size];
-            }
-            for(int i = 0; i < sortFieldValues.length; i++) {
-                getSortFieldValue(i);
-            }
-        }
+        sortFieldValues = new Object[sortSpec.size];
+        sortSpec.getSortFieldValues(sortFieldValues, doc, score);
     }
 
     @Override
     public int compareTo(Result o) {
 
         ResultImpl r = (ResultImpl) o;
-        if(sortFieldValues == null || (sortSpec != null && sortSpec.isJustScoreSort())) {
-            if(score < r.score) {
-                return -1;
-            }
-            if(score > r.score) {
-                return 1;
-            }
-            return 0;
+        if(sortSpec == null) {
+            return SortSpec.compareScore(score, r.score);
         }
         
         //
         // If we're local to a partition, sort based on the field IDs.
         if(localSort) {
-            for(int i = 0; i < sortFieldIDs.length; i++) {
-                int cmp;
-                if(sortSpec.fields[i] == null) {
-                    if(score < r.score) {
-                        cmp = -1;
-                    } else if(score > r.score) {
-                        cmp = 1;
-                    } else {
-                        cmp = 0;
-                    }
-                } else {
-                    cmp = sortFieldIDs[i] - r.sortFieldIDs[i];
-                }
-                if(cmp != 0) {
-                    return sortSpec.directions[i] ? -cmp : cmp;
-                }
-            } 
+            return sortSpec.compareIDs(sortFieldIDs, r.sortFieldIDs, score, r.score);
         } else {
-
-            //
-            // We're sorting globally, which means that we need the values.
-            for(int i = 0; i < sortFieldValues.length; i++) {
-
-                //
-                // Make sure we have this field value in both results.
-                if(sortFieldValues[i] == null) {
-                    getSortFieldValue(i);
-                }
-
-                if(r.sortFieldValues[i] == null) {
-                    r.getSortFieldValue(i);
-                }
-
-                //
-                // Compare the field values.
-                int cmp = ((Comparable) sortFieldValues[i]).
-                        compareTo(r.sortFieldValues[i]);
-
-                //
-                // No decision...
-                if(cmp == 0) {
-                    continue;
-                }
-
-                //
-                // If this field is increasing, we can just use the comparison
-                // that we just got.
-                return sortSpec.directions[i] ? -cmp : cmp;
-            }
+            return sortSpec.compareValues(sortFieldValues, r.sortFieldValues, doc, score, r.doc, r.score);
         }
-        
-        //
-        // They're the same.
-        return 0;
     }
 
     /** 
@@ -572,18 +464,6 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
 
     public SortSpec getSortSpec() {
         return sortSpec;
-    }
-
-    public boolean[] getDirections() {
-        return sortSpec.directions;
-    }
-
-    public Object[] getSortFieldValues() {
-        return sortFieldValues;
-    }
-    
-    public int[] getSortFieldIDs() {
-        return sortFieldIDs;
     }
 
     /**

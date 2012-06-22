@@ -67,6 +67,7 @@ import com.sun.labs.minion.lexmorph.LiteMorph_en;
 import com.sun.labs.minion.retrieval.AbstractDocumentVector;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
+import com.sun.labs.minion.retrieval.SortSpec;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.Util;
@@ -81,6 +82,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -144,8 +146,10 @@ public class QueryTest extends SEMain {
 
     protected DisplaySpec displaySpec;
 
-    protected String sortSpec;
-
+    protected SortSpec sortSpec;
+    
+    protected String sortSpecString;
+    
     protected String prompt;
 
     protected Searcher searcher;
@@ -192,7 +196,8 @@ public class QueryTest extends SEMain {
         searcher = engine;
         morphEn = LiteMorph_en.getMorph();
         displaySpec = new DisplaySpec(displayFields, displayFormat);
-        this.sortSpec = sortSpec;
+        sortSpecString = sortSpec;
+        this.sortSpec = new SortSpec(manager, sortSpec);
         displayPassage = false;
         shigh = new SimpleHighlighter("<font color=\"#FF0000\">", "</font>",
                                       "<b>", "</b>");
@@ -340,7 +345,14 @@ public class QueryTest extends SEMain {
                 // Run a query.
                 String q = join(args, 1, args.length, " ");
                 try {
-                    ResultSet r = searcher.search(q, sortSpec, queryOp, grammar);
+                    ResultSet r = searcher.search(q, sortSpecString, queryOp, grammar);
+//                    List<Result> lr = r.getAllResults(false);
+//                    shell.out.println("Comparator");
+//                    Collections.sort(lr, SortSpec.RESULT_COMPARATOR);
+//                    displayResults(lr);
+//                    shell.out.println("Reverse Comparator");
+//                    Collections.sort(lr, SortSpec.REVERSE_RESULT_COMPARATOR);
+//                    displayResults(lr);
                     displayResults(r);
                     lastResultSet = (ResultSetImpl) r;
                 } catch(Exception ex) {
@@ -576,7 +588,8 @@ public class QueryTest extends SEMain {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
-                sortSpec = join(args, 1, args.length, " ");
+                sortSpecString = join(args, 1, args.length, " ");
+                sortSpec = new SortSpec(manager, sortSpecString);
                 return "";
             }
 
@@ -1339,7 +1352,8 @@ public class QueryTest extends SEMain {
                 try {
                     //
                     // Run the query
-                    ResultSet rs = searcher.search(q, sortSpec,
+                    ResultSet rs = searcher.search(q, 
+                                                   sortSpecString,
                             Searcher.Operator.AND, grammar);
                     displayResults(rs);
                     BufferedReader br =

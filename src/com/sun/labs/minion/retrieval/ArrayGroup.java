@@ -812,13 +812,13 @@ public class ArrayGroup implements Cloneable {
      * purely score based.
      * @param n the number of hits to retrieve.
      */
-    public List<ResultImpl> getTopDocuments(SortSpec sortSpec, int n, ResultsFilter rf) {
+    public ResultImpl[] getTopDocuments(SortSpec sortSpec, int n, ResultsFilter rf) {
         
-        PriorityQueue<ResultImpl>  sorter = new PriorityQueue<ResultImpl>();
+        PriorityQueue<ResultImpl>  sorter = new PriorityQueue<ResultImpl>(n, SortSpec.REVERSE_RESULT_COMPARATOR);
         ResultImpl curr = new ResultImpl();
         ArrayGroup.DocIterator iter = iterator();
         while(iter.next()) {
-
+            
             //
             // Fill in our result from the iterator.
             curr.init(null,
@@ -827,7 +827,7 @@ public class ArrayGroup implements Cloneable {
                       true,
                       iter.getDoc(),
                       iter.getScore());
-
+            
             //
             // If we don't have enough results, just put this on the
             // heap.
@@ -843,9 +843,8 @@ public class ArrayGroup implements Cloneable {
                 // If it is, *then* run the filter, so that we only run
                 // the filter for the ones that need it.
                 ResultImpl top = sorter.peek();
-                if(curr.compareTo(top) > 0) {
+                if(sorter.comparator().compare(curr, top) > 0) {
                     if(rf == null || rf.filter(iter)) {
-
                         //
                         // It is.  Replace the top and use the old top the
                         // next time around the loop.
@@ -857,12 +856,29 @@ public class ArrayGroup implements Cloneable {
             }
         }
         
-        List<ResultImpl> ret = new ArrayList<ResultImpl>(sorter.size());
-        while(!sorter.isEmpty()) {
-            ret.add(sorter.poll());
+        return sorter.toArray(new ResultImpl[0]);
+    }
+    
+    public static String inOrder(PriorityQueue<ResultImpl> q) {
+        List<ResultImpl> l = new ArrayList<ResultImpl>(q.size());
+        while(!q.isEmpty()) {
+            l.add(q.poll());
         }
-        Collections.reverse(ret);
-        return ret;
+        
+        q.addAll(l);
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        boolean first = true;
+        for(ResultImpl ri : l) {
+            if(!first) {
+                sb.append(", ");
+            }
+            first = false;
+            sb.append(String.format("%d %.3f", ri.doc, ri.score));
+        }
+        sb.append(']');
+        return sb.toString();
     }
     
     /**

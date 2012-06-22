@@ -431,20 +431,18 @@ public class ResultSetImpl implements ResultSet {
 
         try {
             //
-            // A place to organize our hits and a place to store the
-            // information for one hit.
+            // A place to organize our hits. We'll use a max heap, since that's the
+            // order we want to return the results in.
             PriorityQueue<ResultImpl> sorter =
-                    new PriorityQueue<ResultImpl>(start + n);
+                    new PriorityQueue<ResultImpl>(start + n, SortSpec.RESULT_COMPARATOR);
 
             for(Iterator i = results.iterator(); i.hasNext();) {
                 ArrayGroup ag = (ArrayGroup) i.next();
                 ag.setScoreModifier(sm);
-                SortSpec partSortSpec = new SortSpec(sortSpec,
-                        (InvFileDiskPartition) ag.part);
+                SortSpec partSortSpec = new SortSpec(sortSpec, (InvFileDiskPartition) ag.part);
                 //
                 // Get the top documents for this partition.
-                List<ResultImpl> agResults = ag.getTopDocuments(partSortSpec, n+start, rf);
-                for(ResultImpl ri : agResults) {
+                for(ResultImpl ri : ag.getTopDocuments(partSortSpec, n+start, rf)) {
                     ri.setSortFieldValues();
                     sorter.offer(ri);
                 }
@@ -457,7 +455,6 @@ public class ResultSetImpl implements ResultSet {
             while(sorter.size() > 0) {
                 ret.add(sorter.poll());
             }
-            Collections.reverse(ret);
 
             //
             // We likely have more hits than we need at this point, so select
@@ -510,8 +507,7 @@ public class ResultSetImpl implements ResultSet {
         //
         // Depending on whether we want things sorted or not, we'll use a priority
         // queue or a list.
-        Collection<Result> ret =
-                sorted ? new PriorityQueue<Result>() : new ArrayList<Result>();
+        Collection<Result> ret = sorted ? new PriorityQueue<Result>() : new ArrayList<Result>();
 
         for(ArrayGroup ag : results) {
             if(sm != null) {
@@ -522,9 +518,7 @@ public class ResultSetImpl implements ResultSet {
                 partSortSpec = new SortSpec(sortSpec,
                                             (InvFileDiskPartition) ag.part);
             }
-            List<ResultImpl> agResults = ag.getTopDocuments(partSortSpec, ag.size,
-                                                            rf);
-            for(ResultImpl ri : agResults) {
+            for(ResultImpl ri : ag.getTopDocuments(partSortSpec, ag.size, rf)) {
                 ri.setSortFieldValues();
                 ret.add(ri);
             }
