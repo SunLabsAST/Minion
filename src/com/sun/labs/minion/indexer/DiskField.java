@@ -2,7 +2,6 @@ package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.SearchEngineException;
-import com.sun.labs.minion.ScoreCombiner;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
@@ -15,6 +14,7 @@ import com.sun.labs.minion.indexer.partition.MergeState;
 import com.sun.labs.minion.indexer.partition.io.PartitionOutput;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.LocalFacet;
+import com.sun.labs.minion.retrieval.SortSpec;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import java.io.RandomAccessFile;
 import java.util.List;
@@ -315,9 +315,9 @@ public class DiskField<N extends Comparable> extends Field<N> {
         bundle.calculateVectorLengths(partOut);
     }
     
-    public List<LocalFacet<N>> getFacets(int[] docs, float[] scores, int p, ScoreCombiner combiner) throws
+    public List<LocalFacet<N>> getFacets(ArrayGroup ag, SortSpec sortSpec) throws
             SearchEngineException {
-        return bundle.getFacets(docs, scores, p, combiner);
+        return bundle.getFacets(ag, sortSpec);
     }
 
     /**

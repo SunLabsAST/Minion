@@ -2,7 +2,6 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.SearchEngineException;
-import com.sun.labs.minion.ScoreCombiner;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
@@ -23,6 +22,7 @@ import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
 import com.sun.labs.minion.retrieval.LocalFacet;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
+import com.sun.labs.minion.retrieval.SortSpec;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
 import com.sun.labs.minion.util.CDateParser;
 import com.sun.labs.minion.util.CharUtils;
@@ -1290,32 +1290,25 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @return a list of the facets for this partition.
      * @throws SearchEngineException 
      */
-    public List<LocalFacet<N>> getFacets(int[] docs, float[] scores, int p, ScoreCombiner combiner) throws SearchEngineException {
+    public List<LocalFacet<N>> getFacets(ArrayGroup ag, SortSpec sortSpec) {
         Map<Integer, LocalFacet<N>> m = new HashMap<Integer, LocalFacet<N>>();
         Fetcher fetcher = getFetcher();
         int[] valIDs = new int[16];
-        boolean useScores = scores != null && combiner != null;
-        for(int i = 0; i < p; i++) {
-            int doc = docs[i];
-            float score = 0;
+        ArrayGroup.DocIterator di = ag.iterator();
+        while(di.next()) {
+            int doc = di.getDoc();
+            float score = di.getScore();
             valIDs = fetcher.fetch(doc, valIDs);
-            if(useScores) {
-                score = scores[i];
-            }
-            
             for(int j = 1; j <= valIDs[0]; j++) {
                 int valID = valIDs[j];
                 LocalFacet facet = m.get(valID);
                 if(facet == null) {
                     facet = new LocalFacet((InvFileDiskPartition) field.getPartition(), 
-                            info, valID);
+                            info, valID, sortSpec);
                     m.put(valID, facet);
                 }
                 facet.addCount(1);
                 facet.add(doc, score);
-                if(useScores) {
-                    facet.setScore(combiner.combine(facet.getScore(), score));
-                }
             }
         }
         

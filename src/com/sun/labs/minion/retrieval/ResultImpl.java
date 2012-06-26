@@ -397,9 +397,11 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * what we're comparing by.
      */
     protected void setSortFieldValues() {
-        localSort = false;
-        sortFieldValues = new Object[sortSpec.size];
-        sortSpec.getSortFieldValues(sortFieldValues, doc, score);
+        if(sortSpec != null) {
+            localSort = false;
+            sortFieldValues = new Object[sortSpec.size];
+            sortSpec.getSortFieldValues(sortFieldValues, doc, score);
+        }
     }
 
     @Override

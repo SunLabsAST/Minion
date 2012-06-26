@@ -73,7 +73,6 @@ public class QueryEvaluator {
         // We want to check for a single all-asterisk wildcard, which is a query
         // for all documents.
         if(qe instanceof DictTerm) {
-            DictTerm dt = (DictTerm) qe;
             String qt = ((DictTerm) qe).getName();
             if(qt.matches("\\**")) {
                 for(DiskPartition p : parts) {

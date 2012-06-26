@@ -47,6 +47,16 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
      */
     protected float score;
     
+    /**
+     * A specification for sorting the results inside of a facet.
+     */
+    protected SortSpec sortSpec;
+    
+    /**
+     * The field values that we should use for sorting facets.
+     */
+    protected Object[] sortFieldValues;
+    
     protected List<LocalFacet> localFacets = new ArrayList<LocalFacet>(2);
     
     /**
@@ -75,27 +85,19 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     }
 
     @Override
-    public List<Result> getResults(int n, SortSpec ss) {
+    public List<Result> getResults(int n, SortSpec sortSpec) {
         PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(Math.max(n,size));
-        Map<Partition,SortSpec> sortSpecs = new HashMap<Partition, SortSpec>();
         if(size < n) {
             n = size;
         }
         for(LocalFacet lf : localFacets) {
-            SortSpec lss = null;
-            if(ss != null) {
-                lss = sortSpecs.get(lf.getPartition());
-                if(lss == null) {
-                    lss = new SortSpec(ss, lf.getPartition());
-                    sortSpecs.put(lf.getPartition(), lss);
-                }
-            }
             for(Iterator<Pair<Integer, Float>> i = lf.iterator(); i.hasNext();) {
                 Pair<Integer, Float> doc = i.next();
-                ResultImpl curr = new ResultImpl(set, null, lss,
+                ResultImpl curr = new ResultImpl(set, null, lf.sortSpec,
                                                  false,
                                                  doc.getA(), doc.getB());
                 curr.setPartition(lf.getPartition());
+                curr.setSortFieldValues();
                 if(sorter.size() < n) {
                     sorter.offer(curr);
                 } else {
@@ -119,6 +121,21 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     
     public void addLocalFacet(LocalFacet localFacet) {
         localFacets.add(localFacet);
+        size += localFacet.size;
+        if(sortSpec == null || sortSpec.isJustScoreSort()) {
+            score = Math.max(score, localFacet.exemplarScore);
+        } else {
+            
+            //
+            // Remember the field values that were highest according to the 
+            // sorting specification, because we'll use those to (eventually) 
+            // sort the facets.
+            localFacet.setSortFieldValues();
+            if(sortSpec.compareValues(sortFieldValues, localFacet.sortFieldValues, 0, score, 0, localFacet.exemplarScore) < 0) {
+                sortFieldValues = localFacet.sortFieldValues;
+                score = localFacet.exemplarScore;
+            }
+        }
     }
 
     public void setValue(T value) {

@@ -346,13 +346,6 @@ public class QueryTest extends SEMain {
                 String q = join(args, 1, args.length, " ");
                 try {
                     ResultSet r = searcher.search(q, sortSpecString, queryOp, grammar);
-//                    List<Result> lr = r.getAllResults(false);
-//                    shell.out.println("Comparator");
-//                    Collections.sort(lr, SortSpec.RESULT_COMPARATOR);
-//                    displayResults(lr);
-//                    shell.out.println("Reverse Comparator");
-//                    Collections.sort(lr, SortSpec.REVERSE_RESULT_COMPARATOR);
-//                    displayResults(lr);
                     displayResults(r);
                     lastResultSet = (ResultSetImpl) r;
                 } catch(Exception ex) {
@@ -408,21 +401,7 @@ public class QueryTest extends SEMain {
                     return "No previous query";
                 }
                 
-                Comparator<Facet> comparer = Facet.FACET_SCORE_COMPARATOR;
-                
-                if(args.length >= 3) {
-                    if(args[2].equalsIgnoreCase("size")) {
-                        comparer = Facet.FACET_SIZE_COMPARATOR;
-                        logger.info(String.format("using size"));
-                    } else if(args[2].equalsIgnoreCase("name")) {
-                        comparer = Facet.FACET_NAME_COMPARATOR;
-                    }
-                }
-                
-                List<Facet> lf = lastResultSet.getTopFacets(args[1], 
-                                                            comparer,
-                                                            ScoreCombiner.MAX_WEIGHT_COMBINER, 
-                                                            nHits);
+                List<Facet> lf = lastResultSet.getTopFacets(args[1], sortSpec, nHits);
                 
                 ci.out.format("Found %d facets for %s in %d hits\n", 
                               lf.size(), args[1], lastResultSet.size());

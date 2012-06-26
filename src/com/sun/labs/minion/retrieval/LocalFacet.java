@@ -15,8 +15,11 @@ import java.util.List;
  * (e.g., fetching a number of dictionary entries) can be used within a single 
  * partition.
  * 
- * The default comparison compares partition facets based on the ID of the value
- * that the represent.
+ * Local facets are always compared by the name (well, the dictionary ID) of the
+ * values, since we need to combine the local facets from different partitions by
+ * name.  We will sort the documents that make up the facet according to an 
+ * external sorting specification and keep an exemplar document that is the 
+ * maximum document according to that sorting specification.
  */
 public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements Iterable<Pair<Integer,Float>> {
 
@@ -31,11 +34,35 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
      * The documents that contributed to this facet and their associated scored.
      */
     List<Pair<Integer,Float>> docs = new ArrayList<Pair<Integer,Float>>(3);
+
+    /**
+     * The document that is an exemplar for this facet.  This is the document
+     * that has the maximum field values according to the sorting specification
+     * for these facets.
+     */
+    protected int exemplar;
+
+    /**
+     * The score associated with the exemplar document.
+     */
+    protected float exemplarScore;
     
-    public LocalFacet(InvFileDiskPartition part, FieldInfo field, int facetValueID) {
+    /**
+     * The IDs for the field values that we'll use to sort this exemplar.
+     */
+    protected int[] exemplarSortFieldIDs;
+    
+    /**
+     * A holder for a set of field value IDs that we want to check against the
+     * exemplar.
+     */
+    private int[] tempSortFieldIDs;
+    
+    public LocalFacet(InvFileDiskPartition part, FieldInfo field, int facetValueID, SortSpec sortSpec) {
         super(field, null, null);
         this.partition = part;
         this.valueID = facetValueID;
+        this.sortSpec = sortSpec;
     }
     
     public int getValueID() {
@@ -44,6 +71,29 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
     
     public void add(int doc, float score) {
         docs.add(new Pair<Integer,Float>(doc, score));
+        
+        //
+        // Keep track of the "maximum" document in the facet, using the 
+        // provided sorting criterion or just the score if that's all we're 
+        // doing.
+        if(sortSpec == null || sortSpec.isJustScoreSort()) {
+            if(score > exemplarScore) {
+                exemplar = doc;
+                exemplarScore = score;
+            }
+        } else {
+            if(tempSortFieldIDs == null) {
+                tempSortFieldIDs = new int[sortSpec.size];
+            }
+            sortSpec.getSortFieldIDs(tempSortFieldIDs, doc);
+            if(sortSpec.compareIDs(tempSortFieldIDs, exemplarSortFieldIDs, score, exemplarScore) > 0) {
+                int[] tmp = exemplarSortFieldIDs;
+                exemplarSortFieldIDs = tempSortFieldIDs;
+                tempSortFieldIDs = tmp;
+                exemplar = doc;
+                exemplarScore = score;
+            }
+        }
     }
 
     public InvFileDiskPartition getPartition() {
@@ -57,6 +107,9 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
 
     @Override
     public int compareTo(Facet<T> o) {
+        
+        //
+        // Local facets are always compared by name.
         if(o instanceof LocalFacet) {
             return valueID - ((LocalFacet) o).valueID;
         } else {
@@ -64,10 +117,10 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
         }
     }
     
-    public int compareTo(LocalFacet o) {
-        return valueID - o.valueID;
+    protected void setSortFieldValues() {
+        sortFieldValues = new Object[sortSpec.size];
+        sortSpec.getSortFieldValues(sortFieldValues, exemplar, exemplarScore);
     }
-
 
     @Override
     public String toString() {

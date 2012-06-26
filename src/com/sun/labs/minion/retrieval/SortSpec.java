@@ -246,6 +246,12 @@ public class SortSpec {
             sortValues[field] = fields[field].getDefaultSavedValue();
         }
     }
+    
+    public void getSortFieldIDs(int[] sortIDs, int doc) {
+        for(int i = 0; i < sortIDs.length; i++) {
+            getSortFieldID(i, sortIDs, doc);
+        }
+    }
 
     /**
      * Gets the ID for a field value, suitable for sorting results locally to
@@ -376,6 +382,14 @@ public class SortSpec {
         @Override
         public int compare(ResultImpl o1, ResultImpl o2) {
             return -o1.compareTo(o2);
+        }
+    };
+    
+    public static final Comparator FACET_COMPARATOR = new Comparator<FacetImpl>() {
+
+        @Override
+        public int compare(FacetImpl o1, FacetImpl o2) {
+            return o1.compareTo(o2);
         }
     };
 

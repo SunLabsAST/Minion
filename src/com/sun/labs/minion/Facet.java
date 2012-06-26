@@ -40,9 +40,9 @@ public interface Facet<T extends Comparable> extends Comparable<Facet<T>> {
     /**
      * Gets the top results in this facet, sorted by the given sorting specification.
      * @param n the number of results to get.
-     * @param ss a sorting specification to use for the results.
+     * @param sortSpec a sorting specification to use for the results.
      */
-    public List<Result> getResults(int n, SortSpec ss);
+    public List<Result> getResults(int n, SortSpec sortSpec);
     
     /**
      * A comparator that will return facets in increasing order of size.

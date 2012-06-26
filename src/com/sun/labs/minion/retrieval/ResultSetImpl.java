@@ -442,9 +442,15 @@ public class ResultSetImpl implements ResultSet {
                 SortSpec partSortSpec = new SortSpec(sortSpec, (InvFileDiskPartition) ag.part);
                 //
                 // Get the top documents for this partition.
+                if(qs != null) {
+                    qs.resultSortW.start();
+                }
                 for(ResultImpl ri : ag.getTopDocuments(partSortSpec, n+start, rf)) {
                     ri.setSortFieldValues();
                     sorter.offer(ri);
+                }
+                if(qs != null) {
+                    qs.resultSortW.stop();
                 }
             }
 
@@ -541,14 +547,15 @@ public class ResultSetImpl implements ResultSet {
 
         return fres;
     }
-    @Override
-    public List<Facet> getTopFacets(String fieldName, int n) throws SearchEngineException {
-        return getTopFacets(fieldName, null, null, n);
-    }
     
     @Override
-    public List<Facet> getTopFacets(String fieldName, Comparator<Facet> comparer, ScoreCombiner combiner, int n) throws
-            SearchEngineException {
+    public List<Facet> getTopFacets(String fieldName, int n) throws SearchEngineException {
+        return getTopFacets(fieldName, null, n);
+    }
+
+    @Override
+    public List<Facet> getTopFacets(String fieldName, SortSpec sortSpec, int n)
+            throws SearchEngineException {
         FieldInfo field = e.getFieldInfo(fieldName);
         if(field == null) {
             throw new SearchEngineException("Can't facet on unknown field " + fieldName);
@@ -558,18 +565,11 @@ public class ResultSetImpl implements ResultSet {
         }
         
         //
-        // Queue up the results from each partition, using the provided comparer.
+        // Queue up the facets from each partition.
         PriorityQueue<QueuableIterator<LocalFacet>> q = new PriorityQueue(results.size());
         for(ArrayGroup ag : results) {
-            
-            float[] scores = null;
-            if(ag instanceof ScoredGroup) {
-                scores = ((ScoredGroup) ag).scores;
-            }
-            List<LocalFacet> l = 
-                    ((InvFileDiskPartition) ag.part)
-                    .getDF(field)
-                    .getFacets(ag.docs, scores, ag.size, combiner);
+            List<LocalFacet> l = ((InvFileDiskPartition) ag.part).getDF(field).
+                    getFacets(ag, sortSpec);
             QueuableIterator<LocalFacet> qi = new QueuableIterator(l.iterator());
             if(qi.hasNext()) {
                 qi.next();
@@ -578,27 +578,24 @@ public class ResultSetImpl implements ResultSet {
         }
 
         //
-        // A min heap to sort our answers.
-        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(n > 0 ? n : 1, comparer);
-        
-        if(n > 0 && comparer == null) {
-            comparer = Facet.FACET_SIZE_COMPARATOR;
+        // A min heap to sort our facets according to the sort spec, if there is one.
+        Comparator<Facet> comparator = SortSpec.FACET_COMPARATOR;
+        if(n > 0 && sortSpec == null) {
+            comparator = Facet.FACET_SIZE_COMPARATOR;
         }
+        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(n > 0 ? n : 1, comparator);
         
         //
         // Build facets as we go.
         while(!q.isEmpty()) {
+            
+            //
+            // Combine facets with the same name.
             QueuableIterator<LocalFacet> top = q.peek();
             FacetImpl f = new FacetImpl(field, (Comparable) top.getCurrent().getValue(), this);
-            while(top != null && top.getCurrent().getValue().
-                    equals(f.getValue())) {
+            while(top != null && top.getCurrent().getValue().equals(f.getValue())) {
                 top = q.poll();
                 f.addLocalFacet(top.getCurrent());
-                f.addCount(top.getCurrent().size());
-                if(combiner != null) {
-                    f.setScore(combiner.combine(f.getScore(), top.getCurrent().
-                            getScore()));
-                }
                 if(top.hasNext()) {
                     top.next();
                     q.offer(top);
@@ -606,17 +603,22 @@ public class ResultSetImpl implements ResultSet {
                 top = q.peek();
             }
 
+            //
+            // See if this new facet is good enough to add to the heap of the 
+            // top facets that we're building.
             if(n < 0 || pq.size() < n) {
                 pq.offer(f);
             } else {
-                
                 FacetImpl curr = pq.peek();
-                if(comparer.compare(f, curr) > 0) {
+                if(comparator.compare(f, curr) > 0) {
                     pq.poll();
                     pq.offer(f);
                 }
             }
         }
+        
+        //
+        // Empty our heap of facets and return them.
         List<Facet> ret = new ArrayList<Facet>(pq.size());
         while(!pq.isEmpty()) {
             ret.add(pq.poll());
