@@ -408,8 +408,8 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     public int compareTo(Result o) {
 
         ResultImpl r = (ResultImpl) o;
-        if(sortSpec == null) {
-            return SortSpec.compareScore(score, r.score);
+        if(sortSpec == null || sortSpec.isJustScoreSort()) {
+            return SortSpec.compareScore(score, r.score, SortSpec.Direction.DECREASING);
         }
         
         //
@@ -440,23 +440,28 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("(").append(partition).append(", ").append(doc).append(", ").append(score).append(", [");
+        sb.append("(").append(partition).append(", ").append(doc).append(", ").
+                append(score).append(", [");
         if(localSort) {
-            for(int i = 0; i < sortFieldIDs.length; i++) {
-                if(i > 0) {
-                    sb.append(", ");
+            if(sortFieldIDs != null) {
+                for(int i = 0; i < sortFieldIDs.length; i++) {
+                    if(i > 0) {
+                        sb.append(", ");
+                    }
+                    sb.append(sortFieldIDs[i]);
                 }
-                sb.append(sortFieldIDs[i]);
             }
         } else {
-            for(int i = 0; i < sortFieldValues.length; i++) {
-                if(i > 0) {
-                    sb.append(", ");
+            if(sortFieldValues != null) {
+                for(int i = 0; i < sortFieldValues.length; i++) {
+                    if(i > 0) {
+                        sb.append(", ");
+                    }
+                    sb.append(sortFieldValues[i].toString());
                 }
-                sb.append(sortFieldValues[i].toString());
             }
         }
-        sb.append("]");
+        sb.append("])");
         return sb.toString();
     }
 

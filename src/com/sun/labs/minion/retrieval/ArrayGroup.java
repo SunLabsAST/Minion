@@ -859,28 +859,6 @@ public class ArrayGroup implements Cloneable {
         return sorter.toArray(new ResultImpl[0]);
     }
     
-    public static String inOrder(PriorityQueue<ResultImpl> q) {
-        List<ResultImpl> l = new ArrayList<ResultImpl>(q.size());
-        while(!q.isEmpty()) {
-            l.add(q.poll());
-        }
-        
-        q.addAll(l);
-        
-        StringBuilder sb = new StringBuilder();
-        sb.append('[');
-        boolean first = true;
-        for(ResultImpl ri : l) {
-            if(!first) {
-                sb.append(", ");
-            }
-            first = false;
-            sb.append(String.format("%d %.3f", ri.doc, ri.score));
-        }
-        sb.append(']');
-        return sb.toString();
-    }
-    
     /**
      * Gets an iterator that will return each document in the set.
      */

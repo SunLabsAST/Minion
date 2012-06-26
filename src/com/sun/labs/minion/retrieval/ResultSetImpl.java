@@ -33,7 +33,6 @@ import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
-import com.sun.labs.minion.ScoreCombiner;
 import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -47,7 +46,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -568,8 +566,16 @@ public class ResultSetImpl implements ResultSet {
         // Queue up the facets from each partition.
         PriorityQueue<QueuableIterator<LocalFacet>> q = new PriorityQueue(results.size());
         for(ArrayGroup ag : results) {
+
+            //
+            // Make a partition-local sorting spec.
+            SortSpec partSortSpec = null;
+            if(sortSpec != null) {
+                partSortSpec = new SortSpec(sortSpec,
+                                            (InvFileDiskPartition) ag.part);
+            }
             List<LocalFacet> l = ((InvFileDiskPartition) ag.part).getDF(field).
-                    getFacets(ag, sortSpec);
+                    getFacets(ag, partSortSpec);
             QueuableIterator<LocalFacet> qi = new QueuableIterator(l.iterator());
             if(qi.hasNext()) {
                 qi.next();
@@ -579,10 +585,11 @@ public class ResultSetImpl implements ResultSet {
 
         //
         // A min heap to sort our facets according to the sort spec, if there is one.
-        Comparator<Facet> comparator = SortSpec.FACET_COMPARATOR;
+        Comparator<Facet> comparator = SortSpec.REVERSE_FACET_COMPARATOR;
         if(n > 0 && sortSpec == null) {
             comparator = Facet.FACET_SIZE_COMPARATOR;
         }
+        
         PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(n > 0 ? n : 1, comparator);
         
         //
@@ -602,7 +609,7 @@ public class ResultSetImpl implements ResultSet {
                 }
                 top = q.peek();
             }
-
+            
             //
             // See if this new facet is good enough to add to the heap of the 
             // top facets that we're building.

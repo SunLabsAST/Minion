@@ -24,6 +24,7 @@
 package com.sun.labs.minion.util;
 
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
+import com.sun.labs.minion.retrieval.ResultImpl;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +32,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.logging.Logger;
 
 /**
@@ -2162,4 +2164,27 @@ public class Util {
         return (x[a] < x[b] ? (x[b] < x[c] ? b : x[a] < x[c] ? c : a) : (x[b] >
                 x[c] ? b : x[a] > x[c] ? c : a));
     }
+    
+    public static String inOrder(PriorityQueue q) {
+        List l = new ArrayList(q.size());
+        while(!q.isEmpty()) {
+            l.add(q.poll());
+        }
+
+        q.addAll(l);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        boolean first = true;
+        for(Object o : l) {
+            if(!first) {
+                sb.append(", ");
+            }
+            first = false;
+            sb.append(o.toString());
+        }
+        sb.append(']');
+        return sb.toString();
+    }
+
 } // Util

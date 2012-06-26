@@ -4,14 +4,13 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Result;
-import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.util.Pair;
+import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.logging.Logger;
 
@@ -86,7 +85,8 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
 
     @Override
     public List<Result> getResults(int n, SortSpec sortSpec) {
-        PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(Math.max(n,size));
+        Comparator<ResultImpl> comparator = SortSpec.REVERSE_RESULT_COMPARATOR;
+        PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(Math.max(n,size), comparator);
         if(size < n) {
             n = size;
         }
@@ -102,7 +102,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
                     sorter.offer(curr);
                 } else {
                     ResultImpl top = sorter.peek();
-                    if(curr.compareTo(top) > 0) {
+                    if(comparator.compare(curr, top) > 0) {
                         sorter.poll();
                         sorter.offer(curr);
                     }
@@ -157,7 +157,12 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     
     @Override
     public int compareTo(Facet<T> o) {
-        return value.compareTo(o.getValue());
+        FacetImpl ofi = (FacetImpl) o;
+        if(sortSpec == null || sortSpec.isJustScoreSort()) {
+            return SortSpec.compareScore(score, ofi.score, SortSpec.Direction.DECREASING);
+        } else {
+            return sortSpec.compareValues(sortFieldValues, ofi.sortFieldValues, size, score, ofi.size, ofi.score);
+        }
     }
 
     @Override

@@ -86,11 +86,15 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
                 tempSortFieldIDs = new int[sortSpec.size];
             }
             sortSpec.getSortFieldIDs(tempSortFieldIDs, doc);
-            if(sortSpec.compareIDs(tempSortFieldIDs, exemplarSortFieldIDs, score, exemplarScore) > 0) {
+            if(exemplarSortFieldIDs == null) {
+                exemplar = doc; 
+                exemplarSortFieldIDs = tempSortFieldIDs;
+                exemplarScore = score;
+            } else if(sortSpec.compareIDs(tempSortFieldIDs, exemplarSortFieldIDs, score, exemplarScore) > 0) {
+                exemplar = doc;
                 int[] tmp = exemplarSortFieldIDs;
                 exemplarSortFieldIDs = tempSortFieldIDs;
                 tempSortFieldIDs = tmp;
-                exemplar = doc;
                 exemplarScore = score;
             }
         }
@@ -124,7 +128,7 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
 
     @Override
     public String toString() {
-        return "LocalFacet{" + "facetValueID=" + valueID + ", value=" +
-                value + ", size=" + size + '}';
+        return String.format("LocalFacet{facetValueID=%d value=%s size=%d exemplarScore=%f\n\t\tdocs=%s",
+                             valueID, value, size, exemplarScore, docs);
     }
 }

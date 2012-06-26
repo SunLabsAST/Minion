@@ -345,22 +345,22 @@ public class SortSpec {
     }
     
     /**
-     * Compare two scores in decreasing order.
+     * Compare two scores in the natural order, i.e., increasing order.
      * @param score1 the first score
      * @param score2 the second score
-     * @return -1 if score1 is greater than score2, 1 if score1 is less than score2
-     * or 0 if the are equal.
+     * @return -1 if score1 is less than score2, 1 if score1 is greater than score2
+     * or 0 if the scores are equal.
      */
     public static int compareScore(float score1, float score2) {
-        return compareScore(score1, score2, Direction.DECREASING);
+        return compareScore(score1, score2, Direction.INCREASING);
     }
     
-    public static int compareScore(float score1, float score2, Direction direction) {
+    public static int compareScore(float s1, float s2, Direction direction) {
         int cmp = 0;
-        if(score1 < score2) {
+        if(s1 < s2) {
             cmp = -1;
         }
-        if(score1 > score2) {
+        if(s1 > s2) {
             cmp = 1;
         }
         return direction == Direction.INCREASING ? cmp : -cmp;
@@ -390,6 +390,13 @@ public class SortSpec {
         @Override
         public int compare(FacetImpl o1, FacetImpl o2) {
             return o1.compareTo(o2);
+        }
+    };
+
+    public static final Comparator REVERSE_FACET_COMPARATOR = new Comparator<FacetImpl>() {
+        @Override
+        public int compare(FacetImpl o1, FacetImpl o2) {
+            return -o1.compareTo(o2);
         }
     };
 

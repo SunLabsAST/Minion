@@ -73,6 +73,7 @@ import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
 import com.sun.labs.util.LabsLogFormatter;
+import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.command.CommandInterface;
 import com.sun.labs.util.command.CommandInterpreter;
 import java.io.BufferedReader;
@@ -197,7 +198,9 @@ public class QueryTest extends SEMain {
         morphEn = LiteMorph_en.getMorph();
         displaySpec = new DisplaySpec(displayFields, displayFormat);
         sortSpecString = sortSpec;
-        this.sortSpec = new SortSpec(manager, sortSpec);
+        if(sortSpecString != null) {
+            this.sortSpec = new SortSpec(manager, sortSpec);
+        }
         displayPassage = false;
         shigh = new SimpleHighlighter("<font color=\"#FF0000\">", "</font>",
                                       "<b>", "</b>");
@@ -401,10 +404,13 @@ public class QueryTest extends SEMain {
                     return "No previous query";
                 }
                 
+                NanoWatch fw = new NanoWatch();
+                fw.start();
                 List<Facet> lf = lastResultSet.getTopFacets(args[1], sortSpec, nHits);
+                fw.stop();
                 
-                ci.out.format("Found %d facets for %s in %d hits\n", 
-                              lf.size(), args[1], lastResultSet.size());
+                ci.out.format("Found %d facets for %s in %d hits in %.3fms\n", 
+                              lf.size(), args[1], lastResultSet.size(), fw.getAvgTimeMillis());
                 for(Facet f : lf) {
                     ci.out.print("  ");
                     ci.out.println(f);
@@ -1698,7 +1704,7 @@ public class QueryTest extends SEMain {
                 inputFile,
                 "partNum docID dockey",
                 "%6d%10d %s",
-                "-score");
+                null);
 
         qt.nHits = 10;
         qt.stats();

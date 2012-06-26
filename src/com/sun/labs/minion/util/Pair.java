@@ -49,7 +49,9 @@ public class Pair<T1, T2> {
         }
         return true;
     }
-    
-    
-    
+
+    @Override
+    public String toString() {
+        return "Pair{" + "a=" + a + ", b=" + b + '}';
+    }
 }
