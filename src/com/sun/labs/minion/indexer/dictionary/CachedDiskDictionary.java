@@ -167,12 +167,12 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
      * the name doesn't appear in the dictionary.
      */
     @Override
-    public QueryEntry get(N name) {
-        QueryEntry e = entriesByName.get(name);
+    public QueryEntry<N> get(N name) {
+        QueryEntry<N> e = entriesByName.get(name);
         if(e == null) {
             return null;
         }
-        return (QueryEntry) e.clone();
+        return (QueryEntry<N>) e.clone();
     }
 
     /**
@@ -183,7 +183,7 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
      * our dictionary.
      */
     @Override
-    public QueryEntry getByID(int id) {
+    public QueryEntry<N> getByID(int id) {
         if(id < 1 || id > entries.length) {
             return null;
         }
@@ -191,11 +191,11 @@ public class CachedDiskDictionary<N extends Comparable> extends DiskDictionary<N
     }
 
     @Override
-    public DictionaryIterator iterator() {
+    public DictionaryIterator<N> iterator() {
         if(dictOrderEntries != null) {
-            return new ArrayDictionaryIterator(dictOrderEntries);
+            return new ArrayDictionaryIterator<N>(dictOrderEntries);
         }
-        return new ArrayDictionaryIterator(entries, 0, entries.length);
+        return new ArrayDictionaryIterator<N>(entries);
     }
 
     /**

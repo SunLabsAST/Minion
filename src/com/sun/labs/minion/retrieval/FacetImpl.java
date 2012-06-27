@@ -5,8 +5,8 @@ import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.util.Pair;
-import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -66,6 +66,14 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
         this.field = field;
         this.value = value;
         this.set = set;
+    }
+    
+    public final void reset(T value) {
+        this.value = value;
+        localFacets.clear();
+        score = 0;
+        size = 0;
+        sortFieldValues = null;
     }
 
     @Override

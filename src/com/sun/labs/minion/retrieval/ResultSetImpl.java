@@ -33,12 +33,12 @@ import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.util.QueuableIterator;
-import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -433,7 +433,6 @@ public class ResultSetImpl implements ResultSet {
             // order we want to return the results in.
             PriorityQueue<ResultImpl> sorter =
                     new PriorityQueue<ResultImpl>(start + n, SortSpec.RESULT_COMPARATOR);
-
             for(Iterator i = results.iterator(); i.hasNext();) {
                 ArrayGroup ag = (ArrayGroup) i.next();
                 ag.setScoreModifier(sm);
@@ -574,12 +573,15 @@ public class ResultSetImpl implements ResultSet {
                 partSortSpec = new SortSpec(sortSpec,
                                             (InvFileDiskPartition) ag.part);
             }
-            List<LocalFacet> l = ((InvFileDiskPartition) ag.part).getDF(field).
-                    getFacets(ag, partSortSpec);
-            QueuableIterator<LocalFacet> qi = new QueuableIterator(l.iterator());
-            if(qi.hasNext()) {
-                qi.next();
-                q.add(qi);
+            DiskField df = ((InvFileDiskPartition) ag.part).getDF(field);
+            if(df != null) {
+                List<LocalFacet> l = df.getFacets(ag, partSortSpec);
+                QueuableIterator<LocalFacet> qi = new QueuableIterator(l.
+                        iterator());
+                if(qi.hasNext()) {
+                    qi.next();
+                    q.add(qi);
+                }
             }
         }
 
@@ -589,16 +591,22 @@ public class ResultSetImpl implements ResultSet {
         PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(n > 0 ? n : 1, comparator);
         
         //
+        // A facet impl that we can refill as necessary while finding the top 
+        // facets.  This will allow us to only keep around n+1 facet impls, rather
+        // than thousands.
+        FacetImpl curr = new FacetImpl(field, null, this);
+
+        //
         // Build facets as we go.
         while(!q.isEmpty()) {
             
             //
             // Combine facets with the same name.
             QueuableIterator<LocalFacet> top = q.peek();
-            FacetImpl f = new FacetImpl(field, (Comparable) top.getCurrent().getValue(), this);
-            while(top != null && top.getCurrent().getValue().equals(f.getValue())) {
+            curr.reset((Comparable) top.getCurrent().getValue());
+            while(top != null && top.getCurrent().getValue().equals(curr.getValue())) {
                 top = q.poll();
-                f.addLocalFacet(top.getCurrent());
+                curr.addLocalFacet(top.getCurrent());
                 if(top.hasNext()) {
                     top.next();
                     q.offer(top);
@@ -610,12 +618,14 @@ public class ResultSetImpl implements ResultSet {
             // See if this new facet is good enough to add to the heap of the 
             // top facets that we're building.
             if(n < 0 || pq.size() < n) {
-                pq.offer(f);
+                pq.offer(curr);
+                curr = new FacetImpl(field, null, this);
             } else {
-                FacetImpl curr = pq.peek();
-                if(comparator.compare(f, curr) > 0) {
+                FacetImpl topf = pq.peek();
+                if(comparator.compare(curr, topf) > 0) {
                     pq.poll();
-                    pq.offer(f);
+                    pq.offer(curr);
+                    curr = topf;
                 }
             }
         }

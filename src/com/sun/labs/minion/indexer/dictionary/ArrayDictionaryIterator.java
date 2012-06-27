@@ -54,9 +54,6 @@ public class ArrayDictionaryIterator<N extends Comparable> implements Dictionary
                                    int begin, int end) {
         if(entries == null) {
             this.entries = new QueryEntry[0];
-            curr = 0;
-            begin = 0;
-            end = 0;
         } else {
             this.entries = entries;
             curr = begin;
@@ -83,7 +80,7 @@ public class ArrayDictionaryIterator<N extends Comparable> implements Dictionary
      * the iterator.
      */
     @Override
-    public QueryEntry next() {
+    public QueryEntry<N> next() {
 
         //
         // If the next entry hasn't been set yet, then check to see if there
