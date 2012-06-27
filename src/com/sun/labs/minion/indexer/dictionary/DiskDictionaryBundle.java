@@ -1288,7 +1288,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @param docs the IDs of the documents for which we want facets.
      * @param p the number of IDs in the array
      * @return a list of the facets for this partition.
-     * @throws SearchEngineException 
      */
     public List<LocalFacet<N>> getFacets(ArrayGroup ag, SortSpec sortSpec) {
         Map<Integer, LocalFacet<N>> m = new HashMap<Integer, LocalFacet<N>>();

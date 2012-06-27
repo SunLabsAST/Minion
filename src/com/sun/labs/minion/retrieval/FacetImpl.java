@@ -120,6 +120,9 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
 
     
     public void addLocalFacet(LocalFacet localFacet) {
+        if(localFacets.isEmpty()) {
+            sortSpec = localFacet.sortSpec;
+        }
         localFacets.add(localFacet);
         size += localFacet.size;
         if(sortSpec == null || sortSpec.isJustScoreSort()) {
@@ -131,7 +134,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
             // sorting specification, because we'll use those to (eventually) 
             // sort the facets.
             localFacet.setSortFieldValues();
-            if(sortSpec.compareValues(sortFieldValues, localFacet.sortFieldValues, 0, score, 0, localFacet.exemplarScore) < 0) {
+            if(sortFieldValues == null || sortSpec.compareValues(sortFieldValues, localFacet.sortFieldValues, 0, score, 0, localFacet.exemplarScore) < 0) {
                 sortFieldValues = localFacet.sortFieldValues;
                 score = localFacet.exemplarScore;
             }
@@ -158,11 +161,16 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     @Override
     public int compareTo(Facet<T> o) {
         FacetImpl ofi = (FacetImpl) o;
+        int cmp;
         if(sortSpec == null || sortSpec.isJustScoreSort()) {
-            return SortSpec.compareScore(score, ofi.score, SortSpec.Direction.DECREASING);
+            cmp = SortSpec.compareScore(score, ofi.score, SortSpec.Direction.DECREASING);
         } else {
-            return sortSpec.compareValues(sortFieldValues, ofi.sortFieldValues, size, score, ofi.size, ofi.score);
+            cmp = sortSpec.compareValues(sortFieldValues, ofi.sortFieldValues, size, score, ofi.size, ofi.score);
         }
+        
+        //
+        // Sort by size if all else fails.
+        return cmp == 0 ? ofi.size - size : cmp;
     }
 
     @Override

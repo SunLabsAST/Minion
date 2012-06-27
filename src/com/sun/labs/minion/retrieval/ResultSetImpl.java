@@ -586,10 +586,6 @@ public class ResultSetImpl implements ResultSet {
         //
         // A min heap to sort our facets according to the sort spec, if there is one.
         Comparator<Facet> comparator = SortSpec.REVERSE_FACET_COMPARATOR;
-        if(n > 0 && sortSpec == null) {
-            comparator = Facet.FACET_SIZE_COMPARATOR;
-        }
-        
         PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(n > 0 ? n : 1, comparator);
         
         //
