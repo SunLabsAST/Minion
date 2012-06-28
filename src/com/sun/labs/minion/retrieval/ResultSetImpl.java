@@ -107,7 +107,7 @@ public class ResultSetImpl implements ResultSet {
      */
     protected long queryTime;
 
-    protected static Logger logger = Logger.getLogger(ResultSetImpl.class.getName());
+    protected static final Logger logger = Logger.getLogger(ResultSetImpl.class.getName());
 
     protected static String logTag = "RSI";
 
@@ -513,6 +513,9 @@ public class ResultSetImpl implements ResultSet {
         Collection<Result> ret = sorted ? new PriorityQueue<Result>() : new ArrayList<Result>();
 
         for(ArrayGroup ag : results) {
+            if(ag.size == 0) {
+                continue;
+            }
             if(sm != null) {
                 ag.setScoreModifier(sm);
             }
@@ -598,6 +601,7 @@ public class ResultSetImpl implements ResultSet {
 
         //
         // Build facets as we go.
+        int nFacets = 0;
         while(!q.isEmpty()) {
             
             //
@@ -617,6 +621,7 @@ public class ResultSetImpl implements ResultSet {
             //
             // See if this new facet is good enough to add to the heap of the 
             // top facets that we're building.
+            nFacets++;
             if(n < 0 || pq.size() < n) {
                 pq.offer(curr);
                 curr = new FacetImpl(field, null, this);
@@ -629,6 +634,8 @@ public class ResultSetImpl implements ResultSet {
                 }
             }
         }
+        
+//        logger.info(String.format("Evaluated %d facets", nFacets));
         
         //
         // Empty our heap of facets and return them.

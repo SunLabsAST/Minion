@@ -665,9 +665,15 @@ public class MetaFile implements Iterable<FieldInfo> {
 
         MetaFile mf = new MetaFile(null, new File(args[0]));
         mf.read();
-        if(args.length > 1) {
-            mf.setTermStatsNumber(Integer.parseInt(args[1]));
+        if(args.length >= 3) {
+            FieldInfo fi = mf.getFieldInfo(args[1]);
+            fi.setName(args[2]);
             mf.write();
+        } else {
+            if(args.length > 1) {
+                mf.setTermStatsNumber(Integer.parseInt(args[1]));
+                mf.write();
+            }
         }
         System.out.println(mf);
     }

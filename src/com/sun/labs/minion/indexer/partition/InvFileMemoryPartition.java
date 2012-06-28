@@ -105,7 +105,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         docKey = docDict.put(key);
         docKey.setUsed(true);
         if(old != null && logger.isLoggable(Level.FINE)) {
-            logger.info(String.format("%s %s replace %d with %d", 
+            logger.fine(String.format("%s %s replace %d with %d", 
                     getPartitionName(), key, old.getID(), docKey.getID()));
         }
 
@@ -188,8 +188,6 @@ public class InvFileMemoryPartition extends MemoryPartition {
 
     @Override
     protected void customMarshall(PartitionOutput partOut) throws IOException {
-
-        int tsn = 0;
 
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 

@@ -190,11 +190,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         if(field.isVectored()) {
             if(field.isCased()) {
                 rawVector = dicts[Type.RAW_VECTOR.ordinal()].put(docKey);
-//                logger.info(String.format("%s %s rv: %d dk: %d", info.getName(), docKey.getName(), rawVector.getID(), docKey.getID()));
             }
             if(field.isStemmed()) {
                 stemmedVector = dicts[Type.STEMMED_VECTOR.ordinal()].put(docKey);
-//                logger.info(String.format("%s %s sv: %d dk: %d", info.getName(), docKey.getName(), stemmedVector.getID(), docKey.getID()));
             }
         } else {
             rawVector = null;
@@ -204,6 +202,16 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
     public int getMaxDocID() {
         return maxDocID;
+    }
+    
+    public boolean anyData() {
+        for(Type type : Type.values()) {
+            int ord = type.ordinal();
+            if(dicts[ord] != null && dicts[ord].size() > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void token(Token t) {
@@ -532,10 +540,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             long dictPos = partDictOut.position();
             
             try {
-//                if(type == Type.RAW_VECTOR || type == Type.STEMMED_VECTOR) {
-//                    Logger.getLogger(MemoryDictionary.class.getName()).setLevel(Level.FINER);
-//                    logger.info(String.format("marshall %s: %s", info.getName(), type));
-//                }
                 if(dicts[ord].marshall(partOut)) {
                     header.dictOffsets[ord] = dictPos;
                     entryIDMaps[ord] = dicts[ord].getIdMap();
@@ -553,7 +557,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 // But we want the marshalling thread to ultimately catch the exception.
                 throw (ex);
             }
-//            Logger.getLogger(MemoryDictionary.class.getName()).setLevel(Level.INFO);
             dw.stop();
             if(logger.isLoggable(Level.FINER)) {
                 logger.finer(String.format("%s in %s took %.2fms", type, field.getInfo().getName(), dw.getLastTimeMillis()));

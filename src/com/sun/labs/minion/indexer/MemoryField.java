@@ -146,7 +146,7 @@ public class MemoryField extends Field {
             java.io.IOException {
         //
         // If there's nothing in the field, then call it a day.
-        if(bundle.getMaxDocID() == 0) {
+        if(!bundle.anyData()) {
             return MarshallResult.NOTHING_DUMPED;
         }
         return bundle.marshall(partOut);

@@ -99,7 +99,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
     private DocumentVectorLengths dvl;
 
     protected CDateParser dateParser;
-
+    
     public DiskDictionaryBundle(DiskField field,
             RandomAccessFile dictFile,
             RandomAccessFile vectorLengthsFile,
@@ -112,7 +112,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         headerPos = dictFile.getFilePointer();
         header = new FieldHeader(dictFile);
         dicts = new DiskDictionary[MemoryDictionaryBundle.Type.values().length];
-
+        
         for(Type type : Type.values()) {
             int ord = type.ordinal();
             NameDecoder decoder = null;

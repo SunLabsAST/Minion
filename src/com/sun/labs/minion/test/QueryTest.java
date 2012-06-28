@@ -269,9 +269,12 @@ public class QueryTest extends SEMain {
     public void displayResults(String prefix, ResultSet set) {
 
         List results;
+        NanoWatch nw = new NanoWatch();
 
         try {
+            nw.start();
             results = set.getResults(0, nHits);
+            nw.stop();
         } catch(SearchEngineException se) {
             logger.log(Level.SEVERE, "Error getting search results", se);
             return;
@@ -280,7 +283,7 @@ public class QueryTest extends SEMain {
             return;
         }
 
-        shell.out.println("Query took: " + set.getQueryTime() + " ms");
+        shell.out.format("Query took: %dms (%.2fms to sort)\n", set.getQueryTime(), nw.getAvgTimeMillis());
         totalTime += set.getQueryTime();
         nQueries++;
 
@@ -1872,7 +1875,7 @@ public class QueryTest extends SEMain {
                     }
                 } else {
                     List val = r.getField(fn);
-                    if(val.isEmpty()) {
+                    if(val == null || val.isEmpty()) {
                         vals[i] = null;
                     } else if(val.size() == 1) {
                         vals[i] = val.get(0);

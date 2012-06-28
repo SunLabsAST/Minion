@@ -393,6 +393,10 @@ public class FieldInfo implements Cloneable, Configurable {
         return this.name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     /**
      * Adds an attribute to the field.
      *

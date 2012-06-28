@@ -803,7 +803,7 @@ public class ArrayGroup implements Cloneable {
     }
     
     /**
-     * Gets the top 10 documents from this group according to the provided 
+     * Gets the top <em>n</em> documents from this group according to the provided 
      * sorting specification.  We do this here because we know that we're only
      * in a single partition, so sorting by field values can be done based on the
      * IDs of the values.
@@ -813,6 +813,10 @@ public class ArrayGroup implements Cloneable {
      * @param n the number of hits to retrieve.
      */
     public ResultImpl[] getTopDocuments(SortSpec sortSpec, int n, ResultsFilter rf) {
+
+        if(n == 0) {
+            return new ResultImpl[0];
+        }
         
         PriorityQueue<ResultImpl>  sorter = new PriorityQueue<ResultImpl>(n, SortSpec.REVERSE_RESULT_COMPARATOR);
         ResultImpl curr = new ResultImpl();
