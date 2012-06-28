@@ -362,9 +362,6 @@ public class DocumentVectorLengths {
         for(int i = 0; i < p; i++) {
             lvl.position((docs[i] - 1) * 4);
             float vl = lvl.decodeFloat();
-            if(docs[i] == 17778) {
-                logger.info(String.format("%d score: %.3f vl: %.3f qw: %.3f", docs[i], scores[i], vl, qw));
-            }
             scores[i] /= (vl * qw);
         }
     }
