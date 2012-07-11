@@ -524,8 +524,7 @@ public class ResultSetImpl implements ResultSet {
                 partSortSpec = new SortSpec(sortSpec,
                                             (InvFileDiskPartition) ag.part);
             }
-            for(ResultImpl ri : ag.getTopDocuments(partSortSpec, ag.size, rf)) {
-                ri.setSortFieldValues();
+            for(ResultImpl ri : ag.getAllResults(sorted, partSortSpec, rf)) {
                 ret.add(ri);
             }
         }
@@ -540,7 +539,7 @@ public class ResultSetImpl implements ResultSet {
             }
             //
             // The heap is a min heap!
-            Collections.reverse(fres);
+//            Collections.reverse(fres);
         } else {
             fres = (List<Result>) ret;
         }

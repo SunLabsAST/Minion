@@ -803,6 +803,21 @@ public class ArrayGroup implements Cloneable {
     }
     
     /**
+     * Gets all the results in this set.
+     */
+    public ResultImpl[] getAllResults(boolean sorted, SortSpec sortSpec, ResultsFilter rf) {
+        if(sorted) {
+            return getTopDocuments(sortSpec, size, rf);
+        }
+        List<ResultImpl> ret = new ArrayList<ResultImpl>();
+        ArrayGroup.DocIterator iter = iterator();
+        while(iter.next()) {
+            ret.add(new ResultImpl(null, this, sortSpec, false, iter.getDoc(), iter.getScore()));
+        }
+        return ret.toArray(new ResultImpl[0]);
+    }
+    
+    /**
      * Gets the top <em>n</em> documents from this group according to the provided 
      * sorting specification.  We do this here because we know that we're only
      * in a single partition, so sorting by field values can be done based on the
@@ -860,7 +875,12 @@ public class ArrayGroup implements Cloneable {
             }
         }
         
-        return sorter.toArray(new ResultImpl[0]);
+        ResultImpl[] ret = new ResultImpl[sorter.size()];
+        int pos = ret.length - 1;
+        while(!sorter.isEmpty()) {
+            ret[pos--] = sorter.poll();
+        }
+        return ret;
     }
     
     /**
