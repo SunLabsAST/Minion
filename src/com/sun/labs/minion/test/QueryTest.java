@@ -234,9 +234,19 @@ public class QueryTest extends SEMain {
             shell.out.println("");
             shell.out.println(" Sorting specification is: " + sortSpec);
             shell.out.println(" Display specification is: " + displaySpec);
+            Set<FieldInfo> defaultFields = engine.getDefaultFields();
+            StringBuilder sb = new StringBuilder();
+            for(FieldInfo df : defaultFields) {
+                if(sb.length() > 0) {
+                    sb.append(", ");
+                }
+                sb.append(df.getName());
+            }
+            shell.out.println(" Default search fields:    " + sb);
             shell.out.println(" Partitions have:\n" + "  " + manager.getNDocs()
                            + " documents\n" + "  " + manager.getNTokens()
                            + " tokens\n" + "  " + manager.getNTerms() + " terms");
+            
         }
     }
 

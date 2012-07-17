@@ -128,7 +128,6 @@ public abstract class QueryElement implements Comparable {
         //
         // We only need to set up the search fields and multipliers once.
         if(searchFields == null) {
-            logger.info(String.format("No search fields"));
             if(part instanceof InvFileDiskPartition) {
                 InvFileDiskPartition ifpart = (InvFileDiskPartition) part;
                 if(searchFieldNames == null) {
