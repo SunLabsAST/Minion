@@ -653,6 +653,9 @@ public class QueryConfig implements Cloneable, Configurable {
     }
 
     public Set<FieldInfo> getDefaultFields() {
+        if(defaultFields.isEmpty()) {
+            
+        }
         return defaultFields;
     }
     

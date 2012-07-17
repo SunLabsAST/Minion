@@ -658,6 +658,15 @@ public interface SearchEngine extends Searcher {
      * @return the number of undeleted documents in the index
      */
     public int getNDocs();
+    
+    /**
+     * Gets the default fields to search from this engine. These may have been
+     * specified as part of a query configuration or when the fields were
+     * defined. Any default field information that is part of the query configuration 
+     * (see {@link QueryConfig#addDefaultField}) will take precedence over 
+     * default fields in the field definitions themselves.
+     */
+    public Set<FieldInfo> getDefaultFields();
 
     /**
      * Sets the query configuration to use for subsequent queries.

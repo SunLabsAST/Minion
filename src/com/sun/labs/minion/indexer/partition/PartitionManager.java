@@ -1073,11 +1073,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
     
     public DocumentVector getDocumentVectorForDefaultFields(QueryEntry<String> key) {
-        Set<FieldInfo> deff = getQueryConfig().getDefaultFields();
-        if(deff == null || deff.isEmpty()) {
+        Set<FieldInfo> defaultFields = engine.getDefaultFields();
+        if(defaultFields == null || defaultFields.isEmpty()) {
             throw new IllegalArgumentException("Must specify default fields");
         }
-        FieldInfo[] fi = deff.toArray(new FieldInfo[0]);
+        FieldInfo[] fi = defaultFields.toArray(new FieldInfo[0]);
         if(fi.length == 1) {
             return new SingleFieldDocumentVector(engine, key, fi[0]);
         } else {

@@ -211,12 +211,12 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
         this.keyEntry = key;
         this.key = keyEntry.getName();
         if(fields == null) {
-            Set<FieldInfo> deff = e.getQueryConfig().getDefaultFields();
-            if(deff == null || deff.isEmpty()) {
+            Set<FieldInfo> defaultFields = e.getDefaultFields();
+            if(defaultFields == null || defaultFields.isEmpty()) {
                 throw new IllegalArgumentException(
                         "Must either define default fields or pass fields in!");
             }
-            this.fields = deff.toArray(new FieldInfo[deff.size()]);
+            this.fields = defaultFields.toArray(new FieldInfo[defaultFields.size()]);
         } else {
             this.fields = fields;
         }

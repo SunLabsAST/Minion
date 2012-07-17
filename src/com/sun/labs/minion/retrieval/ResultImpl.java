@@ -255,7 +255,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      */
     @Override
     public DocumentVector getDocumentVector() {
-        Set<FieldInfo> defaultFields = set.getEngine().getQueryConfig().getDefaultFields();
+        Set<FieldInfo> defaultFields = set.getEngine().getDefaultFields();
         if(defaultFields.size() == 1) {
             return new SingleFieldDocumentVector(this, defaultFields.iterator().next());
         } else {

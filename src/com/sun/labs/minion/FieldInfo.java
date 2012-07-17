@@ -122,11 +122,11 @@ import java.util.logging.Logger;
  *
  * <dt><code>INTEGER</code></dt>
  *
- * <dd> Some quantity storeable in a 64 bit integer.</dd>
+ * <dd> Some quantity storable in a 64 bit integer.</dd>
  *
  * <dt><code>FLOAT</code></dt>
  *
- * <dd>Some quantity storeable in a 64 bit double.</dd>
+ * <dd>Some quantity storable in a 64 bit double.</dd>
  *
  * <dt><code>DATE</code></dt>
  *
@@ -144,14 +144,15 @@ import java.util.logging.Logger;
  * <p>
  *
  * The attributes of the
- * <code>FieldInfo</code> object can be set by providing an {@link java.util.EnumSet}
- * to the constructor, or by using the
+ * <code>FieldInfo</code> object can be set by providing an
+ * {@link java.util.EnumSet} to the constructor, or by using the
  * <code>setAttribute</code> method.
  *
  */
 public class FieldInfo implements Cloneable, Configurable {
 
-    protected static final Logger logger = Logger.getLogger(FieldInfo.class.getName());
+    protected static final Logger logger = Logger.getLogger(FieldInfo.class.
+            getName());
 
     /**
      * The various attributes that a field can have. Any field may specify any
@@ -171,7 +172,7 @@ public class FieldInfo implements Cloneable, Configurable {
          */
         INDEXED,
         /**
-         * Postions for the tokens in this field will be stored in the index
+         * Positions for the tokens in this field will be stored in the index
          */
         POSITIONS,
         /**
@@ -204,7 +205,17 @@ public class FieldInfo implements Cloneable, Configurable {
          * The values for this field will be stored as-is in the index for use
          * in relational queries or for sorting search results.
          */
-        SAVED;
+        SAVED,
+        /**
+         * This field, if it is INDEXED will be a default field for searches if
+         * no other field information is provided.
+         */
+        DEFAULT,
+        /**
+         * This field should be considered for caching when it is under heavy
+         * use.
+         */
+        CACHE;
 
     }
 
@@ -227,9 +238,10 @@ public class FieldInfo implements Cloneable, Configurable {
      * The set of attributes for the class.
      */
     @ConfigEnumSet(type = FieldInfo.Attribute.class, defaultList = {"INDEXED",
-        "TOKENIZED",
-        "VECTORED",
-        "UNCASED", "CASED"})
+                                                                    "TOKENIZED",
+                                                                    "VECTORED",
+                                                                    "UNCASED",
+                                                                    "CASED"})
     public static final String PROP_ATTRIBUTES = "attributes";
 
     /**
@@ -328,7 +340,8 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param type A type that will be used if the attributes indicate that the
      * field is saved.
      */
-    public FieldInfo(String name, EnumSet<Attribute> attributes, Type type, String pipelineFactoryName) {
+    public FieldInfo(String name, EnumSet<Attribute> attributes, Type type,
+                     String pipelineFactoryName) {
         this(0, name, attributes, type, pipelineFactoryName);
     }
 
@@ -343,13 +356,13 @@ public class FieldInfo implements Cloneable, Configurable {
      * this set, so it is safe to modify or reuse the attributes.
      * @param type The field type
      * @throws IllegalArgumentException if the attributes of the field specify
-     * that a field is saved and the type of the field is
-     * <code>null</code> or Type.NONE, or if a type other than Type.NONE is
-     * specified and the attributes do not contain the SAVED attribute.
+     * that a field is saved and the type of the field is <code>null</code> or
+     * Type.NONE, or if a type other than Type.NONE is specified and the
+     * attributes do not contain the SAVED attribute.
      */
     public FieldInfo(int id, String name,
-            EnumSet<Attribute> attributes,
-            Type type, String pipelineFactoryName) {
+                     EnumSet<Attribute> attributes,
+                     Type type, String pipelineFactoryName) {
         this.id = id;
         this.name = name == null ? null : name.toLowerCase();
         if(attributes != null) {
@@ -358,15 +371,18 @@ public class FieldInfo implements Cloneable, Configurable {
             this.attributes = getDefaultAttributes();
         }
         this.type = type;
-        if(pipelineFactoryName == null && this.attributes.contains(Attribute.INDEXED)) {
-            logger.log(Level.WARNING, String.format("Field %s is indexed but has no pipeline defined, using the default", name),
-                    new Exception("here"));
+        if(pipelineFactoryName == null && this.attributes.contains(
+                Attribute.INDEXED)) {
+            logger.log(Level.WARNING, String.format(
+                    "Field %s is indexed but has no pipeline defined, using the default",
+                                                    name),
+                       new Exception("here"));
             this.pipelineFactoryName = DEFAULT_PIPELINE_FACTORY_NAME;
         } else {
             this.pipelineFactoryName = pipelineFactoryName;
         }
     }
-    
+
     public FieldInfo(RandomAccessFile raf) throws IOException {
         read(raf);
     }
@@ -448,8 +464,8 @@ public class FieldInfo implements Cloneable, Configurable {
      * Gets the field type.
      *
      * @return the type of this field. If this field does not have the
-     * <code>SAVED</code> attribute, then the type
-     * <code>NONE</code> is returned.
+     * <code>SAVED</code> attribute, then the type <code>NONE</code> is
+     * returned.
      */
     public Type getType() {
         return type;
@@ -477,7 +493,9 @@ public class FieldInfo implements Cloneable, Configurable {
             case STRING:
                 return "";
             default:
-                logger.warning(String.format("Field: %s has unknown type %s, using STRING", name, type));
+                logger.warning(String.format(
+                        "Field: %s has unknown type %s, using STRING", name,
+                                             type));
                 return "";
         }
 
@@ -503,7 +521,7 @@ public class FieldInfo implements Cloneable, Configurable {
     @Override
     public String toString() {
         return String.format("%s: %d type: %s attributes: %s", this.name, id,
-                type, attributes);
+                             type, attributes);
     }
 
     /**
@@ -523,7 +541,8 @@ public class FieldInfo implements Cloneable, Configurable {
         //
         // The name of the field will be the name of the configured component.
         name = ps.getInstanceName();
-        attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(PROP_ATTRIBUTES);
+        attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(
+                PROP_ATTRIBUTES);
         type = (Type) ps.getEnum(PROP_TYPE);
         pipelineFactoryName = ps.getString(PROP_PIPELINE_FACTORY_NAME);
     }
@@ -599,11 +618,11 @@ public class FieldInfo implements Cloneable, Configurable {
      */
     public static EnumSet<Attribute> getIndexedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                Attribute.TOKENIZED,
-                Attribute.POSITIONS,
-                Attribute.CASED,
-                Attribute.UNCASED,
-                Attribute.VECTORED);
+                          Attribute.TOKENIZED,
+                          Attribute.POSITIONS,
+                          Attribute.CASED,
+                          Attribute.UNCASED,
+                          Attribute.VECTORED);
     }
 
     /**
@@ -614,10 +633,10 @@ public class FieldInfo implements Cloneable, Configurable {
      */
     public static EnumSet<Attribute> getDefaultAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                Attribute.CASED,
-                Attribute.UNCASED,
-                Attribute.TOKENIZED,
-                Attribute.POSITIONS);
+                          Attribute.CASED,
+                          Attribute.UNCASED,
+                          Attribute.TOKENIZED,
+                          Attribute.POSITIONS);
     }
 
     /**
@@ -628,12 +647,12 @@ public class FieldInfo implements Cloneable, Configurable {
      */
     public static EnumSet<Attribute> getIndexedAndSavedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                Attribute.TOKENIZED,
-                Attribute.POSITIONS,
-                Attribute.CASED,
-                Attribute.UNCASED,
-                Attribute.VECTORED,
-                Attribute.SAVED);
+                          Attribute.TOKENIZED,
+                          Attribute.POSITIONS,
+                          Attribute.CASED,
+                          Attribute.UNCASED,
+                          Attribute.VECTORED,
+                          Attribute.SAVED);
     }
 
     /**
@@ -661,7 +680,7 @@ public class FieldInfo implements Cloneable, Configurable {
         }
         final FieldInfo other = (FieldInfo) obj;
         if((this.name == null) ? (other.name != null)
-                : !this.name.equals(other.name)) {
+           : !this.name.equals(other.name)) {
             return false;
         }
         if(this.id != other.id) {

@@ -47,7 +47,7 @@ public class QueryEvaluator {
      * <code>ArrayGroup</code>s containing the results for the corresponding
      * partitions.
      */
-    public List eval(List parts,
+    public List eval(List<DiskPartition> parts,
                      QueryConfig qc,
                      String name, Relation.Operator op, String value) {
         QueryElement qe = new FieldTerm(name, op, value);

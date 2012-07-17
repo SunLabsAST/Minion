@@ -23,25 +23,85 @@
  */
 package com.sun.labs.minion.engine;
 
-import com.sun.labs.minion.*;
+import com.sun.labs.minion.Document;
+import com.sun.labs.minion.DocumentVector;
+import com.sun.labs.minion.FieldFrequency;
+import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.FieldValue;
+import com.sun.labs.minion.IndexConfig;
+import com.sun.labs.minion.IndexListener;
+import com.sun.labs.minion.Indexable;
+import com.sun.labs.minion.IndexableMap;
+import com.sun.labs.minion.MetaDataStore;
+import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.QueryException;
+import com.sun.labs.minion.QueryPipeline;
+import com.sun.labs.minion.QueryStats;
+import com.sun.labs.minion.ResultSet;
+import com.sun.labs.minion.SearchEngine;
+import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.Searcher;
+import com.sun.labs.minion.SimpleIndexer;
+import com.sun.labs.minion.TermStats;
+import com.sun.labs.minion.WeightedField;
 import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
-import com.sun.labs.minion.indexer.partition.*;
+import com.sun.labs.minion.indexer.partition.DiskPartition;
+import com.sun.labs.minion.indexer.partition.DocumentIterator;
+import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
+import com.sun.labs.minion.indexer.partition.Marshaller;
+import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.PipelineFactory;
-import com.sun.labs.minion.query.*;
 import com.sun.labs.minion.query.And;
+import com.sun.labs.minion.query.Element;
 import com.sun.labs.minion.query.Or;
-import com.sun.labs.minion.retrieval.*;
-import com.sun.labs.minion.retrieval.parser.*;
+import com.sun.labs.minion.query.Range;
+import com.sun.labs.minion.query.Relation;
+import com.sun.labs.minion.query.StringRelation;
+import com.sun.labs.minion.query.Term;
+import com.sun.labs.minion.retrieval.ArrayGroup;
+import com.sun.labs.minion.retrieval.CollectionStats;
+import com.sun.labs.minion.retrieval.QueryElement;
+import com.sun.labs.minion.retrieval.QueryOptimizer;
+import com.sun.labs.minion.retrieval.ResultSetImpl;
+import com.sun.labs.minion.retrieval.ScoredGroup;
+import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
+import com.sun.labs.minion.retrieval.parser.LuceneParser;
+import com.sun.labs.minion.retrieval.parser.LuceneTransformer;
+import com.sun.labs.minion.retrieval.parser.Parser;
+import com.sun.labs.minion.retrieval.parser.SimpleNode;
+import com.sun.labs.minion.retrieval.parser.StrictParser;
+import com.sun.labs.minion.retrieval.parser.StrictTransformer;
+import com.sun.labs.minion.retrieval.parser.TokenMgrError;
+import com.sun.labs.minion.retrieval.parser.Transformer;
+import com.sun.labs.minion.retrieval.parser.WebParser;
+import com.sun.labs.minion.retrieval.parser.WebTransformer;
 import com.sun.labs.minion.util.CDateParser;
-import com.sun.labs.util.props.*;
+import com.sun.labs.util.props.ConfigBoolean;
+import com.sun.labs.util.props.ConfigComponent;
+import com.sun.labs.util.props.ConfigDouble;
+import com.sun.labs.util.props.ConfigInteger;
+import com.sun.labs.util.props.ConfigString;
+import com.sun.labs.util.props.Configurable;
+import com.sun.labs.util.props.ConfigurationManager;
+import com.sun.labs.util.props.PropertyException;
+import com.sun.labs.util.props.PropertySheet;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -236,6 +296,19 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         indexConfig.setDefaultFieldInfo(field);
     }
 
+    @Override
+    public Set<FieldInfo> getDefaultFields() {
+        Set<FieldInfo> defaults = queryConfig.getDefaultFields();
+        if(defaults.isEmpty()) {
+            defaults = new HashSet<FieldInfo>(invFilePartitionManager.getMetaFile().getFieldInfo(FieldInfo.Attribute.DEFAULT));
+        }
+        if(defaults.isEmpty()) {
+            logger.warning(String.format("No default search fields defined"));
+        }
+        return defaults;
+    }
+
+    
     /**
      * Gets the information for a field.
      *

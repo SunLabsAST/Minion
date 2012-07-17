@@ -128,13 +128,14 @@ public abstract class QueryElement implements Comparable {
         //
         // We only need to set up the search fields and multipliers once.
         if(searchFields == null) {
+            logger.info(String.format("No search fields"));
             if(part instanceof InvFileDiskPartition) {
                 InvFileDiskPartition ifpart = (InvFileDiskPartition) part;
                 if(searchFieldNames == null) {
                     //
                     // Set up any default fields if there are none specified in
                     // the query.
-                    Set<FieldInfo> df = qc.getDefaultFields();
+                    Set<FieldInfo> df = part.getPartitionManager().getEngine().getDefaultFields();
                     if(!df.isEmpty()) {
                         searchFieldNames = new String[df.size()];
                         searchFields = df.toArray(new FieldInfo[0]);

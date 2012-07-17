@@ -47,7 +47,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * A class to read and write the indexer's metafile.
+ * A class to read and write the metafile for the engine. The metafile stores 
+ * information about the index, such as the defined fields and the next partition
+ * number to be generated.
  */
 public class MetaFile implements Iterable<FieldInfo> {
 
