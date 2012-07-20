@@ -398,9 +398,7 @@ public class DocumentVectorLengths {
             }
             if(norm == 0) {
                 norm = 1;
-            } else {
-                norm /= lvls.length;
-            }
+            } 
             scores[i] /= (norm * qw);
         }
     }

@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,6 +40,13 @@ import java.util.Set;
  * represent a set of documents as easily as it can a single document.
  */
 public interface DocumentVector extends Cloneable {
+    
+    /**
+     * Gets the fields that were used to generate this vector.
+     * 
+     * @return the fields used to generate the document vector.
+     */
+    public Collection<FieldInfo> getFields();
 
     /**
      * Creates a copy of the current document vector and returns it.
@@ -54,7 +62,7 @@ public interface DocumentVector extends Cloneable {
 
     /** 
      * Computes the similarity between this document vector and the
-     * supplied vector.  Similarity is as how small or large the angle
+     * supplied vector.  Similarity is defined as how small or large the angle
      * between the two vectors is.  The measurement returned is the cosine
      * of the angle between the vectors.
      * 

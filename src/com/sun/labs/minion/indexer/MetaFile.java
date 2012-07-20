@@ -232,8 +232,8 @@ public class MetaFile implements Iterable<FieldInfo> {
      * @param attr the attribute that we wish the fields to have
      * @return a list of the information for the fields that have this attribute.
      */
-    public synchronized List<FieldInfo> getFieldInfo(FieldInfo.Attribute attr) {
-        List<FieldInfo> ret = new ArrayList<FieldInfo>();
+    public synchronized Collection<FieldInfo> getFieldInfo(FieldInfo.Attribute attr) {
+        Set<FieldInfo> ret = new HashSet<FieldInfo>();
         for(FieldInfo fi : idToInfo.values()) {
             if(fi.hasAttribute(attr)) {
                 ret.add(fi);
@@ -269,8 +269,8 @@ public class MetaFile implements Iterable<FieldInfo> {
      * @return a list of the information for the fields that have all of these
      * attributes.
      */
-    public synchronized List<FieldInfo> getFieldInfo(EnumSet<FieldInfo.Attribute> attrs) {
-        List<FieldInfo> ret = new ArrayList<FieldInfo>();
+    public synchronized Collection<FieldInfo> getFieldInfo(EnumSet<FieldInfo.Attribute> attrs) {
+        Set<FieldInfo> ret = new HashSet<FieldInfo>();
         for(FieldInfo fi : idToInfo.values()) {
             if(fi.getAttributes().containsAll(attrs)) {
                 ret.add(fi);

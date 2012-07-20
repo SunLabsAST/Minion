@@ -26,6 +26,7 @@ package com.sun.labs.minion.retrieval;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.QueryConfig;
+import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedFeature;
@@ -42,6 +43,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -226,6 +228,11 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
     }
 
     @Override
+    public Collection<FieldInfo> getFields() {
+        return Arrays.asList(fields);
+    }
+
+    @Override
     public DocumentVector copy() {
         MultiFieldDocumentVector ret = new MultiFieldDocumentVector();
         ret.e = e;
@@ -393,8 +400,18 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
      */
     @Override
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
+        return MultiFieldDocumentVector.findSimilar(e, getFeatures(), 
+                                                        fields, sortOrder, skimPercent, wf, wc);
+    } 
+    
+    protected static ResultSet findSimilar(SearchEngine e, WeightedFeature[] v, 
+                                                           FieldInfo[] fields, 
+                                                           String sortOrder, 
+                                                           double skimPercent,
+                                                           WeightingFunction wf, 
+                                                           WeightingComponents wc) {
 
-        getFeatures();
+        QueryStats qs = new QueryStats();
         qs.queryW.start();
 
         //
@@ -421,8 +438,6 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
         } else {
             sf = v;
         }
-
-        logger.info(String.format("findsim query has %d terms", sf.length));
 
         //
         // We now have sf, which is the (possibly skimmed) set of features
@@ -472,7 +487,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
                     if(entry == null) {
                         continue;
                     }
-                    tsi.add((TermStatsImpl) e.getTermStats(f.getName(), field));
+                    tsi.add(cdf.getTermStats(f.getName()));
                     qs.postReadW.start();
                     PostingsIterator pi = entry.iterator(null);
                     if(pi == null) {
@@ -488,12 +503,11 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
 
                 //
                 // Compute weights.
-                wc.setTerm(tsi);
-                wf.initTerm(wc);
+                wf.initTerm(wc.setTerm(tsi));
                 for(int i = 0; i < freqs.length; i++) {
                     if(freqs[i] != 0) {
                         wc.fdt = freqs[i];
-                        scores[i] = wf.termWeight(wc) * f.getWeight();
+                        scores[i] += wf.termWeight(wc) * f.getWeight();
                     }
                 }
             }

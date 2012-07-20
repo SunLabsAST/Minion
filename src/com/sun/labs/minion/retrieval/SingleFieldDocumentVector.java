@@ -42,6 +42,8 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.util.Util;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.logging.Logger;
@@ -106,7 +108,6 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             FieldInfo field) {
         this(e, key, field, e.getQueryConfig().getWeightingFunction(),
              e.getQueryConfig().getWeightingComponents());
-        logger.info(String.format("field: %s", field));
     }
 
     public SingleFieldDocumentVector(SearchEngine e,
@@ -201,6 +202,11 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
         normalize();
     }
 
+    @Override
+    public Collection<FieldInfo> getFields() {
+        return Collections.singletonList(field);
+    }
+    
     @Override
     public DocumentVector copy() {
         SingleFieldDocumentVector ret = new SingleFieldDocumentVector();
@@ -316,8 +322,18 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
      */
     @Override
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
+        return SingleFieldDocumentVector.findSimilar(e, getFeatures(), 
+                                                        field, sortOrder, skimPercent, wf, wc);
+    }
+    
+    protected static ResultSet findSimilar(SearchEngine e, 
+                                           WeightedFeature[] v, 
+                                           FieldInfo field,
+                                           String sortOrder, double skimPercent, 
+                                           WeightingFunction wf, 
+                                           WeightingComponents wc) {
 
-        getFeatures();
+        QueryStats qs = new QueryStats();
         qs.queryW.start();
 
         //
@@ -345,8 +361,6 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             sf = v;
         }
         
-        logger.info(String.format("findsim query has %d terms", sf.length));
-
         //
         // We now have sf, which is the (possibly skimmed) set of features
         // that we want to use for finding similar documents.  Let's go ahead

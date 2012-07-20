@@ -183,7 +183,7 @@ public class DocumentImpl implements Document {
         if(p == null) {
             return;
         }
-        List<FieldInfo> vfs =
+        Collection<FieldInfo> vfs =
                 p.getPartitionManager().getMetaFile().getFieldInfo(FieldInfo.Attribute.VECTORED);
         List<Posting> lp = getPostings(dke, 0);
         if(lp != null) {

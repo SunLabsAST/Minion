@@ -71,6 +71,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -1037,7 +1038,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         if(dt == null) {
             return null;
         }
-
+        
         if(fields == null) {
             return getDocumentVectorForDefaultFields(dt);
         }
@@ -1073,18 +1074,23 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
     
     public DocumentVector getDocumentVectorForDefaultFields(QueryEntry<String> key) {
-        Set<FieldInfo> defaultFields = engine.getDefaultFields();
-        if(defaultFields == null || defaultFields.isEmpty()) {
+        //
+        // Get the default, vectored fields.
+        Collection<FieldInfo> defaultVecFields = 
+                getMetaFile().
+                getFieldInfo(EnumSet.of(FieldInfo.Attribute.DEFAULT, 
+                                        FieldInfo.Attribute.VECTORED));
+        if(defaultVecFields == null || defaultVecFields.isEmpty()) {
             throw new IllegalArgumentException("Must specify default fields");
         }
-        FieldInfo[] fi = defaultFields.toArray(new FieldInfo[0]);
+        FieldInfo[] fi = defaultVecFields.toArray(new FieldInfo[0]);
         if(fi.length == 1) {
             return new SingleFieldDocumentVector(engine, key, fi[0]);
         } else {
             return new MultiFieldDocumentVector(engine, key, fi);
         }
     }
-
+    
     /**
      * Gets the values for the given field that match the given pattern.
      * @param field the saved, string field against whose values we will match.

@@ -37,7 +37,6 @@ import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
-import com.sun.labs.minion.ScoreCombiner;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.Searcher;
@@ -83,8 +82,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -900,7 +898,7 @@ public class QueryTest extends SEMain {
                     return getHelp();
                 }
 
-                List<FieldInfo> vf = manager.getMetaFile().getFieldInfo(FieldInfo.Attribute.VECTORED);
+                Collection<FieldInfo> vf = manager.getMetaFile().getFieldInfo(FieldInfo.Attribute.VECTORED);
                 List<DiskPartition> parts = manager.getActivePartitions();
                 for(int i = 1; i < args.length; i++) {
                     for(DiskPartition p : parts) {
@@ -1528,7 +1526,7 @@ public class QueryTest extends SEMain {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 if(args.length < 2) {
-                    return "Must specify document key";
+                    return "Must specify at least one document key";
                 }
                 
                 String key = args[1];
@@ -1550,6 +1548,33 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add("mfindsim", "Query", new CommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                if(args.length < 2) {
+                    return "Must specify at least one document key";
+                }
+
+                String[] keys = args[1].split(",");
+                String[] fields = args.length > 2 ? args[2].split(",") : null;
+                double skim = args.length > 3 ? Double.parseDouble(args[3]) : 1.0;
+                DocumentVector dv = engine.getDocumentVector(Arrays.asList(keys), fields);
+                if(dv != null) {
+                    ResultSet rs = dv.findSimilar("-score", skim);
+                    displayResults(rs);
+                } else {
+                    shell.out.format("No vector for %s\n", Arrays.asList(keys));
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "key [fields] [skim] Find documents similar to the given one, using comma-separated field list";
+            }
+        });
+
         shell.add("rf", "Query", new CommandInterface() {
 
             @Override

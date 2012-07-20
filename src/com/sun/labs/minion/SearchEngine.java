@@ -481,7 +481,10 @@ public interface SearchEngine extends Searcher {
     public List<FieldFrequency> getTopFieldValues(String field, int n, boolean ignoreCase);
 
     /**
-     * Gets a document vector for the given key.
+     * Gets a document vector for the given key. The vector will be composed of
+     * the default, vectored fields, that is, fields that have the
+     * {@link FieldInfo.Attribute#DEFAULT} and
+     * {@link FieldInfo.Attribute#VECTORED} attributes.
      *
      * @param key the key of the document whose vector we will return
      * @return the vector for that document, or <code>null</code> if that key
@@ -522,7 +525,7 @@ public interface SearchEngine extends Searcher {
     public DocumentVector getDocumentVector(String key, String[] fields);
 
     /**
-     * Gets a composite document vector for the given linear combination of 
+     * Gets a document vector for the given linear combination of 
      * vectored fields for the given key.
      *
      * @param key the key of the document whose vector we will return
@@ -568,7 +571,23 @@ public interface SearchEngine extends Searcher {
      */
     public DocumentVector getDocumentVector(Document doc, WeightedField[] fields)
             throws SearchEngineException;
+    
+    /**
+     * Gets a document vector that is created from the combination of the 
+     * document vectors for the given document keys.
+     * @param keys the keys for which we want a document vector.
+     * @return the document vector.
+     */
+    public DocumentVector getDocumentVector(Collection<String> keys) throws SearchEngineException;
 
+    public DocumentVector getDocumentVector(Collection<String> keys, String field) throws
+            SearchEngineException;
+    
+    public DocumentVector getDocumentVector(Collection<String> keys, String[] fields)
+            throws SearchEngineException;
+    
+    public DocumentVector getDocumentVector(Collection<String> keys, WeightedField[] fields) throws
+            SearchEngineException;
     /**
      * Gets the combined query stats for any queries run by the engine.
      * @return the combined query statistics
@@ -667,7 +686,7 @@ public interface SearchEngine extends Searcher {
      * default fields in the field definitions themselves.
      */
     public Set<FieldInfo> getDefaultFields();
-
+    
     /**
      * Sets the query configuration to use for subsequent queries.
      *

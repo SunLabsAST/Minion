@@ -62,6 +62,7 @@ import com.sun.labs.minion.query.StringRelation;
 import com.sun.labs.minion.query.Term;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.CollectionStats;
+import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
 import com.sun.labs.minion.retrieval.QueryElement;
 import com.sun.labs.minion.retrieval.QueryOptimizer;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
@@ -1171,6 +1172,73 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 //                getDocumentDictionary().get(doc.getKey());
 
         return null;
+    }
+
+    @Override
+    public DocumentVector getDocumentVector(Collection<String> keys) throws SearchEngineException {
+        List<DocumentVector> singles = new ArrayList<DocumentVector>(keys.size());
+        for(String key : keys) {
+            DocumentVector dv = getDocumentVector(key);
+            if(dv != null) {
+                singles.add(dv);
+            }
+        }
+        if(singles.isEmpty()) {
+            logger.warning(String.format("No vectors for any keys in %s", keys));
+            return null;
+        }
+        return new MultiDocumentVectorImpl(this, singles);
+    }
+
+    @Override
+    public DocumentVector getDocumentVector(Collection<String> keys, String field)
+            throws SearchEngineException {
+        List<DocumentVector> singles = new ArrayList<DocumentVector>(keys.size());
+        for(String key : keys) {
+            DocumentVector dv = getDocumentVector(key, field);
+            if(dv != null) {
+                singles.add(dv);
+            }
+        }
+        if(singles.isEmpty()) {
+            logger.warning(String.format("No vectors for any keys in %s", keys));
+            return null;
+        }
+        return new MultiDocumentVectorImpl(this, singles);
+    }
+
+    @Override
+    public DocumentVector getDocumentVector(Collection<String> keys, String[] fields)
+            throws SearchEngineException {
+        List<DocumentVector> singles = new ArrayList<DocumentVector>(keys.size());
+        for(String key : keys) {
+            DocumentVector dv = getDocumentVector(key, fields);
+            if(dv != null) {
+                singles.add(dv);
+            }
+        }
+        if(singles.isEmpty()) {
+            logger.warning(String.format("No vectors for any keys in %s", keys));
+            return null;
+        }
+        return new MultiDocumentVectorImpl(this, singles);
+    }
+
+    @Override
+    public DocumentVector getDocumentVector(Collection<String> keys,
+                                            WeightedField[] fields) throws SearchEngineException {
+        List<DocumentVector> singles = new ArrayList<DocumentVector>(keys.size());
+        for(String key : keys) {
+            DocumentVector dv = getDocumentVector(key, fields);
+            if(dv != null) {
+                singles.add(dv);
+            }
+        }
+        if(singles.isEmpty()) {
+            logger.warning(String.format("No vectors for any keys in %s", keys));
+            return null;
+        }
+        return new MultiDocumentVectorImpl(this, singles);
     }
 
     public QueryEntry getDocumentTerm(String key) {
