@@ -24,12 +24,14 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
@@ -38,18 +40,12 @@ import java.util.logging.Logger;
  * can be sorted by any combination of saved fields and the score assigned
  * to the document.
  * <P>
- * This class implements a number of comparison methods that can be used to 
- * compare the field values (or the IDs of the field values) with respect to this
- * sorting specification.  The results of these comparison methods could be used
- * to sort the results into the correct order using a method like {@link Collections#sort(java.util.List)}
- * <P>
- * Unfortunately, when we are generating a list of search results, we generally
- * want to select only the top <em>n</em> results.  For this we want to use a 
- * min-heap of size n, where the top of the heap is the <em>n<sup>th</sup></em>.
- * This requires us to reverse the comparison that this class will produce.
- * <P> 
- * We've provided a comparator for this use case.
- */
+ This class implements a number of comparison methods that can
+ * be used to compare the field values (or the IDs of the field values) with
+ * respect to this sorting specification. The results of these comparison
+ * methods could be used to sort the results into the correct order using a
+ * method like {@link Collections#sort(java.util.List)} 
+  */
 public class SortSpec {
     
     /**
@@ -103,24 +99,53 @@ public class SortSpec {
      * of the score.
      */
     private float scoreFactor = 1000;
-
+    
+    /**
+     * The reserved name for the score field.
+     */
+    public static final String SCORE_FIELD_NAME = "score";
+    
+    private static final FieldInfo scoreField = new FieldInfo(SCORE_FIELD_NAME, 
+            EnumSet.noneOf(FieldInfo.Attribute.class));
+    
+    public static final String FACET_SIZE_FIELD_NAME = "facet-size";
+    
+    private static final FieldInfo facetSizeField = new FieldInfo(FACET_SIZE_FIELD_NAME, 
+            EnumSet.noneOf(FieldInfo.Attribute.class));
+    
+    public static final String FACET_VALUE_FIELD_NAME = "facet-value";
+    
+    private static final FieldInfo facetValueField = new FieldInfo(FACET_VALUE_FIELD_NAME, 
+            EnumSet.noneOf(FieldInfo.Attribute.class));
+    
     /**
      * Creates a sorting specification from the given string description.
      *
-     * @param spec The sorting specification.  This is of the form:
-     * <tt>[+|-]fieldName{,[+|-]fieldName}{,[+|-]fieldName}...</tt>
+     * @param e a search engine, which is used to retrieve the field information
+     * for each of the named fields.
+     * @param spec The sorting specification. This is of the form:
+     * <tt>[+|-]fieldName{,[+|-]fieldName}{,[+|-]fieldName}...</tt> <p> A
+     * <tt>+</tt> indicates that the values from the named field should be
+     * sorted in increasing order, and a <tt>-</tt> indicates that the values
+     * from the named field should be sorted in decreasing order. If the
+     * direction specifier is not given, <tt>+</tt> will be assumed. If a field
+     * given as part of the sorting specification does not exist or is not a
+     * saved field, that field will be ignored for the purposes of sorting.
+     * 
      * <p>
-     * A <tt>+</tt> indicates that the values from the named field should
-     * be sorted in increasing order, and a <tt>-</tt> indicates that the
-     * values from the named field should be sorted in decreasing order.
-     * If the direction specifier is not given, <tt>+</tt> will be
-     * assumed.  If a field given as part of the sorting specification does not
-     * exist or is not a saved field, that field will be ignored for the purposes
-     * of sorting.
-     * @param manager a partition manager.  This is used to retrieve the field
-     * information for each of the named fields.
+     * 
+     * Note that the sorting spec reserves the field named <em>score</em> for 
+     * sorting based on the score assigned to documents by the engine.  If you 
+     * use this field name and expect to be able to sort on it, our use of that
+     * field name will supersede yours.
+     * 
+     * <p>
+     * 
+     * When sorting facets, we reserve the field named <em>facet-size</em> for sorting
+     * based on the size of the facet and the field named <em>facet-name</em> for
+     * sorting based on the name of the facet.
      */
-    public SortSpec(PartitionManager manager, String spec) {
+    public SortSpec(SearchEngine e, String spec) {
         if(spec != null ) {
             this.spec = spec.trim();
             if(this.spec.isEmpty()) {
@@ -155,10 +180,14 @@ public class SortSpec {
                     directions[i] = Direction.INCREASING;
                     break;
             }
-            if(fn.equalsIgnoreCase("score")) {
-                fields[i] = null;
+            if(fn.equalsIgnoreCase(SCORE_FIELD_NAME)) {
+                fields[i] = scoreField;
+            } else if(fn.equalsIgnoreCase(FACET_SIZE_FIELD_NAME)) {
+                fields[i] = facetSizeField;
+            } else if(fn.equalsIgnoreCase(FACET_VALUE_FIELD_NAME)) {
+                fields[i] =  facetValueField;
             } else {
-                fields[i] = manager.getFieldInfo(fn);
+                fields[i] = e.getManager().getFieldInfo(fn);
                 if(fields[i] == null) {
                     logger.warning(String.format("Unknown field in sort spec: %s", fn));
                 } else if(!fields[i].hasAttribute(FieldInfo.Attribute.SAVED)) {
@@ -169,7 +198,7 @@ public class SortSpec {
         
         //
         // Are we just sorting by score?
-        justScoreSort = fields.length == 1 && fields[0] == null &&
+        justScoreSort = fields.length == 1 && fields[0] == scoreField &&
                 directions[0] == Direction.DECREASING;
     } // SortSpec constructor
 
@@ -185,7 +214,7 @@ public class SortSpec {
         directions = ss.directions;
         fetchers = new Fetcher[size];
         for(int i = 0; i < size; i++) {
-            if(fields[i] != null) {
+            if(fields[i] != null && fields[i] != scoreField && fields[i] != facetSizeField && fields[i] != facetValueField) {
                 fetchers[i] = part.getDF(fields[i]).getFetcher();
             }
         }
@@ -208,9 +237,9 @@ public class SortSpec {
         scoreFactor = (float) Math.pow(10, scorePlaces);
     }
     
-    public void getSortFieldValues(Object[] sortValues, int doc, float score) {
+    public void getSortFieldValues(Object[] sortValues, int doc, float score, FacetImpl facet) {
         for(int i = 0; i < sortValues.length; i++) {
-            getSortFieldValue(i, sortValues, doc, score);
+            getSortFieldValue(i, sortValues, doc, score, facet);
         }
     }
     
@@ -222,14 +251,26 @@ public class SortSpec {
      * @param sortValues the values that we're setting
      * @param doc the document for which we want the field value
      * @param score the score associated with the result
+     * @param facet a facet from which we might want sort values.
+     * 
      */
-    public void getSortFieldValue(int field, Object[] sortValues, int doc, float score) {
+    public void getSortFieldValue(int field, Object[] sortValues, int doc, float score, FacetImpl facet) {
 
         //
         // A field with a zero ID indicates that we're sorting by score.
-        if(fields[field] == null) {
+        if(fields[field] == scoreField) {
             sortValues[field] = new Float(score);
             return;
+        } else if(fields[field] == facetSizeField) {
+            if(facet != null) {
+                sortValues[field] = new Integer(facet.size);
+                return;
+            }
+        } else if(fields[field] == facetValueField) {
+            if(facet != null) {
+                sortValues[field] = facet.getValue();
+                return;
+            }
         }
 
         //
@@ -264,7 +305,7 @@ public class SortSpec {
 
         //
         // A field with a zero ID indicates that we're sorting by score.
-        if(fields[field] == null) {
+        if(fields[field] == scoreField) {
             sortIDs[field] = 0;
             return;
         }
@@ -291,7 +332,7 @@ public class SortSpec {
     public int compareIDs(int[] ids1, int[] ids2, float score1, float score2) {
         for(int i = 0; i < ids1.length; i++) {
             int cmp;
-            if(fields[i] == null) {
+            if(fields[i] == scoreField) {
                 cmp = compareScore(score1, score2, directions[i]);
             } else {
                 cmp = ids1[i] - ids2[i];
@@ -317,17 +358,17 @@ public class SortSpec {
      * @param score2 the score of the second document
      * @return 
      */
-    public int compareValues(Object[] val1, Object[] val2, int doc1, float score1, int doc2, float score2) {
+    public int compareValues(Object[] val1, Object[] val2, int doc1, float score1, int doc2, float score2, FacetImpl facet1, FacetImpl facet2) {
         for(int i = 0; i < val1.length; i++) {
 
             //
             // Make sure we have this field value in both results.
             if(val1[i] == null) {
-                getSortFieldValue(i, val1, doc1, score1);
+                getSortFieldValue(i, val1, doc1, score1, facet1);
             }
 
             if(val2[i] == null) {
-                getSortFieldValue(i, val2, doc2, score2);
+                getSortFieldValue(i, val2, doc2, score2, facet2);
             }
 
             //
@@ -407,10 +448,7 @@ public class SortSpec {
             if(i > 0) {
                 sb.append(", ");
             }
-            sb.append(directions[i]).append(' ');
-            if(fields[i] == null) {
-                sb.append("score");
-            }
+            sb.append(directions[i]).append(' ').append(fields[i].getName());
         }
         return sb.toString();
     }

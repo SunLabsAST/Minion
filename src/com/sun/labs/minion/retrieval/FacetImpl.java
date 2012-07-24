@@ -142,7 +142,9 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
             // sorting specification, because we'll use those to (eventually) 
             // sort the facets.
             localFacet.setSortFieldValues();
-            if(sortFieldValues == null || sortSpec.compareValues(sortFieldValues, localFacet.sortFieldValues, 0, score, 0, localFacet.exemplarScore) < 0) {
+            if(sortFieldValues == null || 
+                    sortSpec.compareValues(sortFieldValues, localFacet.sortFieldValues, 
+                                                            0, score, 0, localFacet.exemplarScore, this, localFacet) < 0) {
                 sortFieldValues = localFacet.sortFieldValues;
                 score = localFacet.exemplarScore;
             }
@@ -173,7 +175,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
         if(sortSpec == null || sortSpec.isJustScoreSort()) {
             cmp = SortSpec.compareScore(score, ofi.score, SortSpec.Direction.DECREASING);
         } else {
-            cmp = sortSpec.compareValues(sortFieldValues, ofi.sortFieldValues, size, score, ofi.size, ofi.score);
+            cmp = sortSpec.compareValues(sortFieldValues, ofi.sortFieldValues, size, score, ofi.size, ofi.score, this, ofi);
         }
         
         //

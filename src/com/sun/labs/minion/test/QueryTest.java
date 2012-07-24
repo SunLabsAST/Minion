@@ -197,7 +197,7 @@ public class QueryTest extends SEMain {
         displaySpec = new DisplaySpec(displayFields, displayFormat);
         sortSpecString = sortSpec;
         if(sortSpecString != null) {
-            this.sortSpec = new SortSpec(manager, sortSpec);
+            this.sortSpec = new SortSpec(engine, sortSpec);
         }
         displayPassage = false;
         shigh = new SimpleHighlighter("<font color=\"#FF0000\">", "</font>",
@@ -585,7 +585,7 @@ public class QueryTest extends SEMain {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 sortSpecString = join(args, 1, args.length, " ");
-                sortSpec = new SortSpec(manager, sortSpecString);
+                sortSpec = new SortSpec(engine, sortSpecString);
                 return "";
             }
 

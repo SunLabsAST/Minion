@@ -400,7 +400,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         if(sortSpec != null) {
             localSort = false;
             sortFieldValues = new Object[sortSpec.size];
-            sortSpec.getSortFieldValues(sortFieldValues, doc, score);
+            sortSpec.getSortFieldValues(sortFieldValues, doc, score, null);
         }
     }
 
@@ -417,7 +417,7 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         if(localSort) {
             return sortSpec.compareIDs(sortFieldIDs, r.sortFieldIDs, score, r.score);
         } else {
-            return sortSpec.compareValues(sortFieldValues, r.sortFieldValues, doc, score, r.doc, r.score);
+            return sortSpec.compareValues(sortFieldValues, r.sortFieldValues, doc, score, r.doc, r.score, null, null);
         }
     }
 

@@ -209,10 +209,13 @@ public interface ResultSet {
      * facet scores by taking the max score of individual documents making up 
      * the facets.
      * @param fieldName the name of the saved field for which we want facets
+     * @param nFacets the number of facets to return. The facets are ordered
+     * according to the sorting specification associated with this result set. A
+     * value of <code>-1</code> means that all facets should be returned.
      * @return the list of facets associated with this field.
      * @throws SearchEngineException if there is an error building the facets.
      */
-    public List<Facet> getTopFacets(String fieldName, int n) throws SearchEngineException;
+    public List<Facet> getTopFacets(String fieldName, int nFacets) throws SearchEngineException;
     
     /**
      * Gets the facets for this result set associated with a field name, returning
@@ -220,6 +223,10 @@ public interface ResultSet {
      * facet scores using the given weight combiner across the scores of the
      * individual documents from this set making up the facets.
      * @param fieldName the name of the saved field for which we want facets.
+     * @param nFacets the number of facets to return. The facets will be ordered
+     * according to the provided sorting specification and the
+     * top <code>nFacets</code> of them will be returned. A value
+     * of <code>-1</code> means that all facets should be returned.
      * @param sortSpec a specification for sorting the list of facets that are
      * returned.  The values within the facet will be sorted according to the 
      * same specification. If this value is <code>null</code> then 
@@ -227,5 +234,5 @@ public interface ResultSet {
      * to the sorting specification.
      * @throws SearchEngineException if there is an error building the facets.
      */
-    public List<Facet> getTopFacets(String fieldName, SortSpec sortSpec, int n) throws SearchEngineException;
+    public List<Facet> getTopFacets(String fieldName, SortSpec sortSpec, int nFacets) throws SearchEngineException;
 } // ResultSet

@@ -138,7 +138,7 @@ public class ResultSetImpl implements ResultSet {
         this.e = e;
         this.qc = qc;
         this.qs = qs;
-        this.sortSpec = new SortSpec(e.getManager(), qc.getSortSpec());
+        this.sortSpec = new SortSpec(e, qc.getSortSpec());
         this.qs.queryW.start();
 
         //
@@ -197,7 +197,7 @@ public class ResultSetImpl implements ResultSet {
     public ResultSetImpl(SearchEngine e, QueryConfig qc, List results) {
         this.e = e;
         this.qc = qc;
-        this.sortSpec = new SortSpec(e.getManager(), qc.getSortSpec());
+        this.sortSpec = new SortSpec(e, qc.getSortSpec());
         this.results = results;
     }
 
@@ -208,7 +208,7 @@ public class ResultSetImpl implements ResultSet {
         this.e = e;
         qc = e.getQueryConfig();
         qc.setSortSpec(spec);
-        this.sortSpec = new SortSpec(e.getManager(), spec);
+        this.sortSpec = new SortSpec(e, spec);
         this.results = results;
     }
 
@@ -222,7 +222,7 @@ public class ResultSetImpl implements ResultSet {
 
     @Override
     public void setSortSpec(String sortSpec) {
-        this.sortSpec = new SortSpec(e.getManager(), sortSpec);
+        this.sortSpec = new SortSpec(e, sortSpec);
     }
 
     @Override
@@ -548,12 +548,12 @@ public class ResultSetImpl implements ResultSet {
     }
     
     @Override
-    public List<Facet> getTopFacets(String fieldName, int n) throws SearchEngineException {
-        return getTopFacets(fieldName, null, n);
+    public List<Facet> getTopFacets(String fieldName, int nFacets) throws SearchEngineException {
+        return getTopFacets(fieldName, null, nFacets);
     }
 
     @Override
-    public List<Facet> getTopFacets(String fieldName, SortSpec sortSpec, int n)
+    public List<Facet> getTopFacets(String fieldName, SortSpec sortSpec, int nFacets)
             throws SearchEngineException {
         FieldInfo field = e.getFieldInfo(fieldName);
         if(field == null) {
@@ -590,7 +590,7 @@ public class ResultSetImpl implements ResultSet {
         //
         // A min heap to sort our facets according to the sort spec, if there is one.
         Comparator<Facet> comparator = SortSpec.REVERSE_FACET_COMPARATOR;
-        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(n > 0 ? n : 1, comparator);
+        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(nFacets > 0 ? nFacets : 1, comparator);
         
         //
         // A facet impl that we can refill as necessary while finding the top 
@@ -600,7 +600,7 @@ public class ResultSetImpl implements ResultSet {
 
         //
         // Build facets as we go.
-        int nFacets = 0;
+        int nBuilt = 0;
         while(!q.isEmpty()) {
             
             //
@@ -620,8 +620,8 @@ public class ResultSetImpl implements ResultSet {
             //
             // See if this new facet is good enough to add to the heap of the 
             // top facets that we're building.
-            nFacets++;
-            if(n < 0 || pq.size() < n) {
+            nBuilt++;
+            if(nBuilt < 0 || pq.size() < nBuilt) {
                 pq.offer(curr);
                 curr = new FacetImpl(field, null, this);
             } else {

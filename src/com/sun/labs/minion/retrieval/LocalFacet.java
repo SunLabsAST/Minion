@@ -123,7 +123,7 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
     
     protected void setSortFieldValues() {
         sortFieldValues = new Object[sortSpec.size];
-        sortSpec.getSortFieldValues(sortFieldValues, exemplar, exemplarScore);
+        sortSpec.getSortFieldValues(sortFieldValues, exemplar, exemplarScore, this);
     }
 
     @Override
