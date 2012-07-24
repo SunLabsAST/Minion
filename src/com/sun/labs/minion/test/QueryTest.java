@@ -145,9 +145,25 @@ public class QueryTest extends SEMain {
 
     protected DisplaySpec displaySpec;
 
-    protected SortSpec sortSpec;
-    
+    /**
+     * A sorting specification for result sets.
+     */
+    protected SortSpec resultsSortSpec;
+
+    /**
+     * The string representation of the results sorting specification.
+     */
     protected String sortSpecString;
+
+    /**
+     * A sorting specification for faceting.
+     */
+    protected SortSpec facetSortSpec;
+    
+    /**
+     * The string representation of the sorting specification.
+     */
+    protected String facetSpecString;
     
     protected String prompt;
 
@@ -197,7 +213,7 @@ public class QueryTest extends SEMain {
         displaySpec = new DisplaySpec(displayFields, displayFormat);
         sortSpecString = sortSpec;
         if(sortSpecString != null) {
-            this.sortSpec = new SortSpec(engine, sortSpec);
+            this.resultsSortSpec = new SortSpec(engine, sortSpec);
         }
         displayPassage = false;
         shigh = new SimpleHighlighter("<font color=\"#FF0000\">", "</font>",
@@ -230,8 +246,9 @@ public class QueryTest extends SEMain {
                         p.getDelMap().getNDeleted());
             }
             shell.out.println("");
-            shell.out.println(" Sorting specification is: " + sortSpec);
-            shell.out.println(" Display specification is: " + displaySpec);
+            shell.out.println(" Results sorting specification is: " + resultsSortSpec);
+            shell.out.println(" Facet sorting specification is:   " + facetSortSpec);
+            shell.out.println(" Display specification is:         " + displaySpec);
             Set<FieldInfo> defaultFields = engine.getDefaultFields();
             StringBuilder sb = new StringBuilder();
             for(FieldInfo df : defaultFields) {
@@ -417,7 +434,7 @@ public class QueryTest extends SEMain {
                 
                 NanoWatch fw = new NanoWatch();
                 fw.start();
-                List<Facet> lf = lastResultSet.getTopFacets(args[1], sortSpec, nHits);
+                List<Facet> lf = lastResultSet.getTopFacets(args[1], facetSortSpec, nHits);
                 fw.stop();
                 
                 ci.out.format("Found %d facets for %s in %d hits in %.3fms\n", 
@@ -425,7 +442,7 @@ public class QueryTest extends SEMain {
                 for(Facet f : lf) {
                     ci.out.print("  ");
                     ci.out.println(f);
-                    List<Result> lr = f.getResults(1, null);
+                    List<Result> lr = f.getResults(1, resultsSortSpec);
                     displayResults("   ", lr);
                 }
                 
@@ -585,16 +602,31 @@ public class QueryTest extends SEMain {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
                 sortSpecString = join(args, 1, args.length, " ");
-                sortSpec = new SortSpec(engine, sortSpecString);
+                resultsSortSpec = new SortSpec(engine, sortSpecString);
                 return "";
             }
 
             @Override
             public String getHelp() {
-                return "sortspec - Set the sorting spec";
+                return "sortspec - Set the sorting spec for result sets";
             }
         });
         
+        shell.add("fsort", "Query", new CommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                facetSpecString = join(args, 1, args.length, ",");
+                facetSortSpec = new SortSpec(engine, facetSpecString);
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "sortspec - Set the sorting spec for facets";
+            }
+        });
+
         shell.add("display", "Query", new CommandInterface() {
 
             @Override

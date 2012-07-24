@@ -28,7 +28,6 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-import com.sun.labs.minion.indexer.partition.PartitionManager;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -365,6 +364,9 @@ public class SortSpec {
             // Make sure we have this field value in both results.
             if(val1[i] == null) {
                 getSortFieldValue(i, val1, doc1, score1, facet1);
+                if(val1[i] == null) {
+                    logger.info(String.format("Couldn't get value for %d (%s) for doc %d", i, fields[i].getName(), doc1));
+                }
             }
 
             if(val2[i] == null) {

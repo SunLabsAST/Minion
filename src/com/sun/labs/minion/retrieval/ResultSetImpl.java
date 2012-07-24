@@ -54,6 +54,9 @@ import java.util.logging.Logger;
  */
 public class ResultSetImpl implements ResultSet {
 
+    protected static final Logger logger = Logger.getLogger(ResultSetImpl.class.
+            getName());
+
     /**
      * The query, as provided by the user.
      */
@@ -106,10 +109,6 @@ public class ResultSetImpl implements ResultSet {
      * The time spent parsing and evaluating the query, in milliseconds.
      */
     protected long queryTime;
-
-    protected static final Logger logger = Logger.getLogger(ResultSetImpl.class.getName());
-
-    protected static String logTag = "RSI";
 
     /**
      * Creates an empty result set.
@@ -600,7 +599,6 @@ public class ResultSetImpl implements ResultSet {
 
         //
         // Build facets as we go.
-        int nBuilt = 0;
         while(!q.isEmpty()) {
             
             //
@@ -620,8 +618,7 @@ public class ResultSetImpl implements ResultSet {
             //
             // See if this new facet is good enough to add to the heap of the 
             // top facets that we're building.
-            nBuilt++;
-            if(nBuilt < 0 || pq.size() < nBuilt) {
+            if(nFacets < 0 || pq.size() < nFacets) {
                 pq.offer(curr);
                 curr = new FacetImpl(field, null, this);
             } else {
@@ -633,8 +630,6 @@ public class ResultSetImpl implements ResultSet {
                 }
             }
         }
-        
-//        logger.info(String.format("Evaluated %d facets", nFacets));
         
         //
         // Empty our heap of facets and return them.

@@ -5,8 +5,8 @@ import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.util.Pair;
+import com.sun.labs.util.NanoWatch;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -93,26 +93,30 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
 
     @Override
     public List<Result> getResults(int n, SortSpec sortSpec) {
+        NanoWatch nw = new NanoWatch();
+        nw.start();
         Comparator<ResultImpl> comparator = SortSpec.REVERSE_RESULT_COMPARATOR;
         PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(Math.max(n,size), comparator);
         if(size < n) {
             n = size;
         }
+        ResultImpl curr = new ResultImpl();
         for(LocalFacet lf : localFacets) {
+            SortSpec lfss = new SortSpec(sortSpec, lf.getPartition());
             for(Iterator<Pair<Integer, Float>> i = lf.iterator(); i.hasNext();) {
                 Pair<Integer, Float> doc = i.next();
-                ResultImpl curr = new ResultImpl(set, null, lf.sortSpec,
-                                                 false,
-                                                 doc.getA(), doc.getB());
+                curr.init(set, null, lfss, false, doc.getA(), doc.getB());
                 curr.setPartition(lf.getPartition());
                 curr.setSortFieldValues();
                 if(sorter.size() < n) {
                     sorter.offer(curr);
+                    curr = new ResultImpl();
                 } else {
                     ResultImpl top = sorter.peek();
                     if(comparator.compare(curr, top) > 0) {
-                        sorter.poll();
+                        top = sorter.poll();
                         sorter.offer(curr);
+                        curr = top;
                     }
                 }
             }
@@ -123,6 +127,8 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
             ret.add(sorter.poll());
         }
         Collections.reverse(ret);
+        nw.stop();
+        logger.info(String.format("getting results for %s took %.3f", value, nw.getTimeMillis()));
         return ret;
     }
 
