@@ -1,7 +1,6 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
@@ -20,6 +19,7 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.ArrayGroup.DocIterator;
 import com.sun.labs.minion.retrieval.LocalFacet;
+import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.ScoredQuickOr;
 import com.sun.labs.minion.retrieval.SortSpec;
@@ -1285,46 +1285,71 @@ public class DiskDictionaryBundle<N extends Comparable> {
     
     /**
      * Gets a list of local facets for this field.
-     * @param docs the IDs of the documents for which we want facets.
-     * @param p the number of IDs in the array
+     *
+     * @param ag the array group from which we'll generate the facets.
+     * @param facetSortSpec the sorting specification for the facets that we'll return.
+     * @param n if this value is greater than 0, then only facets from the top <code>n</code> hits
+     * will be considered.
+     * @param resultSortSpec a sorting specification that can be used to determine the top <code>n</code> hits.
      * @return a list of the facets for this partition.
      */
-    public List<LocalFacet<N>> getFacets(ArrayGroup ag, SortSpec sortSpec) {
+    
+    public List<LocalFacet<N>> getFacets(ArrayGroup ag, SortSpec facetSortSpec, int n, SortSpec resultSortSpec) {
         Map<Integer, LocalFacet<N>> m = new HashMap<Integer, LocalFacet<N>>();
         Fetcher fetcher = getFetcher();
         int[] valIDs = new int[16];
+        if(n > 0) {
+            for(ResultImpl ri : ag.getTopDocuments(resultSortSpec, n, null)) {
+                processFacets(fetcher, m, facetSortSpec, valIDs, ri.getDocID(), ri.getScore());
+            }
+        } else {
         ArrayGroup.DocIterator di = ag.iterator();
         while(di.next()) {
-            int doc = di.getDoc();
-            float score = di.getScore();
-            valIDs = fetcher.fetch(doc, valIDs);
-            for(int j = 1; j <= valIDs[0]; j++) {
-                int valID = valIDs[j];
-                LocalFacet facet = m.get(valID);
-                if(facet == null) {
-                    facet = new LocalFacet((InvFileDiskPartition) field.getPartition(), 
-                            info, valID, sortSpec);
-                    m.put(valID, facet);
-                }
-                facet.addCount(1);
-                facet.add(doc, score);
-            }
+            processFacets(fetcher, m, facetSortSpec, valIDs, di.getDoc(), di.getScore());
         }
-        
+        }
         List<LocalFacet<N>> ret = new ArrayList<LocalFacet<N>>(m.values());
         if(!ret.isEmpty()) {
             //
             // Sort the facets by ID and set the name values all at once, which
             // will let us stream through the dictionary.
             Collections.sort(ret);
-            DiskDictionary<N>.LightDiskDictionaryIterator lit = 
-                    (DiskDictionary.LightDiskDictionaryIterator) fetcher.literator();
+            DiskDictionary<N>.LightDiskDictionaryIterator lit =
+                    (DiskDictionary.LightDiskDictionaryIterator) fetcher.
+                    literator();
             for(LocalFacet<N> facet : ret) {
                 lit.simpleAdvance(facet.getValueID());
                 facet.setValue(lit.getName());
             }
         }
         return ret;
+    }
+
+    /**
+     * Processes the facets for a single document and score.
+     * @param fetcher a fetcher for facet values
+     * @param m a map from value IDs to facets.
+     * @param facetSortSpec a sorting specification for the facets.
+     * @param valIDs a holder for the value IDs fetched
+     * @param doc the doc that we're interested in fetching facet values for
+     * @param score  the score associated with the document
+     */
+    private void processFacets(Fetcher fetcher, Map<Integer, LocalFacet<N>> m,
+                               SortSpec facetSortSpec, int[] valIDs, int doc,
+                               float score) {
+        valIDs = fetcher.fetch(doc, valIDs);
+        for(int j = 1; j <= valIDs[0]; j++) {
+            int valID = valIDs[j];
+            LocalFacet facet = m.get(valID);
+            if(facet == null) {
+                facet = new LocalFacet((InvFileDiskPartition) field.
+                        getPartition(),
+                                       info, valID, facetSortSpec);
+                m.put(valID, facet);
+            }
+            facet.addCount(1);
+            facet.add(doc, score);
+        }
     }
 
     /**

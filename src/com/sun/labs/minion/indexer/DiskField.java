@@ -317,7 +317,7 @@ public class DiskField<N extends Comparable> extends Field<N> {
     
     public List<LocalFacet<N>> getFacets(ArrayGroup ag, SortSpec sortSpec) throws
             SearchEngineException {
-        return bundle.getFacets(ag, sortSpec);
+        return bundle.getFacets(ag, sortSpec, -1, null);
     }
 
     /**

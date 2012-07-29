@@ -552,7 +552,7 @@ public class ResultSetImpl implements ResultSet {
     }
 
     @Override
-    public List<Facet> getTopFacets(String fieldName, SortSpec sortSpec, int nFacets)
+    public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec, int nFacets)
             throws SearchEngineException {
         FieldInfo field = e.getFieldInfo(fieldName);
         if(field == null) {
@@ -569,14 +569,14 @@ public class ResultSetImpl implements ResultSet {
 
             //
             // Make a partition-local sorting spec.
-            SortSpec partSortSpec = null;
-            if(sortSpec != null) {
-                partSortSpec = new SortSpec(sortSpec,
+            SortSpec partFacetSortSpec = null;
+            if(facetSortSpec != null) {
+                partFacetSortSpec = new SortSpec(facetSortSpec,
                                             (InvFileDiskPartition) ag.part);
             }
             DiskField df = ((InvFileDiskPartition) ag.part).getDF(field);
             if(df != null) {
-                List<LocalFacet> l = df.getFacets(ag, partSortSpec);
+                List<LocalFacet> l = df.getFacets(ag, partFacetSortSpec);
                 QueuableIterator<LocalFacet> qi = new QueuableIterator(l.
                         iterator());
                 if(qi.hasNext()) {

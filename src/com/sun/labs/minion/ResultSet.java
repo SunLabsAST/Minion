@@ -227,12 +227,13 @@ public interface ResultSet {
      * according to the provided sorting specification and the
      * top <code>nFacets</code> of them will be returned. A value
      * of <code>-1</code> means that all facets should be returned.
-     * @param sortSpec a specification for sorting the list of facets that are
+     * @param facetSortSpec a specification for sorting the list of facets that are
      * returned.  The values within the facet will be sorted according to the 
-     * same specification. If this value is <code>null</code> then 
+     * same specification. If this value is <code>null</code> then the facets
+     * will be returned in reverse order of size.
      * @return the list of facets associated with this field, ordered according 
      * to the sorting specification.
      * @throws SearchEngineException if there is an error building the facets.
      */
-    public List<Facet> getTopFacets(String fieldName, SortSpec sortSpec, int nFacets) throws SearchEngineException;
+    public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec, int nFacets) throws SearchEngineException;
 } // ResultSet
