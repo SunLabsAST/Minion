@@ -326,12 +326,12 @@ public class DiskField<N extends Comparable> extends Field<N> {
      */
     public List<LocalFacet<N>> getFacets(ArrayGroup ag) throws
             SearchEngineException {
-        return getFacets(ag, -1, null);
+        return getFacets(ag, null, -1, null);
     }
     
-    public List<LocalFacet<N>> getFacets(ArrayGroup ag, int n, SortSpec resultSortSpec) throws
+    public List<LocalFacet<N>> getFacets(ArrayGroup ag, SortSpec facetSortSpec, int n, SortSpec resultSortSpec) throws
             SearchEngineException {
-        return bundle.getFacets(ag, n, resultSortSpec);
+        return bundle.getTopFacets(ag, facetSortSpec, n, resultSortSpec);
     }
 
     /**

@@ -536,9 +536,6 @@ public class ResultSetImpl implements ResultSet {
             while(!ret.isEmpty()) {
                 fres.add(((PriorityQueue<Result>) ret).poll());
             }
-            //
-            // The heap is a min heap!
-//            Collections.reverse(fres);
         } else {
             fres = (List<Result>) ret;
         }
@@ -577,10 +574,22 @@ public class ResultSetImpl implements ResultSet {
         for(ArrayGroup ag : results) {
 
             //
-            // Make a partition-local sorting spec.
+            // Make a partition-local facet sorting spec and result sorting spec,
+            // since they need to know the partition to get fetchers for the
+            // appropriate fields.
+            SortSpec localFSS = null;
+            if(facetSortSpec != null) {
+                localFSS = new SortSpec(facetSortSpec,
+                                        (InvFileDiskPartition) ag.getPartition());
+            }
+            SortSpec localRSS = null;
+            if(resultSortSpec != null) {
+                localRSS = new SortSpec(resultSortSpec,
+                                        (InvFileDiskPartition) ag.getPartition());
+            }
             DiskField df = ((InvFileDiskPartition) ag.part).getDF(field);
             if(df != null) {
-                List<LocalFacet> l = df.getFacets(ag, nResults, resultSortSpec);
+                List<LocalFacet> l = df.getFacets(ag, localFSS, nResults, localRSS);
                 QueuableIterator<LocalFacet> qi = new QueuableIterator(l.
                         iterator());
                 if(qi.hasNext()) {
@@ -592,7 +601,7 @@ public class ResultSetImpl implements ResultSet {
 
         //
         // A min heap to sort our facets according to the facet sort spec.
-        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(nFacets > 0 ? nFacets : 1);
+        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(nFacets > 0 ? nFacets : 512);
         
         //
         // A facet impl that we can refill as necessary while finding the top 

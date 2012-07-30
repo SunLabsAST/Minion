@@ -238,7 +238,7 @@ public class SortSpec {
     
     public void getSortFieldValues(Object[] sortValues, int doc, float score, FacetImpl facet) {
         for(int i = 0; i < sortValues.length; i++) {
-            getSortFieldValue(i, sortValues, doc, score, facet);
+            sortValues[i] = getSortFieldValue(i, doc, score, facet);
         }
     }
     
@@ -253,38 +253,32 @@ public class SortSpec {
      * @param facet a facet from which we might want sort values.
      * 
      */
-    public void getSortFieldValue(int field, Object[] sortValues, int doc, float score, FacetImpl facet) {
+    public Object getSortFieldValue(int field, int doc, float score, FacetImpl facet) {
 
         //
         // A field with a zero ID indicates that we're sorting by score.
         if(fields[field] == scoreField) {
-            sortValues[field] = new Float(score);
-            return;
+            return new Float(score);
         } else if(fields[field] == facetSizeField) {
             if(facet != null) {
-                sortValues[field] = new Integer(facet.size);
-                return;
+                return new Integer(facet.size);
             }
+            return null;
         } else if(fields[field] == facetValueField) {
             if(facet != null) {
-                sortValues[field] = facet.getValue();
-                return;
+                return facet.getValue();
             }
         }
 
         //
         // Get a single field value to use for the sort.
         if(fetchers[field] != null) {
-            sortValues[field] = fetchers[field].fetchOne(doc);
-        } else {
-            sortValues[field] = null;
+            return fetchers[field].fetchOne(doc);
         }
 
         //
         // Get the default value for the field.
-        if(sortValues[field] == null) {
-            sortValues[field] = fields[field].getDefaultSavedValue();
-        }
+        return fields[field].getDefaultSavedValue();
     }
     
     public void getSortFieldIDs(int[] sortIDs, int doc) {
@@ -355,6 +349,8 @@ public class SortSpec {
      * @param score1 the score of the first document
      * @param doc2 the id of the second document
      * @param score2 the score of the second document
+     * @param facet1 the first facet being compared
+     * @param facet2 the second facet being compared
      * @return 
      */
     public int compareValues(Object[] val1, Object[] val2, int doc1, float score1, int doc2, float score2, FacetImpl facet1, FacetImpl facet2) {
@@ -363,14 +359,11 @@ public class SortSpec {
             //
             // Make sure we have this field value in both results.
             if(val1[i] == null) {
-                getSortFieldValue(i, val1, doc1, score1, facet1);
-                if(val1[i] == null) {
-                    logger.info(String.format("Couldn't get value for %d (%s) for doc %d", i, fields[i].getName(), doc1));
-                }
+                val1[i] = getSortFieldValue(i, doc1, score1, facet1);
             }
 
             if(val2[i] == null) {
-                getSortFieldValue(i, val2, doc2, score2, facet2);
+                val2[i] = getSortFieldValue(i, doc2, score2, facet2);
             }
 
             //

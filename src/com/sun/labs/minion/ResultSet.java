@@ -244,7 +244,8 @@ public interface ResultSet {
      * to the sorting specification.
      * @throws SearchEngineException if there is an error building the facets.
      */
-    public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec,
+    public List<Facet> getTopFacets(String fieldName, 
+                                    SortSpec facetSortSpec,
                                     int nFacets) throws SearchEngineException;
     
     /**
@@ -257,7 +258,8 @@ public interface ResultSet {
      * @param nFacets
      * @param resultSortSpec
      * @param nResults
-     * @return
+     * @return the list of facets associated with this field, ordered according
+     * to the facet sorting specification.
      * @throws SearchEngineException 
      */
     public List<Facet> getTopFacets(String fieldName, 
