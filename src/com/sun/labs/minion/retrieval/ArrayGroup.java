@@ -833,7 +833,12 @@ public class ArrayGroup implements Cloneable {
             return new ResultImpl[0];
         }
         
-        PriorityQueue<ResultImpl>  sorter = new PriorityQueue<ResultImpl>(n, SortSpec.REVERSE_RESULT_COMPARATOR);
+        //
+        // Note that this priority queue is supposed to be a min-heap, so 
+        // we'll be ordering by the reverse of our sorting spec, so that the
+        // smallest element (according to our sorting spect) will appear at the 
+        // top of the heap.
+        PriorityQueue<ResultImpl>  sorter = new PriorityQueue<ResultImpl>(n, ResultImpl.REVERSE_RESULT_COMPARATOR);
         ResultImpl curr = new ResultImpl();
         ArrayGroup.DocIterator iter = iterator();
         while(iter.next()) {

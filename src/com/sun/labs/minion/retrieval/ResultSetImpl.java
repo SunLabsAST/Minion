@@ -430,8 +430,7 @@ public class ResultSetImpl implements ResultSet {
             //
             // A place to organize our hits. We'll use a max heap, since that's the
             // order we want to return the results in.
-            PriorityQueue<ResultImpl> sorter =
-                    new PriorityQueue<ResultImpl>(start + n, SortSpec.RESULT_COMPARATOR);
+            PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(start + n);
             for(Iterator i = results.iterator(); i.hasNext();) {
                 ArrayGroup ag = (ArrayGroup) i.next();
                 ag.setScoreModifier(sm);
@@ -451,8 +450,7 @@ public class ResultSetImpl implements ResultSet {
             }
 
             //
-            // Dump the heap to a list.  We're pulling the hits off in
-            // least-to-greatest order, so we'll need to reverse the list.
+            // Dump the heap to a list.
             List<Result> ret = new ArrayList<Result>(sorter.size());
             while(sorter.size() > 0) {
                 ret.add(sorter.poll());

@@ -401,40 +401,6 @@ public class SortSpec {
         }
         return direction == Direction.INCREASING ? cmp : -cmp;
     }
-    
-    public static final Comparator RESULT_COMPARATOR = new Comparator<ResultImpl>() {
-
-        @Override
-        public int compare(ResultImpl o1, ResultImpl o2) {
-            return o1.compareTo(o2);
-        }
-    };
-    
-    /**
-     * A comparator that reverses the result of the comparison that this sorting
-     * specification generates.
-     */
-    public static final Comparator REVERSE_RESULT_COMPARATOR = new Comparator<ResultImpl>() {
-        @Override
-        public int compare(ResultImpl o1, ResultImpl o2) {
-            return -o1.compareTo(o2);
-        }
-    };
-    
-    public static final Comparator FACET_COMPARATOR = new Comparator<FacetImpl>() {
-
-        @Override
-        public int compare(FacetImpl o1, FacetImpl o2) {
-            return o1.compareTo(o2);
-        }
-    };
-
-    public static final Comparator REVERSE_FACET_COMPARATOR = new Comparator<FacetImpl>() {
-        @Override
-        public int compare(FacetImpl o1, FacetImpl o2) {
-            return -o1.compareTo(o2);
-        }
-    };
 
     @Override
     public String toString() {

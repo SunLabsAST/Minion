@@ -38,6 +38,7 @@ import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,6 @@ import java.util.logging.Logger;
 
 public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         ResultAccessor {
-
     /**
      * The set of results to which this result belongs.
      */
@@ -420,6 +420,20 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
             return sortSpec.compareValues(sortFieldValues, r.sortFieldValues, doc, score, r.doc, r.score, null, null);
         }
     }
+    
+    /**
+     * A comparator that reverses the result of the comparison for a set of 
+     * results.  This can be used when we want to generate a min-heap of
+     * results during results sorting.
+     */
+    public static final Comparator REVERSE_RESULT_COMPARATOR =
+            new Comparator<ResultImpl>() {
+                @Override
+                public int compare(ResultImpl o1,
+                                   ResultImpl o2) {
+                    return -o1.compareTo(o2);
+                }
+            };
 
     /** 
      * Two results are equal if they represent the same document.
