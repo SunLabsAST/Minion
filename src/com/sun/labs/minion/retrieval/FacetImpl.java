@@ -7,8 +7,8 @@ import com.sun.labs.minion.Result;
 import com.sun.labs.minion.util.Pair;
 import com.sun.labs.util.NanoWatch;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -47,9 +47,10 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     protected float score;
     
     /**
-     * A specification for sorting the results inside of a facet.
+     * A specification for sorting this facet against other facets when
+     * building a set of facets to return.
      */
-    protected SortSpec sortSpec;
+    protected SortSpec facetSortSpec;
     
     /**
      * The field values that we should use for sorting facets.
@@ -62,10 +63,11 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
      * Creates a facet for the given field.
      * @param field 
      */
-    public FacetImpl(FieldInfo field, T value, ResultSetImpl set) {
+    public FacetImpl(FieldInfo field, T value, ResultSetImpl set, SortSpec facetSortSpec) {
         this.field = field;
         this.value = value;
         this.set = set;
+        this.facetSortSpec = facetSortSpec;
     }
     
     public final void reset(T value) {
@@ -73,7 +75,9 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
         localFacets.clear();
         score = 0;
         size = 0;
-        sortFieldValues = null;
+        if(sortFieldValues != null) {
+            Arrays.fill(sortFieldValues, null);
+        }
     }
 
     @Override
@@ -95,14 +99,16 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     public List<Result> getResults(int n, SortSpec sortSpec) {
         NanoWatch nw = new NanoWatch();
         nw.start();
-        Comparator<ResultImpl> comparator = SortSpec.REVERSE_RESULT_COMPARATOR;
-        PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(Math.max(n,size), comparator);
         if(size < n) {
             n = size;
         }
+        PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(n);
         ResultImpl curr = new ResultImpl();
         for(LocalFacet lf : localFacets) {
-            SortSpec lfss = new SortSpec(sortSpec, lf.getPartition());
+            SortSpec lfss = null;
+            if(sortSpec != null) {
+                lfss = new SortSpec(sortSpec, lf.getPartition());
+            }
             for(Iterator<Pair<Integer, Float>> i = lf.iterator(); i.hasNext();) {
                 Pair<Integer, Float> doc = i.next();
                 curr.init(set, null, lfss, false, doc.getA(), doc.getB());
@@ -113,7 +119,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
                     curr = new ResultImpl();
                 } else {
                     ResultImpl top = sorter.peek();
-                    if(comparator.compare(curr, top) > 0) {
+                    if(curr.compareTo(top) > 0) {
                         top = sorter.poll();
                         sorter.offer(curr);
                         curr = top;
@@ -135,11 +141,11 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     
     public void addLocalFacet(LocalFacet localFacet) {
         if(localFacets.isEmpty()) {
-            sortSpec = localFacet.sortSpec;
+            facetSortSpec = localFacet.facetSortSpec;
         }
         localFacets.add(localFacet);
         size += localFacet.size;
-        if(sortSpec == null || sortSpec.isJustScoreSort()) {
+        if(facetSortSpec == null || facetSortSpec.isJustScoreSort()) {
             score = Math.max(score, localFacet.exemplarScore);
         } else {
             
@@ -149,7 +155,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
             // sort the facets.
             localFacet.setSortFieldValues();
             if(sortFieldValues == null || 
-                    sortSpec.compareValues(sortFieldValues, localFacet.sortFieldValues, 
+                    facetSortSpec.compareValues(sortFieldValues, localFacet.sortFieldValues, 
                                                             0, score, 0, localFacet.exemplarScore, this, localFacet) < 0) {
                 sortFieldValues = localFacet.sortFieldValues;
                 score = localFacet.exemplarScore;
@@ -178,10 +184,10 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     public int compareTo(Facet<T> o) {
         FacetImpl ofi = (FacetImpl) o;
         int cmp;
-        if(sortSpec == null || sortSpec.isJustScoreSort()) {
+        if(facetSortSpec == null || facetSortSpec.isJustScoreSort()) {
             cmp = SortSpec.compareScore(score, ofi.score, SortSpec.Direction.DECREASING);
         } else {
-            cmp = sortSpec.compareValues(sortFieldValues, ofi.sortFieldValues, size, score, ofi.size, ofi.score, this, ofi);
+            cmp = facetSortSpec.compareValues(sortFieldValues, ofi.sortFieldValues, size, score, ofi.size, ofi.score, this, ofi);
         }
         
         //

@@ -1287,26 +1287,28 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * Gets a list of local facets for this field.
      *
      * @param ag the array group from which we'll generate the facets.
-     * @param facetSortSpec the sorting specification for the facets that we'll return.
      * @param n if this value is greater than 0, then only facets from the top <code>n</code> hits
      * will be considered.
-     * @param resultSortSpec a sorting specification that can be used to determine the top <code>n</code> hits.
+     * @param resultSortSpec a sorting specification that can be used to determine 
+     * the top <code>n</code> hits from the given group of hits.
      * @return a list of the facets for this partition.
      */
     
-    public List<LocalFacet<N>> getFacets(ArrayGroup ag, SortSpec facetSortSpec, int n, SortSpec resultSortSpec) {
+    public List<LocalFacet<N>> getFacets(ArrayGroup ag, int n, SortSpec resultSortSpec) {
         Map<Integer, LocalFacet<N>> m = new HashMap<Integer, LocalFacet<N>>();
         Fetcher fetcher = getFetcher();
         int[] valIDs = new int[16];
         if(n > 0) {
             for(ResultImpl ri : ag.getTopDocuments(resultSortSpec, n, null)) {
-                processFacets(fetcher, m, facetSortSpec, valIDs, ri.getDocID(), ri.getScore());
+                processFacets(fetcher, m, valIDs, ri.getDocID(),
+                              ri.getScore(), resultSortSpec);
             }
         } else {
-        ArrayGroup.DocIterator di = ag.iterator();
-        while(di.next()) {
-            processFacets(fetcher, m, facetSortSpec, valIDs, di.getDoc(), di.getScore());
-        }
+            ArrayGroup.DocIterator di = ag.iterator();
+            while(di.next()) {
+                processFacets(fetcher, m, valIDs, di.getDoc(),
+                              di.getScore(), resultSortSpec);
+            }
         }
         List<LocalFacet<N>> ret = new ArrayList<LocalFacet<N>>(m.values());
         if(!ret.isEmpty()) {
@@ -1335,16 +1337,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @param score  the score associated with the document
      */
     private void processFacets(Fetcher fetcher, Map<Integer, LocalFacet<N>> m,
-                               SortSpec facetSortSpec, int[] valIDs, int doc,
-                               float score) {
+                               int[] valIDs, int doc, float score, 
+                               SortSpec resultSortSpec) {
         valIDs = fetcher.fetch(doc, valIDs);
         for(int j = 1; j <= valIDs[0]; j++) {
             int valID = valIDs[j];
             LocalFacet facet = m.get(valID);
             if(facet == null) {
                 facet = new LocalFacet((InvFileDiskPartition) field.
-                        getPartition(),
-                                       info, valID, facetSortSpec);
+                        getPartition(), info, valID, resultSortSpec);
                 m.put(valID, facet);
             }
             facet.addCount(1);

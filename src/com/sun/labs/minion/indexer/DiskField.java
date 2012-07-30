@@ -315,9 +315,23 @@ public class DiskField<N extends Comparable> extends Field<N> {
         bundle.calculateVectorLengths(partOut);
     }
     
-    public List<LocalFacet<N>> getFacets(ArrayGroup ag, SortSpec sortSpec) throws
+    /**
+     * Get the facets from this field for the documents in the given group. The
+     * results inside the facets should be sorted according to the given sorting
+     * specification.
+     *
+     * @param ag the group containing the documents to facet
+     * @return the local facets from this field.
+     * @throws SearchEngineException 
+     */
+    public List<LocalFacet<N>> getFacets(ArrayGroup ag) throws
             SearchEngineException {
-        return bundle.getFacets(ag, sortSpec, -1, null);
+        return getFacets(ag, -1, null);
+    }
+    
+    public List<LocalFacet<N>> getFacets(ArrayGroup ag, int n, SortSpec resultSortSpec) throws
+            SearchEngineException {
+        return bundle.getFacets(ag, n, resultSortSpec);
     }
 
     /**

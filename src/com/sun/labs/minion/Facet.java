@@ -57,6 +57,14 @@ public interface Facet<T extends Comparable> extends Comparable<Facet<T>> {
         }
     };
 
+    public static final Comparator<Facet> REVERSE_FACET_SIZE_COMPARATOR =
+            new Comparator<Facet>() {
+                @Override
+                public int compare(Facet o1, Facet o2) {
+                    return -(o1.size() - o2.size());
+                }
+            };
+    
     /**
      * A comparator that will return facets in the natural order of score (i.e.,
      * lowest score first.)

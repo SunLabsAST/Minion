@@ -548,12 +548,21 @@ public class ResultSetImpl implements ResultSet {
     
     @Override
     public List<Facet> getTopFacets(String fieldName, int nFacets) throws SearchEngineException {
-        return getTopFacets(fieldName, null, nFacets);
+        return getTopFacets(fieldName, null, nFacets, null, -1);
     }
 
     @Override
-    public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec, int nFacets)
+    public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec,
+                                    int nFacets)
             throws SearchEngineException {
+        return getTopFacets(fieldName, facetSortSpec, nFacets, null, -1);
+    }
+    
+    @Override
+    public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec,
+                                    int nFacets, SortSpec resultSortSpec,
+                                    int nResults) throws SearchEngineException {
+    
         FieldInfo field = e.getFieldInfo(fieldName);
         if(field == null) {
             throw new SearchEngineException("Can't facet on unknown field " + fieldName);
@@ -569,14 +578,9 @@ public class ResultSetImpl implements ResultSet {
 
             //
             // Make a partition-local sorting spec.
-            SortSpec partFacetSortSpec = null;
-            if(facetSortSpec != null) {
-                partFacetSortSpec = new SortSpec(facetSortSpec,
-                                            (InvFileDiskPartition) ag.part);
-            }
             DiskField df = ((InvFileDiskPartition) ag.part).getDF(field);
             if(df != null) {
-                List<LocalFacet> l = df.getFacets(ag, partFacetSortSpec);
+                List<LocalFacet> l = df.getFacets(ag, nResults, resultSortSpec);
                 QueuableIterator<LocalFacet> qi = new QueuableIterator(l.
                         iterator());
                 if(qi.hasNext()) {
@@ -587,15 +591,14 @@ public class ResultSetImpl implements ResultSet {
         }
 
         //
-        // A min heap to sort our facets according to the sort spec, if there is one.
-        Comparator<Facet> comparator = SortSpec.REVERSE_FACET_COMPARATOR;
-        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(nFacets > 0 ? nFacets : 1, comparator);
+        // A min heap to sort our facets according to the facet sort spec.
+        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(nFacets > 0 ? nFacets : 1);
         
         //
         // A facet impl that we can refill as necessary while finding the top 
         // facets.  This will allow us to only keep around n+1 facet impls, rather
         // than thousands.
-        FacetImpl curr = new FacetImpl(field, null, this);
+        FacetImpl curr = new FacetImpl(field, null, this, facetSortSpec);
 
         //
         // Build facets as we go.
@@ -620,11 +623,11 @@ public class ResultSetImpl implements ResultSet {
             // top facets that we're building.
             if(nFacets < 0 || pq.size() < nFacets) {
                 pq.offer(curr);
-                curr = new FacetImpl(field, null, this);
+                curr = new FacetImpl(field, null, this, facetSortSpec);
             } else {
                 FacetImpl topf = pq.peek();
-                if(comparator.compare(curr, topf) > 0) {
-                    pq.poll();
+                if(curr.compareTo(topf) > 0) {
+                    topf = pq.poll();
                     pq.offer(curr);
                     curr = topf;
                 }

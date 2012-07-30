@@ -21,7 +21,6 @@
  * Park, CA 94025 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-
 package com.sun.labs.minion;
 
 import com.sun.labs.minion.retrieval.SortSpec;
@@ -34,12 +33,14 @@ public interface ResultSet {
 
     /**
      * Gets the search engine that generated this result set.
+     *
      * @return the search engine that generated this result set.
      */
     public SearchEngine getEngine();
-    
+
     /**
      * Sets the sorting specification used by this result set.
+     *
      * @param sortSpec a sorting specification for this result set.
      */
     public void setSortSpec(String sortSpec);
@@ -47,7 +48,7 @@ public interface ResultSet {
     /**
      * Sets the results filter that will be used to decide whether results
      * should be returned from this set.
-     * 
+     *
      * @param rf the results filter to use
      * @see ResultsFilter
      * @see CompositeResultsFilter
@@ -57,7 +58,7 @@ public interface ResultSet {
     /**
      * Sets the score modifier that will be used to modify the scores of the
      * documents returned from this set.
-     * 
+     *
      * @param sm the score modifier to use
      */
     public void setScoreModifier(ScoreModifier sm);
@@ -65,124 +66,128 @@ public interface ResultSet {
     /**
      * Gets a subset of the query results stored in this set.
      *
-     * @param start The position in the set to start getting results,
-     * indexed from 0.
-     * @param n The number of results to get.  Note that you may get less
-     * than this number of results if there are insufficient results in the
-     * set.
-     * @return A list of <code>Result</code> instances containing the
-     * search results.
-     *
-     * @throws SearchEngineException if there is some error getting the
+     * @param start The position in the set to start getting results, indexed
+     * from 0.
+     * @param n The number of results to get. Note that you may get less than
+     * this number of results if there are insufficient results in the set.
+     * @return A list of <code>Result</code> instances containing the search
      * results.
+     *
+     * @throws SearchEngineException if there is some error getting the results.
      */
-    public List<Result> getResults(int start, int n) throws SearchEngineException;
+    public List<Result> getResults(int start, int n) throws
+            SearchEngineException;
 
     /**
      * Gets a subset of the query results stored in this set.
      *
-     * @param start The position in the set to start getting results,
-     * indexed from 0.
-     * @param n The number of results to get.  Note that you may get less
-     * than this number of results if there are insufficient results in the
-     * set.
+     * @param start The position in the set to start getting results, indexed
+     * from 0.
+     * @param n The number of results to get. Note that you may get less than
+     * this number of results if there are insufficient results in the set.
      * @param rf a filter to apply against candidate results
-     * @return A list of <code>Result</code> instances containing the
-     * search results.
-     *
-     * @throws SearchEngineException if there is some error getting the
+     * @return A list of <code>Result</code> instances containing the search
      * results.
+     *
+     * @throws SearchEngineException if there is some error getting the results.
      */
-    public List<Result> getResults(int start, int n, ResultsFilter rf) throws SearchEngineException;
+    public List<Result> getResults(int start, int n, ResultsFilter rf) throws
+            SearchEngineException;
 
     /**
-     * Gets all of the query results in the set.  Note that this list may
-     * be very large!
+     * Gets all of the query results in the set. Note that this list may be very
+     * large!
+     *
      * @return A list of all the results in the set.
      * @param sorted If <code>true</code>, then the results will be sorted
-     * according to the sorting specification that was provided with the
-     * query.  If <code>false</code>, then the results will be returned in
-     * an arbitrary order.
-     * @throws com.sun.labs.minion.SearchEngineException if there is any error processing the result set
+     * according to the sorting specification that was provided with the query.
+     * If <code>false</code>, then the results will be returned in an arbitrary
+     * order.
+     * @throws com.sun.labs.minion.SearchEngineException if there is any error
+     * processing the result set
      */
-    public List<Result> getAllResults(boolean sorted) throws SearchEngineException;
-    
+    public List<Result> getAllResults(boolean sorted) throws
+            SearchEngineException;
+
     /**
-     * Gets all of the query results in the set.  Note that this list may
-     * be very large!
+     * Gets all of the query results in the set. Note that this list may be very
+     * large!
+     *
      * @return A list of all the results in the set.
      * @param sorted If <code>true</code>, then the results will be sorted
-     * according to the sorting specification that was provided with the
-     * query.  If <code>false</code>, then the results will be returned in
-     * an arbitrary order.
+     * according to the sorting specification that was provided with the query.
+     * If <code>false</code>, then the results will be returned in an arbitrary
+     * order.
      * @param rf a filter to apply against candidate results
-     * @throws com.sun.labs.minion.SearchEngineException if there is any error processing the result set
+     * @throws com.sun.labs.minion.SearchEngineException if there is any error
+     * processing the result set
      */
-    public List<Result> getAllResults(boolean sorted, ResultsFilter rf) throws SearchEngineException;
+    public List<Result> getAllResults(boolean sorted, ResultsFilter rf) throws
+            SearchEngineException;
 
     /**
      * Gets the statistics for the query that generated this set.
+     *
      * @return the query statistics for the query that generated this set.
      */
     public QueryStats getQueryStats();
-    
+
     /**
      * Weights the results in this set.
      *
-     * @param w a weight to apply multiplicatively to each of the scores in 
-     * this set.
-     * @return a new result set with the weights applied.  If no normalization 
-     * is requested, then the scores for results in the new set may be greater
-     * than 0.
+     * @param w a weight to apply multiplicatively to each of the scores in this
+     * set.
+     * @return a new result set with the weights applied. If no normalization is
+     * requested, then the scores for results in the new set may be greater than
+     * 0.
      */
     public ResultSet weight(float w);
-    
+
     /**
      * Computes the intersection of this result set with another result set.
      *
      * @param rs the result set with which this set will be intersected.
-     * @return a new result set containing only thos documents that occur in 
-     * both this set and the set passed in.  The score for documents in the 
-     * returned set that occur in both sets will be the sum of the scores
-     * from the two sets.  Note that this may result in scores greater than
-     * 1 for these documents!
+     * @return a new result set containing only thos documents that occur in
+     * both this set and the set passed in. The score for documents in the
+     * returned set that occur in both sets will be the sum of the scores from
+     * the two sets. Note that this may result in scores greater than 1 for
+     * these documents!
      */
     public ResultSet intersect(ResultSet rs);
-    
+
     /**
      * Computes the intersection of this result set with another result set.
      *
      * @param rs the result set with which this set will be intersected.
-     * @return a new result set containing the documents that occur in 
-     * either this set or the set passed in (or both).  The score for documents in the 
-     * returned set that occur in both sets will be the sum of the scores
-     * from the two sets.  Note that this may result in scores greater than
-     * 1 for these documents!
+     * @return a new result set containing the documents that occur in either
+     * this set or the set passed in (or both). The score for documents in the
+     * returned set that occur in both sets will be the sum of the scores from
+     * the two sets. Note that this may result in scores greater than 1 for
+     * these documents!
      */
     public ResultSet union(ResultSet rs);
-    
 
     /**
      * Computes the difference of this result set and another result set.
      *
      * @param rs the result set with which this set will be intersected.
-     * @return a new result set containing the documents that occur in 
-     * this set, but <em>not</em> the set passed in.
+     * @return a new result set containing the documents that occur in this set,
+     * but <em>not</em> the set passed in.
      */
     public ResultSet difference(ResultSet rs);
 
     /**
      * Indicates whether the query contained a syntax error.
      *
-     * @return <code>true</code> if there was such an error,
-     * <code>false</code> otherwise.
+     * @return <code>true</code> if there was such an error, <code>false</code>
+     * otherwise.
      */
     public boolean querySyntaxError();
 
     /**
-     * Gets the size of the results set, that is, the number of documents
-     * that matched the query.  If this number is 0, it may be worthwhile
-     * to see if the reason is that there was a syntax error in the query.
+     * Gets the size of the results set, that is, the number of documents that
+     * matched the query. If this number is 0, it may be worthwhile to see if
+     * the reason is that there was a syntax error in the query.
      *
      * @return The number of documents matching the query.
      * @see #querySyntaxError
@@ -191,6 +196,7 @@ public interface ResultSet {
 
     /**
      * Gets the number of documents that are in the whole index.
+     *
      * @return the number of documents in the entire collection
      */
     public int getNumDocs();
@@ -198,42 +204,65 @@ public interface ResultSet {
     /**
      * Gets the amount of time that it took to evaluate the query, in
      * milliseconds.
+     *
      * @return the amount of time that it took to evaluate this query, in
      * milliseconds
      */
     public long getQueryTime();
 
     /**
-     * Gets the facets associated with a field name, returning the facets in 
-     * order according to the count of occurrence of the facet and computing 
-     * facet scores by taking the max score of individual documents making up 
+     * Gets the facets associated with a field name, returning the facets in
+     * order according to the count of occurrence of the facet and computing
+     * facet scores by taking the max score of individual documents making up
      * the facets.
+     *
      * @param fieldName the name of the saved field for which we want facets
-     * @param nFacets the number of facets to return. The facets are ordered
-     * according to the sorting specification associated with this result set. A
+     * @param nFacets the number of facets to return. A
      * value of <code>-1</code> means that all facets should be returned.
-     * @return the list of facets associated with this field.
+     * @return the list of facets associated with this field. The facets will be
+     * returned in reverse order of their size.
      * @throws SearchEngineException if there is an error building the facets.
      */
-    public List<Facet> getTopFacets(String fieldName, int nFacets) throws SearchEngineException;
-    
+    public List<Facet> getTopFacets(String fieldName, int nFacets) throws
+            SearchEngineException;
+
     /**
-     * Gets the facets for this result set associated with a field name, returning
-     * the facets in order according to the provided comparator and computing
-     * facet scores using the given weight combiner across the scores of the
-     * individual documents from this set making up the facets.
+     * Gets the facets for this result set associated with a field name,
+     * returning the facets in order according to the provided sorting 
+     * specification.
+     *
      * @param fieldName the name of the saved field for which we want facets.
      * @param nFacets the number of facets to return. The facets will be ordered
-     * according to the provided sorting specification and the
-     * top <code>nFacets</code> of them will be returned. A value
+     * according to the provided sorting specification and the      
+     * top <code>nFacets</code> of them will be returned. A value      
      * of <code>-1</code> means that all facets should be returned.
-     * @param facetSortSpec a specification for sorting the list of facets that are
-     * returned.  The values within the facet will be sorted according to the 
+     * @param facetSortSpec a specification for sorting the list of facets that
+     * are returned. The values within the facet will be sorted according to the
      * same specification. If this value is <code>null</code> then the facets
      * will be returned in reverse order of size.
-     * @return the list of facets associated with this field, ordered according 
+     * @return the list of facets associated with this field, ordered according
      * to the sorting specification.
      * @throws SearchEngineException if there is an error building the facets.
      */
-    public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec, int nFacets) throws SearchEngineException;
+    public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec,
+                                    int nFacets) throws SearchEngineException;
+    
+    /**
+     * Gets the facets for the top <code>nResults</code> results in this set, 
+     * where the top <code>nResults</code> results are determined by the 
+     * <code>resultSortSpec</code>. The facets will be returned ordered according
+     * to the provided <code>facetSortSpec</code>.
+     * @param fieldName
+     * @param facetSortSpec
+     * @param nFacets
+     * @param resultSortSpec
+     * @param nResults
+     * @return
+     * @throws SearchEngineException 
+     */
+    public List<Facet> getTopFacets(String fieldName, 
+                                    SortSpec facetSortSpec,
+                                    int nFacets, 
+                                    SortSpec resultSortSpec,
+                                    int nResults) throws SearchEngineException;
 } // ResultSet

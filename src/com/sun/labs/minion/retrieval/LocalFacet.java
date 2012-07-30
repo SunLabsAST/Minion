@@ -58,11 +58,14 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
      */
     private int[] tempSortFieldIDs;
     
-    public LocalFacet(InvFileDiskPartition part, FieldInfo field, int facetValueID, SortSpec sortSpec) {
-        super(field, null, null);
+    private SortSpec resultSortSpec;
+    
+    public LocalFacet(InvFileDiskPartition part, FieldInfo field,
+                      int facetValueID, SortSpec resultSortSpec) {
+        super(field, null, null, null);
         this.partition = part;
         this.valueID = facetValueID;
-        this.sortSpec = sortSpec;
+        this.resultSortSpec = resultSortSpec;
     }
     
     public int getValueID() {
@@ -76,21 +79,21 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
         // Keep track of the "maximum" document in the facet, using the 
         // provided sorting criterion or just the score if that's all we're 
         // doing.
-        if(sortSpec == null || sortSpec.isJustScoreSort()) {
+        if(resultSortSpec == null || resultSortSpec.isJustScoreSort()) {
             if(score > exemplarScore) {
                 exemplar = doc;
                 exemplarScore = score;
             }
         } else {
             if(tempSortFieldIDs == null) {
-                tempSortFieldIDs = new int[sortSpec.size];
+                tempSortFieldIDs = new int[resultSortSpec.size];
             }
-            sortSpec.getSortFieldIDs(tempSortFieldIDs, doc);
+            resultSortSpec.getSortFieldIDs(tempSortFieldIDs, doc);
             if(exemplarSortFieldIDs == null) {
                 exemplar = doc; 
                 exemplarSortFieldIDs = tempSortFieldIDs;
                 exemplarScore = score;
-            } else if(sortSpec.compareIDs(tempSortFieldIDs, exemplarSortFieldIDs, score, exemplarScore) > 0) {
+            } else if(resultSortSpec.compareIDs(tempSortFieldIDs, exemplarSortFieldIDs, score, exemplarScore) > 0) {
                 exemplar = doc;
                 int[] tmp = exemplarSortFieldIDs;
                 exemplarSortFieldIDs = tempSortFieldIDs;
@@ -122,8 +125,8 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
     }
     
     protected void setSortFieldValues() {
-        sortFieldValues = new Object[sortSpec.size];
-        sortSpec.getSortFieldValues(sortFieldValues, exemplar, exemplarScore, this);
+        sortFieldValues = new Object[facetSortSpec.size];
+        resultSortSpec.getSortFieldValues(sortFieldValues, exemplar, exemplarScore, this);
     }
 
     @Override
