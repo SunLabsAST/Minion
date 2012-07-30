@@ -8,6 +8,7 @@ import com.sun.labs.minion.util.Pair;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * A facet that is local to a single partition.  This is used while building
@@ -22,6 +23,8 @@ import java.util.List;
  * maximum document according to that sorting specification.
  */
 public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements Iterable<Pair<Integer,Float>> {
+
+    private static final Logger logger = Logger.getLogger(LocalFacet.class.getName());
 
     InvFileDiskPartition partition;
     

@@ -9,6 +9,7 @@ import com.sun.labs.util.NanoWatch;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -96,22 +97,22 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     }
 
     @Override
-    public List<Result> getResults(int n, SortSpec sortSpec) {
+    public List<Result> getTopResults(int n, SortSpec sortSpec) {
         NanoWatch nw = new NanoWatch();
         nw.start();
         if(size < n) {
             n = size;
         }
-        PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(n);
+        PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(n, ResultImpl.REVERSE_COMPARATOR);
         ResultImpl curr = new ResultImpl();
         for(LocalFacet lf : localFacets) {
-            SortSpec lfss = null;
+            SortSpec localRSS = null;
             if(sortSpec != null) {
-                lfss = new SortSpec(sortSpec, lf.getPartition());
+                localRSS = new SortSpec(sortSpec, lf.getPartition());
             }
             for(Iterator<Pair<Integer, Float>> i = lf.iterator(); i.hasNext();) {
                 Pair<Integer, Float> doc = i.next();
-                curr.init(set, null, lfss, false, doc.getA(), doc.getB());
+                curr.init(set, null, localRSS, false, doc.getA(), doc.getB());
                 curr.setPartition(lf.getPartition());
                 curr.setSortFieldValues();
                 if(sorter.size() < n) {
@@ -119,7 +120,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
                     curr = new ResultImpl();
                 } else {
                     ResultImpl top = sorter.peek();
-                    if(curr.compareTo(top) > 0) {
+                    if(sorter.comparator().compare(curr, top) > 0) {
                         top = sorter.poll();
                         sorter.offer(curr);
                         curr = top;
@@ -196,6 +197,21 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
         // Sort by size if all else fails.
         return cmp == 0 ? ofi.size - size : cmp;
     }
+    
+    /**
+     * A comparator that reverses the result of the comparison for a pair of
+     * facets. This can be used when we want to generate a min-heap of results
+     * during results sorting.
+     */
+    public static final Comparator REVERSE_COMPARATOR =
+            new Comparator<FacetImpl>() {
+                @Override
+                public int compare(FacetImpl o1,
+                                   FacetImpl o2) {
+                    return -o1.compareTo(o2);
+                }
+            };
+
 
     @Override
     public String toString() {

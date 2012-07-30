@@ -442,7 +442,7 @@ public class QueryTest extends SEMain {
                 for(Facet f : lf) {
                     ci.out.print("  ");
                     ci.out.println(f);
-                    List<Result> lr = f.getResults(1, resultsSortSpec);
+                    List<Result> lr = f.getTopResults(1, resultsSortSpec);
                     displayResults("   ", lr);
                 }
                 

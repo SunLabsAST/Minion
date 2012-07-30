@@ -599,7 +599,7 @@ public class ResultSetImpl implements ResultSet {
 
         //
         // A min heap to sort our facets according to the facet sort spec.
-        PriorityQueue<FacetImpl> pq = new PriorityQueue<FacetImpl>(nFacets > 0 ? nFacets : 512);
+        PriorityQueue<FacetImpl> sorter = new PriorityQueue<FacetImpl>(nFacets > 0 ? nFacets : 512, FacetImpl.REVERSE_COMPARATOR);
         
         //
         // A facet impl that we can refill as necessary while finding the top 
@@ -628,14 +628,14 @@ public class ResultSetImpl implements ResultSet {
             //
             // See if this new facet is good enough to add to the heap of the 
             // top facets that we're building.
-            if(nFacets < 0 || pq.size() < nFacets) {
-                pq.offer(curr);
+            if(nFacets < 0 || sorter.size() < nFacets) {
+                sorter.offer(curr);
                 curr = new FacetImpl(field, null, this, facetSortSpec);
             } else {
-                FacetImpl topf = pq.peek();
-                if(curr.compareTo(topf) > 0) {
-                    topf = pq.poll();
-                    pq.offer(curr);
+                FacetImpl topf = sorter.peek();
+                if(sorter.comparator().compare(curr, topf) > 0) {
+                    topf = sorter.poll();
+                    sorter.offer(curr);
                     curr = topf;
                 }
             }
@@ -643,9 +643,9 @@ public class ResultSetImpl implements ResultSet {
         
         //
         // Empty our heap of facets and return them.
-        List<Facet> ret = new ArrayList<Facet>(pq.size());
-        while(!pq.isEmpty()) {
-            ret.add(pq.poll());
+        List<Facet> ret = new ArrayList<Facet>(sorter.size());
+        while(!sorter.isEmpty()) {
+            ret.add(sorter.poll());
         }
         Collections.reverse(ret);
         return ret;

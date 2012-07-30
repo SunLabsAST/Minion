@@ -422,11 +422,11 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     }
     
     /**
-     * A comparator that reverses the result of the comparison for a set of 
+     * A comparator that reverses the result of the comparison for a pair of 
      * results.  This can be used when we want to generate a min-heap of
      * results during results sorting.
      */
-    public static final Comparator REVERSE_RESULT_COMPARATOR =
+    public static final Comparator REVERSE_COMPARATOR =
             new Comparator<ResultImpl>() {
                 @Override
                 public int compare(ResultImpl o1,
