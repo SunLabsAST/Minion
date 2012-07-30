@@ -170,7 +170,7 @@ public interface SearchEngine extends Searcher {
 
     /**
      * Gets the collection level term statistics for the given term.
-     * @param term the term for which we want the statisitics
+     * @param term the term for which we want the statistics
      * @return the statistics associated with the given term, or <code>null</code>
      * if the term does not occur in the collection.
      */
@@ -178,7 +178,7 @@ public interface SearchEngine extends Searcher {
 
     /**
      * Gets the collection level term statistics for the given term.
-     * @param term the term for which we want the statisitics
+     * @param term the term for which we want the statistics
      * @return the statistics associated with the given term, or <code>null</code>
      * if the term does not occur in the collection.
      */
