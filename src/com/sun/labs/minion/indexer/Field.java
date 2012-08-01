@@ -29,6 +29,8 @@ public abstract class Field<N extends Comparable> {
     protected boolean uncased;
 
     protected boolean vectored;
+    
+    protected boolean indexed;
 
     protected CDateParser dateParser;
 
@@ -44,6 +46,7 @@ public abstract class Field<N extends Comparable> {
     public Field(Partition partition, FieldInfo info) {
         this.partition = partition;
         this.info = info;
+        indexed = info.hasAttribute(FieldInfo.Attribute.INDEXED);
         tokenized = info.hasAttribute(FieldInfo.Attribute.TOKENIZED);
         stemmed = info.hasAttribute(FieldInfo.Attribute.STEMMED);
         saved = info.hasAttribute(FieldInfo.Attribute.SAVED);

@@ -48,24 +48,28 @@ public class MemoryField extends Field {
     public MemoryField(MemoryPartition partition, FieldInfo info) {
         super(partition, info);
         bundle = new MemoryDictionaryBundle<Comparable>(this);
-        String pipelineFactoryName = info.getPipelineFactoryName();
-        if(pipelineFactoryName != null) {
-            PipelineFactory pf =
-                    (PipelineFactory) ((SearchEngineImpl) partition.
-                    getPartitionManager().getEngine()).getConfigurationManager().
-                    lookup(pipelineFactoryName);
-            if(pf == null) {
-                logger.log(Level.SEVERE, String.format(
-                        "Unknown pipline factory name %s", pipelineFactoryName));
-                throw new IllegalArgumentException(String.format(
-                        "Unknown pipline factory name %s for field %s",
-                        pipelineFactoryName,
-                        info.getName()));
+        if(indexed) {
+            String pipelineFactoryName = info.getPipelineFactoryName();
+            if(pipelineFactoryName != null) {
+                PipelineFactory pf =
+                        (PipelineFactory) ((SearchEngineImpl) partition.
+                        getPartitionManager().getEngine()).
+                        getConfigurationManager().
+                        lookup(pipelineFactoryName);
+                if(pf == null) {
+                    logger.log(Level.SEVERE, String.format(
+                            "Unknown pipline factory name %s",
+                            pipelineFactoryName));
+                    throw new IllegalArgumentException(String.format(
+                            "Unknown pipline factory name %s for field %s",
+                            pipelineFactoryName,
+                            info.getName()));
+                }
+                pipeline = pf.getPipeline();
+                fieldStage = new MemoryField.FieldStage();
+                pipeline.addStage(fieldStage);
+                pipeline.setField(this);
             }
-            pipeline = pf.getPipeline();
-            fieldStage = new MemoryField.FieldStage();
-            pipeline.addStage(fieldStage);
-            pipeline.setField(this);
         }
     }
     
