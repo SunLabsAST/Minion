@@ -184,6 +184,14 @@ public class QueryConfig implements Cloneable, Configurable {
      */
     @ConfigComponent(type = com.sun.labs.minion.knowledge.KnowledgeSource.class)
     public static final String PROP_KNOWLEDGE_SOURCE = "knowledge_source";
+    
+    /**
+     * Whether we should normalize results by their vector lengths.
+     */
+    @ConfigBoolean(defaultValue=true)
+    public static final String PROP_NORMALIZE_RESULTS = "normalize_results";
+    
+    private boolean normalizeResults;
 
     /**
      * The search engine associated with the collection that we're
@@ -573,6 +581,7 @@ public class QueryConfig implements Cloneable, Configurable {
         } catch(PropertyException pe) {
         }
         defaultFields = new HashSet<FieldInfo>((List<FieldInfo>) ps.getComponentList(PROP_DEFAULT_FIELDS));
+        normalizeResults = ps.getBoolean(PROP_NORMALIZE_RESULTS);
     }
 
     public void setAllUpperIsCI(boolean allUpperIsCI) {
@@ -624,6 +633,14 @@ public class QueryConfig implements Cloneable, Configurable {
                         wfClass + " using default: " + wf.toString(), ex);
             }
         }
+    }
+
+    public boolean getNormalizeResults() {
+        return normalizeResults;
+    }
+
+    public void setNormalizeResults(boolean normalizeResults) {
+        this.normalizeResults = normalizeResults;
     }
     
     /**

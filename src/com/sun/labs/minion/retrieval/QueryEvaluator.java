@@ -98,9 +98,6 @@ public class QueryEvaluator {
             if(ag != null) {
                 ag.part = p;
                 ag.queryTerms = qe.getQueryTerms();
-                qe.qs.normW.start();
-                ag.normalize();
-                qe.qs.normW.stop();
                 ret.add(ag);
             }
         }

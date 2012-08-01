@@ -68,6 +68,7 @@ import com.sun.labs.minion.retrieval.AbstractDocumentVector;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.SortSpec;
+import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.Util;
@@ -453,6 +454,67 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "field - Get the facets for a particular field from the last set of search results";
+            }
+        });
+        
+        shell.add("wf", "Query", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                try {
+                    Class clazz = Class.forName(args[1]);
+                    WeightingFunction wf = (WeightingFunction) clazz.
+                            newInstance();
+                    QueryConfig qc = engine.getQueryConfig();
+                    qc.setWeightingFunction(wf);
+                    engine.setQueryConfig(qc);
+                    return String.format("Weighting function set to %s", args[1]);
+                } catch(ClassCastException ex) {
+                    return String.format(
+                            "%s is not a weighting function class name", args[1]);
+                } catch(Exception ex) {
+                    return String.format("Couldn't create %s: %s", args[1], ex);
+                }
+            }
+
+            @Override
+            public String getHelp() {
+                return "weighting function classname - Sets the weighting function to be used during querying";
+            }
+        });
+        
+        shell.add("norm", "Query", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] strings)
+                    throws Exception {
+                QueryConfig qc = engine.getQueryConfig();
+                qc.setNormalizeResults(true);
+                engine.setQueryConfig(qc);
+                return "Result sets will be normalized";
+            }
+
+            @Override
+            public String getHelp() {
+                return "Turn on normalization for result sets";
+            }
+        });
+        
+        shell.add("nonorm", "Query", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] strings)
+                    throws Exception {
+                QueryConfig qc = engine.getQueryConfig();
+                qc.setNormalizeResults(false);
+                engine.setQueryConfig(qc);
+                return "Result sets will not be normalized";
+            }
+
+            @Override
+            public String getHelp() {
+                return "Turn off normalization for result sets";
             }
         });
         
