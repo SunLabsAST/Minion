@@ -41,6 +41,7 @@ import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.Searcher;
 import com.sun.labs.minion.SimpleHighlighter;
+import com.sun.labs.minion.Stemmer;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.TextHighlighter;
 import com.sun.labs.minion.WeightedFeature;
@@ -760,6 +761,49 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add("stem", "Terms", new CommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                if(args.length == 1) {
+                    return "Must specify one or more terms";
+                }
+
+                for(int i = 1; i < args.length; i++) {
+                    String term = CharUtils.decodeUnicode(args[i]);
+                    for(DiskPartition p : manager.getActivePartitions()) {
+                        for(DiskField df : ((InvFileDiskPartition) p).
+                                getDiskFields()) {
+                            if(!df.getInfo().hasAttribute(FieldInfo.Attribute.INDEXED) ||
+                                    !df.getInfo().hasAttribute(FieldInfo.Attribute.STEMMED)) {
+                                continue;
+                            }
+                            Stemmer stemmer = df.getStemmer();
+                            String stem = stemmer.stem(term);
+                            Entry e = df.getStem(stem);
+                            if(e == null) {
+                                shell.out.format("%s field: %s null\n", p,
+                                                 df.getInfo().getName());
+                            } else {
+                                shell.out.format("%s field: %s %s (%s) %d\n", p,
+                                                 df.getInfo().getName(),
+                                                 e.getName(), Util.
+                                        toHexDigits(e.getName().
+                                        toString()), e.getN());
+                            }
+                        }
+                    }
+
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "[term...] Perform a case insensitive lookup for one or more terms";
+            }
+        });
+
         shell.add("tbid", "Terms", new CommandInterface() {
 
             @Override

@@ -42,7 +42,6 @@ import java.util.logging.Logger;
  * A configurable factor class for pipelines.  This factor class can be used to
  * get synchronous or asynchronous pipeline stages.
  *
- * @author Stephen Green <stephen.green@sun.com>
  */
 public class PipelineFactory implements Configurable {
 

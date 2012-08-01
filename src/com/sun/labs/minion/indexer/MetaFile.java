@@ -584,7 +584,8 @@ public class MetaFile implements Iterable<FieldInfo> {
      */
     public FieldInfo addField(FieldInfo fi)
             throws SearchEngineException {
-        return addField(fi.getName(), fi.getAttributes(), fi.getType(), fi.getPipelineFactoryName());
+        return addField(fi.getName(), fi.getAttributes(), fi.getType(), fi.
+                getPipelineFactoryName(), fi.getStemmerFactoryName());
     }
 
     /**
@@ -602,7 +603,8 @@ public class MetaFile implements Iterable<FieldInfo> {
     public synchronized FieldInfo addField(String name,
                                            EnumSet<FieldInfo.Attribute> attributes,
                                            FieldInfo.Type type,
-                                           String pipelineFactoryName)
+                                           String pipelineFactoryName, 
+                                           String stemmerFactoryName)
             throws SearchEngineException {
         try {
 
@@ -635,7 +637,9 @@ public class MetaFile implements Iterable<FieldInfo> {
                 // We need to make a new field and put in in the maps and then
                 // write the file to disk.
                 fi = new com.sun.labs.minion.FieldInfo(++nextID, name,
-                                                       attributes, type, pipelineFactoryName);
+                                                       attributes, type,
+                                                       pipelineFactoryName,
+                                                       stemmerFactoryName);
                 nameToInfo.put(name, fi);
                 idToInfo.put(fi.getID(), fi);
                 write();

@@ -2,9 +2,13 @@ package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Stemmer;
+import com.sun.labs.minion.StemmerFactory;
+import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.partition.Partition;
+import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.util.CDateParser;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -51,6 +55,30 @@ public abstract class Field<N extends Comparable> {
                 != FieldInfo.Type.NONE && uncased) {
             logger.warning(String.format("Field %s of type %s has UNCASED attribute, which "
                     + "doesn't make sense!", info.getName(), info.getType()));
+        }
+        
+        //
+        // Get the stemmer for this field.
+        if(stemmed) {
+            String stemmerFactoryName = info.getStemmerFactoryName();
+            if(stemmerFactoryName != null) {
+                StemmerFactory sf =
+                        (StemmerFactory) partition
+                        .getPartitionManager()
+                        .getConfigurationManager()
+                        .lookup(stemmerFactoryName);
+                if(sf == null) {
+                    logger.log(Level.SEVERE, String.
+                            format(
+                            "Unknown stemmer factory name %s",
+                            stemmerFactoryName));
+                    throw new IllegalArgumentException(String.format(
+                            "Unknown stemmer factory name %s for field %s",
+                            stemmerFactoryName,
+                            info.getName()));
+                }
+                stemmer = sf.getStemmer();
+            }
         }
     }
     

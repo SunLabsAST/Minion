@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.util;
 
+import com.sun.labs.minion.Stemmer;
 import java.io.*;
 
 /**
@@ -34,7 +35,7 @@ import java.io.*;
   * by calling one of the various stem(something) methods.
   */
 
-public class PorterStemmer
+public class PorterStemmer implements Stemmer
 {  private char[] b;
    private int i,     /* offset into b */
                i_end, /* offset to end of stemmed word */
@@ -46,6 +47,18 @@ public class PorterStemmer
       i = 0;
       i_end = 0;
    }
+
+    @Override
+    public String stem(String token) {
+        add(token);
+        stem();
+        return toString();
+    }
+
+    @Override
+    public Stemmer clone() {
+        return new PorterStemmer();
+    }
 
    /**
     * Add a character to the word being stemmed.  When you are finished

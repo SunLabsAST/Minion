@@ -245,17 +245,30 @@ public class FieldInfo implements Cloneable, Configurable {
     public static final String PROP_ATTRIBUTES = "attributes";
 
     /**
-     * A factory for pipelines.
+     * The name of a factory for pipelines.
      */
     @ConfigString(defaultValue = FieldInfo.DEFAULT_PIPELINE_FACTORY_NAME)
     public static final String PROP_PIPELINE_FACTORY_NAME = "pipelineFactoryName";
 
     private String pipelineFactoryName;
-
+    
     /**
      * The name of the configuration component containing the default pipeline.
      */
     public static final String DEFAULT_PIPELINE_FACTORY_NAME = "pipeline_factory";
+
+    /**
+     * The name of the factory for stemmers.
+     */
+    @ConfigString(defaultValue = FieldInfo.DEFAULT_STEMMER_FACTORY_NAME)
+    public static final String PROP_STEMMER_FACTORY_NAME = "stemmerFactoryName";
+    
+    private String stemmerFactoryName;
+    
+    /**
+     * The name of the default stemmer factory.
+     */
+    public static final String DEFAULT_STEMMER_FACTORY_NAME = "stemmerFactory";
 
     /**
      * The name of this field.
@@ -289,7 +302,7 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param name The name of the field.
      */
     public FieldInfo(String name) {
-        this(0, name, getDefaultAttributes(), Type.NONE, null);
+        this(0, name, getDefaultAttributes(), Type.NONE, DEFAULT_PIPELINE_FACTORY_NAME, DEFAULT_STEMMER_FACTORY_NAME);
     }
 
     /**
@@ -300,7 +313,7 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param name The name of the field.
      */
     public FieldInfo(int id, String name) {
-        this(id, name, getDefaultAttributes(), Type.NONE, null);
+        this(id, name, getDefaultAttributes(), Type.NONE, DEFAULT_PIPELINE_FACTORY_NAME, DEFAULT_STEMMER_FACTORY_NAME);
     }
 
     /**
@@ -313,7 +326,7 @@ public class FieldInfo implements Cloneable, Configurable {
      *
      */
     public FieldInfo(String name, EnumSet<Attribute> attributes) {
-        this(0, name, attributes, Type.NONE, null);
+        this(0, name, attributes, Type.NONE, DEFAULT_PIPELINE_FACTORY_NAME, DEFAULT_STEMMER_FACTORY_NAME);
     }
 
     /**
@@ -327,7 +340,7 @@ public class FieldInfo implements Cloneable, Configurable {
      * field is saved.
      */
     public FieldInfo(String name, EnumSet<Attribute> attributes, Type type) {
-        this(0, name, attributes, type, null);
+        this(0, name, attributes, type, DEFAULT_PIPELINE_FACTORY_NAME, DEFAULT_STEMMER_FACTORY_NAME);
     }
 
     /**
@@ -342,7 +355,7 @@ public class FieldInfo implements Cloneable, Configurable {
      */
     public FieldInfo(String name, EnumSet<Attribute> attributes, Type type,
                      String pipelineFactoryName) {
-        this(0, name, attributes, type, pipelineFactoryName);
+        this(0, name, attributes, type, pipelineFactoryName, DEFAULT_STEMMER_FACTORY_NAME);
     }
 
     /**
@@ -362,7 +375,10 @@ public class FieldInfo implements Cloneable, Configurable {
      */
     public FieldInfo(int id, String name,
                      EnumSet<Attribute> attributes,
-                     Type type, String pipelineFactoryName) {
+                     Type type, 
+                     String pipelineFactoryName, 
+                     String stemmerFactoryName) {
+
         this.id = id;
         this.name = name == null ? null : name.toLowerCase();
         if(attributes != null) {
@@ -375,11 +391,20 @@ public class FieldInfo implements Cloneable, Configurable {
                 Attribute.INDEXED)) {
             logger.log(Level.WARNING, String.format(
                     "Field %s is indexed but has no pipeline defined, using the default",
-                                                    name),
-                       new Exception("here"));
+                                                    name));
             this.pipelineFactoryName = DEFAULT_PIPELINE_FACTORY_NAME;
         } else {
             this.pipelineFactoryName = pipelineFactoryName;
+        }
+        if(stemmerFactoryName == null && this.attributes.contains(
+                Attribute.STEMMED)) {
+            logger.log(Level.WARNING, String.
+                    format(
+                    "Field %s is stemmed but has no stemmer defined, using the default",
+                    name));
+            this.stemmerFactoryName = DEFAULT_STEMMER_FACTORY_NAME;
+        } else {
+            this.stemmerFactoryName = stemmerFactoryName;
         }
     }
 
@@ -509,6 +534,14 @@ public class FieldInfo implements Cloneable, Configurable {
         return pipelineFactoryName;
     }
 
+    public String getStemmerFactoryName() {
+        return stemmerFactoryName;
+    }
+
+    public void setStemmerFactoryName(String stemmerFactoryName) {
+        this.stemmerFactoryName = stemmerFactoryName;
+    }
+
     /**
      * Gets the numeric id of this field.
      *
@@ -585,6 +618,11 @@ public class FieldInfo implements Cloneable, Configurable {
         } else {
             out.writeUTF(pipelineFactoryName);
         }
+        if(stemmerFactoryName == null) {
+            out.writeUTF("");
+        } else {
+            out.writeUTF(stemmerFactoryName);
+        }
     }
 
     /**
@@ -607,6 +645,10 @@ public class FieldInfo implements Cloneable, Configurable {
         pipelineFactoryName = in.readUTF();
         if(pipelineFactoryName.isEmpty()) {
             pipelineFactoryName = null;
+        }
+        stemmerFactoryName = in.readUTF();
+        if(stemmerFactoryName.isEmpty()) {
+            stemmerFactoryName = null;
         }
     }
 

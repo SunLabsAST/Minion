@@ -61,6 +61,7 @@ import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigDouble;
 import com.sun.labs.util.props.ConfigInteger;
 import com.sun.labs.util.props.ConfigString;
+import com.sun.labs.util.props.ConfigurationManager;
 import com.sun.labs.util.props.PropertyException;
 import com.sun.labs.util.props.PropertySheet;
 import java.io.File;
@@ -237,6 +238,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * The tag for this module.
      */
     protected String managerTag = "PM";
+    
+    /**
+     * The configuration manager that generated this manager.
+     */
+    protected ConfigurationManager configurationManager;
 
     /**
      * The directory where locks will be put.
@@ -2821,9 +2827,15 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         return randID;
     }
 
+    public ConfigurationManager getConfigurationManager() {
+        return configurationManager;
+    }
+
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
 
+        configurationManager = ps.getConfigurationManager();
+        
         //
         // If we're re-called, then do a shutdown before initializing.
         if(activeParts != null && activeParts.size() > 0) {

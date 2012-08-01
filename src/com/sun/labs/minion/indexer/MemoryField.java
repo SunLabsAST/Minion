@@ -2,6 +2,7 @@ package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Pipeline;
+import com.sun.labs.minion.StemmerFactory;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
@@ -49,13 +50,20 @@ public class MemoryField extends Field {
         bundle = new MemoryDictionaryBundle<Comparable>(this);
         String pipelineFactoryName = info.getPipelineFactoryName();
         if(pipelineFactoryName != null) {
-            PipelineFactory pf = (PipelineFactory) ((SearchEngineImpl) partition.getPartitionManager().getEngine()).getConfigurationManager().lookup(pipelineFactoryName);
+            PipelineFactory pf =
+                    (PipelineFactory) ((SearchEngineImpl) partition.
+                    getPartitionManager().getEngine()).getConfigurationManager().
+                    lookup(pipelineFactoryName);
             if(pf == null) {
-                logger.log(Level.SEVERE, String.format("Unknown pipline name %s", pipelineFactoryName));
-                throw new IllegalArgumentException(String.format("Unknown pipline name %s for field %s", pipelineFactoryName, info.getName()));
+                logger.log(Level.SEVERE, String.format(
+                        "Unknown pipline factory name %s", pipelineFactoryName));
+                throw new IllegalArgumentException(String.format(
+                        "Unknown pipline factory name %s for field %s",
+                        pipelineFactoryName,
+                        info.getName()));
             }
             pipeline = pf.getPipeline();
-            fieldStage = new FieldStage();
+            fieldStage = new MemoryField.FieldStage();
             pipeline.addStage(fieldStage);
             pipeline.setField(this);
         }
