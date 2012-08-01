@@ -145,10 +145,14 @@ public class InvFileMemoryPartition extends MemoryPartition {
     }
 
     public void addField(String field, Object val) {
+        if(val == null) {
+            logger.warning(String.format("Ignoring null value for field %s in doc %s", field, docKey.getName()));
+            return;
+        }
         FieldInfo fi = manager.getFieldInfo(field);
 
         if(field != null && fi == null) {
-            logger.warning(String.format("Can't add term to undefined field %s",
+            logger.warning(String.format("Can't add value to undefined field %s",
                     field));
         }
         addField(fi, val);
@@ -158,6 +162,12 @@ public class InvFileMemoryPartition extends MemoryPartition {
      * Adds a field to this document.
      */
     public void addField(FieldInfo fi, Object val) {
+        if(val == null) {
+            logger.warning(String.format(
+                    "Ignoring null value for field %s in doc %s", fi.getName(), docKey.
+                    getName()));
+            return;
+        }
         MemoryField mf = getMF(fi);
         mf.addData(docKey.getID(), val);
     }
@@ -166,6 +176,9 @@ public class InvFileMemoryPartition extends MemoryPartition {
      * Adds a term to a single field in this document.
      */
     public void addTerm(String field, String term, int count) {
+        if(term == null) {
+            logger.warning(String.format("Ignoring null term for field %s in doc %s", field, docKey.getName()));
+        }
         FieldInfo fi = manager.getFieldInfo(field);
         if(field != null && fi == null) {
             logger.warning(String.format("Can't add term to undefined field %s", field));
