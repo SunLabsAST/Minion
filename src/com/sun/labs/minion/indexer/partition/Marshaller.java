@@ -40,6 +40,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -151,9 +152,9 @@ public class Marshaller implements Configurable {
         }
     }
 
-    public void marshall(InvFileMemoryPartition part) {
+    public void marshall(InvFileMemoryPartition part, CountDownLatch completion) {
         try {
-            toMarshall.put(new MPHolder(part, new Date()));
+            toMarshall.put(new MPHolder(part, completion, new Date()));
         } catch(InterruptedException ex) {
             logger.warning("Marshaller interrupted during put");
         }
@@ -235,12 +236,15 @@ public class Marshaller implements Configurable {
     class MPHolder {
 
         public InvFileMemoryPartition part;
+        
+        public CountDownLatch completion;
 
         public Date time;
 
-        public MPHolder(InvFileMemoryPartition part, Date t) {
+        public MPHolder(InvFileMemoryPartition part, CountDownLatch completion, Date time) {
             this.part = part;
-            time = t;
+            this.completion = completion;
+            this.time = time;
         }
     }
 
@@ -309,6 +313,7 @@ public class Marshaller implements Configurable {
 
         private void marshall(MPHolder mph, PartitionOutput partOut) throws IOException, InterruptedException {
             if(partOut != null) {
+                partOut.setCompletion(mph.completion);
                 PartitionOutput ret = mph.part.marshall(partOut);
                 mph.part.clear();
                 mpPool.put(mph.part);

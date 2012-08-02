@@ -5,6 +5,7 @@ import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.IDMap;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary.Renumber;
 import com.sun.labs.minion.indexer.dictionary.NameEncoder;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
+import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
 import com.sun.labs.minion.indexer.partition.MemoryPartition;
 import com.sun.labs.minion.indexer.partition.PartitionHeader;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 
 /**
@@ -101,6 +103,8 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     private String name;
 
     private boolean started = false;
+    
+    private CountDownLatch completion;
 
     public AbstractPartitionOutput(PartitionManager manager) throws IOException {
         this.partitionManager = manager;
@@ -286,6 +290,16 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
     }
 
     @Override
+    public void setCompletion(CountDownLatch completion) {
+        this.completion = completion;
+    }
+
+    @Override
+    public CountDownLatch getCompletion() {
+        return completion;
+    }
+
+    @Override
     public void flushVectorLengths() throws IOException {
         if(vectorLengthsBuffer.position() > 0) {
             //
@@ -332,6 +346,14 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
 
         if(keys != null && !keys.isEmpty()) {
             partitionManager.addNewPartition(partitionNumber, keys);
+            
+            //
+            // If there's a completion latch for this partition, then count
+            // it down.
+            if(completion != null) {
+                completion.countDown();
+                completion = null;
+            }
         }
         started = false;
     }
@@ -346,6 +368,14 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
         }
         vectorLengthsBuffer.clear();
         deletionsBuffer.clear();
+        if(completion != null) {
+            //
+            // If we got here, some bad stuff went down and someone is blocked
+            // waiting on a flush or dump.  Let them continue even though things went
+            // pear-shaped.
+            completion.countDown();
+        }
+        completion = null;
     }
 
     @Override

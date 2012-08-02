@@ -51,8 +51,11 @@ public class InvFileMemoryPartition extends MemoryPartition {
      */
     private MemoryField[] fields;
 
+    /**
+     * The key for the document that we're currently processing.
+     */
     private IndexEntry<String> docKey;
-
+    
     public InvFileMemoryPartition() {
         super();
     }

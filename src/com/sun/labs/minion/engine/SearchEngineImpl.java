@@ -44,6 +44,7 @@ import com.sun.labs.minion.Searcher;
 import com.sun.labs.minion.SimpleIndexer;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.WeightedField;
+import com.sun.labs.minion.indexer.FlushDocument;
 import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -105,6 +106,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -273,8 +275,6 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     private MemoryMXBean memBean;
 
     long hwMark;
-    
-    private Indexable flushDoc = new IndexableMap("SearchEngineImpl-flush");
     
     private Indexable closeDoc = new IndexableMap("SearchEngineImpl-close");
 
@@ -473,8 +473,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         invFilePartitionManager.removeIndexListener(il);
     }
 
-    public void checkDump()
-            throws SearchEngineException {
+    public void checkDump() throws SearchEngineException {
         if(checkLowMemory()) {
             dump();
         }
@@ -482,29 +481,50 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
     /**
      * Dumps any data currently held in memory to the disk via our configured
-     * dumper.
+     * dumper.  This will not wait for indexing to finish.
      */
     protected void dump() throws SearchEngineException {
-        for(int i = 0; i < indexers.length; i++) {
-            indexers[i].marshall();
+        CountDownLatch completion = new CountDownLatch(indexers.length);
+        for(Indexer indexer : indexers) {
+            indexer.dump(completion);
+        }
+        try {
+            completion.await(60, TimeUnit.SECONDS);
+        } catch (InterruptedException ex) {
+            logger.warning(String.format("Interrupted during dump"));
         }
     }
 
-    /**
-     * Flushes the indexed material currently held in memory to the disk,
-     * making it available for searching.
-     * @throws com.sun.labs.minion.SearchEngineException If there is any error
-     * flushing the in-memory data.
-     */
     @Override
-    public synchronized void flush() throws SearchEngineException {
+    public void flush() throws SearchEngineException {
+        internalFlush(new CountDownLatch(indexers.length));
+    }
 
+    @Override
+    public void asyncFlush() throws SearchEngineException {
+        internalFlush(null);
+    }
+
+    private void internalFlush(CountDownLatch completion) throws
+            SearchEngineException {
         if(invFilePartitionManager == null) {
             return;
         }
 
+        FlushDocument flushDoc = new FlushDocument(completion);
+
         for(Indexer indexer : indexers) {
             indexer.index(flushDoc);
+        }
+
+        //
+        // If we have a latch, then wait on it now.
+        if(completion != null) {
+            try {
+                completion.await(10, TimeUnit.SECONDS);
+            } catch(InterruptedException ex) {
+                logger.warning(String.format("Interrupted waiting for flush"));
+            }
         }
 
         if(metaDataStore != null) {
@@ -1702,13 +1722,13 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         private boolean finished;
 
-        private boolean flushRequested;
-        
         private String key;
         
         private int nIndexed;
         
         private int docsPerPart;
+        
+        private CountDownLatch dumpNow;
         
         public Indexer() {
             this(-1, 2);
@@ -1741,15 +1761,15 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                     
                     //
                     // Process a flush request.
-                    if(doc == flushDoc) {
-                        marshall();
+                    if(doc instanceof FlushDocument) {
+                        marshall(((FlushDocument) doc).getCompletion());
                         continue;
                     }
                     
                     //
                     // We're done.  Flush and return.
                     if(doc == closeDoc) {
-                        marshall();
+                        marshall(null);
                         break;
                     }
                     
@@ -1758,8 +1778,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                     if(doc != null) {
                         indexInternal(doc);
                         if(docsPerPart > 0 && nIndexed == docsPerPart) {
-                            marshall();
+                            marshall(null);
                         }
+                    }
+                    if(dumpNow != null) {
+                        marshall(dumpNow);
                     }
                 } catch(InterruptedException ex) {
                     return;
@@ -1770,11 +1793,6 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         public void index(Indexable doc) {
             try {
                 indexingQueue.put(doc);
-//                if(!indexingQueue.offer(doc, 5, TimeUnit.SECONDS)) {
-//                    logger.log(Level.SEVERE, String.format("Unable to put %s on indexing queue for %s", 
-//                            doc.getKey(),
-//                            Thread.currentThread().getName()));
-//                }
             } catch(InterruptedException ex) {
                 Logger.getLogger(SearchEngineImpl.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -1788,16 +1806,25 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             nIndexed++;
         }
         
-        public void flush() {
-            flushRequested = true;
+        /**
+         * Requests an immediate dump of data held in memory. "Immediate" is 
+         * defined as after the current document has finished indexing.
+         */
+        public void dump(CountDownLatch completion) {
+            if(dumpNow != null) {
+                //
+                // We're already awaiting a dump, send them on their way.
+                completion.countDown();
+            }
+            dumpNow = completion;
         }
 
         public void purge() {
             part = new InvFileMemoryPartition(invFilePartitionManager);
         }
 
-        public void marshall() {
-            marshaller.marshall(part);
+        public void marshall(CountDownLatch completion) {
+            marshaller.marshall(part, completion);
             try {
                 part = mpPool.take();
                 part.start();

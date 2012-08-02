@@ -11,6 +11,7 @@ import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * An interface for things that want to write partition data.
@@ -82,4 +83,8 @@ public interface PartitionOutput {
     public void cleanUp();
 
     public void close() throws IOException;
+    
+    public void setCompletion(CountDownLatch completion);
+    
+    public CountDownLatch getCompletion();
 }

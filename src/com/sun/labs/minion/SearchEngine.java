@@ -292,17 +292,27 @@ public interface SearchEngine extends Searcher {
      * @see SimpleIndexer#indexDocument(Document)
      *
      */
-    public void index(Document document)
-            throws SearchEngineException;
+    public void index(Document document) throws SearchEngineException;
 
     /**
      * Flushes the indexed material currently held in memory to the disk,
-     * making it available for searching.
+     * making it available for searching. Control will not return to the caller
+     * until the data is available for searching, which may take some time. If 
+     * you wish to get control back immediately, see {@link #asyncFlush()}.
+     * 
      * @throws com.sun.labs.minion.SearchEngineException if there is any error
-     * flusing the data to disk
+     * flushing the data to disk
      */
-    public void flush()
-            throws SearchEngineException;
+    public void flush() throws SearchEngineException;
+
+    /**
+     * Flushes the indexed material currently held in memory to the disk, making
+     * it available for searching.
+     *
+     * @throws com.sun.labs.minion.SearchEngineException if there is any error
+     * flushing the data to disk
+     */
+    public void asyncFlush() throws SearchEngineException;
 
     /**
      * Checks to see if a document is in the index.
