@@ -1497,6 +1497,28 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     }
     
     /**
+     * Gets a pipeline that can be used to process a string into a list of
+     * query terms for a given field.
+     * @param field the field for which we want a query pipeline.
+     * @return the query pipeline associated with the field, or null if the
+     * field is not tokenized.
+     */
+    public QueryPipeline getQueryPipeline(String field) {
+        FieldInfo fi = getFieldInfo(field);
+        if(fi == null || !fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
+            return null;
+        }
+        
+        PipelineFactory pf = (PipelineFactory) cm.lookup(fi.getPipelineFactoryName());
+        if(pf == null) {
+            logger.warning(String.format("No pipeline factory for %s", field));
+            return null;
+        }
+        
+        return pf.getQueryPipeline(this);
+    }
+    
+    /**
      * Gets a string description of the search engine.
      * @return a string description of the search engine.
      */

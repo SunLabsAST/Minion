@@ -1749,17 +1749,11 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                     return true;
                 }
                 
-                boolean debug = mapper != null && curr.getName().equals("13938");
-
                 //
                 // Go ahead and map the entry.
                 QueryEntry foo = curr;
                 curr = (QueryEntry) mapper.map(curr);
                 
-                if(debug) {
-                    logger.info(String.format("%s %s: %s", foo.getPartition(), foo.getName(), curr));
-                }
-
                 //
                 // If this entry is not to appear in the merged dictionary,
                 // then try the next entry.

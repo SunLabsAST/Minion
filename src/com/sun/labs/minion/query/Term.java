@@ -133,39 +133,13 @@ public class Term extends Element implements Serializable {
         if(!modifiers.contains(Modifier.CASE)) {
             term = CharUtils.toLowerCase(term);
         }
-        
-        //
-        // Start by throwing the term into a dummy document that we'll
-        // feed through a pipeline to process the term.  This will apply
-        // any further changes (such as stemming) that might be defined
-        // in the query configuration.
-        pipeline.process(term);
-        String[] tokens = pipeline.getTokens();
 
         //
-        // See what we got out.  If we broke into multiple tokens, make a
-        // phrase out of what was entered.
-        QueryElement ret = null;
-        if (tokens.length > 1) {
-            ArrayList<QueryElement> qes = new ArrayList<QueryElement>();
-            for (String t : tokens) {
-                DictTerm dt = new DictTerm(t);
-                setModifiers(dt);
-                dt.setTermWeight(termWeight);
-                qes.add(dt);
-            }
-            ret = new Phrase(qes);
-        } else if (tokens.length == 1) {
-            DictTerm dt = new DictTerm(tokens[0]);
-            setModifiers(dt);
-            ret = dt;
-        } else {
-            // The whole thing was tokenized away
-            DictTerm dt = new DictTerm("");
-            setModifiers(dt);
-            ret = dt;
-        }
-        return ret;
+        // We won't process the term, because the user said it was a single
+        // term, eh?
+        DictTerm dt = new DictTerm(term);
+        setModifiers(dt);
+        return dt;
     }
     
     protected void setModifiers(DictTerm term) {
