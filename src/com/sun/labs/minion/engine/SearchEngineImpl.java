@@ -1276,8 +1276,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         if(invFilePartitionManager != null) {
             invFilePartitionManager.purge();
-            for(int i = 0; i < indexers.length; i++) {
-                indexers[i].purge();
+            for(Indexer indexer : indexers) {
+                indexer.purge();
             }
         }
         try {
@@ -1820,7 +1820,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
 
         public void purge() {
-            part = new InvFileMemoryPartition(invFilePartitionManager);
+            indexingQueue.clear();
+            part.clear();
+            if(dumpNow != null) {
+                dumpNow.countDown();
+            }
         }
 
         public void marshall(CountDownLatch completion) {

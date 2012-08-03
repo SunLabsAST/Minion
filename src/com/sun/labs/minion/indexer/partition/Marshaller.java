@@ -226,7 +226,6 @@ public class Marshaller implements Configurable {
         flushThread = new Thread(new FlushThread());
         flushThread.setName("Flusher");
         flushThread.start();
-
     }
 
     public String getName() {
@@ -263,25 +262,41 @@ public class Marshaller implements Configurable {
                     // we're finished.
                     MPHolder mph = toMarshall.poll(pollInterval, TimeUnit.MILLISECONDS);
                     PartitionOutput partOut = null;
-                    if(mph != null && mph.time.after(partitionManager.getLastPurgeTime())) {
-                        try {
+                    if(mph != null) {
+                        //
+                        // If this partition was added after the time of the last
+                        // purge, then marshall it.
+                        if(mph.time.after(partitionManager.getLastPurgeTime())) {
+                            try {
 
-                            partOut = poPool.take();
-                            marshall(mph, partOut);
+                                partOut = poPool.take();
+                                marshall(mph, partOut);
 
-                            Merger m = partitionManager.getMerger();
-                            if(m != null) {
-                                m.run();
+                                Merger m = partitionManager.getMerger();
+                                if(m != null) {
+                                    m.run();
+                                }
+                            } catch(Exception ex) {
+                                logger.log(Level.SEVERE,
+                                           "Error marshalling partition, continuing",
+                                           ex);
+                                partOut.cleanUp();
                             }
-                        } catch(Exception ex) {
-                            logger.log(Level.SEVERE,
-                                    "Error marshalling partition, continuing", ex);
-                            partOut.cleanUp();
+                        } else {
+                            //
+                            // This one was queued before the last purge, so
+                            // clear it out and countdown anyone waiting on it.
+                            mph.part.clear();
+                            if(mph.completion != null) {
+                                mph.completion.countDown();
+                            }
                         }
                     }
                 } catch(InterruptedException ex) {
                     logger.log(Level.WARNING,
-                            String.format("Dumper interrupted during poll, exiting with %d partitions waiting", toMarshall.size()));
+                               String.format(
+                            "Dumper interrupted during poll, exiting with %d partitions waiting",
+                                             toMarshall.size()));
                     return;
                 }
             }
@@ -313,6 +328,9 @@ public class Marshaller implements Configurable {
 
         private void marshall(MPHolder mph, PartitionOutput partOut) throws IOException, InterruptedException {
             if(partOut != null) {
+                //
+                // Let the partition output know if there's a latch to signal 
+                // when the marshall and flush has finished.
                 partOut.setCompletion(mph.completion);
                 PartitionOutput ret = mph.part.marshall(partOut);
                 mph.part.clear();
