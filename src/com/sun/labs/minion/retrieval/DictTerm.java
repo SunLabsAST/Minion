@@ -550,7 +550,7 @@ public class DictTerm extends QueryTerm implements Comparator {
                         feat);
             }
 
-            posns = new int[part.getPartitionManager().getMetaFile().size()][];
+            posns = new int[part.getPartitionManager().getMetaFile().size()+1][];
         }  else {
             for(int i = 0; i < posns.length; i++) {
                 if(posns[i] != null) {
