@@ -1122,6 +1122,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         // Special case of a single partition, we just need to iterate through
         // the entries and copy out the data, so no need for messing with the heap.
         int nMerged = 0;
+        int nWritten = 0;
         int tsid = 1;
         if(bundles.length == 1) {
             DictionaryIterator di = null;
@@ -1143,6 +1144,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     TermStatsIndexEntry tse = new TermStatsIndexEntry((String) qe.getName(), tsid++);
                     tse.getTermStats().add(qe);
                     termStatsDictOut.write(tse);
+                    nWritten++;
                 }
                 nMerged++;
                 if(nMerged % 50000 == 0 && logger.isLoggable(Level.FINER)) {
@@ -1220,6 +1222,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 }
                 if(tse.getN() > 1) {
                     termStatsDictOut.write(tse);
+                    nWritten++;
                 }
                 nMerged++;
                 if(nMerged % 100000 == 0 && logger.isLoggable(Level.FINER)) {
@@ -1231,7 +1234,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
             termStatsDictOut.finish();
         }
-        return nMerged > 0;
+        return nWritten > 0;
     }
 
     public void calculateVectorLengths(PartitionOutput partOut) throws java.io.IOException {
