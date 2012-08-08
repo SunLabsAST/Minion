@@ -142,8 +142,8 @@ public class Marshaller implements Configurable {
     public Marshaller() {
     }
 
-    public void setMemoryPartitionQueue(BlockingQueue<InvFileMemoryPartition> mpq) {
-        this.mpPool = mpq;
+    public void setMemoryPartitionQueue(BlockingQueue<InvFileMemoryPartition> mpPool) {
+        this.mpPool = mpPool;
     }
     
     public void setLongIndexingRun(boolean longIndexingRun) {
@@ -239,6 +239,10 @@ public class Marshaller implements Configurable {
         public CountDownLatch completion;
 
         public Date time;
+        
+        public MPHolder(CountDownLatch completion) {
+            this.completion = completion;
+        }
 
         public MPHolder(InvFileMemoryPartition part, CountDownLatch completion, Date time) {
             this.part = part;

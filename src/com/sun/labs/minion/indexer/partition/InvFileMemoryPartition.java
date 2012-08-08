@@ -125,7 +125,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
         return docDict.get(key) != null;
     }
 
-    private MemoryField getMF(FieldInfo fi) {
+    public MemoryField getMF(FieldInfo fi) {
 
         //
         // Non-field stuff goes into the 0th position.
@@ -174,6 +174,21 @@ public class InvFileMemoryPartition extends MemoryPartition {
         MemoryField mf = getMF(fi);
         mf.addData(docKey.getID(), val);
     }
+    
+    /**
+     * Saves a value to this document, without processing it further.
+     */
+    public void saveFieldValue(FieldInfo fi, Object val) {
+        if(val == null) {
+            logger.warning(String.format(
+                    "Ignoring null value for field %s in doc %s", fi.getName(),
+                    docKey.
+                    getName()));
+            return;
+        }
+        MemoryField mf = getMF(fi);
+        mf.save(docKey.getID(), val);
+    }
 
     /**
      * Adds a term to a single field in this document.
@@ -181,10 +196,16 @@ public class InvFileMemoryPartition extends MemoryPartition {
     public void addTerm(String field, String term, int count) {
         if(term == null) {
             logger.warning(String.format("Ignoring null term for field %s in doc %s", field, docKey.getName()));
+            return;
         }
         FieldInfo fi = manager.getFieldInfo(field);
         if(field != null && fi == null) {
             logger.warning(String.format("Can't add term to undefined field %s", field));
+            return;
+        }
+        if(!fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
+            logger.warning(String.format("Can't add terms to an unindexed field %s", field));
+            return;
         }
         MemoryField mf = getMF(fi);
         Token t = new Token(term, count);

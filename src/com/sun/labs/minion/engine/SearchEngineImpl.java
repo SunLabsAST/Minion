@@ -33,6 +33,7 @@ import com.sun.labs.minion.IndexListener;
 import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.MetaDataStore;
+import com.sun.labs.minion.Posting;
 import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryException;
 import com.sun.labs.minion.QueryPipeline;
@@ -80,6 +81,7 @@ import com.sun.labs.minion.retrieval.parser.Transformer;
 import com.sun.labs.minion.retrieval.parser.WebParser;
 import com.sun.labs.minion.retrieval.parser.WebTransformer;
 import com.sun.labs.minion.util.CDateParser;
+import com.sun.labs.minion.util.HeapDumper;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigDouble;
@@ -94,6 +96,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -475,23 +478,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
     public void checkDump() throws SearchEngineException {
         if(checkLowMemory()) {
-            dump();
-        }
-    }
-
-    /**
-     * Dumps any data currently held in memory to the disk via our configured
-     * dumper.  This will not wait for indexing to finish.
-     */
-    protected void dump() throws SearchEngineException {
-        CountDownLatch completion = new CountDownLatch(indexers.length);
-        for(Indexer indexer : indexers) {
-            indexer.dump(completion);
-        }
-        try {
-            completion.await(60, TimeUnit.SECONDS);
-        } catch (InterruptedException ex) {
-            logger.warning(String.format("Interrupted during dump"));
+            //
+            // Synchronous flush.
+            flush();
         }
     }
 
@@ -521,7 +510,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         // If we have a latch, then wait on it now.
         if(completion != null) {
             try {
-                completion.await(10, TimeUnit.SECONDS);
+                completion.await(60, TimeUnit.SECONDS);
             } catch(InterruptedException ex) {
                 logger.warning(String.format("Interrupted waiting for flush"));
             }
@@ -1593,34 +1582,19 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
      * @return true if memory is low
      */
     public boolean checkLowMemory() {
-//        MemoryUsage mu = memBean.getHeapMemoryUsage();
-//
-//        if(state == 1 && mu.getUsed() > afterGC) {
-//            logger.info(String.format("Big heap at %,d", mu.getUsed()));
-//            HeapDumper.dumpHeap("bigheap", false);
-//        } else if(mu.getUsed() > bigGigLimit) {
-//            if(state == 0) {
-//                System.gc();
-//                mu = memBean.getHeapMemoryUsage();
-//                afterGC = mu.getUsed();
-//                logger.info(String.format("Baseline at %,d", afterGC));
-//                afterGC += (long) (0.7 * 1000L * 1000L * 1000L);
-//                HeapDumper.dumpHeap("baseline", false);
-//                state++;
-//            }
-//        }
-        
+        MemoryUsage mu = memBean.getHeapMemoryUsage();
+
         //
         // If we have less than 15% of all our memory free, then
         // memory is low.
-//        double freePercent = (mu.getMax() - mu.getUsed()) / (double) mu.getMax();
-//        if(freePercent < 0.01) {
-//            logger.info(String.format(
-//                    "Memory is low %.1fMB used %.1fMB max %.1f%% free",
-//                    toMB(mu.getUsed()), toMB(mu.getMax()),
-//                    freePercent * 100));
-//            return true;
-//        }
+        double freePercent = (mu.getMax() - mu.getUsed()) / (double) mu.getMax();
+        if(freePercent < 0.01) {
+            logger.info(String.format(
+                    "Memory is low %.1fMB used %.1fMB max %.1f%% free",
+                    toMB(mu.getUsed()), toMB(mu.getMax()),
+                    freePercent * 100));
+            return true;
+        }
         return false;
     }
 
@@ -1753,12 +1727,19 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         private CountDownLatch dumpNow;
         
         public Indexer() {
-            this(-1, 2);
+            try {
+                part = mpPool.take();
+                part.start();
+            } catch(InterruptedException ex) {
+                throw new IllegalStateException("Error getting memory partition");
+            }
         }
         
         public Indexer(int docsPerPart, int queueSize) {
             this.docsPerPart = docsPerPart;
-            indexingQueue = new ArrayBlockingQueue<Indexable>(queueSize);
+            if(queueSize > 0) {
+                indexingQueue = new ArrayBlockingQueue<Indexable>(queueSize);
+            }
             try {
                 part = mpPool.take();
                 part.start();
@@ -1813,10 +1794,15 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
         
         public void index(Indexable doc) {
-            try {
-                indexingQueue.put(doc);
-            } catch(InterruptedException ex) {
-                Logger.getLogger(SearchEngineImpl.class.getName()).log(Level.SEVERE, null, ex);
+            if(indexingQueue == null) {
+                indexInternal(doc);
+            } else {
+                try {
+                    indexingQueue.put(doc);
+                } catch(InterruptedException ex) {
+                    Logger.getLogger(SearchEngineImpl.class.getName()).
+                            log(Level.SEVERE, null, ex);
+                }
             }
         }
 
@@ -1842,7 +1828,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
 
         public void purge() {
-            indexingQueue.clear();
+            if(indexingQueue != null) {
+                indexingQueue.clear();
+            }
             part.clear();
             if(dumpNow != null) {
                 dumpNow.countDown();
@@ -1863,15 +1851,40 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         @Override
         public void finish() {
             finished = true;
+            if(indexingQueue == null) {
+                marshaller.marshall(part, null);
+            }
         }
 
         @Override
         public void indexDocument(Indexable doc) throws SearchEngineException {
-            index(doc);
+            indexInternal(doc);
         }
 
         @Override
         public void indexDocument(Document doc) throws SearchEngineException {
+            startDocument(doc.getKey());
+            for(Iterator<Map.Entry<String, List<Posting>>> i = doc.getPostings();
+                    i.hasNext();) {
+                Map.Entry<String, List<Posting>> e = i.next();
+                String field = e.getKey();
+                FieldInfo fi = getFieldInfo(field);
+                
+                //
+                // We'll only process the postings for non-saved fields, as
+                // saved fields will get handled below.
+                for(Posting p : e.getValue()) {
+                    addTerm(field, p.getTerm(), p.getFreq());
+                }
+            }
+            for(Iterator<Map.Entry<String,List>> i = doc.getSavedFields(); i.hasNext();) {
+                Map.Entry<String,List> e = i.next();
+                FieldInfo fi = getFieldInfo(e.getKey());
+                for(Object o : e.getValue()) {
+                    part.saveFieldValue(fi, o);
+                }
+            }
+            endDocument();
         }
 
         @Override

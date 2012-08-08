@@ -56,8 +56,10 @@ public class HeapDumper {
         switch (args.length) {
             case 2:
                 live = args[1].equals("true");
+                break;
             case 1:
                 fileName = args[0];
+                break;
         }
 
         // dump the heap

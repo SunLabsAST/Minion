@@ -557,9 +557,7 @@ public interface SearchEngine extends Searcher {
      * not</em> be added to the index.
      * @param field the field for which we want a document vector.  If this
      * parameter is <code>null</code>, then a vector containing the terms from
-     * all vectored fields in the document is returned. If this value is the
-     * empty string, then a vector for the contents of the document that are
-     * not in any field are returned.  If this value is the name of a field
+     * the default fields in the document is returned.  If this value is the name of a field
      * that was not vectored during indexing, an empty vector will be returned.
      * @return the vector for the given document, taking into account the 
      * restrictions in the <code>field</code> parameter
