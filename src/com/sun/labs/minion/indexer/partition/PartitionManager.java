@@ -2805,20 +2805,26 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 if(logger.isLoggable(Level.FINE)) {
                     logger.fine(String.format("TermStatsKeeper: %d %d %.2f", lastNumDocs, numDocs, changedRatio * 100));
                 }
-                NanoWatch nw = new NanoWatch();
-                nw.start();
-                try {
-                    generateTermStats();
-                } catch(FileLockException ex) {
-                    logger.log(Level.SEVERE, String.format("Error recalculating term stats"), ex);
-                } catch(IOException ex) {
-                    logger.log(Level.SEVERE, String.format("Error recalculating term stats"), ex);
+                if(!activeParts.isEmpty()) {
+                    NanoWatch nw = new NanoWatch();
+                    nw.start();
+                    try {
+                        generateTermStats();
+                    } catch(FileLockException ex) {
+                        logger.log(Level.SEVERE, String.format(
+                                "Error recalculating term stats"), ex);
+                    } catch(IOException ex) {
+                        logger.log(Level.SEVERE, String.format(
+                                "Error recalculating term stats"), ex);
+                    }
+                    nw.stop();
+                    if(logger.isLoggable(Level.FINE)) {
+                        logger.fine(String.format("Generated term stats in %s",
+                                                  Util.millisToTimeString(nw.
+                                getTimeMillis())));
+                    }
+                    lastNumDocs = numDocs;
                 }
-                nw.stop();
-                if(logger.isLoggable(Level.FINE)) {
-                    logger.fine(String.format("Generated term stats in %s", Util.millisToTimeString(nw.getTimeMillis())));
-                }
-                lastNumDocs = numDocs;
             }
         }
     }
