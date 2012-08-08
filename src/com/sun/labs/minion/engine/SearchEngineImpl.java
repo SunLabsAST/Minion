@@ -513,8 +513,13 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 completion.await(60, TimeUnit.SECONDS);
             } catch(InterruptedException ex) {
                 logger.warning(String.format("Interrupted waiting for flush"));
+                return;
             }
         }
+        
+        //
+        // OK, the document's been indexed by everyone.  Let's flush the marshaller.
+        marshaller.flush();
 
         if(metaDataStore != null) {
             try {
@@ -1316,8 +1321,13 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             return;
         }
         try {
-            invFilePartitionManager.mergeAll();
+            //
+            // Get the most up-to-date term stats.
             invFilePartitionManager.generateTermStats();
+            
+            //
+            // A single partition with new vector lengths.
+            invFilePartitionManager.mergeAll();
         } catch(Exception e) {
             throw new SearchEngineException("Error optimizing index", e);
         }
