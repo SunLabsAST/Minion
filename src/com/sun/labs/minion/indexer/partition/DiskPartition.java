@@ -297,7 +297,9 @@ public class DiskPartition extends Partition implements Closeable {
      * which have the document keys as their names.
      */
     public Iterator getDocumentIterator() {
-        return docDict.iterator();
+        DictionaryIterator di = docDict.iterator();
+        di.setDeletionMap(getDeletedDocumentsMap());
+        return di;
     }
 
     /**

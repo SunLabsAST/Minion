@@ -417,6 +417,7 @@ public class ArrayBuffer extends StdBufferImpl implements Cloneable {
         ret.units = units;
         ret.pos   = pos;
         ret.off   = off;
+        ret.lim   = lim;
         return ret;
     }
 

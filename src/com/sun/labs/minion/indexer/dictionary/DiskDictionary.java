@@ -1893,6 +1893,12 @@ public class DiskDictionary implements Dictionary {
         protected boolean returnCurr;
 
         private boolean unbufferedPostings;
+        
+        /**
+         * A map of IDs that have been removed from the system and that should,
+         * therefore not be returned from the iterator.
+         */
+        private ReadableBuffer deletionMap;
 
         /**
          * Creates a DictionaryIterator that iterates over a range of
@@ -1999,6 +2005,10 @@ public class DiskDictionary implements Dictionary {
             bufferedPostings = getBufferedInputs();
         }
 
+        public void setDeletionMap(ReadableBuffer deletionMap) {
+            this.deletionMap = deletionMap;
+        }
+
         /**
          * Modifies the iterator so that it only returns entries whose names have
          * actually occurred in the indexed material.  So, for example, if the word
@@ -2015,6 +2025,7 @@ public class DiskDictionary implements Dictionary {
          * that actually occurred in the indexed material will be returned.
          * If <code>false</code> all entries will be returned.
          */
+        @Override
         public void setActualOnly(boolean actualOnly) {
             this.actualOnly = actualOnly && casedEntries;
         }
@@ -2050,6 +2061,13 @@ public class DiskDictionary implements Dictionary {
                 } catch(StringIndexOutOfBoundsException sib) {
                     logger.info(part + " " + pos + " " + prevName);
                     throw sib;
+                }
+                
+                //
+                // If we're skipping deleted IDs, and this ID matches, then
+                // carry on.
+                if(deletionMap != null && deletionMap.test(curr.getID())) {
+                    continue;
                 }
 
                 //
