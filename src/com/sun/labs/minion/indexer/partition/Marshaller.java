@@ -458,6 +458,13 @@ public class Marshaller implements Configurable {
                     // Nothing got dumped, but we still need to put the partition
                     // output back in the pool!
                     poPool.put(partOut);
+                    
+                    //
+                    // We also need to countdown the completion latch that we
+                    // were given.
+                    if(mph.completion != null) {
+                        mph.completion.countDown();
+                    }
                 }
             }
         }

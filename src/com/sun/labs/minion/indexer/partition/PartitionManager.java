@@ -1902,6 +1902,27 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     /**
+     * Optimizes the index for querying with a single partition and the most 
+     * up-to-date term statistics.
+     * @throws IOException if there is any error generating term statistics
+     * @throws FileLockException if there is any error locking the files during
+     * term stats generation.
+     */
+    public synchronized void optimize() throws IOException, FileLockException {
+        
+        if(activeParts.size() > 1) {
+            //
+            // Get the most up-to-date term stats.
+            generateTermStats();
+
+            //
+            // A single partition with new vector lengths.
+            mergeAll();
+        }
+        
+    }
+
+    /**
      * Merges all partitions from the active list into a new partition.
      * The merged partitions are removed from the active list, and the new
      * partition is then placed there.

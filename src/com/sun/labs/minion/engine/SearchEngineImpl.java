@@ -1321,13 +1321,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             return;
         }
         try {
-            //
-            // Get the most up-to-date term stats.
-            invFilePartitionManager.generateTermStats();
-            
-            //
-            // A single partition with new vector lengths.
-            invFilePartitionManager.mergeAll();
+            invFilePartitionManager.optimize();
         } catch(Exception e) {
             throw new SearchEngineException("Error optimizing index", e);
         }
@@ -1878,11 +1872,6 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                     i.hasNext();) {
                 Map.Entry<String, List<Posting>> e = i.next();
                 String field = e.getKey();
-                FieldInfo fi = getFieldInfo(field);
-                
-                //
-                // We'll only process the postings for non-saved fields, as
-                // saved fields will get handled below.
                 for(Posting p : e.getValue()) {
                     addTerm(field, p.getTerm(), p.getFreq());
                 }
