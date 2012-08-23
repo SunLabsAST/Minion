@@ -55,9 +55,6 @@ public class MemoryField extends Field {
                         getPartitionManager().getEngine()).
                         getConfigurationManager().
                         lookup(pipelineFactoryName);
-                if(info.getName().equals("subject")) {
-                    logger.info(String.format("got factory: %s %s", pipelineFactoryName, pf));
-                }
                 if(pf == null) {
                     logger.log(Level.SEVERE, String.format(
                             "Unknown pipline factory name %s",

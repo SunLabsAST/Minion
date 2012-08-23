@@ -27,6 +27,7 @@ import com.sun.labs.minion.Document;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.Passage;
@@ -1743,6 +1744,33 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add("simi", "Query", new CommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                if(args.length < 3) {
+                    return "Must specify a field and document text";
+                }
+
+                String field = args[1];
+                String docText = join(args, 2, args.length, " ");
+                IndexableMap doc = new IndexableMap("doc-key");
+                doc.put(field, docText);
+                DocumentVector dv = engine.getDocumentVector(doc, field);
+                
+                if(dv != null) {
+                    ResultSet rs = dv.findSimilar("-score");
+                    displayResults(rs);
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field [document text] Find documents similar to the given one";
+            }
+        });
+
         shell.add("dv", "Terms", new CommandInterface() {
 
             @Override

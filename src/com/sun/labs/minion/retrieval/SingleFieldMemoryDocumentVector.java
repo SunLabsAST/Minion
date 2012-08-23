@@ -98,18 +98,10 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
         // Get the dictionary from which we'll draw the vector and the one
         // from which we'll draw terms, then look up the document.
         MemoryDictionary<String> vecDict;
-        MemoryDictionary<String> termDict;
         if(mf.isStemmed()) {
             vecDict = mf.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
-            termDict = mf.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
         } else {
             vecDict = mf.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
-            if(mf.isUncased()) {
-                termDict = mf.getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
-            } else {
-                termDict = mf.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
-            }
-            
         }
 
         IndexEntry<String> vecEntry = vecDict.get(key);

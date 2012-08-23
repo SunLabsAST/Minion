@@ -71,6 +71,7 @@ import com.sun.labs.minion.retrieval.QueryOptimizer;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
+import com.sun.labs.minion.retrieval.SingleFieldMemoryDocumentVector;
 import com.sun.labs.minion.retrieval.parser.LuceneParser;
 import com.sun.labs.minion.retrieval.parser.LuceneTransformer;
 import com.sun.labs.minion.retrieval.parser.Parser;
@@ -1175,8 +1176,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
         SimpleIndexer si = getSimpleIndexer();
         si.indexDocument(doc);
-        MemoryField mf = ((Indexer) si).getMemoryPartition().getMF(new FieldInfo(field));
-        return null;
+        MemoryField mf = ((Indexer) si).getMemoryPartition().getMF(fi);
+        DocumentVector ret = new SingleFieldMemoryDocumentVector(mf, doc.getKey(), this);
+        return ret;
     }
 
     @Override
