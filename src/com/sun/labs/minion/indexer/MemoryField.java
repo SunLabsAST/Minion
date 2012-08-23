@@ -79,6 +79,10 @@ public class MemoryField extends Field {
     public String[] getPostingsChannelNames() {
         return bundle.getPostingsChannelNames();
     } 
+    
+    public MemoryDictionary getDictionary(MemoryDictionaryBundle.Type type) {
+        return bundle.getDictionary(type);
+    }
 
     public void startDocument(IndexEntry<String> docKey) {
         if(pipeline != null) {

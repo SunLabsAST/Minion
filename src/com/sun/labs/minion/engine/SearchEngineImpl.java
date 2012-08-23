@@ -47,6 +47,7 @@ import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.WeightedField;
 import com.sun.labs.minion.indexer.FlushDocument;
 import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
+import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
@@ -81,7 +82,6 @@ import com.sun.labs.minion.retrieval.parser.Transformer;
 import com.sun.labs.minion.retrieval.parser.WebParser;
 import com.sun.labs.minion.retrieval.parser.WebTransformer;
 import com.sun.labs.minion.util.CDateParser;
-import com.sun.labs.minion.util.HeapDumper;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigDouble;
@@ -1168,8 +1168,14 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     }
     
     public DocumentVector getDocumentVector(Indexable doc, String field) throws SearchEngineException {
+        FieldInfo fi = getFieldInfo(field);
+        if(fi == null || !fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
+            logger.warning(String.format("Can't get document vector for field %s", field));
+            return null;
+        }
         SimpleIndexer si = getSimpleIndexer();
         si.indexDocument(doc);
+        MemoryField mf = ((Indexer) si).getMemoryPartition().getMF(new FieldInfo(field));
         return null;
     }
 
@@ -1762,6 +1768,10 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         public void setDocsPerPart(int docsPerPart) {
             this.docsPerPart = docsPerPart;
+        }
+        
+        public InvFileMemoryPartition getMemoryPartition() {
+            return part;
         }
 
         @Override

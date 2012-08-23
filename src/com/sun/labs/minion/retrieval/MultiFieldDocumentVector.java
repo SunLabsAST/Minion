@@ -88,12 +88,12 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
     /**
      * Creates a document vector with a set of precomputed features.
      *
-     * @param e the engine that we'll use for similarity computations
+     * @param engine the engine that we'll use for similarity computations
      * @param basisFeatures the features to use for the vector.
      */
     public MultiFieldDocumentVector(SearchEngine e,
             WeightedFeature[] basisFeatures) {
-        this.e = e;
+        this.engine = e;
         this.key = null;
         QueryConfig qc = e.getQueryConfig();
         wf = qc.getWeightingFunction();
@@ -177,7 +177,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
     /**
      * Creates a document vector for a given document.
      *
-     * @param e The search engine with which the document is associated.
+     * @param engine The search engine with which the document is associated.
      * @param key The entry from the document dictionary for the given document.
      * @param field The name of the field for which we want the document vector.
      * If this value is
@@ -209,7 +209,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             WeightingFunction wf,
             WeightingComponents wc) {
 
-        this.e = e;
+        this.engine = e;
         this.keyEntry = key;
         this.key = keyEntry.getName();
         if(fields == null) {
@@ -235,7 +235,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
     @Override
     public DocumentVector copy() {
         MultiFieldDocumentVector ret = new MultiFieldDocumentVector();
-        ret.e = e;
+        ret.engine = engine;
         ret.key = key;
         ret.keyEntry = keyEntry;
         ret.fields = fields;
@@ -282,7 +282,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
 
             //
             // Get the data for the field in the partition containing this key.
-            DiskField df = e.getPM().getField(key, fi);
+            DiskField df = engine.getPM().getField(key, fi);
             if(df == null) {
                 continue;
             }
@@ -331,7 +331,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
                 }
                 //
                 // Accumulate the frequency and term stats for this entry.
-                TermStatsImpl tsi = (TermStatsImpl) e.getTermStats(termEntry.getName(), fi);
+                TermStatsImpl tsi = (TermStatsImpl) engine.getTermStats(termEntry.getName(), fi);
                 LocalTermStats lts = tm.get(termEntry.getName());
                 if(lts == null) {
                     lts = new LocalTermStats(termEntry.getName());
@@ -378,7 +378,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
      * Calculates the dot product of this document vector with another.
      *
      * @param dvi another document vector
-     * @return the dot product of the two vectors (i.e. the sum of the products
+     * @return the dot product of the two vectors (i.engine. the sum of the products
      * of the components in each dimension)
      */
     public float dot(MultiFieldDocumentVector dvi) {
@@ -400,7 +400,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
      */
     @Override
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
-        return MultiFieldDocumentVector.findSimilar(e, getFeatures(), 
+        return MultiFieldDocumentVector.findSimilar(engine, getFeatures(), 
                                                         fields, sortOrder, skimPercent, wf, wc);
     } 
     

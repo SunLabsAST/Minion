@@ -29,7 +29,7 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
     /**
      * The search engine that generated this vector.
      */
-    protected transient SearchEngine e;
+    protected transient SearchEngine engine;
 
     /**
      * Words that can be ignored in the vector we're building
@@ -86,7 +86,7 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
      * vector.
      *
      * @param wfv a weighted feature vector
-     * @return the dot product of the two vectors (i.e. the sum of the products
+     * @return the dot product of the two vectors (i.engine. the sum of the products
      * of the components in each dimension)
      */
     public float dot(WeightedFeature[] wfv) {
@@ -126,7 +126,7 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
      * @return the engine
      */
     public SearchEngine getEngine() {
-        return e;
+        return engine;
     }
 
     /**
@@ -296,11 +296,11 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
      * Sets the search engine that this vector will use, which is useful when
      * we've been unserialized and need to get ourselves back into shape.
      *
-     * @param e the engine to use
+     * @param engine the engine to use
      */
     @Override
     public void setEngine(SearchEngine e) {
-        this.e = e;
+        this.engine = e;
         QueryConfig qc = e.getQueryConfig();
         wf = qc.getWeightingFunction();
         wc = qc.getWeightingComponents();

@@ -36,7 +36,7 @@ public class MultiDocumentVectorImpl extends AbstractDocumentVector {
     }
     
     public MultiDocumentVectorImpl(SearchEngine e, List<DocumentVector> components) {
-        this.e = e;
+        this.engine = e;
         this.wf = e.getQueryConfig().getWeightingFunction();
         this.wc = e.getQueryConfig().getWeightingComponents();
         this.components = components;
@@ -109,7 +109,7 @@ public class MultiDocumentVectorImpl extends AbstractDocumentVector {
         MultiDocumentVectorImpl ret = new MultiDocumentVectorImpl();
         ret.components = new ArrayList<DocumentVector>(components);
         ret.fields = new HashSet<FieldInfo>(fields);
-        ret.e = e;
+        ret.engine = engine;
         ret.key = key;
         ret.keyEntry = keyEntry;
         ret.wf = wf;
@@ -122,9 +122,9 @@ public class MultiDocumentVectorImpl extends AbstractDocumentVector {
     @Override
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
         if(fields.size() == 1) {
-            return SingleFieldDocumentVector.findSimilar(e, v, fields.iterator().next(), sortOrder, skimPercent, wf, wc);
+            return SingleFieldDocumentVector.findSimilar(engine, v, fields.iterator().next(), sortOrder, skimPercent, wf, wc);
         } else {
-            return MultiFieldDocumentVector.findSimilar(e, v, fields.toArray(new FieldInfo[0]), sortOrder, skimPercent, wf, wc);
+            return MultiFieldDocumentVector.findSimilar(engine, v, fields.toArray(new FieldInfo[0]), sortOrder, skimPercent, wf, wc);
         }
     }
     

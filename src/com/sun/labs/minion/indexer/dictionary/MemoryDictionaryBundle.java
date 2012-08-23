@@ -172,6 +172,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
     }
 
+    public MemoryDictionary getDictionary(Type type) {
+        return dicts[type.ordinal()];
+    }
+
     public String[] getPostingsChannelNames() {
         String[] max = null;
         for(MemoryDictionary dict : dicts) {

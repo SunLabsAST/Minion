@@ -32,8 +32,10 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
-import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
+import com.sun.labs.minion.indexer.MemoryField;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
+import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
@@ -56,9 +58,9 @@ import java.util.logging.Logger;
  * @see CompositeDocumentVectorImpl for an implementation that can handle
  * features from multiple vectored fields.
  */
-public class SingleFieldDocumentVector extends AbstractDocumentVector implements Serializable {
+public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector implements Serializable {
 
-    private static final Logger logger = Logger.getLogger(SingleFieldDocumentVector.class.getName());
+    private static final Logger logger = Logger.getLogger(SingleFieldMemoryDocumentVector.class.getName());
 
     /**
      * We'll need to send this along when serializing as we're doing our own
@@ -71,111 +73,47 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
      * The field from which this document vector was generated.
      */
     protected transient FieldInfo field;
+    
+    /**
+     * The memory field from which this document vector was generated.
+     */
+    protected transient MemoryField mf;
 
-    public SingleFieldDocumentVector() {
+    public SingleFieldMemoryDocumentVector() {
     }
 
     /**
-     * Creates a document vector for a particular field from a search result.
-     *
-     * @param r The search result for which we want a document vector.
-     * @param field The name of the field for which we want the document vector.
-     * If this value is
-     * <code>null</code> a vector for the whole document will be returned. If
-     * the named field is not a field that was indexed with the vectored
-     * attribute set, the resulting document vector will be empty!
+     * Creates a single fielded document vector from the data stored in an
+     * in-memory field.
      */
-    public SingleFieldDocumentVector(ResultImpl r, FieldInfo field) {
-        this(r.set.getEngine(),
-                r.ag.part.getDocumentDictionary().getByID(r.doc), field);
-    }
-
-    /**
-     * Creates a document vector for a given document.
-     *
-     * @param engine The search engine with which the document is associated.
-     * @param key The entry from the document dictionary for the given document.
-     * @param field The name of the field for which we want the document vector.
-     * If this value is
-     * <code>null</code> a vector for the whole document will be returned. If
-     * this value is the empty string, then a vector for the text not in any
-     * defined field will be returned. If the named field is not a field that
-     * was indexed with the vectored attribute set, the resulting document
-     * vector will be empty!
-     */
-    public SingleFieldDocumentVector(SearchEngine engine,
-            QueryEntry<String> key, 
-            FieldInfo field) {
-        this(engine, key, field, engine.getQueryConfig().getWeightingFunction(),
-             engine.getQueryConfig().getWeightingComponents());
-    }
-
-    public SingleFieldDocumentVector(SearchEngine e,
-            QueryEntry<String> key,
-            FieldInfo field,
-            WeightingFunction wf,
-            WeightingComponents wc) {
-        this.engine = e;
-        this.keyEntry = key;
-        this.key = key.getName();
-        this.field = field;
-        this.wf = wf;
-        this.wc = wc;
-        initFeatures();
-    }
-
-    public SingleFieldDocumentVector(SearchEngine e,
-            WeightedFeature[] basisFeatures,
-            String field) {
-        this.engine = e;
-        QueryConfig qc = e.getQueryConfig();
-        wf = qc.getWeightingFunction();
-        wc = qc.getWeightingComponents();
-        v = basisFeatures.clone();
-
-        //
-        // Compute the length.
-        double ss = 0;
-        for(WeightedFeature feat : v) {
-            ss += feat.getWeight() * feat.getWeight();
-        }
-        length = (float) Math.sqrt(ss);
-        ignoreWords = qc.getVectorZeroWords();
-    }
-
-    /**
-     * Builds the features for the feature vector.
-     */
-    private void initFeatures() {
-
-        //
-        // Get the data for the field in the partition containing this key.
-        DiskField df = engine.getPM().getField(key, field);
-        if(df == null) {
-            v = new WeightedFeature[0];
-            return;
-        }
-
+    public SingleFieldMemoryDocumentVector(MemoryField mf, String key, SearchEngine engine) {
+        this.mf = mf;
+        this.key = key;
+        this.engine = engine;
+        wf = engine.getQueryConfig().getWeightingFunction();
+        wc = engine.getQueryConfig().getWeightingComponents();
+        
         //
         // Get the dictionary from which we'll draw the vector and the one
         // from which we'll draw terms, then look up the document.
-        DiskDictionary<String> vecDict;
-        DiskDictionary<String> termDict;
-        if(df.isStemmed()) {
-            vecDict = df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
-            termDict = df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
+        MemoryDictionary<String> vecDict;
+        MemoryDictionary<String> termDict;
+        if(mf.isStemmed()) {
+            vecDict = mf.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
+            termDict = mf.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
         } else {
-            vecDict = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
-            if(df.isUncased()) {
-                termDict = df.getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
+            vecDict = mf.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+            if(mf.isUncased()) {
+                termDict = mf.getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
             } else {
-                termDict = df.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+                termDict = mf.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
             }
             
         }
 
-        QueryEntry<String> vecEntry = vecDict.getByID(keyEntry.getID());
+        IndexEntry<String> vecEntry = vecDict.get(key);
         if(vecEntry == null) {
+            logger.warning(String.format("No document vector for key %s", key));
             v = new WeightedFeature[0];
             return;
         }
@@ -209,7 +147,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
     
     @Override
     public DocumentVector copy() {
-        SingleFieldDocumentVector ret = new SingleFieldDocumentVector();
+        SingleFieldMemoryDocumentVector ret = new SingleFieldMemoryDocumentVector();
         ret.engine = engine;
         ret.key = key;
         ret.keyEntry = keyEntry;
@@ -261,7 +199,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
      * @return the dot product of the two vectors (i.engine. the sum of the products
      * of the components in each dimension)
      */
-    public float dot(SingleFieldDocumentVector dvi) {
+    public float dot(SingleFieldMemoryDocumentVector dvi) {
         dvi.getFeatures();
         getFeatures();
         return dot(dvi.v);
@@ -322,7 +260,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
      */
     @Override
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
-        return SingleFieldDocumentVector.findSimilar(engine, getFeatures(), 
+        return SingleFieldMemoryDocumentVector.findSimilar(engine, getFeatures(), 
                                                         field, sortOrder, skimPercent, wf, wc);
     }
     
