@@ -11,7 +11,6 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.pipeline.HighlightStage;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -84,7 +83,7 @@ public class HighlightDocumentProcessor implements PassageBuilder {
                             pipelineFactoryName,
                             info.getName()));
                 }
-                pipeline = pf.getHLPipeline();
+                pipeline = pf.getHLPipeline(info);
                 ((HighlightStage) pipeline.getTail()).setField(info);
                 ((HighlightStage) pipeline.getTail()).reset(ag, doc, queryTerms);
                 pipelines.put(info.getName(), pipeline);

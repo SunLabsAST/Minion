@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.pipeline;
 
+import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.SearchEngine;
@@ -82,10 +83,19 @@ public class PipelineFactory implements Configurable {
 
     /**
      * Gets a highlighting pipeline configured according to the configuration.
+     * 
+     * @param info the field that we're highlighting for.
      *
      */
-    public Pipeline getHLPipeline() {
-        return new PipelineImpl(getPipeline(hlStages));
+    public Pipeline getHLPipeline(FieldInfo info) {
+        PipelineImpl pi = new PipelineImpl(getPipeline(hlStages));
+        Stage tail = pi.getTail();
+        if(!(tail instanceof HighlightStage)) {
+            logger.warning(String.format("Non-highlight stage on highlight pipeine!"));
+        } else {
+            ((HighlightStage) tail).setField(info);
+        }
+        return pi;
     }
 
     /**

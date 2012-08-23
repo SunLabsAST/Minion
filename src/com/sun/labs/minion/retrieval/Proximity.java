@@ -25,6 +25,7 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.util.Util;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -191,6 +192,7 @@ public abstract class Proximity extends Operator {
             int[] doFields;
             doFields = new int[part.getPartitionManager().getMetaFile().size() + 1];
             for(FieldInfo fi : searchFields) {
+                logger.info(String.format("single term passages for %s (%d)", fi.getName(), fi.getID()));
                 doFields[fi.getID()] = 1;
             }
 
@@ -206,7 +208,7 @@ public abstract class Proximity extends Operator {
                     if(doFields[f] == 0) {
                         continue;
                     }
-
+                    
                     int[] fposn = fieldPosns[f];
                     if(fposn == null) {
                         continue;
@@ -715,13 +717,25 @@ public abstract class Proximity extends Operator {
     protected static String printCols(int[][] columns, int[] lens) {
         StringBuilder b = new StringBuilder();
         int maxLen = 0;
+        if(lens == null) {
+            lens = new int[columns.length];
+            for(int i = 0; i < lens.length; i++) {
+                lens[i] = columns[i] != null ? columns[i].length : 0;
+            }
+        }
+        
         for(int i = 0; i < lens.length; i++) {
             if(lens[i] > maxLen) {
                 maxLen = lens[i];
             }
         }
+
         for(int i = 0; i < maxLen; i++) {
             for(int j = 0; j < columns.length; j++) {
+                if(columns[j] == null) {
+                    b.append("  -1");
+                    continue;
+                }
                 if(i < lens[j]) {
                     b.append("  ").append(columns[j][i]);
                 } else {

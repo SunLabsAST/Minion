@@ -69,6 +69,8 @@ public class HighlightStage extends StageAdapter {
      * The query terms used in the query.
      */
     protected String[] queryTerms;
+    
+    private boolean debug;
 
     private static final Logger logger = Logger.getLogger(HighlightStage.class.getName());
 
@@ -104,10 +106,6 @@ public class HighlightStage extends StageAdapter {
     /**
      * Adds a field to the map of fields that we're supposed to look for.
      *
-     * @param fieldName The name of the field that we want to collect
-     * passages for.  If the name is <code>NonField</code>, then the other
-     * parameters specify the data for passages that do not occur in any
-     * field.
      * @param type The type of passage to build. If this is
      * <code>com.sun.labs.minion.JOIN_PASSAGES</code>, then all hits within
      * the named field will be joined into a single passage.  If this is
@@ -122,7 +120,7 @@ public class HighlightStage extends StageAdapter {
      */
     public void addPassage(com.sun.labs.minion.Passage.Type type,
             int context, int maxSize, boolean doSort) {
-
+        
         //
         // If there are no passages defined for the given field, we'll only
         // handle it if there was a request for the whole field.

@@ -785,6 +785,9 @@ public class ArrayGroup implements Cloneable {
             return null;
         }
 
+        if(info.getID() >= pass.length) {
+            return null;
+        }
         return pass[info.getID()];
     }
 
