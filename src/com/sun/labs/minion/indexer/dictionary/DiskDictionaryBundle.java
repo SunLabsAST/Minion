@@ -1328,6 +1328,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             for(LocalFacet<N> facet : ret) {
                 lit.simpleAdvance(facet.getValueID());
                 facet.setValue(lit.getName());
+                facet.setArrayGroup(ag);
             }
         }
         return ret;

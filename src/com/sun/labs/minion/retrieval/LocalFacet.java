@@ -26,6 +26,9 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
 
     private static final Logger logger = Logger.getLogger(LocalFacet.class.getName());
 
+    /**
+     * The partition from which this facet was generated.
+     */
     InvFileDiskPartition partition;
     
     /**
@@ -61,9 +64,7 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
      */
     private int[] tempSortFieldIDs;
     
-    protected SortSpec facetSortSpec;
-    
-    /**
+     /**
      * Creates a facet that is local to a single partition.
      * @param part the partition that this facet is local to
      * @param field the field that we're a facet of

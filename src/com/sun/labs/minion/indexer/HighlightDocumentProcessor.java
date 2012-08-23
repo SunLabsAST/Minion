@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 /**
  * An indexer that can be used to process documents for highlighting.  This
- * class does some of what {@link SearchEngineImpl.index} does, along witha
+ * class does some of what {@link SearchEngineImpl.index} does, along with 
  * some of what {@link MemoryField} does, but skips the actual indexing.
  * 
  */
@@ -98,6 +98,9 @@ public class HighlightDocumentProcessor implements PassageBuilder {
     public void addField(FieldInfo info, Object data) {
         Pipeline pipeline = getPipeline(info);
         
+        if(info.getName().equals("full-text")) {
+            logger.info(String.format("%s: %s", info.getName(), pipeline));
+        }
         if(pipeline == null) {
             return;
         }

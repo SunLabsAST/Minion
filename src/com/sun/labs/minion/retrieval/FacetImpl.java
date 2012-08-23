@@ -58,7 +58,16 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
      */
     protected Object[] sortFieldValues;
     
+    /**
+     * The partition local facets that make up this facet.
+     */
     protected List<LocalFacet> localFacets = new ArrayList<LocalFacet>(2);
+    
+    /**
+     * The array group that generated this facet.  We'll need this if we want to
+     * highlight results that we get from facets later on.
+     */
+    ArrayGroup arrayGroup;
     
     /**
      * Creates a facet for the given field.
@@ -81,6 +90,13 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
         }
     }
 
+    public void setArrayGroup(ArrayGroup ag) {
+        this.arrayGroup = ag;
+    }
+
+    public ArrayGroup getArrayGroup() {
+        return arrayGroup;
+    }
     @Override
     public T getValue() {
         return value;
@@ -113,6 +129,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
             for(Iterator<Pair<Integer, Float>> i = lf.iterator(); i.hasNext();) {
                 Pair<Integer, Float> doc = i.next();
                 curr.init(set, null, localRSS, false, doc.getA(), doc.getB());
+                curr.setArrayGroup(lf.arrayGroup);
                 curr.setPartition(lf.getPartition());
                 curr.setSortFieldValues();
                 if(sorter.size() < n) {
@@ -135,7 +152,6 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
         }
         Collections.reverse(ret);
         nw.stop();
-        logger.info(String.format("getting results for %s took %.3f", value, nw.getTimeMillis()));
         return ret;
     }
 
@@ -217,4 +233,5 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     public String toString() {
         return String.format("%s %.3f (%d)", value, score, size);
     }
+
 }

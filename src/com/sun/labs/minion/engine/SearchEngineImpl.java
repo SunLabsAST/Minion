@@ -1118,8 +1118,6 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
         return invFilePartitionManager.getDocumentVector(key, fields);
     }
-    
-    
 
     @Override
     public DocumentVector getDocumentVector(String key, WeightedField[] fields) {
@@ -1167,6 +1165,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 //                queryConfig.getWeightingComponents()));
 //        dvi.setField(field);
         return dvi;
+    }
+    
+    public DocumentVector getDocumentVector(Indexable doc, String field) throws SearchEngineException {
+        SimpleIndexer si = getSimpleIndexer();
+        si.indexDocument(doc);
+        return null;
     }
 
     @Override

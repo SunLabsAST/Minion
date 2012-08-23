@@ -553,8 +553,9 @@ public class FieldInfo implements Cloneable, Configurable {
 
     @Override
     public String toString() {
-        return String.format("%s: %d type: %s attributes: %s", this.name, id,
-                             type, attributes);
+        return String.format("%s: %d type: %s attributes: %s stemmer: %s pipeline: %s", 
+                             this.name, id,
+                             type, attributes, stemmerFactoryName, pipelineFactoryName);
     }
 
     /**

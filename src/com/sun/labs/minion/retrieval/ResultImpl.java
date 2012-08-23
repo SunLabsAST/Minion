@@ -189,6 +189,10 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
         }
     }
 
+    public void setArrayGroup(ArrayGroup ag) {
+        this.ag = ag;
+    }
+
     /**
      * Sets the partition for this result.
      * @param partition the partition that generated this result.
