@@ -192,7 +192,6 @@ public abstract class Proximity extends Operator {
             int[] doFields;
             doFields = new int[part.getPartitionManager().getMetaFile().size() + 1];
             for(FieldInfo fi : searchFields) {
-                logger.info(String.format("single term passages for %s (%d)", fi.getName(), fi.getID()));
                 doFields[fi.getID()] = 1;
             }
 

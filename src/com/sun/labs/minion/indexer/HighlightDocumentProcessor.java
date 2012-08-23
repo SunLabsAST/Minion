@@ -97,9 +97,6 @@ public class HighlightDocumentProcessor implements PassageBuilder {
     public void addField(FieldInfo info, Object data) {
         Pipeline pipeline = getPipeline(info);
         
-        if(info.getName().equals("full-text")) {
-            logger.info(String.format("%s: %s", info.getName(), pipeline));
-        }
         if(pipeline == null) {
             return;
         }
