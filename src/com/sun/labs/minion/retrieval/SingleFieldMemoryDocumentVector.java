@@ -39,6 +39,7 @@ import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.indexer.postings.DocumentVectorPostings;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.util.Util;
@@ -117,24 +118,12 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
             v = new WeightedFeature[0];
             return;
         }
-
-        PostingsIterator pi = vecEntry.iterator(new PostingsIteratorFeatures(wf, wc));
-        if(pi == null) {
-            v = new WeightedFeature[0];
-            return;
-        }
         
-        v = new WeightedFeature[pi.getN()];
-        int p = 0;
-        while(pi.next()) {
-            int tid = pi.getID();
-            QueryEntry<String> termEntry = termDict.getByID(tid);
-            TermStatsImpl tsi = (TermStatsImpl) engine.getTermStats(termEntry.getName(), field);
-            wc.setTerm(tsi).setDocument(pi);
-            wf.initTerm(wc);
-            WeightedFeature feat = new WeightedFeature(termEntry, pi.getFreq(), wf.termWeight(wc));
+        DocumentVectorPostings dvp = (DocumentVectorPostings) vecEntry.getPostings();
+        v = dvp.getWeightedFeatures(vecEntry.getID(), field.getID(), null, wf, wc);
+        length = 0;
+        for(WeightedFeature feat : v) {
             length += feat.getWeight() * feat.getWeight();
-            v[p++] = feat;
         }
         length = (float) Math.sqrt(length);
         normalize();
@@ -161,9 +150,6 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
 
     @Override
     public WeightedFeature[] getFeatures() {
-        if(v == null) {
-            initFeatures();
-        }
         return v;
     }
 

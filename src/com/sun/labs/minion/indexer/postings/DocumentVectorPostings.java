@@ -284,22 +284,13 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
             // We have an entries map, so we'll use that.
             WeightedFeature[] ret = new WeightedFeature[entries.size()];
             int x = 0;
-            float dl = 0;
             for(EntryFreq ef : entries.values()) {
                 String term = ef.e.getName().toString();
                 wc.setTerm(term);
                 wc.fdt = ef.freq;
                 wf.initTerm(wc);
                 ret[x] = new WeightedFeature(term, wf.termWeight(wc));
-                dl += (ret[x].getWeight() * ret[x].getWeight());
                 x++;
-            }
-
-            //
-            // Handle length normalization.
-            dl = (float) Math.sqrt(dl);
-            for(WeightedFeature f : ret) {
-                f.setWeight(f.getWeight() / dl);
             }
 
             //
