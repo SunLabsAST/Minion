@@ -35,6 +35,9 @@ import com.sun.labs.minion.retrieval.Not;
 import com.sun.labs.minion.retrieval.Or;
 import com.sun.labs.minion.retrieval.PAnd;
 import com.sun.labs.minion.retrieval.QueryElement;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -54,33 +57,38 @@ public class WebTransformer extends Transformer {
     protected final static String validMods = "+-~/";
 
     public static void main(String args[]) throws Exception {
-        WebParser p = new WebParser(System.in);
-        SimpleNode n = p.doParse();
-        n.dump(":");
-        WebTransformer t = new WebTransformer();
+        String q = ""; // the query
         
-        //
-        // Create the pipeline, pushing on stages back to front
-        LinkedList<Stage> stages = new LinkedList<Stage>();
-        TokenCollectorStage tcs = new TokenCollectorStage();
-        stages.push(tcs);
-
-        UniversalTokenizer tokStage = new UniversalTokenizer(stages.peek());
-        tokStage.noBreakCharacters = "*?";
-        stages.push(tokStage);
+        BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+        while ((q = input.readLine()) != null) {
+            WebParser p = new WebParser(new StringReader(q));
+            SimpleNode n = p.doParse();
+            n.dump(":");
+            WebTransformer t = new WebTransformer();
             
-        QueryPipelineImpl pipeline = new QueryPipelineImpl(null, null, stages);
-        QueryElement e = t.transformTree(n, Searcher.Operator.PAND, pipeline);
-        e.dump("!");
-        // and check getQueryTerms implementation
-        List l = e.getQueryTerms();
-        String names = "";
-        Iterator it = l.iterator();
-        while(it.hasNext()) {
-            DictTerm dt = (DictTerm) it.next();
-            names = names + dt.toString() + " ";
+            //
+            // Create the pipeline, pushing on stages back to front
+            LinkedList<Stage> stages = new LinkedList<Stage>();
+            TokenCollectorStage tcs = new TokenCollectorStage();
+            stages.push(tcs);
+            
+            UniversalTokenizer tokStage = new UniversalTokenizer(stages.peek());
+            tokStage.noBreakCharacters = "*?";
+            stages.push(tokStage);
+            
+            QueryPipelineImpl pipeline = new QueryPipelineImpl(null, null, stages);
+            QueryElement e = t.transformTree(n, Searcher.Operator.PAND, pipeline);
+            e.dump("!");
+            // and check getQueryTerms implementation
+            List l = e.getQueryTerms();
+            String names = "";
+            Iterator it = l.iterator();
+            while(it.hasNext()) {
+                DictTerm dt = (DictTerm) it.next();
+                names = names + dt.toString() + " ";
+            }
+            System.out.println("terms: " + names);
         }
-        System.out.println("terms: " + names);
     }
 
     public WebTransformer() {

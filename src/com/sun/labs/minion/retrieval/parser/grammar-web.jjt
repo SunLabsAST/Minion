@@ -104,18 +104,14 @@ void passageTerm(): {Token t=null;} {
 }
 //SKIP : { " "|"\r"|"\n"|"\t" }
 
-TOKEN : { <PLUS: "+" >}
-TOKEN : { <MINUS: "-" >}
-TOKEN : { <FSLASH: "/" >}
-TOKEN : { <TILDE: "~" >}
 TOKEN : { <DUBQUOTE: "\"" >}
 TOKEN : { <LB: "[" >}
 TOKEN : { <RB: "]" >}
 //TOKEN : { <VALIDCHAR: ~["\""," ","\t","\r","\n","[","]"] >}
 TOKEN : { <VALIDCHAR: (<SPACESEPCHAR>) >}
-TOKEN : { <PHRASE: ((<MINUS>|<PLUS>|<FSLASH>)? (<DUBQUOTE>) (<NGRAMTOKEN>|<VALIDCHAR>|<WHITESPACE>|<PUNCTUATION>)+ (<DUBQUOTE>)) >}
-TOKEN : { <PASSAGE: ((<MINUS>|<PLUS>|<FSLASH>)? (<LB>) (<NGRAMTOKEN>|<VALIDCHAR>|<WHITESPACE>|<PUNCTUATION>)+ (<RB>)) >}
-TOKEN : { <TERM: ((<MINUS>|<PLUS>|<FSLASH>|<TILDE>)? (<NGRAMTOKEN>|<VALIDCHAR>|<PUNCTUATION>)+) >}
+TOKEN : { <PHRASE: ( (<DUBQUOTE>) (<NGRAMTOKEN>|<VALIDCHAR>|<WHITESPACE>|<PUNCTUATION>)+ (<DUBQUOTE>)) >}
+TOKEN : { <PASSAGE: ( (<LB>) (<NGRAMTOKEN>|<VALIDCHAR>|<WHITESPACE>|<PUNCTUATION>)+ (<RB>)) >}
+TOKEN : { <TERM: ((<NGRAMTOKEN>|<VALIDCHAR>|<PUNCTUATION>)+) >}
 
 
 /*
@@ -402,7 +398,8 @@ TOKEN : {
    "\u2126" | 
    "\u2128" | 
    "\ufb1d" | 
-   "\ufb3e"
+   "\ufb3e" |
+   "="
 > }
 TOKEN : { < NGRAMTOKEN : (<NONSPACESEPCHAR>) (<NONSPACESEPCHAR>)* > }
 TOKEN : {
