@@ -208,6 +208,9 @@ public class QueryTest extends SEMain {
                     indexDir,
                     engineType, cmFile);
         }
+        QueryConfig qc = engine.getQueryConfig();
+        qc.setAllUpperIsCI(false);
+        engine.setQueryConfig(qc);
         shell = new CommandInterpreter(inputFile);
         manager = engine.getManager();
         manager.setReapDoesNothing(true);
