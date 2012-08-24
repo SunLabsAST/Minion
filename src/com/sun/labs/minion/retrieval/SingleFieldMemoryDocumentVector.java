@@ -91,6 +91,7 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
         this.mf = mf;
         this.key = key;
         this.engine = engine;
+        this.field = mf.getInfo();
         wf = engine.getQueryConfig().getWeightingFunction();
         wc = engine.getQueryConfig().getWeightingComponents();
         
