@@ -2018,6 +2018,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         @Override
         public void endDocument() {
         }
+        
+        @Override
+        public void clear() {
+            part.clear();
+            mpPool.offer(part);
+        }
 
         @Override
         public boolean isIndexed(String key) {
