@@ -381,6 +381,11 @@ public interface SimpleIndexer {
      * will result in an <code>IllegalStateException</code>.
      */
     public void finish();
+            
+    /**
+     * Finishes indexing and throws away the indexed data.
+     */
+    public void clear();
     
     /**
      * Indicates whether a document has been indexed or not.  A document
