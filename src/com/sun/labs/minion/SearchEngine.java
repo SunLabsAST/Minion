@@ -581,6 +581,22 @@ public interface SearchEngine extends Searcher {
             throws SearchEngineException;
     
     /**
+     * Creates a document vector for the given Indexable document as though
+     * it occurred in the index.
+     * 
+     * @param doc an Indexable for which we want a document vector.  The document
+     * will be processed as though it were being indexed in order to extract
+     * the appropriate document vector, but the data resulting from processing
+     * <em>will not</em> be added to the index.
+     * @param field the field for which we want a document vector
+     * @return the document vector for the indexable document
+     * @throws SearchEngineException 
+     */
+    public DocumentVector getDocumentVector(Indexable doc, String field)
+            throws SearchEngineException;
+
+    
+    /**
      * Gets a document vector that is created from the combination of the 
      * document vectors for the given document keys.
      * @param keys the keys for which we want a document vector.
