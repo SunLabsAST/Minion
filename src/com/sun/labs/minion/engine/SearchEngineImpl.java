@@ -1178,6 +1178,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         si.indexDocument(doc);
         MemoryField mf = ((Indexer) si).getMemoryPartition().getMF(fi);
         DocumentVector ret = new SingleFieldMemoryDocumentVector(mf, doc.getKey(), this);
+        si.clear();
         return ret;
     }
 
