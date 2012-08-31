@@ -27,7 +27,6 @@ import com.sun.labs.minion.Document;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.Indexable;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.Passage;
@@ -78,6 +77,7 @@ import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.command.CommandInterface;
 import com.sun.labs.util.command.CommandInterpreter;
+import com.sun.labs.util.command.CompletorCommandInterface;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -96,6 +96,10 @@ import java.util.TreeSet;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jline.ClassNameCompletor;
+import jline.Completor;
+import jline.NullCompletor;
+import jline.SimpleCompletor;
 
 /**
  * <p>
@@ -424,7 +428,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("facet", "Query", new CommandInterface() {
+        shell.add("facet", "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -459,9 +463,16 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "field - Get the facets for a particular field from the last set of search results";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile())
+                };
+            }
         });
         
-        shell.add("wf", "Query", new CommandInterface() {
+        shell.add("wf", "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -485,6 +496,19 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "weighting function classname - Sets the weighting function to be used during querying";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                try {
+                    return new Completor[] {
+                        new ClassNameCompletor()
+                    };
+                } catch (IOException e) {
+                    return new Completor[] {
+                        new NullCompletor()
+                    };
+                }
             }
         });
         
@@ -536,7 +560,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("qop", "Query", new CommandInterface() {
+        shell.add("qop", "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -557,9 +581,21 @@ public class QueryTest extends SEMain {
                 return String.format("qop - Set the default query operator values: %s", 
                         Arrays.toString(Searcher.Operator.values()));
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                Searcher.Operator[] ops = Searcher.Operator.values();
+                String[] vals = new String[ops.length];
+                for (int i = 0; i < ops.length; i++) {
+                    vals[i] = ops.toString();
+                }
+                return new Completor[] {
+                    new SimpleCompletor(vals)
+                };
+            }
         });
         
-        shell.add("deff", "Query", new CommandInterface() {
+        shell.add("deff", "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -577,6 +613,13 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "field [field]...Set the default search fields";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile())
+                };
             }
         });
         
@@ -694,7 +737,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("display", "Query", new CommandInterface() {
+        shell.add("display", "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -705,6 +748,13 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "Set the display specification for hits";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile())
+                };
             }
         });
         
@@ -726,7 +776,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("gram", "Query", new CommandInterface() {
+        shell.add("gram", "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -746,6 +796,13 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "Set the default grammar to use for parsing queries";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    getEnumCompletor(Searcher.Grammar.class)
+                };
             }
         });
 
@@ -870,7 +927,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("tbid", "Terms", new CommandInterface() {
+        shell.add("tbid", "Terms", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -907,6 +964,16 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "partNum field dict id - Gets a term by term id from a particular dictionary and partition";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new NullCompletor(),
+                    new FieldCompletor(manager.getMetaFile()),
+                    getEnumCompletor(MemoryDictionaryBundle.Type.class),
+                    new NullCompletor()
+                };
             }
         });
         
@@ -995,7 +1062,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("di", "Terms", new CommandInterface() {
+        shell.add("di", "Terms", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1030,9 +1097,18 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "partNum field dict - prints all the terms from a particular field's dictionary and partition";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new NullCompletor(),
+                    new FieldCompletor(manager.getMetaFile()),
+                    getEnumCompletor(MemoryDictionaryBundle.Type.class)
+                };
+            }
         });
         
-        shell.add("ck", "Info", new CommandInterface() {
+        shell.add("ck", "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1094,9 +1170,17 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "field key [key]... - Get the document key from the document dictionary and from any vector dictionaries";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
         
-        shell.add("post", "Info", new CommandInterface() {
+        shell.add("post", "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1129,9 +1213,17 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "field term [term...] - Get a short description of the postings associated with a term in a given field";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
         
-        shell.add("postfinds", "Info", new CommandInterface() {
+        shell.add("postfinds", "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -1176,9 +1268,17 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "- field partNum term doc [doc...] Finds docs in a given postings list";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
         
-        shell.add("postbuff", "Info", new CommandInterface() {
+        shell.add("postbuff", "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -1217,9 +1317,17 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "field term [term...] - print the buffers for the postings associated with a term in a given field";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
         
-        shell.add("vpost", "Info", new CommandInterface() {
+        shell.add("vpost", "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1252,9 +1360,17 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "field term [term...] - Get a verbose description of the postings associated with a term in a given field";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
         
-        shell.add("vdpost", "Info", new CommandInterface() {
+        shell.add("vdpost", "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1300,9 +1416,17 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "field docID term [term...] - Get a verbose description of the postings associated with a term in a given field";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
         
-        shell.add("dpost", "Info", new CommandInterface() {
+        shell.add("dpost", "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1348,6 +1472,14 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "field docID term [term...] - Get all of the postings associated with a term in a particular document, in a given field";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
         
         shell.add("keys", "Info", new CommandInterface() {
@@ -1378,7 +1510,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("svals", "Info", new CommandInterface() {
+        shell.add("svals", "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1412,6 +1544,14 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "pn field [field]... - Prints all the values for a saved field in that partition";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new NullCompletor(),
+                    new FieldCompletor(manager.getMetaFile())
+                };
             }
         });
 
@@ -1551,7 +1691,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("get", "Info", new CommandInterface() {
+        shell.add("get", "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1579,6 +1719,15 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "partNum docID field [field...] - Get field values from a particular doc";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new NullCompletor(),
+                    new NullCompletor(),
+                    new FieldCompletor(manager.getMetaFile())
+                };
             }
         });
         
@@ -1663,7 +1812,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("findsim", "Query", new CommandInterface() {
+        shell.add("findsim", "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1688,9 +1837,18 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "key [fields] [skim] Find documents similar to the given one, using comma-separated field list";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new NullCompletor(),
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
         
-        shell.add("mfindsim", "Query", new CommandInterface() {
+        shell.add("mfindsim", "Query", new CompletorCommandInterface() {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws
                     Exception {
@@ -1714,6 +1872,15 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "key [fields] [skim] Find documents similar to the given one, using comma-separated field list";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new NullCompletor(),
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
             }
         });
 
@@ -1747,7 +1914,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("simi", "Query", new CommandInterface() {
+        shell.add("simi", "Query", new CompletorCommandInterface() {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws
                     Exception {
@@ -1772,9 +1939,17 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "field [document text] Find documents similar to the given one";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
 
-        shell.add("dv", "Terms", new CommandInterface() {
+        shell.add("dv", "Terms", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1799,9 +1974,17 @@ public class QueryTest extends SEMain {
             public String getHelp() {
                 return "field dockey - Show the document vector for a given field in a given document";
             }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
         });
         
-        shell.add("log", "Other", new CommandInterface() {
+        shell.add("log", "Other", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1822,6 +2005,32 @@ public class QueryTest extends SEMain {
             @Override
             public String getHelp() {
                 return "class logLevel - Set the log level for a given class";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                String[] logLevels = new String[] {
+                    Level.ALL.getLocalizedName(),
+                    Level.CONFIG.getLocalizedName(),
+                    Level.FINE.getLocalizedName(),
+                    Level.FINER.getLocalizedName(),
+                    Level.FINEST.getLocalizedName(),
+                    Level.INFO.getLocalizedName(),
+                            Level.OFF.getLocalizedName(),
+                            Level.SEVERE.getLocalizedName(),
+                            Level.WARNING.getLocalizedName()
+                };
+                try {
+                    return new Completor[] {
+                        new ClassNameCompletor(),
+                        new SimpleCompletor(logLevels)
+                    };
+                } catch (IOException e) {
+                    return new Completor[] {
+                        new NullCompletor(),
+                        new SimpleCompletor(logLevels)
+                    };
+                }
             }
         });
     }
@@ -2226,5 +2435,50 @@ public class QueryTest extends SEMain {
             return "fields: " + Util.toString(fields) + " format: \""
                    + formatString + "\"";
         }
+    }
+    
+    /**
+     * Provides command line completion based on all currently defined field
+     * names.
+     */
+    class FieldCompletor implements Completor {
+        
+        protected MetaFile mf;
+        
+        public FieldCompletor(MetaFile mf) {
+            this.mf = mf;
+        }
+        
+        @Override
+        public int complete(String buff, int i, List ret) {
+            String prefix = buff.substring(0, i);
+            //
+            // Go through the currently defined fields
+            Iterator<FieldInfo> infos = mf.fieldIterator();
+            while (infos.hasNext()) {
+                String name = infos.next().getName();
+                if (name.toLowerCase().startsWith(prefix.toLowerCase())) {
+                    ret.add(name);
+                }
+            }
+
+            //
+            // Pad a " " to the end if this was the only completion
+            if (ret.size() == 1) {
+                ret.set(0, ret.get(0) + " ");
+            }
+            return (ret.isEmpty() ? -1 : 0);
+        }
+        
+    }
+    
+    protected static <E extends Enum<E>>
+            Completor getEnumCompletor(Class<E> enumType) {
+        E[] consts = enumType.getEnumConstants();
+        String[] vals = new String[consts.length];
+        for (int i = 0; i < consts.length; i++) {
+            vals[i] = consts[i].name();
+        }
+        return new SimpleCompletor(vals);
     }
 }
