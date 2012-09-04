@@ -2451,7 +2451,10 @@ public class QueryTest extends SEMain {
         
         @Override
         public int complete(String buff, int i, List ret) {
-            String prefix = buff.substring(0, i);
+            String prefix = "";
+            if (buff != null) {
+                prefix = buff.substring(0, i);
+            }
             //
             // Go through the currently defined fields
             Iterator<FieldInfo> infos = mf.fieldIterator();
