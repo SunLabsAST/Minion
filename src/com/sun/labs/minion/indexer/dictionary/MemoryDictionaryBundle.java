@@ -121,7 +121,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
     private EntryFactory savedEntryFactory = new EntryFactory(Postings.Type.ID);
 
     protected CDateParser dateParser;
-
+    
     public MemoryDictionaryBundle(MemoryField field) {
         this.field = field;
         info = field.getInfo();
@@ -388,14 +388,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
             partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
             partOut.setPostingsIDMap(null);
+            
             switch(type) {
 
                 case CASED_TOKENS:
-                    partOut.setDictionaryEncoder(new StringNameHandler());
-                    partOut.setDictionaryIDMap(MemoryDictionary.IDMap.OLD_TO_NEW);
-                    break;
-
                 case UNCASED_TOKENS:
+                case STEMMED_TOKENS:
                     partOut.setDictionaryEncoder(new StringNameHandler());
                     partOut.setDictionaryIDMap(MemoryDictionary.IDMap.OLD_TO_NEW);
                     break;
@@ -537,7 +535,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 default:
                     partOut.setDictionaryEncoder(new StringNameHandler());
             }
-
             
             //
             // The offset where we're about to marshall this dictionary.

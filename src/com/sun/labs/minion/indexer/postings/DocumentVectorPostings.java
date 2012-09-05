@@ -146,7 +146,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
         if(idMap == null) {
             return;
         }
-
+        
         //
         // Sort our entry set by the ID, so that we can dump things in ID order.
         EntryFreq[] se = new EntryFreq[entries.size()];
@@ -184,7 +184,6 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
             prevID = id;
         }
         idBuff = temp;
-
         lastID = prevID;
     }
 

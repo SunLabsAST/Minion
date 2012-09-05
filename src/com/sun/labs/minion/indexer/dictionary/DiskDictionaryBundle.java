@@ -183,8 +183,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 throw (ex);
             }
         }
-
-
+        
         if(header.dtvOffset >= 0) {
 
             //
@@ -823,6 +822,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 case CASED_TOKENS:
                 case UNCASED_TOKENS:
                 case STEMMED_TOKENS:
+                    
                     //
                     // Tokens are always encoded as strings, and their postings
                     // are mapped using the document ID maps that were passed in

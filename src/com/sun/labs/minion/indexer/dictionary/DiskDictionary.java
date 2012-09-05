@@ -1370,7 +1370,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             }
 
             idMaps[i] = new int[dd.dh.getMaxID() + 1];
-
+            
             //
             // Make an entry in the heap for this dictionary.
             HE he = new HE(dd, i, mappers == null ? null : mappers[i]);
@@ -1492,7 +1492,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             //
             // Write the postings for the newly merged entry.
             try {
-                if(me.writePostings(postOut, null) == true) {
+                if(me.writePostings(postOut, null)) {
 
                     //
                     // Add the new entry to the dictionary that we're building.
@@ -1517,6 +1517,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             }
             
             if(logger.isLoggable(Level.FINER) && 
+                    dictOut.getHeader().size > 0 &&
                     dictOut.getHeader().size % 100000 == 0) {
                 logger.fine(String.format(" Merged %d entries", dictOut.
                         getHeader().size));

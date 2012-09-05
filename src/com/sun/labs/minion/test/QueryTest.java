@@ -51,6 +51,7 @@ import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -927,34 +928,44 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("tbid", "Terms", new CompletorCommandInterface() {
-
+        shell.add("termByID", "Terms", new CompletorCommandInterface() {
             @Override
-            public String execute(CommandInterpreter ci, String[] args) throws Exception {
-                if(args.length != 5) {
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                if(args.length < 5) {
                     return "Must specify a partition, a field, a dictionary type and ID";
                 }
-                
+
                 int partNum = Integer.parseInt(args[1]);
                 String fieldName = args[2];
-                MemoryDictionaryBundle.Type type = MemoryDictionaryBundle.Type.valueOf(args[3].toUpperCase());
-                int termID = Integer.parseInt(args[4]);
-                
+                MemoryDictionaryBundle.Type type = MemoryDictionaryBundle.Type.
+                        valueOf(args[3].toUpperCase());
+
                 for(DiskPartition p : manager.getActivePartitions()) {
                     if(p.getPartitionNumber() == partNum) {
-                        DiskField df = ((InvFileDiskPartition) p).getDF(fieldName);
+                        DiskField df = ((InvFileDiskPartition) p).getDF(
+                                fieldName);
                         if(df == null) {
                             return String.format("No such field %s", fieldName);
                         }
                         DiskDictionary dict = df.getDictionary(type);
                         if(dict == null) {
-                            return String.format("No dictionary of type %s for %s", type, fieldName);
+                            return String.format(
+                                    "No dictionary of type %s for %s", type,
+                                                 fieldName);
                         }
-                        QueryEntry qe = dict.getByID(termID);
-                        if(qe == null) {
-                            return String.format("No term with ID %d in %s of %s", termID, type, fieldName);
+                        for(int i = 4; i < args.length; i++) {
+                            int termID = Integer.parseInt(args[i]);
+                            QueryEntry qe = dict.getByID(termID);
+                            if(qe == null) {
+                                shell.out.
+                                        format(
+                                        "No term with ID %d in %s of %s\n", termID,
+                                        type, fieldName);
+                            } else {
+                                shell.out.format("Entry: %s\n", qe);
+                            }
                         }
-                        shell.out.format("Entry: %s\n", qe);
                         return "";
                     }
                 }
@@ -963,7 +974,7 @@ public class QueryTest extends SEMain {
 
             @Override
             public String getHelp() {
-                return "partNum field dict id - Gets a term by term id from a particular dictionary and partition";
+                return "partNum field dict id [id]...- Gets a term by term id from a particular dictionary and partition";
             }
 
             @Override
@@ -976,6 +987,8 @@ public class QueryTest extends SEMain {
                 };
             }
         });
+        
+        shell.addAlias("termByID", "tbid");
         
         shell.add("wild", "Terms", new CommandInterface() {
 
@@ -1177,6 +1190,62 @@ public class QueryTest extends SEMain {
                     new FieldCompletor(manager.getMetaFile()),
                     new NullCompletor()
                 };
+            }
+        });
+
+        shell.add("postByDictType", "Info", new CompletorCommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                if(args.length < 3) {
+                    return getHelp();
+                }
+
+                String field = args[1];
+                Type type = Type.valueOf(args[2].toUpperCase());
+                FieldInfo fi = manager.getFieldInfo(field);
+                List<DiskPartition> parts = manager.getActivePartitions();
+                for(int i = 3; i < args.length; i++) {
+                    String term = args[i];
+                    for(DiskPartition p : parts) {
+                        DiskField df = ((InvFileDiskPartition) p).getDF(fi);
+                        DiskDictionary dd = df.getDictionary(type);
+                        if(type == Type.STEMMED_TOKENS) {
+                            Stemmer stemmer = df.getStemmer();
+                            if(stemmer != null) {
+                                term = stemmer.stem(term);
+                            }
+                        }
+
+                        QueryEntry qe = dd.get(term);
+                        if(qe == null) {
+                            continue;
+                        }
+                        Postings post = qe.getPostings();
+                        if(post != null) {
+                            shell.out.format(
+                                    "Postings for %s (%d) from %s in %s\n",
+                                             args[i], qe.getN(), field, p);
+                            shell.out.println(post.describe(true));
+                        }
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field dictionaryType term [term]...";
+            }
+            
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[]{
+                            new FieldCompletor(manager.getMetaFile()),
+                            getEnumCompletor(MemoryDictionaryBundle.Type.class),
+                            new NullCompletor()
+                        };
             }
         });
         

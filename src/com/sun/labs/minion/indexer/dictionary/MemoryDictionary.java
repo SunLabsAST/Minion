@@ -448,9 +448,6 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
         // Write the postings and entries.
         for(int i = 0 ; i < nUsed; i++) {
             IndexEntry entry = sortedEntries[i];
-//            if(logger.isLoggable(Level.FINER)) {
-//                logger.fine(String.format("m: %s %d", entry.getName(), entry.getID()));
-//            }
             if(entry.writePostings(postOut, postingsIDMap)) {
                 dictOut.write(entry);
             }
