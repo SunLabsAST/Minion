@@ -1246,7 +1246,7 @@ public class QueryTest extends SEMain {
             public Completor[] getCompletors() {
                 return new Completor[]{
                             new FieldCompletor(manager.getMetaFile()),
-                            getEnumCompletor(MemoryDictionaryBundle.Type.class),
+                            new EnumCompletor(MemoryDictionaryBundle.Type.class),
                             new NullCompletor()
                         };
             }
