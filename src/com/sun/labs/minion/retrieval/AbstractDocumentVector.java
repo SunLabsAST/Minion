@@ -350,56 +350,6 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
         return s;
     }
 
-    @Override
-    public Map<String, Float> getSimilarityTermMap(DocumentVector vector) {
-        if(!(vector instanceof AbstractDocumentVector)) {
-            throw new IllegalArgumentException("Can't process non-AbstractDocumentVectors");
-        }
-        
-        getFeatures();
-        WeightedFeature[] ov = ((AbstractDocumentVector) vector).getFeatures();
-
-        int i1 = 0;
-        int i2 = 0;
-        int x = 0;
-
-        SortedSet<WeightedFeature> s = new TreeSet(WeightedFeature.INVERSE_WEIGHT_COMPARATOR);
-        //
-        // Go in order (alphabetically) through the two arrays, finding
-        // terms that occur in both.
-        while(i1 < v.length && i2 < ov.length) {
-            WeightedFeature f1 = v[i1];
-            WeightedFeature f2 = ov[i2];
-
-            int cmp = f1.getName().compareTo(f2.getName());
-
-            if(cmp == 0) {
-                if(ignoreWords == null || !ignoreWords.isStop(f1.getName())) {
-                    //
-                    // We found two terms with the same name.
-                    float combined = f1.getWeight() * f2.getWeight();
-                    WeightedFeature wf = new WeightedFeature(f1.getName(),
-                            combined);
-                    s.add(wf);
-                }
-                i1++;
-                i2++;
-            } else if(cmp < 0) {
-                i1++;
-            } else {
-                i2++;
-            }
-        }
-        
-        Map<String,Float> ret = new TreeMap<String,Float>();
-        for(WeightedFeature feat : s) {
-            ret.put(feat.getName(), feat.getWeight());
-        }
-
-        return ret;
-
-    }
-
     /**
      * Gets a map of term names to weights, where the weights represent the
      * amount the term contributed to the similarity of the two documents. Only
@@ -411,7 +361,11 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
      * @param dv the document vector to compare this one to
      * @return a sorted hash map of String names to Float weights
      */
-    public Map<String, Float> getSimilarityTermMap(AbstractDocumentVector dv) {
+    public Map<String, Float> getSimilarityTermMap(DocumentVector vector) {
+        if(!(vector instanceof AbstractDocumentVector)) {
+            throw new IllegalArgumentException("Can't process non-AbstractDocumentVectors");
+        }
+        AbstractDocumentVector dv = (AbstractDocumentVector)vector;
         //
         // Get the set of similarity terms, then turn it into
         // an ordered hashmap that is suitable for returning to

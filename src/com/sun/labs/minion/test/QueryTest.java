@@ -79,8 +79,10 @@ import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.command.CommandInterface;
 import com.sun.labs.util.command.CommandInterpreter;
 import com.sun.labs.util.command.CompletorCommandInterface;
+import com.sun.labs.util.command.EnumCompletor;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -99,6 +101,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jline.ClassNameCompletor;
 import jline.Completor;
+import jline.FileNameCompletor;
 import jline.NullCompletor;
 import jline.SimpleCompletor;
 
@@ -802,7 +805,7 @@ public class QueryTest extends SEMain {
             @Override
             public Completor[] getCompletors() {
                 return new Completor[] {
-                    getEnumCompletor(Searcher.Grammar.class)
+                    new EnumCompletor(Searcher.Grammar.class)
                 };
             }
         });
@@ -982,7 +985,7 @@ public class QueryTest extends SEMain {
                 return new Completor[] {
                     new NullCompletor(),
                     new FieldCompletor(manager.getMetaFile()),
-                    getEnumCompletor(MemoryDictionaryBundle.Type.class),
+                    new EnumCompletor(MemoryDictionaryBundle.Type.class),
                     new NullCompletor()
                 };
             }
@@ -1116,7 +1119,7 @@ public class QueryTest extends SEMain {
                 return new Completor[] {
                     new NullCompletor(),
                     new FieldCompletor(manager.getMetaFile()),
-                    getEnumCompletor(MemoryDictionaryBundle.Type.class)
+                    new EnumCompletor(MemoryDictionaryBundle.Type.class)
                 };
             }
         });
@@ -2053,6 +2056,79 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add("describeSimilarity", "Terms", new CompletorCommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                if (args.length < 4) {
+                    return "Provide two keys or files and at least one field for comparison";
+                }
+                String[] fields = Arrays.copyOfRange(args, 3, args.length);
+                //
+                // See if we have a filename or a doc key for each dv
+                DocumentVector dv1 = getDV(args[1], fields, ci);
+                DocumentVector dv2 = getDV(args[2], fields, ci);
+                
+                if(dv1 == null) {
+                    ci.getOutput().println("No such doc: " + args[1]);
+                } else if(dv2 == null) {
+                    ci.getOutput().println("No such doc: " + args[2]);
+                } else {
+                    Map<String, Float> words = dv1.getSimilarityTermMap(dv2);
+                    for(Iterator it = words.keySet().iterator(); it.hasNext();) {
+                        String curr = (String) it.next();
+                        ci.getOutput().println(curr + ": \t" + words.get(curr));
+                    }
+                }
+                return "";
+            }
+
+            public DocumentVector getDV(String arg,
+                                        String[] fields,
+                                        CommandInterpreter ci)
+                    throws Exception {
+                DocumentVector dv;
+                File f1 = new File(arg);
+                if (f1.exists()) {
+                    if (fields.length != 1) {
+                        //
+                        // Right now, we can only do a single field for
+                        // in-memory document vectors
+                        ci.getOutput()
+                                .println("Specify only a single field for " +
+                                "file-based DV");
+                    }
+                    BufferedReader reader =
+                            new BufferedReader(new FileReader(f1));
+                    String line = null;
+                    IndexableMap map = new IndexableMap("mySingleDoc");
+                    while ((line = reader.readLine()) != null) {
+                        int sep = line.indexOf(' ');
+                        map.put(line.substring(0, sep),
+                                line.substring(sep + 1));
+                    }
+                    dv = engine.getDocumentVector(map, fields[0]);
+                } else {
+                    dv = engine.getDocumentVector(arg, fields);
+                }
+                return dv;
+            }
+            
+            @Override
+            public String getHelp() {
+                return "<doc1> <doc2> [field ...] - describe the similarity between two docs";
+            }
+            
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FileNameCompletor(),
+                    new FileNameCompletor(),
+                    new FieldCompletor(manager.getMetaFile())
+                };
+            }
+        });
+        
         shell.add("log", "Other", new CompletorCommandInterface() {
 
             @Override
@@ -2544,13 +2620,5 @@ public class QueryTest extends SEMain {
         
     }
     
-    protected static <E extends Enum<E>>
-            Completor getEnumCompletor(Class<E> enumType) {
-        E[] consts = enumType.getEnumConstants();
-        String[] vals = new String[consts.length];
-        for (int i = 0; i < consts.length; i++) {
-            vals[i] = consts[i].name();
-        }
-        return new SimpleCompletor(vals);
-    }
+
 }
