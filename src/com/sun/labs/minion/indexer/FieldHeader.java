@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 
 
 /**
- * A header for saved field information.
+ * A header with information about where various parts of a field can be found.
  */
 public class FieldHeader {
     
@@ -64,10 +64,11 @@ public class FieldHeader {
     public long dtvOffset = -1;
 
     /**
-     * Where we'll find the document lengths for this field.
+     * Where we'll find the document vector lengths for this field, both 
+     * unstemmed (element 0) and stemmed (element 1).
      */
-    public long vectorLengthOffset = -1;
-
+    public long[] vectorLengthOffsets = new long[] {-1, -1};
+    
     /**
      * Creates a header.
      */
@@ -97,7 +98,9 @@ public class FieldHeader {
         }
         dtvPosOffset = f.readLong();
         dtvOffset = f.readLong();
-        vectorLengthOffset = f.readLong();
+        for(int i = 0; i < vectorLengthOffsets.length; i++) {
+            vectorLengthOffsets[i] = f.readLong();
+        }
     }
 
     /**
@@ -113,7 +116,9 @@ public class FieldHeader {
         }
         f.writeLong(dtvPosOffset);
         f.writeLong(dtvOffset);
-        f.writeLong(vectorLengthOffset);
+        for(int i = 0; i < vectorLengthOffsets.length; i++) {
+            f.writeLong(vectorLengthOffsets[i]);
+        }
     }
     
     public void write(WriteableBuffer b) {
@@ -125,7 +130,9 @@ public class FieldHeader {
         }
         b.byteEncode(dtvPosOffset, 8);
         b.byteEncode(dtvOffset, 8);
-        b.byteEncode(vectorLengthOffset, 8);
+        for(int i = 0; i < vectorLengthOffsets.length; i++) {
+            b.byteEncode(vectorLengthOffsets[i], 8);
+        }
         
     }
 
@@ -134,8 +141,8 @@ public class FieldHeader {
         return "FieldHeader{\n " + "fieldID=" + fieldID + "\n maxDocID="
                 + maxDocID + "\n dictOffsets=" + Arrays.toString(dictOffsets)
                 + "\n dtvPosOffset=" + dtvPosOffset
-                + "\n dtvOffset=" + dtvOffset + "\n vectorLengthOffset="
-                + vectorLengthOffset + "\n}";
+                + "\n dtvOffset=" + dtvOffset + "\n vectorLengthOffsets="
+                + Arrays.toString(vectorLengthOffsets) + "\n}";
     }
     
     

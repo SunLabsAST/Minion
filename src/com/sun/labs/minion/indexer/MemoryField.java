@@ -3,6 +3,7 @@ package com.sun.labs.minion.indexer;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Pipeline;
 import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
@@ -76,7 +77,7 @@ public class MemoryField extends Field {
         return bundle.getPostingsChannelNames();
     } 
     
-    public MemoryDictionary getDictionary(MemoryDictionaryBundle.Type type) {
+    public Dictionary getDictionary(MemoryDictionaryBundle.Type type) {
         return bundle.getDictionary(type);
     }
 
@@ -169,11 +170,6 @@ public class MemoryField extends Field {
     
     public void clear() {
         bundle.clear();
-    }
-
-    @Override
-    public MemoryDictionary getTermDictionary(boolean cased) {
-        return bundle.getTermDictionary(cased);
     }
 
     private class FieldStage extends StageAdapter {

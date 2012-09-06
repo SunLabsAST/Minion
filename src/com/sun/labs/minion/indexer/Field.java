@@ -3,10 +3,9 @@ package com.sun.labs.minion.indexer;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Stemmer;
 import com.sun.labs.minion.StemmerFactory;
-import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.partition.Partition;
-import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.util.CDateParser;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,7 +84,7 @@ public abstract class Field<N extends Comparable> {
         }
     }
     
-    public abstract Dictionary getTermDictionary(boolean caseSensitive);
+    public abstract Dictionary getDictionary(Type type);
 
     public FieldInfo getInfo() {
         return info;

@@ -25,9 +25,11 @@ package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
@@ -110,17 +112,50 @@ public class DocumentVectorLengths {
      * @throws java.io.IOException if there is any error writing the vector lengths
      */
     public static void calculate(Field f, PartitionOutput partOut,
+                                 long[] vectorLengthOffsets,
                                  TermStatsDiskDictionary gts)
             throws java.io.IOException {
         Partition p = f.getPartition();
+        WriteableBuffer vectorLengthsBuffer = partOut.getVectorLengthsBuffer();
+        vectorLengthOffsets[0] = vectorLengthsBuffer.position();
+        Dictionary<String> termDict;
+        if(f.isUncased()) {
+            termDict = f.getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
+        } else {
+            termDict = f.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+        }
         calculate(f.getInfo(), 
                   p.getNDocs(), 
                   p.maxDocumentID,
                   p.getPartitionManager(),
-                  (DictionaryIterator<String>) f.getTermDictionary(false).iterator(),
-                  partOut.getVectorLengthsBuffer(), gts);
+                  (DictionaryIterator<String>) termDict.iterator(),
+                  vectorLengthsBuffer, gts);
+        if(f.isStemmed()) {
+            vectorLengthOffsets[1] = vectorLengthsBuffer.position();
+            termDict = f.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
+            calculate(f.getInfo(),
+                      p.getNDocs(),
+                      p.maxDocumentID,
+                      p.getPartitionManager(),
+                      (DictionaryIterator<String>) termDict.iterator(),
+                      vectorLengthsBuffer, gts);
+            
+        }
     }
 
+    /**
+     * Calculates the document vectors associated with a given term dictionary and
+     * set of global term statistics.
+     * @param fi the field for which we're calculating vector lengths
+     * @param nDocs the number of docs in the partition we're calculating vector lengths for
+     * @param maxDocID the maximum document ID in the partition
+     * @param manager the partition manager responsible for the partition
+     * @param mdi an iterator for the term dictionary
+     * @param vectorLengthsBuffer a buffer to which we can write the vector lengths
+     * @param gts the global term stats
+     * @return the offset of the buffer at the start 
+     * @throws java.io.IOException 
+     */
     public static void calculate(FieldInfo fi,
                                  int nDocs,
                                  int maxDocID,
@@ -128,7 +163,6 @@ public class DocumentVectorLengths {
                                  DictionaryIterator<String> mdi,
                                  WriteableBuffer vectorLengthsBuffer,
                                  TermStatsDiskDictionary gts)
-
             throws java.io.IOException {
 
         float[] vl = new float[maxDocID + 1];

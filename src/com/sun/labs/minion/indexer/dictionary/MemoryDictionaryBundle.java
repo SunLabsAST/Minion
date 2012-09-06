@@ -614,13 +614,15 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         if(getTermDictionary(false) != null && !partOut.isLongIndexingRun()) {
             
             dw.start();
+            
             //
             // Write out our document vector lengths.
             WriteableBuffer vlb = partOut.getVectorLengthsBuffer();
-            header.vectorLengthOffset = vlb.position();
+            header.vectorLengthOffsets[0] = vlb.position();
             
             try {
                 DocumentVectorLengths.calculate(field, partOut,
+                                                       header.vectorLengthOffsets,
                         field.getPartition().getPartitionManager().
                         getTermStatsDict());
                 ret = MemoryField.MarshallResult.EVERYTHING_DUMPED;
@@ -633,7 +635,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 logger.finer(String.format("Vector lengths for %s took %.2fms", field.getInfo().getName(), dw.getLastTimeMillis()));
             }
         } else {
-            header.vectorLengthOffset = -1;
+            header.vectorLengthOffsets[0] = -1;
+            header.vectorLengthOffsets[1] = -1;
         }
 
         //

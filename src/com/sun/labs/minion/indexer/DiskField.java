@@ -2,6 +2,7 @@ package com.sun.labs.minion.indexer;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.SearchEngineException;
+import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
@@ -49,12 +50,7 @@ public class DiskField<N extends Comparable> extends Field<N> {
         return bundle.getHeader().maxDocID;
     }
 
-    @Override
-    public DiskDictionary getTermDictionary(boolean cased) {
-        return bundle.getTermDictionary(cased);
-    }
-    
-    public DiskDictionary getDictionary(MemoryDictionaryBundle.Type type) {
+    public Dictionary getDictionary(MemoryDictionaryBundle.Type type) {
         return bundle.getDictionary(type);
     }
 
