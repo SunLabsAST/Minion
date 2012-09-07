@@ -25,6 +25,7 @@ package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
@@ -111,19 +112,14 @@ public class DocumentVectorLengths {
      * @param gts the dictionary of global term stats.
      * @throws java.io.IOException if there is any error writing the vector lengths
      */
-    public static void calculate(Field f, PartitionOutput partOut,
-                                 long[] vectorLengthOffsets,
+    public static void calculate(Field f, FieldHeader header,
+                                 PartitionOutput partOut,
                                  TermStatsDiskDictionary gts)
             throws java.io.IOException {
         Partition p = f.getPartition();
         WriteableBuffer vectorLengthsBuffer = partOut.getVectorLengthsBuffer();
-        vectorLengthOffsets[0] = vectorLengthsBuffer.position();
-        Dictionary<String> termDict;
-        if(f.isUncased()) {
-            termDict = f.getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
-        } else {
-            termDict = f.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
-        }
+        header.vectorLengthOffsets[Field.DocumentVectorType.RAW.ordinal()] = vectorLengthsBuffer.position();
+        Dictionary<String> termDict = f.getTermDictionary();
         calculate(f.getInfo(), 
                   p.getNDocs(), 
                   p.maxDocumentID,
@@ -131,7 +127,7 @@ public class DocumentVectorLengths {
                   (DictionaryIterator<String>) termDict.iterator(),
                   vectorLengthsBuffer, gts);
         if(f.isStemmed()) {
-            vectorLengthOffsets[1] = vectorLengthsBuffer.position();
+            header.vectorLengthOffsets[Field.DocumentVectorType.STEMMED.ordinal()] = vectorLengthsBuffer.position();
             termDict = f.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
             calculate(f.getInfo(),
                       p.getNDocs(),

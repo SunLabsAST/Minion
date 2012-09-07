@@ -48,6 +48,7 @@ import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.MetaFile;
+import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
@@ -951,7 +952,7 @@ public class QueryTest extends SEMain {
                         if(df == null) {
                             return String.format("No such field %s", fieldName);
                         }
-                        DiskDictionary dict = df.getDictionary(type);
+                        DiskDictionary dict = (DiskDictionary) df.getDictionary(type);
                         if(dict == null) {
                             return String.format(
                                     "No dictionary of type %s for %s", type,
@@ -1096,7 +1097,7 @@ public class QueryTest extends SEMain {
                         if(df == null) {
                             return String.format("No such field %s", fieldName);
                         }
-                        DiskDictionary dict = df.getDictionary(type);
+                        Dictionary dict = df.getDictionary(type);
                         if(dict == null) {
                             return String.format("No dictionary of type %s for %s", type, fieldName);
                         }
@@ -1146,7 +1147,7 @@ public class QueryTest extends SEMain {
 
                             DiskField df = ((InvFileDiskPartition) p).getDF(fi);
 
-                            DiskDictionary rvd = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+                            DiskDictionary rvd = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
                             QueryEntry re;
                             String res = "no raw";
                             if(rvd != null) {
@@ -1158,7 +1159,7 @@ public class QueryTest extends SEMain {
                                 }
                             }
 
-                            DiskDictionary svd = df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+                            DiskDictionary svd = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
                             QueryEntry se;
                             String ses = "no stemmed";
                             if(svd != null) {
@@ -1213,7 +1214,7 @@ public class QueryTest extends SEMain {
                     String term = args[i];
                     for(DiskPartition p : parts) {
                         DiskField df = ((InvFileDiskPartition) p).getDF(fi);
-                        DiskDictionary dd = df.getDictionary(type);
+                        DiskDictionary dd = (DiskDictionary) df.getDictionary(type);
                         if(type == Type.STEMMED_TOKENS) {
                             Stemmer stemmer = df.getStemmer();
                             if(stemmer != null) {

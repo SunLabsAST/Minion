@@ -192,7 +192,7 @@ public class MTDictReader implements Runnable {
         int numTerms = 0;
         for(DiskPartition part : partitions) {
             for(DiskField df : ((InvFileDiskPartition) part).getDiskFields()) {
-                DiskDictionary main = df.getTermDictionary(false);
+                DiskDictionary main = (DiskDictionary) df.getTermDictionary();
                 if(main.size() > numTerms) {
                     numTerms = main.size();
                     selectedDict = main;

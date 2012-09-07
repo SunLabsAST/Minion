@@ -54,7 +54,7 @@ public class PositionsMergeTest {
                 starts[i] = starts[i - 1] + parts[i - 1].getNDocs();
             }
             if(df != null) {
-                dicts[i] = df.getDictionary(
+                dicts[i] = (DiskDictionary) df.getDictionary(
                         MemoryDictionaryBundle.Type.CASED_TOKENS);
             }
         }

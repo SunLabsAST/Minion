@@ -28,6 +28,7 @@ import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
@@ -115,7 +116,14 @@ public class PostTest implements Runnable {
             int nEntries = 1;
 
             if(terms.isEmpty()) {
-                DiskDictionary dd = df.getTermDictionary(caseSensitive);
+                DiskDictionary dd;
+                if(caseSensitive) {
+                    dd = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+                } else {
+                    dd = (DiskDictionary) df.
+                            getDictionary(
+                            MemoryDictionaryBundle.Type.UNCASED_TOKENS);
+                }
                 if(dd == null) {
                     output.format("No dictionary for %s?\n", fi.getName());
                     continue;

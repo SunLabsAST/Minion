@@ -50,7 +50,7 @@ public class FieldHeader {
     /**
      * The offsets of the starts of the dictionaries that make up the fields.
      */
-    public long[] dictOffsets = new long[MemoryDictionaryBundle.Type.values().length];
+    public long[] dictionaryOffsets = new long[MemoryDictionaryBundle.Type.values().length];
 
     /**
      * Where we'll find the buffer that maps from document ID to a position
@@ -67,13 +67,14 @@ public class FieldHeader {
      * Where we'll find the document vector lengths for this field, both 
      * unstemmed (element 0) and stemmed (element 1).
      */
-    public long[] vectorLengthOffsets = new long[] {-1, -1};
+    public long[] vectorLengthOffsets = new long[Field.DocumentVectorType.values().length];
     
     /**
      * Creates a header.
      */
     public FieldHeader() {
-        Arrays.fill(dictOffsets, -1);
+        Arrays.fill(dictionaryOffsets, -1);
+        Arrays.fill(vectorLengthOffsets, -1);
     } // FieldHeader constructor
 
     /**
@@ -94,7 +95,7 @@ public class FieldHeader {
         maxDocID = f.readInt();
         int n = f.readInt();
         for(int i = 0; i < n; i++) {
-            dictOffsets[i] = f.readLong();
+            dictionaryOffsets[i] = f.readLong();
         }
         dtvPosOffset = f.readLong();
         dtvOffset = f.readLong();
@@ -110,9 +111,9 @@ public class FieldHeader {
             throws java.io.IOException {
         f.writeInt(fieldID);
         f.writeInt(maxDocID);
-        f.writeInt(dictOffsets.length);
-        for(int i = 0; i < dictOffsets.length; i++) {
-            f.writeLong(dictOffsets[i]);
+        f.writeInt(dictionaryOffsets.length);
+        for(int i = 0; i < dictionaryOffsets.length; i++) {
+            f.writeLong(dictionaryOffsets[i]);
         }
         f.writeLong(dtvPosOffset);
         f.writeLong(dtvOffset);
@@ -124,9 +125,9 @@ public class FieldHeader {
     public void write(WriteableBuffer b) {
         b.byteEncode(fieldID, 4);
         b.byteEncode(maxDocID, 4);
-        b.byteEncode(dictOffsets.length, 4);
-        for(int i = 0; i < dictOffsets.length; i++) {
-            b.byteEncode(dictOffsets[i], 8);
+        b.byteEncode(dictionaryOffsets.length, 4);
+        for(int i = 0; i < dictionaryOffsets.length; i++) {
+            b.byteEncode(dictionaryOffsets[i], 8);
         }
         b.byteEncode(dtvPosOffset, 8);
         b.byteEncode(dtvOffset, 8);
@@ -139,7 +140,7 @@ public class FieldHeader {
     @Override
     public String toString() {
         return "FieldHeader{\n " + "fieldID=" + fieldID + "\n maxDocID="
-                + maxDocID + "\n dictOffsets=" + Arrays.toString(dictOffsets)
+                + maxDocID + "\n dictOffsets=" + Arrays.toString(dictionaryOffsets)
                 + "\n dtvPosOffset=" + dtvPosOffset
                 + "\n dtvOffset=" + dtvOffset + "\n vectorLengthOffsets="
                 + Arrays.toString(vectorLengthOffsets) + "\n}";

@@ -32,6 +32,7 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
@@ -99,10 +100,13 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
         // Get the dictionary from which we'll draw the vector and the one
         // from which we'll draw terms, then look up the document.
         MemoryDictionary<String> vecDict;
+        Field.TermStatsType termStatsType;
         if(mf.isStemmed()) {
-            vecDict = mf.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
+            termStatsType = Field.TermStatsType.STEMMED;
+            vecDict = (MemoryDictionary<String>) mf.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
         } else {
-            vecDict = mf.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+            termStatsType = Field.TermStatsType.RAW;
+            vecDict = (MemoryDictionary<String>) mf.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
         }
 
         IndexEntry<String> vecEntry = vecDict.get(key);

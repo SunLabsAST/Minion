@@ -376,7 +376,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 // one of the bigram dictionaries that we might build below, then
                 // just skip it.
                 if(type != Type.TOKEN_BIGRAMS && type != Type.SAVED_VALUE_BIGRAMS) {
-                    header.dictOffsets[ord] = -1;
+                    header.dictionaryOffsets[ord] = -1;
                     continue;
                 }
             } 
@@ -422,7 +422,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         //
                         // There were no entries stored in the dictionary, so
                         // we don't need to save anything.
-                        header.dictOffsets[ord] = -1;
+                        header.dictionaryOffsets[ord] = -1;
                         continue;
                         
                     }
@@ -452,7 +452,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         //
                         // There were no entries stored in the dictionary, so
                         // we don't need to save anything.
-                        header.dictOffsets[ord] = -1;
+                        header.dictionaryOffsets[ord] = -1;
                         continue;
 
                     }
@@ -503,7 +503,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                         partOut.setPostingsIDMap(null);
                     } else {
-                        header.dictOffsets[ord] = -1;
+                        header.dictionaryOffsets[ord] = -1;
                         continue;
                     }
                     break;
@@ -513,7 +513,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     // If this is a string field, and there were some saved values, 
                     // then go ahead and make bigrams out of them.
                     if(field.getInfo().getType() == FieldInfo.Type.STRING &&
-                            header.dictOffsets[Type.RAW_SAVED.ordinal()] != -1){
+                            header.dictionaryOffsets[Type.RAW_SAVED.ordinal()] != -1){
                         if(dicts[ord] == null) {
                             dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
                         }
@@ -528,7 +528,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                         partOut.setPostingsIDMap(null);
                     } else {
-                        header.dictOffsets[ord] = -1;
+                        header.dictionaryOffsets[ord] = -1;
                         continue;
                     }
                     break;
@@ -542,10 +542,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             
             try {
                 if(dicts[ord].marshall(partOut)) {
-                    header.dictOffsets[ord] = dictPos;
+                    header.dictionaryOffsets[ord] = dictPos;
                     entryIDMaps[ord] = dicts[ord].getIdMap();
                 } else {
-                    header.dictOffsets[ord] = -1;
+                    header.dictionaryOffsets[ord] = -1;
                     entryIDMaps[ord] = null;
                 }
             } catch(RuntimeException ex) {
@@ -567,7 +567,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         //
         // If we had any saved values, then we need to dump the map from document
         // IDs to the values that were saved for that document.
-        if(field.isSaved() && header.dictOffsets[Type.RAW_SAVED.ordinal()] != -1) {
+        if(field.isSaved() && header.dictionaryOffsets[Type.RAW_SAVED.ordinal()] != -1) {
 
             //
             // Dump the map from document IDs to the values saved for that document
@@ -617,14 +617,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             
             //
             // Write out our document vector lengths.
-            WriteableBuffer vlb = partOut.getVectorLengthsBuffer();
-            header.vectorLengthOffsets[0] = vlb.position();
-            
             try {
-                DocumentVectorLengths.calculate(field, partOut,
-                                                       header.vectorLengthOffsets,
-                        field.getPartition().getPartitionManager().
-                        getTermStatsDict());
+                DocumentVectorLengths.calculate(field, header, partOut,
+                                                field.getPartition().
+                        getPartitionManager().getTermStatsDict());
                 ret = MemoryField.MarshallResult.EVERYTHING_DUMPED;
             } catch (RuntimeException ex) {
                 logger.log(Level.SEVERE, String.format("Exception calculating document vector lengths for %s", info.getName()));
@@ -635,8 +631,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 logger.finer(String.format("Vector lengths for %s took %.2fms", field.getInfo().getName(), dw.getLastTimeMillis()));
             }
         } else {
-            header.vectorLengthOffsets[0] = -1;
-            header.vectorLengthOffsets[1] = -1;
+            Arrays.fill(header.vectorLengthOffsets, -1);
         }
 
         //

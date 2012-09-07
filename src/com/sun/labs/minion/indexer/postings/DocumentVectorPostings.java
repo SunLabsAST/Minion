@@ -238,11 +238,12 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
 
             wc.dvl = df.getDocumentVectorLength(docID);
             List<WeightedFeature> fl = new ArrayList<WeightedFeature>();
-            if(getN() > 0.1 * df.getTermDictionary(false).size()) {
+            Dictionary termDictionary = df.getTermDictionary();
+            if(getN() > 0.1 * termDictionary.size()) {
                 //
                 // If we have a substantial portion of the entries in the dictionary,
                 // then just iterate through the dictionary and pick out the names.
-                LightIterator di = df.getTermDictionary(false).literator();
+                LightIterator di = ((DiskDictionary) termDictionary).literator();
                 QueryEntry qe = null;
                 while(pi.next()) {
                     while(di.next()) {
@@ -263,7 +264,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
                     }
                 }
             } else {
-                DiskDictionary dd = df.getTermDictionary(false);
+                DiskDictionary dd = (DiskDictionary) termDictionary;
                 while(pi.next()) {
                     QueryEntry qe = dd.getByID((int) pi.getID());
                     String name = qe.getName().toString();

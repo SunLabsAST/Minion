@@ -4,6 +4,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Stemmer;
 import com.sun.labs.minion.StemmerFactory;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
+import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.util.CDateParser;
@@ -41,6 +42,22 @@ public abstract class Field<N extends Comparable> {
      * A stemmer for stemming.
      */
     protected Stemmer stemmer;
+    
+    /**
+     * The types of document vectors that we store.
+     */
+    public enum DocumentVectorType {
+        RAW,
+        STEMMED,
+    }
+    
+    /**
+     * The types of term stats that we can get.
+     */
+    public enum TermStatsType {
+        RAW,
+        STEMMED
+    }
 
     public Field(Partition partition, FieldInfo info) {
         this.partition = partition;
@@ -85,6 +102,19 @@ public abstract class Field<N extends Comparable> {
     }
     
     public abstract Dictionary getDictionary(Type type);
+    
+    /**
+     * Gets a term dictionary, preferring uncased over cased dictionaries, if
+     * they exist.
+     * @return a dictionary of terms for the field, if one exists.
+     */
+    public Dictionary getTermDictionary() {
+        if(uncased) {
+            return getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
+        } else {
+            return getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+        }
+    }
 
     public FieldInfo getInfo() {
         return info;

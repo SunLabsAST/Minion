@@ -50,6 +50,7 @@ public class DiskField<N extends Comparable> extends Field<N> {
         return bundle.getHeader().maxDocID;
     }
 
+    @Override
     public Dictionary getDictionary(MemoryDictionaryBundle.Type type) {
         return bundle.getDictionary(type);
     }

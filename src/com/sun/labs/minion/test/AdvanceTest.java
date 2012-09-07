@@ -46,7 +46,7 @@ public class AdvanceTest {
                 InvFileDiskPartition tp = (InvFileDiskPartition) dp;
                 NanoWatch nw = new NanoWatch();
                 nw.start();
-                DiskDictionary<String> tokens = tp.getDF(args[1]).getTermDictionary(false);
+                DiskDictionary<String> tokens = (DiskDictionary<String>) tp.getDF(args[1]).getTermDictionary();
                 logger.info(String.format("Term dict for %s in %s has %d entries", args[1], tp, tokens.size()));
                 LightIterator<String> tsi = tsd.literator();
                 TermStatsQueryEntry ptse = null;
