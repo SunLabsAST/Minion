@@ -4,6 +4,7 @@ import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
+import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
@@ -37,7 +38,7 @@ public class AdvanceTest {
         SearchEngine engine = SearchEngineFactory.getSearchEngine(args[0]);
         PartitionManager pm = engine.getPM();
         TermStatsDiskDictionary tsds = pm.getTermStatsDict();
-        DiskDictionary tsd = tsds.getDictionary(args[1]);
+        DiskDictionary tsd = tsds.getDictionary(args[1], Field.TermStatsType.RAW);
         logger.info(String.format("Term Stats dict for %s has %d entries", args[1], tsd.size()));
         if(tsd == null) {
             logger.info(String.format("No field %s in term stats", args[1]));

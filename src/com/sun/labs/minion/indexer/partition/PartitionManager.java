@@ -1913,7 +1913,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         if(activeParts.size() > 1) {
             //
             // Get the most up-to-date term stats.
-            generateTermStats();
+            calculateTermStats();
 
             //
             // A single partition with new vector lengths.
@@ -2398,10 +2398,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @throws com.sun.labs.minion.util.FileLockException if there is an error
      * locking the meta file to get the number for the next term stats dictionary.
      */
-    public void generateTermStats() throws java.io.IOException,
+    public void calculateTermStats() throws java.io.IOException,
             FileLockException {
         
-        InvFileDiskPartition.generateTermStats(getActivePartitions().toArray(new DiskPartition[0]), termStatsDictionaryOutput);
+        InvFileDiskPartition.calculateTermStats(getActivePartitions().toArray(new DiskPartition[0]), termStatsDictionaryOutput);
         int tsn = metaFile.getNextTermStatsNumber();
         File newTSF = makeTermStatsFile(tsn);
         RandomAccessFile raf = new RandomAccessFile(newTSF, "rw");
@@ -2830,7 +2830,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     NanoWatch nw = new NanoWatch();
                     nw.start();
                     try {
-                        generateTermStats();
+                        calculateTermStats();
                     } catch(FileLockException ex) {
                         logger.log(Level.SEVERE, String.format(
                                 "Error recalculating term stats"), ex);

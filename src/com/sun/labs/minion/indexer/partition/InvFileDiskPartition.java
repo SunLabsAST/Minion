@@ -25,6 +25,7 @@ package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
@@ -381,12 +382,12 @@ public class InvFileDiskPartition extends DiskPartition {
         }
     }
     
-    public static void generateTermStats(DiskPartition[] partitions,
+    public static void calculateTermStats(DiskPartition[] partitions,
             DictionaryOutput termStatsDictOut) throws java.io.IOException {
 
         //
         // The header and where it goes.
-        TermStatsHeader tsh = new TermStatsHeader();
+        TermStatsHeader termStatsHeader = new TermStatsHeader();
         termStatsDictOut.byteEncode(0, 8);
         
         MetaFile mf = partitions[0].manager.getMetaFile();
@@ -396,7 +397,9 @@ public class InvFileDiskPartition extends DiskPartition {
             if(!fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
                 //
                 // Skip fields that don't have term information.
-                tsh.addOffset(fi.getID(), -1);
+                for(Field.TermStatsType type : Field.TermStatsType.values()) {
+                    termStatsHeader.addOffset(fi.getID(), type, -1);
+                }
                 continue;
             }
             
@@ -410,19 +413,16 @@ public class InvFileDiskPartition extends DiskPartition {
             }
             
             if(regen == null) {
-                tsh.addOffset(fi.getID(), -1);
+                for(Field.TermStatsType type : Field.TermStatsType.values()) {
+                    termStatsHeader.addOffset(fi.getID(), type, -1);
+                }
                 continue;
             }
-            long tsdPos = termStatsDictOut.position();
-            if(DiskField.generateTermStats(fields, termStatsDictOut)) {
-                tsh.addOffset(fi.getID(), tsdPos);
-            } else {
-                tsh.addOffset(fi.getID(), -1);
-            }
+            DiskField.calculateTermStats(fields, termStatsHeader, termStatsDictOut);
         }
         
         long tshpos = termStatsDictOut.position();
-        tsh.write(termStatsDictOut);
+        termStatsHeader.write(termStatsDictOut);
         long end = termStatsDictOut.position();
         termStatsDictOut.position(0);
         termStatsDictOut.byteEncode(tshpos, 8);

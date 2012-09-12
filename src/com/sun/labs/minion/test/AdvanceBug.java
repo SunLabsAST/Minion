@@ -3,6 +3,7 @@ package com.sun.labs.minion.test;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
+import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
@@ -34,7 +35,7 @@ public class AdvanceBug {
         SearchEngine engine = SearchEngineFactory.getSearchEngine(args[0]);
         PartitionManager pm = engine.getPM();
         TermStatsDiskDictionary tsds = pm.getTermStatsDict();
-        DiskDictionary tsd = tsds.getDictionary(args[1]);
+        DiskDictionary tsd = tsds.getDictionary(args[1], Field.TermStatsType.RAW);
         logger.info(String.format("Term Stats dict for %s has %d entries", args[1], tsd.size()));
         
         QueryEntry<String> lastEntry = tsd.getByID(tsd.size());

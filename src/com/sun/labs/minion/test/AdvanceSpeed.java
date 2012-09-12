@@ -4,6 +4,7 @@ import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
+import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary.LookupState;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
@@ -48,7 +49,7 @@ public class AdvanceSpeed {
             }
         }
         TermStatsDiskDictionary tsds = pm.getTermStatsDict();
-        DiskDictionary tsd = tsds.getDictionary(args[1]);
+        DiskDictionary tsd = tsds.getDictionary(args[1], Field.TermStatsType.RAW);
         if(tsd == null) {
             logger.info(String.format("No field %s in term stats", args[1]));
         } else {

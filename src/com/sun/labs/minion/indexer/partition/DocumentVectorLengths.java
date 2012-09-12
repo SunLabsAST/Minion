@@ -125,7 +125,7 @@ public class DocumentVectorLengths {
                   p.maxDocumentID,
                   p.getPartitionManager(),
                   (DictionaryIterator<String>) termDict.iterator(),
-                  vectorLengthsBuffer, gts);
+                  vectorLengthsBuffer, gts, Field.TermStatsType.RAW);
         if(f.isStemmed()) {
             header.vectorLengthOffsets[Field.DocumentVectorType.STEMMED.ordinal()] = vectorLengthsBuffer.position();
             termDict = f.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
@@ -134,7 +134,7 @@ public class DocumentVectorLengths {
                       p.maxDocumentID,
                       p.getPartitionManager(),
                       (DictionaryIterator<String>) termDict.iterator(),
-                      vectorLengthsBuffer, gts);
+                      vectorLengthsBuffer, gts, Field.TermStatsType.STEMMED);
             
         }
     }
@@ -158,7 +158,8 @@ public class DocumentVectorLengths {
                                  PartitionManager manager,
                                  DictionaryIterator<String> mdi,
                                  WriteableBuffer vectorLengthsBuffer,
-                                 TermStatsDiskDictionary gts)
+                                 TermStatsDiskDictionary gts, 
+                                 Field.TermStatsType termStatsType)
             throws java.io.IOException {
 
         float[] vl = new float[maxDocID + 1];
@@ -189,7 +190,7 @@ public class DocumentVectorLengths {
         }        
         //
         // Get an iterator for the term stats.
-        DiskDictionary<String> tsd = gts.getDictionary(fi);
+        DiskDictionary<String> tsd = gts.getDictionary(fi, termStatsType);
         if(tsd == null) {
             //
             // We had a dictionary, but it didn't have term stats for this field,

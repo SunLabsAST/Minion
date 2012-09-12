@@ -25,6 +25,7 @@ package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.Closeable;
+import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.entry.TermStatsEntryFactory;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
@@ -54,8 +55,8 @@ public class TermStatsDiskDictionary implements Closeable {
 
     private RandomAccessFile raf;
 
-    private DiskDictionary[] fieldDicts;
-
+    private DiskDictionary[][] fieldDicts;
+    
     private long closeTime;
 
     private boolean closed;
@@ -70,7 +71,7 @@ public class TermStatsDiskDictionary implements Closeable {
         this.termStatsFile = termStatsFile;
         this.manager = manager;
 
-        fieldDicts = new DiskDictionary[manager.getMetaFile().size() + 1];
+        fieldDicts = new DiskDictionary[manager.getMetaFile().size() + 1][];
 
         //
         // The very first go-round, we might not have stats.
@@ -81,14 +82,25 @@ public class TermStatsDiskDictionary implements Closeable {
             long headerPos = raf.readLong();
             raf.seek(headerPos);
             header = new TermStatsHeader(raf);
-            for(Map.Entry<Integer, Long> e : header) {
-                if(e.getValue() >= 0) {
-                    raf.seek(e.getValue());
-                    fieldDicts[e.getKey()] = new DiskDictionary(new TermStatsEntryFactory(), new StringNameHandler(), raf, 
-                            null, DiskDictionary.PostingsInputType.CHANNEL_FULL_POST, 
-                            DiskDictionary.BufferType.NIOFILEBUFFER, 1024, 
-                            128 * 1024, 128 * 1024, 128*1024, 128*1024, null);
-                    size = Math.max(fieldDicts[e.getKey()].size(), size);
+            for(Map.Entry<Integer, long[]> e : header) {
+                long[] fo = e.getValue();
+                fieldDicts[e.getKey()] = new DiskDictionary[fo.length];
+                for(int i = 0; i < fo.length; i++) {
+                    if(fo[i] >= 0) {
+                        logger.info(String.format("Loading %d: %d", e.getKey(), fo[i]));
+                        raf.seek(fo[i]);
+                        fieldDicts[e.getKey()][i] = new DiskDictionary(
+                                new TermStatsEntryFactory(),
+                                new StringNameHandler(),
+                                raf,
+                                null,
+                                DiskDictionary.PostingsInputType.CHANNEL_FULL_POST,
+                                DiskDictionary.BufferType.NIOFILEBUFFER,
+                                1024,
+                                128
+                                * 1024, 128 * 1024, 128 * 1024, 128 * 1024, null);
+                        size = Math.max(fieldDicts[e.getKey()][i].size(), size);
+                    }
                 }
             }
         }
@@ -103,7 +115,11 @@ public class TermStatsDiskDictionary implements Closeable {
      * if that term does not occur in the index
      */
     public TermStatsQueryEntry getTermStats(String term, String field) {
-        DiskDictionary dd = getDictionary(field);
+        return getTermStats(term, field, Field.TermStatsType.RAW);
+    }    
+
+    public TermStatsQueryEntry getTermStats(String term, String field, Field.TermStatsType type) {
+        DiskDictionary dd = getDictionary(field, type);
         return dd == null ? null : (TermStatsQueryEntry) dd.get(term);
     }
 
@@ -114,11 +130,21 @@ public class TermStatsDiskDictionary implements Closeable {
      * @return the combined term statistics
      */
     public TermStatsImpl getTermStats(String term) {
+        return getTermStats(term, Field.TermStatsType.RAW);
+    }
+
+    /**
+     * Generates combined term stats across all of the fields for a given term.
+     * @param term the term for which we want stats
+     * @param type what type of stats we want (e.g., for raw vs. stemmed)
+     * @return 
+     */
+    public TermStatsImpl getTermStats(String term, Field.TermStatsType type) {
         TermStatsImpl total = new TermStatsImpl(term);
         total.clear();
-        for(DiskDictionary dd : fieldDicts) {
+        for(DiskDictionary[] dd : fieldDicts) {
             if(dd != null) {
-                TermStatsQueryEntry qe = (TermStatsQueryEntry) dd.get(term);
+                TermStatsQueryEntry qe = (TermStatsQueryEntry) dd[type.ordinal()].get(term);
                 if(qe != null) {
                     total.add(qe.getTermStats());
                 }
@@ -136,22 +162,34 @@ public class TermStatsDiskDictionary implements Closeable {
      * if that term does not occur in the index
      */
     public TermStatsQueryEntry getTermStats(String term, FieldInfo fi) {
-        DiskDictionary dd = getDictionary(fi);
+        return getTermStats(term, fi, Field.TermStatsType.RAW); 
+    }
+    
+    public TermStatsQueryEntry getTermStats(String term, FieldInfo fi, Field.TermStatsType type) {
+        DiskDictionary dd = getDictionary(fi, type);
         return dd == null ? null : (TermStatsQueryEntry) dd.get(term);
     }
 
     /**
-     * Gets an for this dictionary.
+     * Gets an iterator for the raw term statistics dictionary.
      * @param field the field for which we want the iterator
      * @return an iterator for the term stats.
      */
     public DictionaryIterator<String> iterator(String field) {
-        DiskDictionary<String> dd = getDictionary(field);
+        return iterator(field, Field.TermStatsType.RAW);
+    }
+    
+    public DictionaryIterator<String> iterator(String field, Field.TermStatsType type) {
+        DiskDictionary<String> dd = getDictionary(field, type);
         return dd == null ? null : (DictionaryIterator<String>) dd.iterator();
     }
     
     public LightIterator<String> literator(String field) {
-        DiskDictionary<String> dd = getDictionary(field);
+        return literator(field, Field.TermStatsType.RAW);
+    }
+    
+    public LightIterator<String> literator(String field, Field.TermStatsType type) {
+        DiskDictionary<String> dd = getDictionary(field, type);
         return dd == null ? null : dd.literator();
     }
     
@@ -161,27 +199,29 @@ public class TermStatsDiskDictionary implements Closeable {
      * @return an iterator for the term stats.
      */
     public DictionaryIterator<String> iterator(FieldInfo field) {
-        if(field.getID() >= fieldDicts.length) {
-            return null;
-        }
-        DiskDictionary dd = fieldDicts[field.getID()];
+        return iterator(field, Field.TermStatsType.RAW);
+    }    
+
+    public DictionaryIterator<String> iterator(FieldInfo field, Field.TermStatsType type) {
+        DiskDictionary dd = getDictionary(field, type);
         return dd == null ? null : (DictionaryIterator<String>) dd.iterator();
     }
 
     public LightIterator literator(FieldInfo field) {
-        if(field.getID() >= fieldDicts.length) {
-            return null;
-        }
-        DiskDictionary dd = fieldDicts[field.getID()];
+        return literator(field, Field.TermStatsType.RAW);
+    }
+    
+    public LightIterator literator(FieldInfo field, Field.TermStatsType type) {
+        DiskDictionary dd = getDictionary(field, type);
         return dd == null ? null : dd.literator();
     }
 
-    public DiskDictionary<String> getDictionary(String field) {
+    public DiskDictionary<String> getDictionary(String field, Field.TermStatsType type) {
         FieldInfo fi = manager.getMetaFile().getFieldInfo(field);
-        return getDictionary(fi);
+        return getDictionary(fi, type);
     }
 
-    public DiskDictionary<String> getDictionary(FieldInfo fi) {
+    public DiskDictionary<String> getDictionary(FieldInfo fi, Field.TermStatsType type) {
         if(fi == null) {
             return null;
         }
@@ -189,8 +229,12 @@ public class TermStatsDiskDictionary implements Closeable {
         if(fi.getID() >= fieldDicts.length) {
             return null;
         }
-        
-        return fieldDicts[fi.getID()];
+
+        DiskDictionary[] dicts = fieldDicts[fi.getID()];
+        if(dicts != null) {
+            return dicts[type.ordinal()];
+        }
+        return null;
     }
 
     public int size() {

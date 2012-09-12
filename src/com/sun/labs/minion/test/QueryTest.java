@@ -1632,7 +1632,7 @@ public class QueryTest extends SEMain {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
-                manager.generateTermStats();
+                manager.calculateTermStats();
                 return "Term stats recalculated";
             }
 

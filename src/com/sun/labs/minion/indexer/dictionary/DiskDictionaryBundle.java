@@ -258,12 +258,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
         }
     }
 
-    public DiskDictionary getTermDictionary(boolean cased) {
-        if(cased) {
-            return dicts[Type.CASED_TOKENS.ordinal()];
-        } else {
+    public DiskDictionary getTermDictionary() {
+        if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
             return dicts[Type.UNCASED_TOKENS.ordinal()];
         }
+        return dicts[Type.CASED_TOKENS.ordinal()];
     }
 
     /**
@@ -1088,7 +1087,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             mergeState.manager,
                             (DictionaryIterator<String>) newMainDict.iterator(),
                             vlb,
-                            mergeState.manager.getTermStatsDict());
+                            mergeState.manager.getTermStatsDict(), 
+                            Field.TermStatsType.RAW);
                     
                     //
                     // The stemmed document vectors.
@@ -1107,7 +1107,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                             mergeState.manager,
                                                             (DictionaryIterator<String>) newStemDict.iterator(),
                                                             vlb,
-                                                            mergeState.manager.getTermStatsDict());
+                                                            mergeState.manager.getTermStatsDict(),
+                                                            Field.TermStatsType.STEMMED);
                         }
                     }
                     for(RandomAccessFile mprf : mPostRAF) {
@@ -1151,127 +1152,199 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @return <code>true</code> if any term statistics were written, <code>false</code>
      * otherwise.
      */
-    public static boolean generateTermStats(DiskDictionaryBundle[] bundles,
-            DictionaryOutput termStatsDictOut) {
+    public static void calculateTermStats(DiskDictionaryBundle[] bundles,
+                                            TermStatsHeader termStatsHeader,
+                                            DictionaryOutput termStatsDictOut) {
         
+        if(bundles.length == 1) {
+            DiskDictionary dict = bundles[0].getTermDictionary();
+            FieldInfo info = bundles[0].info;
+            if(dict != null) {
+                long offset = termStatsDictOut.position();
+                int nWritten = calculateSingleDictionaryTermStats(info, dict,
+                                                                  termStatsDictOut);
+                if(nWritten > 0) {
+                    termStatsHeader.addOffset(info.getID(),
+                                              Field.TermStatsType.RAW, offset);
+                }
+            }
+            if(info.hasAttribute(FieldInfo.Attribute.STEMMED)) {
+                long offset = termStatsDictOut.position();
+                dict = bundles[0].getDictionary(Type.STEMMED_TOKENS);
+                if(dict != null) {
+                    int nWritten = calculateSingleDictionaryTermStats(info, dict,
+                                                                      termStatsDictOut);
+                    if(nWritten > 0) {
+                        termStatsHeader.addOffset(info.getID(),
+                                                  Field.TermStatsType.STEMMED,
+                                                  offset);
+                    }
+                }
+            }
+        } else {
+            
+            DiskDictionary dicts[] = new DiskDictionary[bundles.length];
+            FieldInfo info = null;
+            for(int i = 0; i < bundles.length; i++) {
+                if(bundles[i] == null) {
+                    continue;
+                }
+                info = bundles[i].info;
+                dicts[i] = bundles[i].getTermDictionary();
+            }
+            long offset = termStatsDictOut.position();
+            int nWritten = calculateMultipleDictionaryTermStats(info, dicts,
+                                                               termStatsDictOut);
+            if(nWritten > 0) {
+                termStatsHeader.addOffset(info.getID(),
+                                          Field.TermStatsType.RAW, offset);
+            }
+            if(info.hasAttribute(FieldInfo.Attribute.STEMMED)) {
+                for(int i = 0; i < bundles.length; i++) {
+                    dicts[i] = null;
+                    if(bundles[i] == null) {
+                        continue;
+                    }
+                    info = bundles[i].info;
+                    dicts[i] = bundles[i].getDictionary(Type.STEMMED_TOKENS);
+                }
+                offset = termStatsDictOut.position();
+                nWritten = calculateMultipleDictionaryTermStats(info, dicts,
+                                                                   termStatsDictOut);
+                if(nWritten > 0) {
+                    termStatsHeader.addOffset(info.getID(),
+                                              Field.TermStatsType.STEMMED, offset);
+                }
+                
+            }
+        }
+    }
+    
+    private static int calculateSingleDictionaryTermStats(FieldInfo info,
+                                                   DiskDictionary dict,
+                                                   DictionaryOutput termStatsDictOut) {
         //
-        // Special case of a single partition, we just need to iterate through
+        // Special case of a generating term stats from a single partition, 
+        // we just need to iterate through
         // the entries and copy out the data, so no need for messing with the heap.
+        DictionaryIterator di = (DictionaryIterator) dict.iterator();
+        if(di == null) {
+            return 0;
+        }
         int nMerged = 0;
         int nWritten = 0;
         int tsid = 1;
-        if(bundles.length == 1) {
-            DictionaryIterator di = null;
-            if(bundles[0].dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-                di = (DictionaryIterator) bundles[0].dicts[Type.UNCASED_TOKENS.ordinal()].iterator();
-            } else if(bundles[0].dicts[Type.CASED_TOKENS.ordinal()] != null) {
-                di = (DictionaryIterator) bundles[0].dicts[Type.CASED_TOKENS.ordinal()].iterator();
-            }
-            if(di == null) {
-                return false;
-            }
-            termStatsDictOut.start(null, new StringNameHandler(),
-                                   MemoryDictionary.Renumber.RENUMBER, false, 0);
-            while(di.hasNext()) {
-                QueryEntry qe = (QueryEntry) di.next();
-                //
-                // If we only ended up with 1 document, then forget about this one.
-                if(qe.getN() > 1) {
-                    TermStatsIndexEntry tse = new TermStatsIndexEntry((String) qe.getName(), tsid++);
-                    tse.getTermStats().add(qe);
-                    termStatsDictOut.write(tse);
-                    nWritten++;
-                }
-                nMerged++;
-                if(nMerged % 50000 == 0 && logger.isLoggable(Level.FINER)) {
-                    logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
-                }
-            }
-
-            if(nMerged % 50000 != 0 && logger.isLoggable(Level.FINER)) {
-                logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
-            }
-            termStatsDictOut.finish();
-        } else {
-
+        termStatsDictOut.start(null, new StringNameHandler(),
+                               MemoryDictionary.Renumber.RENUMBER, false, 0);
+        while(di.hasNext()) {
+            QueryEntry qe = (QueryEntry) di.next();
             //
-            // We need to handle data from a number of partitions, which
-            // we'll do with a heap.
-            class HE implements Comparable<HE> {
+            // If we only ended up with 1 document, then forget about this one.
+            if(qe.getN() > 1) {
+                TermStatsIndexEntry tse = new TermStatsIndexEntry((String) qe.
+                        getName(), tsid++);
+                tse.getTermStats().add(qe);
+                termStatsDictOut.write(tse);
+                nWritten++;
+            }
+            nMerged++;
+            if(nMerged % 50000 == 0 && logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("%s generated term stats for %d",
+                                           info.getName(), nMerged));
+            }
+        }
 
-                DictionaryIterator di;
+        if(nMerged % 50000 != 0 && logger.isLoggable(Level.FINER)) {
+            logger.finer(String.format("%s generated term stats for %d", info.
+                    getName(), nMerged));
+        }
+        termStatsDictOut.finish();
+        return nWritten;
+    }
+    
+    private static int calculateMultipleDictionaryTermStats(FieldInfo info,
+                                                        DiskDictionary[] dicts,
+                                                        DictionaryOutput termStatsDictOut) {
+        
+        //
+        // We need to handle data from a number of partitions, which
+        // we'll do with a heap.
+        class HE implements Comparable<HE> {
 
-                QueryEntry curr;
+            DictionaryIterator di;
 
-                public HE(DictionaryIterator di) {
-                    this.di = di;
-                }
+            QueryEntry curr;
 
-                public boolean next() {
-                    if(di.hasNext()) {
-                        curr = (QueryEntry) di.next();
-                        return true;
-                    }
-                    return false;
-                }
-
-                @Override
-                public int compareTo(HE o) {
-                    return ((Comparable) curr.getName()).compareTo(o.curr.getName());
-                }
+            public HE(DictionaryIterator di) {
+                this.di = di;
             }
 
-            PriorityQueue<HE> h = new PriorityQueue<HE>();
-            for(DiskDictionaryBundle bundle : bundles) {
-                if(bundle == null) {
-                    continue;
+            public boolean next() {
+                if(di.hasNext()) {
+                    curr = (QueryEntry) di.next();
+                    return true;
                 }
-                HE el = null;
-                if(bundle.dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-                    el = new HE((DictionaryIterator) bundle.dicts[Type.UNCASED_TOKENS.ordinal()].iterator());
-                } else if(bundle.dicts[Type.CASED_TOKENS.ordinal()] != null) {
-                    el = new HE((DictionaryIterator) bundle.dicts[Type.CASED_TOKENS.ordinal()].iterator());
-                }
-                if(el != null && el.next()) {
-                    h.offer(el);
-                }
-            }
-            
-            if(h.isEmpty()) {
                 return false;
             }
 
-            termStatsDictOut.start(null, new StringNameHandler(),
-                                   MemoryDictionary.Renumber.RENUMBER, false,
-                                   0);
-            while(h.size() > 0) {
-                HE top = h.peek();
-                TermStatsIndexEntry tse = new TermStatsIndexEntry((String) top.curr.getName(), tsid++);
-                TermStatsImpl ts = tse.getTermStats();
-                while(top != null && top.curr.getName().equals(tse.getName())) {
-                    top = h.poll();
-                    ts.add(top.curr);
-                    if(top.next()) {
-                        h.offer(top);
-                    }
-                    top = h.peek();
-                }
-                if(tse.getN() > 1) {
-                    termStatsDictOut.write(tse);
-                    nWritten++;
-                }
-                nMerged++;
-                if(nMerged % 100000 == 0 && logger.isLoggable(Level.FINER)) {
-                    logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
-                }
+            @Override
+            public int compareTo(HE o) {
+                return ((Comparable) curr.getName()).compareTo(o.curr.getName());
             }
-            if(nMerged % 100000 != 0 && logger.isLoggable(Level.FINER)) {
-                logger.finer(String.format("%s generated term stats for %d", bundles[0].info.getName(), nMerged));
-            }
-            termStatsDictOut.finish();
         }
-        return nWritten > 0;
+
+        PriorityQueue<HE> h = new PriorityQueue<HE>();
+        for(DiskDictionary dict : dicts) {
+            if(dict == null) {
+                continue;
+            }
+            HE el = new HE((DictionaryIterator) dict.iterator());
+            if(el.next()) {
+                h.offer(el);
+            }
+        }
+
+        if(h.isEmpty()) {
+            return 0;
+        }
+
+        int nMerged = 0;
+        int nWritten = 0;
+        int tsid = 1;
+        termStatsDictOut.start(null, new StringNameHandler(),
+                               MemoryDictionary.Renumber.RENUMBER, false,
+                               0);
+        while(h.size() > 0) {
+            HE top = h.peek(); 
+            TermStatsIndexEntry tse = new TermStatsIndexEntry((String) top.curr.
+                    getName(), tsid++);
+            TermStatsImpl ts = tse.getTermStats();
+            while(top != null && top.curr.getName().equals(tse.getName())) {
+                top = h.poll();
+                ts.add(top.curr);
+                if(top.next()) {
+                    h.offer(top);
+                }
+                top = h.peek();
+            }
+            if(tse.getN() > 1) {
+                termStatsDictOut.write(tse);
+                nWritten++;
+            }
+            nMerged++;
+            if(nMerged % 100000 == 0 && logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("%s generated term stats for %d",
+                                           info.getName(), nMerged));
+            }
+        }
+        if(nMerged % 100000 != 0 && logger.isLoggable(Level.FINER)) {
+            logger.finer(String.format("%s generated term stats for %d", info.
+                    getName(), nMerged));
+        }
+        termStatsDictOut.finish();
+        return nWritten;
     }
+                                                
 
     public void calculateVectorLengths(PartitionOutput partOut) throws java.io.IOException {
         
@@ -1291,7 +1364,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     p.getPartitionManager(),
                     (DictionaryIterator<String>) termDict.iterator(),
                     vectorLengthsBuffer,
-                    p.getPartitionManager().getTermStatsDict());
+                    p.getPartitionManager().getTermStatsDict(), 
+                    Field.TermStatsType.RAW);
             if(info.hasAttribute(FieldInfo.Attribute.STEMMED)) {
                 termDict = (DiskDictionary<String>) field.getDictionary(Type.STEMMED_TOKENS);
                 header.vectorLengthOffsets[Field.DocumentVectorType.RAW.
@@ -1300,11 +1374,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                                 p.getNDocs(),
                                                 p.getMaxDocumentID(),
                                                 p.getPartitionManager(),
-                                                (DictionaryIterator<String>) termDict.
-                        iterator(),
+                                                (DictionaryIterator<String>) termDict.iterator(),
                                                 vectorLengthsBuffer,
-                                                p.getPartitionManager().
-                        getTermStatsDict());
+                                                p.getPartitionManager().getTermStatsDict(),
+                                                Field.TermStatsType.STEMMED);
                 
             }
         }
