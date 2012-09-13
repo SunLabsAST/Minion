@@ -85,6 +85,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2067,8 +2068,12 @@ public class QueryTest extends SEMain {
                 String[] fields = Arrays.copyOfRange(args, 3, args.length);
                 //
                 // See if we have a filename or a doc key for each dv
-                DocumentVector dv1 = getDV(args[1], fields, ci);
-                DocumentVector dv2 = getDV(args[2], fields, ci);
+                DocumentVector dv1 = getDVFromFileOrEngine(args[1],
+                                                           fields,
+                                                           ci.getOutput());
+                DocumentVector dv2 = getDVFromFileOrEngine(args[2],
+                                                           fields,
+                                                           ci.getOutput());
                 
                 if(dv1 == null) {
                     ci.getOutput().println("No such doc: " + args[1]);
@@ -2201,6 +2206,35 @@ public class QueryTest extends SEMain {
         shell.out.format("length: %.2f\n", Math.sqrt(sum));
     }
 
+    private DocumentVector getDVFromFileOrEngine(String key,
+                                                 String[] fields,
+                                                 PrintStream out)
+            throws Exception {
+        DocumentVector dv;
+        File f1 = new File(key);
+        if (f1.exists()) {
+            if (fields.length != 1) {
+                //
+                // Right now, we can only do a single field for
+                // in-memory document vectors
+                out.println("Specify only a single field for file-based DV");
+            }
+            BufferedReader reader =
+                    new BufferedReader(new FileReader(f1));
+            String line = null;
+            IndexableMap map = new IndexableMap("mySingleDoc");
+            while ((line = reader.readLine()) != null) {
+                int sep = line.indexOf(' ');
+                map.put(line.substring(0, sep),
+                                line.substring(sep + 1));
+            }
+            dv = engine.getDocumentVector(map, fields[0]);
+        } else {
+            dv = engine.getDocumentVector(key, fields);
+        }
+        return dv;
+    }
+    
     public static void main(String[] args) throws java.io.IOException,
             NumberFormatException, SearchEngineException {
 
