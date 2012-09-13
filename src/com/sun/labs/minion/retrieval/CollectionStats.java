@@ -25,6 +25,7 @@
 package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import java.util.Collection;
@@ -106,13 +107,14 @@ public class CollectionStats {
      * @return the term statistics for the term, if it is found in the collection,
      * otherwise return <code>null</code>.
      */
-    public TermStatsImpl getTermStats(String term, String field) {
-        return pm.getTermStats(term, field);
+    public TermStatsImpl getTermStats(String term, String field, TermStatsType termStatsType) {
+        return pm.getTermStats(term, field, termStatsType);
     }
     
-    public TermStatsImpl getTermStats(String term, FieldInfo field) {
-        return pm.getTermStats(term, field);
+    public TermStatsImpl getTermStats(String term, FieldInfo field, TermStatsType termStatsType) {
+        return pm.getTermStats(term, field, termStatsType);
     }
+    
     public int getNDocs() {
         return nDocs;
     }

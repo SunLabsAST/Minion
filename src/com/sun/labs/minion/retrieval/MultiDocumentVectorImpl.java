@@ -6,6 +6,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedFeature;
+import com.sun.labs.minion.engine.SearchEngineImpl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,7 +37,7 @@ public class MultiDocumentVectorImpl extends AbstractDocumentVector {
     }
     
     public MultiDocumentVectorImpl(SearchEngine e, List<DocumentVector> components) {
-        this.engine = e;
+        this.engine = (SearchEngineImpl) e;
         this.wf = e.getQueryConfig().getWeightingFunction();
         this.wc = e.getQueryConfig().getWeightingComponents();
         this.components = components;
@@ -66,6 +67,8 @@ public class MultiDocumentVectorImpl extends AbstractDocumentVector {
                 if(el.next()) {
                     heap.offer(el);
                 }
+            } else {
+                logger.warning(String.format("Unknown DV class %s", dv.getClass().getName()));
             }
         }
         

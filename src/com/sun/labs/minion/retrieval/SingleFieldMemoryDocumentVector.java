@@ -91,7 +91,7 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
     public SingleFieldMemoryDocumentVector(MemoryField mf, String key, SearchEngine engine) {
         this.mf = mf;
         this.key = key;
-        this.engine = engine;
+        this.engine = (SearchEngineImpl) engine;
         this.field = mf.getInfo();
         wf = engine.getQueryConfig().getWeightingFunction();
         wc = engine.getQueryConfig().getWeightingComponents();
@@ -108,6 +108,10 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
             termStatsType = Field.TermStatsType.RAW;
             vecDict = (MemoryDictionary<String>) mf.getDictionary(DictionaryType.RAW_VECTOR);
         }
+        
+        //
+        // Make sure we compute weights with the right term stats!
+        wc.setTermStatsType(termStatsType);
 
         IndexEntry<String> vecEntry = vecDict.get(key);
         if(vecEntry == null) {
@@ -150,29 +154,8 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
         return v;
     }
 
-    /**
-     * Sets the search engine that this vector will use, which is useful when
-     * we've been unserialized and need to get ourselves back into shape.
-     *
-     * @param engine the engine to use
-     */
-    @Override
-    public void setEngine(SearchEngine e) {
-        this.engine = e;
-        QueryConfig qc = e.getQueryConfig();
-        wf = qc.getWeightingFunction();
-        wc = qc.getWeightingComponents();
-        ignoreWords = qc.getVectorZeroWords();
-        qs = new QueryStats();
-    }
-
     public QueryEntry getEntry() {
         return keyEntry;
-    }
-
-    @Override
-    public SearchEngine getEngine() {
-        return engine;
     }
 
     /**
@@ -186,48 +169,6 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
         dvi.getFeatures();
         getFeatures();
         return dot(dvi.v);
-    }
-
-    /**
-     * Calculates the dot product of this feature vector and another feature
-     * vector.
-     *
-     * @param wfv a weighted feature vector
-     * @return the dot product of the two vectors (i.engine. the sum of the products
-     * of the components in each dimension)
-     */
-    @Override
-    public float dot(WeightedFeature[] wfv) {
-        getFeatures();
-        float res = 0;
-        int i1 = 0;
-        int i2 = 0;
-        while(i1 < v.length && i2 < wfv.length) {
-            WeightedFeature f1 = v[i1];
-            WeightedFeature f2 = wfv[i2];
-
-            int cmp = f1.getName().compareTo(f2.getName());
-
-            if(cmp == 0) {
-                if(ignoreWords == null || !ignoreWords.isStop(f1.getName())) {
-                    //
-                    // The term names are the same, so we'll have some
-                    // non-zero value to add for this term's dimension
-                    res += f1.getWeight() * f2.getWeight();
-                }
-                i1++;
-                i2++;
-            } else if(cmp < 0) {
-                //
-                // fv is zero in this dimension
-                i1++;
-            } else {
-                //
-                // v is zero in this dimension
-                i2++;
-            }
-        }
-        return res;
     }
 
     /**

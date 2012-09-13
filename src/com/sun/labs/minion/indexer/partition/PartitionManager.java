@@ -35,6 +35,7 @@ import com.sun.labs.minion.WeightedField;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.Closeable;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
@@ -2946,11 +2947,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return the statistics associated with the given name, or an empty set
      * of term statistics if there are none for the given name
      */
-    public TermStatsImpl getTermStats(String name, String field) {
+    public TermStatsImpl getTermStats(String name, String field, Field.TermStatsType termStatsType) {
         if(termStatsDict == null) {
             return new TermStatsImpl(name);
         }
-        TermStatsQueryEntry tse = termStatsDict.getTermStats(name, field);
+        TermStatsQueryEntry tse = termStatsDict.getTermStats(name, field, termStatsType);
         return tse == null ? new TermStatsImpl(name) : tse.getTermStats();
     }
 
@@ -2960,11 +2961,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * @return the statistics associated with the given name, or an empty set
      * of term statistics if there are none for the given name
      */
-    public TermStatsImpl getTermStats(String name, FieldInfo fi) {
+    public TermStatsImpl getTermStats(String name, FieldInfo fi, Field.TermStatsType termStatsType) {
         if(termStatsDict == null) {
             return new TermStatsImpl(name);
         }
-        TermStatsQueryEntry tse = termStatsDict.getTermStats(name, fi);
+        TermStatsQueryEntry tse = termStatsDict.getTermStats(name, fi, termStatsType);
         return tse == null ? new TermStatsImpl(name) : tse.getTermStats();
     }
 

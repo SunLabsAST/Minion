@@ -45,6 +45,8 @@ import com.sun.labs.minion.Searcher;
 import com.sun.labs.minion.SimpleIndexer;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.WeightedField;
+import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.FlushDocument;
 import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.MemoryField;
@@ -345,12 +347,20 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
     @Override
     public TermStats getTermStats(String term, String field) {
-        return invFilePartitionManager.getTermStats(term, field);
+        return getTermStats(term, field, TermStatsType.RAW);
+    }    
+
+    public TermStats getTermStats(String term, String field, TermStatsType termStatsType) {
+        return invFilePartitionManager.getTermStats(term, field, termStatsType);
     }
 
     @Override
     public TermStats getTermStats(String term, FieldInfo field) {
-        return invFilePartitionManager.getTermStats(term, field);
+        return getTermStats(term, field, TermStatsType.RAW);
+    }
+    
+    public TermStats getTermStats(String term, FieldInfo field, TermStatsType termStatsType) {
+        return invFilePartitionManager.getTermStats(term, field, termStatsType);
     }
 
     @Override

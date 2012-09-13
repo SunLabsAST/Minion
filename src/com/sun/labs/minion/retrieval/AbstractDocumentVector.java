@@ -6,6 +6,7 @@ import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedFeature;
+import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.util.Util;
@@ -15,7 +16,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
@@ -29,7 +29,7 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
     /**
      * The search engine that generated this vector.
      */
-    protected transient SearchEngine engine;
+    protected transient SearchEngineImpl engine;
 
     /**
      * Words that can be ignored in the vector we're building
@@ -300,7 +300,7 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
      */
     @Override
     public void setEngine(SearchEngine e) {
-        this.engine = e;
+        this.engine = (SearchEngineImpl) e;
         QueryConfig qc = e.getQueryConfig();
         wf = qc.getWeightingFunction();
         wc = qc.getWeightingComponents();

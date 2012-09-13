@@ -25,6 +25,7 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import java.util.logging.Logger;
@@ -76,7 +77,13 @@ public class WeightingComponents {
     /**
      * The field that we've got components for.
      */
-    FieldInfo field;
+    public FieldInfo field;
+    
+    /**
+     * What type of terms are we holding statistics for?  Raw terms or stemmed?
+     * We'll default to raw terms.
+     */
+    public TermStatsType termStatsType = TermStatsType.RAW;
 
     /**
      * The statistics that we were given or that we retrieved for the last
@@ -225,7 +232,7 @@ public class WeightingComponents {
         if(cs == null) {
             logger.warning(String.format("No collection stats to get term stats for: %s", name));
         } else {
-            ts = cs.getTermStats(name, field);
+            ts = cs.getTermStats(name, field, termStatsType);
             if(ts == null) {
                 ts = new TermStatsImpl(name);
             }
@@ -253,7 +260,7 @@ public class WeightingComponents {
     }
 
     public TermStatsImpl getTermStats(String term) {
-        return cs.getTermStats(term, field);
+        return cs.getTermStats(term, field, termStatsType);
     }
 
     public WeightingComponents setDocument(QueryEntry key, DiskField field) {
@@ -287,6 +294,14 @@ public class WeightingComponents {
     public WeightingComponents setDocument(PostingsIterator pi) {
         fdt = pi.getFreq();
         return this;
+    }
+
+    public TermStatsType getTermStatsType() {
+        return termStatsType;
+    }
+
+    public void setTermStatsType(TermStatsType termStatsType) {
+        this.termStatsType = termStatsType;
     }
 
     @Override

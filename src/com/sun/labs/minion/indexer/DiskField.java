@@ -89,7 +89,11 @@ public class DiskField<N extends Comparable> extends Field<N> {
     }
 
     public TermStatsImpl getTermStats(String name) {
-        return partition.getPartitionManager().getTermStats(name, info);
+        return getTermStats(name, TermStatsType.RAW);
+    }
+
+    public TermStatsImpl getTermStats(String name, TermStatsType termStatsType) {
+        return partition.getPartitionManager().getTermStats(name, info, termStatsType);
     }
 
     public QueryEntry getStem(String stem) {

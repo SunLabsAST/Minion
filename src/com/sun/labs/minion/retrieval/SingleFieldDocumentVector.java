@@ -116,7 +116,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             FieldInfo field,
             WeightingFunction wf,
             WeightingComponents wc) {
-        this.engine = e;
+        this.engine = (SearchEngineImpl) e;
         this.keyEntry = key;
         this.key = key.getName();
         this.field = field;
@@ -128,7 +128,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
     public SingleFieldDocumentVector(SearchEngine e,
             WeightedFeature[] basisFeatures,
             String field) {
-        this.engine = e;
+        this.engine = (SearchEngineImpl) e;
         QueryConfig qc = e.getQueryConfig();
         wf = qc.getWeightingFunction();
         wc = qc.getWeightingComponents();
@@ -195,7 +195,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
         while(pi.next()) {
             int tid = pi.getID();
             QueryEntry<String> termEntry = termDict.getByID(tid);
-            TermStatsImpl tsi = (TermStatsImpl) engine.getTermStats(termEntry.getName(), field);
+            TermStatsImpl tsi = (TermStatsImpl) engine.getTermStats(termEntry.getName(), field, termStatsType);
             wc.setTerm(tsi).setDocument(pi);
             wf.initTerm(wc);
             WeightedFeature feat = new WeightedFeature(termEntry, pi.getFreq(), wf.termWeight(wc));
@@ -233,29 +233,8 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
         return v;
     }
 
-    /**
-     * Sets the search engine that this vector will use, which is useful when
-     * we've been unserialized and need to get ourselves back into shape.
-     *
-     * @param engine the engine to use
-     */
-    @Override
-    public void setEngine(SearchEngine e) {
-        this.engine = e;
-        QueryConfig qc = e.getQueryConfig();
-        wf = qc.getWeightingFunction();
-        wc = qc.getWeightingComponents();
-        ignoreWords = qc.getVectorZeroWords();
-        qs = new QueryStats();
-    }
-
     public QueryEntry getEntry() {
         return keyEntry;
-    }
-
-    @Override
-    public SearchEngine getEngine() {
-        return engine;
     }
 
     /**

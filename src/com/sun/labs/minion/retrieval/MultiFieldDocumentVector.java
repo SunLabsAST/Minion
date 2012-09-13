@@ -94,7 +94,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
      */
     public MultiFieldDocumentVector(SearchEngine e,
             WeightedFeature[] basisFeatures) {
-        this.engine = e;
+        this.engine = (SearchEngineImpl) e;
         this.key = null;
         QueryConfig qc = e.getQueryConfig();
         wf = qc.getWeightingFunction();
@@ -210,7 +210,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             WeightingFunction wf,
             WeightingComponents wc) {
 
-        this.engine = e;
+        this.engine = (SearchEngineImpl) e;
         this.keyEntry = key;
         this.key = keyEntry.getName();
         if(fields == null) {
