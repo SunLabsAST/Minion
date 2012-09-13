@@ -23,7 +23,7 @@
  */
 package com.sun.labs.minion.indexer;
 
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
+import com.sun.labs.minion.indexer.Field.DictionaryType;
 import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
@@ -50,7 +50,7 @@ public class FieldHeader {
     /**
      * The offsets of the starts of the dictionaries that make up the fields.
      */
-    public long[] dictionaryOffsets = new long[MemoryDictionaryBundle.Type.values().length];
+    public long[] dictionaryOffsets = new long[DictionaryType.values().length];
 
     /**
      * Where we'll find the buffer that maps from document ID to a position

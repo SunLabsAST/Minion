@@ -47,12 +47,11 @@ import com.sun.labs.minion.TextHighlighter;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.Field.DictionaryType;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -942,7 +941,7 @@ public class QueryTest extends SEMain {
 
                 int partNum = Integer.parseInt(args[1]);
                 String fieldName = args[2];
-                MemoryDictionaryBundle.Type type = MemoryDictionaryBundle.Type.
+                DictionaryType type = DictionaryType.
                         valueOf(args[3].toUpperCase());
 
                 for(DiskPartition p : manager.getActivePartitions()) {
@@ -986,7 +985,7 @@ public class QueryTest extends SEMain {
                 return new Completor[] {
                     new NullCompletor(),
                     new FieldCompletor(manager.getMetaFile()),
-                    new EnumCompletor(MemoryDictionaryBundle.Type.class),
+                    new EnumCompletor(DictionaryType.class),
                     new NullCompletor()
                 };
             }
@@ -1089,7 +1088,7 @@ public class QueryTest extends SEMain {
 
                 int partNum = Integer.parseInt(args[1]);
                 String fieldName = args[2];
-                MemoryDictionaryBundle.Type type = MemoryDictionaryBundle.Type.valueOf(args[3].toUpperCase());
+                DictionaryType type = DictionaryType.valueOf(args[3].toUpperCase());
 
                 for(DiskPartition p : manager.getActivePartitions()) {
                     if(p.getPartitionNumber() == partNum) {
@@ -1120,7 +1119,7 @@ public class QueryTest extends SEMain {
                 return new Completor[] {
                     new NullCompletor(),
                     new FieldCompletor(manager.getMetaFile()),
-                    new EnumCompletor(MemoryDictionaryBundle.Type.class)
+                    new EnumCompletor(DictionaryType.class)
                 };
             }
         });
@@ -1147,7 +1146,7 @@ public class QueryTest extends SEMain {
 
                             DiskField df = ((InvFileDiskPartition) p).getDF(fi);
 
-                            DiskDictionary rvd = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+                            DiskDictionary rvd = (DiskDictionary) df.getDictionary(DictionaryType.RAW_VECTOR);
                             QueryEntry re;
                             String res = "no raw";
                             if(rvd != null) {
@@ -1159,7 +1158,7 @@ public class QueryTest extends SEMain {
                                 }
                             }
 
-                            DiskDictionary svd = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+                            DiskDictionary svd = (DiskDictionary) df.getDictionary(DictionaryType.RAW_VECTOR);
                             QueryEntry se;
                             String ses = "no stemmed";
                             if(svd != null) {
@@ -1207,7 +1206,7 @@ public class QueryTest extends SEMain {
                 }
 
                 String field = args[1];
-                Type type = Type.valueOf(args[2].toUpperCase());
+                DictionaryType type = DictionaryType.valueOf(args[2].toUpperCase());
                 FieldInfo fi = manager.getFieldInfo(field);
                 List<DiskPartition> parts = manager.getActivePartitions();
                 for(int i = 3; i < args.length; i++) {
@@ -1215,7 +1214,7 @@ public class QueryTest extends SEMain {
                     for(DiskPartition p : parts) {
                         DiskField df = ((InvFileDiskPartition) p).getDF(fi);
                         DiskDictionary dd = (DiskDictionary) df.getDictionary(type);
-                        if(type == Type.STEMMED_TOKENS) {
+                        if(type == DictionaryType.STEMMED_TOKENS) {
                             Stemmer stemmer = df.getStemmer();
                             if(stemmer != null) {
                                 term = stemmer.stem(term);
@@ -1247,7 +1246,7 @@ public class QueryTest extends SEMain {
             public Completor[] getCompletors() {
                 return new Completor[]{
                             new FieldCompletor(manager.getMetaFile()),
-                            new EnumCompletor(MemoryDictionaryBundle.Type.class),
+                            new EnumCompletor(DictionaryType.class),
                             new NullCompletor()
                         };
             }

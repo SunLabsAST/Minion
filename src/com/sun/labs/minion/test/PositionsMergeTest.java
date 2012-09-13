@@ -3,8 +3,8 @@ package com.sun.labs.minion.test;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.Field.DictionaryType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.StringNameHandler;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.dictionary.io.DiskDictionaryOutput;
@@ -55,7 +55,7 @@ public class PositionsMergeTest {
             }
             if(df != null) {
                 dicts[i] = (DiskDictionary) df.getDictionary(
-                        MemoryDictionaryBundle.Type.CASED_TOKENS);
+                        DictionaryType.CASED_TOKENS);
             }
         }
 

@@ -33,9 +33,9 @@ import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.Field.DictionaryType;
 import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -103,10 +103,10 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector impl
         Field.TermStatsType termStatsType;
         if(mf.isStemmed()) {
             termStatsType = Field.TermStatsType.STEMMED;
-            vecDict = (MemoryDictionary<String>) mf.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
+            vecDict = (MemoryDictionary<String>) mf.getDictionary(DictionaryType.STEMMED_VECTOR);
         } else {
             termStatsType = Field.TermStatsType.RAW;
-            vecDict = (MemoryDictionary<String>) mf.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+            vecDict = (MemoryDictionary<String>) mf.getDictionary(DictionaryType.RAW_VECTOR);
         }
 
         IndexEntry<String> vecEntry = vecDict.get(key);

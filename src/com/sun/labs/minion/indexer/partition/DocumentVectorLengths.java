@@ -25,12 +25,12 @@ package com.sun.labs.minion.indexer.partition;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.Field.DictionaryType;
 import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
@@ -128,7 +128,7 @@ public class DocumentVectorLengths {
                   vectorLengthsBuffer, gts, Field.TermStatsType.RAW);
         if(f.isStemmed()) {
             header.vectorLengthOffsets[Field.DocumentVectorType.STEMMED.ordinal()] = vectorLengthsBuffer.position();
-            termDict = f.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
+            termDict = f.getDictionary(DictionaryType.STEMMED_TOKENS);
             calculate(f.getInfo(),
                       p.getNDocs(),
                       p.maxDocumentID,

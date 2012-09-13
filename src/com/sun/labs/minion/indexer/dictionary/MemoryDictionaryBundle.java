@@ -1,6 +1,7 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.indexer.Field.DictionaryType;
 import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.MemoryField;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
@@ -33,51 +34,6 @@ import java.util.logging.Logger;
 public class MemoryDictionaryBundle<N extends Comparable> {
 
     private static final Logger logger = Logger.getLogger(MemoryDictionaryBundle.class.getName());
-
-    /**
-     * The types of dictionaries that we can bundle.
-     */
-    public enum Type {
-
-        /**
-         * Tokens in the case found in the document.
-         */
-        CASED_TOKENS,
-        /**
-         * Tokens transformed into lowercase.
-         */
-        UNCASED_TOKENS,
-        /**
-         * Tokens that have been transformed into lowercase and stemmed.
-         */
-        STEMMED_TOKENS,
-        /**
-         * Raw saved values from the document.
-         */
-        RAW_SAVED,
-        /**
-         * Lowercased saved values from the document.  Only used if this is a
-         * string field.
-         */
-        UNCASED_SAVED,
-        /**
-         * A document vector with the raw tokens from the document.
-         */
-        RAW_VECTOR,
-        /**
-         * A document vector with the lowercased, stemmed tokens from the document.
-         */
-        STEMMED_VECTOR,
-        /**
-         * A dictionary for the token bigrams.
-         */
-        TOKEN_BIGRAMS,
-        /**
-         * A dictionary for saved value bigrams.
-         */
-        SAVED_VALUE_BIGRAMS
-
-    }
     /**
      * The dictionaries making up this bundle, indexed by the ordinal of one of the
      * {@link Types}.
@@ -125,7 +81,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
     public MemoryDictionaryBundle(MemoryField field) {
         this.field = field;
         info = field.getInfo();
-        dicts = new MemoryDictionary[Type.values().length];
+        dicts = new MemoryDictionary[DictionaryType.values().length];
         
         EntryFactory factory;
         
@@ -136,22 +92,22 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
 
         if(field.isTokenized() && field.isCased()) {
-            dicts[Type.CASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
+            dicts[DictionaryType.CASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
         }
 
         if(field.isTokenized() && field.isUncased()) {
-            dicts[Type.UNCASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
+            dicts[DictionaryType.UNCASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
         }
 
         if(field.isTokenized() && field.isStemmed()) {
-            dicts[Type.STEMMED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
+            dicts[DictionaryType.STEMMED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
         }
 
         if(field.isVectored()) {
-            dicts[Type.RAW_VECTOR.ordinal()] = 
+            dicts[DictionaryType.RAW_VECTOR.ordinal()] = 
                     new MemoryDictionary<String>(vectorEntryFactory);
             if(field.isStemmed()) {
-                dicts[Type.STEMMED_VECTOR.ordinal()] = 
+                dicts[DictionaryType.STEMMED_VECTOR.ordinal()] = 
                         new MemoryDictionary<String>(vectorEntryFactory);
             }
             ddo = new DocOccurrence();
@@ -159,9 +115,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         if(field.isSaved()) {
             dv = new List[128];
-            dicts[Type.RAW_SAVED.ordinal()] = new MemoryDictionary<N>(savedEntryFactory);
+            dicts[DictionaryType.RAW_SAVED.ordinal()] = new MemoryDictionary<N>(savedEntryFactory);
             if(field.isUncased()) {
-                dicts[Type.UNCASED_SAVED.ordinal()] = new MemoryDictionary<N>(
+                dicts[DictionaryType.UNCASED_SAVED.ordinal()] = new MemoryDictionary<N>(
                         savedEntryFactory);
                 ucdv = new List[128];
             }
@@ -172,7 +128,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         }
     }
 
-    public MemoryDictionary getDictionary(Type type) {
+    public MemoryDictionary getDictionary(DictionaryType type) {
         return dicts[type.ordinal()];
     }
 
@@ -193,10 +149,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         maxDocID = Math.max(maxDocID, docKey.getID());
         if(field.isVectored()) {
             if(field.isCased()) {
-                rawVector = dicts[Type.RAW_VECTOR.ordinal()].put(docKey);
+                rawVector = dicts[DictionaryType.RAW_VECTOR.ordinal()].put(docKey);
             }
             if(field.isStemmed()) {
-                stemmedVector = dicts[Type.STEMMED_VECTOR.ordinal()].put(docKey);
+                stemmedVector = dicts[DictionaryType.STEMMED_VECTOR.ordinal()].put(docKey);
             }
         } else {
             rawVector = null;
@@ -209,7 +165,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
     }
     
     public boolean anyData() {
-        for(Type type : Type.values()) {
+        for(DictionaryType type : DictionaryType.values()) {
             int ord = type.ordinal();
             if(dicts[ord] != null && dicts[ord].size() > 0) {
                 return true;
@@ -230,7 +186,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         IndexEntry se = null;
         
         if(field.isCased()) {
-            ce = dicts[Type.CASED_TOKENS.ordinal()].put(t.getToken());
+            ce = dicts[DictionaryType.CASED_TOKENS.ordinal()].put(t.getToken());
             ce.add(t);
         }
         
@@ -244,13 +200,13 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             String uct = CharUtils.toLowerCase(t.getToken());
 
             if(field.isUncased()) {
-                uce = dicts[Type.UNCASED_TOKENS.ordinal()].put(uct);
+                uce = dicts[DictionaryType.UNCASED_TOKENS.ordinal()].put(uct);
                 uce.add(t);
             }
 
             if(field.isStemmed()) {
                 String stok = field.getStemmer().stem(uct);
-                se = dicts[Type.STEMMED_TOKENS.ordinal()].put(stok);
+                se = dicts[DictionaryType.STEMMED_TOKENS.ordinal()].put(stok);
                 se.add(t);
             }
         }
@@ -299,8 +255,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         // We'll just store the saved entries per-document, since we might be adding
         // entries in non-document ID order (e.g., when doing classification.)
         // We'll build the actual postings lists at dump time.
-        if(dicts[Type.RAW_SAVED.ordinal()] != null) {
-            IndexEntry rawSavedEntry = dicts[Type.RAW_SAVED.ordinal()].put(name);
+        if(dicts[DictionaryType.RAW_SAVED.ordinal()] != null) {
+            IndexEntry rawSavedEntry = dicts[DictionaryType.RAW_SAVED.ordinal()].put(name);
             if(docID >= dv.length) {
                 dv = Arrays.copyOf(dv, (docID + 1) * 2);
             }
@@ -313,8 +269,8 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         //
         // Handle the uncased values for string fields.
-        if(dicts[Type.UNCASED_SAVED.ordinal()] != null) {
-            IndexEntry uncasedSavedEntry = dicts[Type.UNCASED_SAVED.ordinal()].put(CharUtils.toLowerCase(
+        if(dicts[DictionaryType.UNCASED_SAVED.ordinal()] != null) {
+            IndexEntry uncasedSavedEntry = dicts[DictionaryType.UNCASED_SAVED.ordinal()].put(CharUtils.toLowerCase(
                     name.toString()));
             if(docID >= ucdv.length) {
                 ucdv = Arrays.copyOf(ucdv, (docID + 1) * 2);
@@ -361,21 +317,21 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
         //
         // The ID maps from each of the dictionaries.
-        int[][] entryIDMaps = new int[Type.values().length][];
+        int[][] entryIDMaps = new int[DictionaryType.values().length][];
         
         //
         // Dump the dictionaries in this bundle.  This loop is a little gross, what
         // with the pre-dump and post-dump switches based on the type of dictionary
         // being dumped, but it makes things a lot more compact as most of the dups
         // are pretty much the same.
-        for(Type type : Type.values()) {
+        for(DictionaryType type : DictionaryType.values()) {
             int ord = type.ordinal();
             if(dicts[ord] == null) {
                 //
                 // If we didn't have a dictionary for this type, and it's not
                 // one of the bigram dictionaries that we might build below, then
                 // just skip it.
-                if(type != Type.TOKEN_BIGRAMS && type != Type.SAVED_VALUE_BIGRAMS) {
+                if(type != DictionaryType.TOKEN_BIGRAMS && type != DictionaryType.SAVED_VALUE_BIGRAMS) {
                     header.dictionaryOffsets[ord] = -1;
                     continue;
                 }
@@ -465,10 +421,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     //
                     // We preferred uncased tokens when making the raw vectors, 
                     // so do the same at marshall time.
-                    if(dicts[Type.UNCASED_TOKENS.ordinal()] != null) {
-                        partOut.setPostingsIDMap(entryIDMaps[Type.UNCASED_TOKENS.ordinal()]);
+                    if(dicts[DictionaryType.UNCASED_TOKENS.ordinal()] != null) {
+                        partOut.setPostingsIDMap(entryIDMaps[DictionaryType.UNCASED_TOKENS.ordinal()]);
                     } else {
-                        partOut.setPostingsIDMap(entryIDMaps[Type.CASED_TOKENS.ordinal()]);
+                        partOut.setPostingsIDMap(entryIDMaps[DictionaryType.CASED_TOKENS.ordinal()]);
                     }
                     break;
 
@@ -476,15 +432,15 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     partOut.setDictionaryEncoder(new StringNameHandler());
                     partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
                     partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
-                    partOut.setPostingsIDMap(entryIDMaps[Type.STEMMED_TOKENS.ordinal()]);
+                    partOut.setPostingsIDMap(entryIDMaps[DictionaryType.STEMMED_TOKENS.ordinal()]);
                     break;
 
                 case TOKEN_BIGRAMS:
                     MemoryDictionary tdict;
-                    if(dicts[Type.CASED_TOKENS.ordinal()] != null) {
-                        tdict = dicts[Type.CASED_TOKENS.ordinal()];
+                    if(dicts[DictionaryType.CASED_TOKENS.ordinal()] != null) {
+                        tdict = dicts[DictionaryType.CASED_TOKENS.ordinal()];
                     } else {
-                        tdict = dicts[Type.UNCASED_TOKENS.ordinal()];
+                        tdict = dicts[DictionaryType.UNCASED_TOKENS.ordinal()];
                     }
 
                     //
@@ -513,12 +469,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     // If this is a string field, and there were some saved values, 
                     // then go ahead and make bigrams out of them.
                     if(field.getInfo().getType() == FieldInfo.Type.STRING &&
-                            header.dictionaryOffsets[Type.RAW_SAVED.ordinal()] != -1){
+                            header.dictionaryOffsets[DictionaryType.RAW_SAVED.ordinal()] != -1){
                         if(dicts[ord] == null) {
                             dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
                         }
                         MemoryBiGramDictionary sbg = (MemoryBiGramDictionary) dicts[ord];
-                        for(Object o : dicts[Type.RAW_SAVED.ordinal()]) {
+                        for(Object o : dicts[DictionaryType.RAW_SAVED.ordinal()]) {
                             IndexEntry e = (IndexEntry) o;
                             sbg.add(CharUtils.toLowerCase(e.getName().toString()),
                                     e.getID());
@@ -567,7 +523,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         //
         // If we had any saved values, then we need to dump the map from document
         // IDs to the values that were saved for that document.
-        if(field.isSaved() && header.dictionaryOffsets[Type.RAW_SAVED.ordinal()] != -1) {
+        if(field.isSaved() && header.dictionaryOffsets[DictionaryType.RAW_SAVED.ordinal()] != -1) {
 
             //
             // Dump the map from document IDs to the values saved for that document
@@ -673,9 +629,9 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
     public MemoryDictionary getTermDictionary(boolean cased) {
         if(cased) {
-            return dicts[Type.CASED_TOKENS.ordinal()];
+            return dicts[DictionaryType.CASED_TOKENS.ordinal()];
         } else {
-            return dicts[Type.UNCASED_TOKENS.ordinal()];
+            return dicts[DictionaryType.UNCASED_TOKENS.ordinal()];
         }
     }
 

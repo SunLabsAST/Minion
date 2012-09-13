@@ -4,8 +4,6 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.Stemmer;
 import com.sun.labs.minion.StemmerFactory;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle.Type;
 import com.sun.labs.minion.indexer.partition.Partition;
 import com.sun.labs.minion.util.CDateParser;
 import java.util.logging.Level;
@@ -43,6 +41,51 @@ public abstract class Field<N extends Comparable> {
      */
     protected Stemmer stemmer;
     
+    public enum DictionaryType {
+
+        /**
+         * Tokens in the case found in the document.
+         */
+        CASED_TOKENS, 
+        /**
+         * Tokens transformed into lowercase.
+         */
+        UNCASED_TOKENS, 
+        /**
+         * Tokens that have been transformed into lowercase and stemmed.
+         */
+        STEMMED_TOKENS, 
+        /**
+         * Raw saved values from the document.
+         */
+        RAW_SAVED, 
+        /**
+         * Lowercased saved values from the document. Only used if this is a
+         * string field.
+         */
+        UNCASED_SAVED, 
+        /**
+         * A document vector with the raw tokens from the document.
+         */
+        RAW_VECTOR, 
+        /**
+         * A document vector with the lowercased, stemmed tokens from the
+         * document.  This will only be generated if a field has a STEMMED
+         * dictionary.
+         */
+        STEMMED_VECTOR, 
+        /**
+         * A dictionary for the token bigrams. Bigrams are generated from the
+         * uncased entries.
+         */
+        TOKEN_BIGRAMS, 
+        /**
+         * A dictionary for saved value bigrams. Bigrams are generated from the
+         * uncased saved entries.
+         */
+        SAVED_VALUE_BIGRAMS
+    }
+
     /**
      * The types of document vectors that we store.
      */
@@ -52,7 +95,7 @@ public abstract class Field<N extends Comparable> {
     }
     
     /**
-     * The types of term stats that we can get.
+     * The types of term stats that we might want for a field.
      */
     public enum TermStatsType {
         RAW,
@@ -101,7 +144,7 @@ public abstract class Field<N extends Comparable> {
         }
     }
     
-    public abstract Dictionary getDictionary(Type type);
+    public abstract Dictionary getDictionary(DictionaryType type);
     
     /**
      * Gets a term dictionary, preferring uncased over cased dictionaries, if
@@ -110,9 +153,9 @@ public abstract class Field<N extends Comparable> {
      */
     public Dictionary getTermDictionary() {
         if(uncased) {
-            return getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
+            return getDictionary(DictionaryType.UNCASED_TOKENS);
         } else {
-            return getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+            return getDictionary(DictionaryType.CASED_TOKENS);
         }
     }
 

@@ -87,7 +87,6 @@ public class TermStatsDiskDictionary implements Closeable {
                 fieldDicts[e.getKey()] = new DiskDictionary[fo.length];
                 for(int i = 0; i < fo.length; i++) {
                     if(fo[i] >= 0) {
-                        logger.info(String.format("Loading %d: %d", e.getKey(), fo[i]));
                         raf.seek(fo[i]);
                         fieldDicts[e.getKey()][i] = new DiskDictionary(
                                 new TermStatsEntryFactory(),

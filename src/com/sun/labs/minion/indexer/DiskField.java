@@ -6,7 +6,6 @@ import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.TermStatsHeader;
 import com.sun.labs.minion.indexer.dictionary.io.DictionaryOutput;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -52,7 +51,7 @@ public class DiskField<N extends Comparable> extends Field<N> {
     }
 
     @Override
-    public Dictionary getDictionary(MemoryDictionaryBundle.Type type) {
+    public Dictionary getDictionary(DictionaryType type) {
         return bundle.getDictionary(type);
     }
 

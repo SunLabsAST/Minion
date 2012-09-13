@@ -192,7 +192,15 @@ public class QueryConfig implements Cloneable, Configurable {
     public static final String PROP_NORMALIZE_RESULTS = "normalize_results";
     
     private boolean normalizeResults;
-
+    
+    /**
+     * Whether queries should use stemmed fields wherever possible.
+     */
+    @ConfigBoolean(defaultValue=false)
+    public static final String PROP_STEMMED_QUERYING = "stemmed_querying";
+    
+    private boolean stemmedQuerying;
+    
     /**
      * The search engine associated with the collection that we're
      * querying.
@@ -582,6 +590,7 @@ public class QueryConfig implements Cloneable, Configurable {
         }
         defaultFields = new HashSet<FieldInfo>((List<FieldInfo>) ps.getComponentList(PROP_DEFAULT_FIELDS));
         normalizeResults = ps.getBoolean(PROP_NORMALIZE_RESULTS);
+        stemmedQuerying = ps.getBoolean(PROP_STEMMED_QUERYING);
     }
 
     public void setAllUpperIsCI(boolean allUpperIsCI) {

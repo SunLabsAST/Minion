@@ -34,8 +34,8 @@ import com.sun.labs.minion.WeightedField;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.Field.DictionaryType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
-import com.sun.labs.minion.indexer.dictionary.MemoryDictionaryBundle;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
@@ -296,15 +296,15 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             Field.TermStatsType termStatsType;
             if(df.isStemmed()) {
                 termStatsType = Field.TermStatsType.STEMMED;
-                vecDict = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_VECTOR);
-                termDict = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.STEMMED_TOKENS);
+                vecDict = (DiskDictionary) df.getDictionary(DictionaryType.STEMMED_VECTOR);
+                termDict = (DiskDictionary) df.getDictionary(DictionaryType.STEMMED_TOKENS);
             } else {
                 termStatsType = Field.TermStatsType.RAW;
-                vecDict = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.RAW_VECTOR);
+                vecDict = (DiskDictionary) df.getDictionary(DictionaryType.RAW_VECTOR);
                 if(df.isUncased()) {
-                    termDict = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.UNCASED_TOKENS);
+                    termDict = (DiskDictionary) df.getDictionary(DictionaryType.UNCASED_TOKENS);
                 } else {
-                    termDict = (DiskDictionary) df.getDictionary(MemoryDictionaryBundle.Type.CASED_TOKENS);
+                    termDict = (DiskDictionary) df.getDictionary(DictionaryType.CASED_TOKENS);
                 }
             }
 
