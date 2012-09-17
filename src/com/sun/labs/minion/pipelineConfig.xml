@@ -76,6 +76,15 @@
         </propertylist>
     </component>
 
+    <component name="stopWordsAndRegexes" type="com.sun.labs.minion.pipeline.StopWordsAndRegexes">
+        <propertylist name="stopwords_files">
+            <item>stopwords</item>    
+        </propertylist>
+        <propertylist name="regex_files">
+            <item>numbers</item>    
+        </propertylist>
+    </component>
+
     <!-- A stage to drop things on the floor. -->
     <component name="dropper" type="com.sun.labs.minion.pipeline.Dropper"/>
     

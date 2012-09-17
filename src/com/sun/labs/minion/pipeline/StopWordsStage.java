@@ -30,12 +30,8 @@ import java.util.logging.Logger;
 
 /**
  * This stage provides the ability to remove stop words from  
- * the token stream.  User-tunable stop words are provided as
- * HashSet, presumably from a file.  Additionally, any token
- * that has a numeric character in it is discarded as a stop word.
- * Finally, words longer than 30 characters are dropped as well.
+ * the token stream.
  *   
- * @author <a href="mailto:jeffrey.alexander@sun.com">Jeff Alexander</a>
  */
 public class StopWordsStage extends StageAdapter implements
         com.sun.labs.util.props.Configurable {
@@ -48,27 +44,14 @@ public class StopWordsStage extends StageAdapter implements
 
     private StopWords stopwords;
 
-    protected boolean inVectoredField = false;
-
     public StopWordsStage() {
     }
 
     @Override
     public void token(Token t) {
         String val = t.getToken().toLowerCase();
-        if(inVectoredField) {
-            if(stopwords.isStop(val)) {
-                return;
-            }
-
-            if(val.length() > 30) {
-                return;
-            }
-
-            if(val.matches(".*\\d.*")) {
-                return;
-            }
-
+        if(stopwords.isStop(val)) {
+            return;
         }
 
         if(downstream == null) {

@@ -37,6 +37,7 @@ import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
+import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.Searcher;
@@ -187,7 +188,7 @@ public class QueryTest extends SEMain {
 
     protected LiteMorph morphEn;
 
-    protected int nHits;
+    protected int nHits = 10;
 
     protected long totalTime, nQueries;
 
@@ -202,7 +203,7 @@ public class QueryTest extends SEMain {
     private ResultSetImpl lastResultSet;
 
     public QueryTest(URL cmFile, String indexDir, String engineType,
-            String inputFile,
+                     String inputFile,
                      String displayFields, String displayFormat,
                      String sortSpec) throws java.io.IOException,
             SearchEngineException {
@@ -217,10 +218,30 @@ public class QueryTest extends SEMain {
                     indexDir,
                     engineType, cmFile);
         }
-        QueryConfig qc = engine.getQueryConfig();
-        qc.setAllUpperIsCI(false);
-        engine.setQueryConfig(qc);
+        init(engine, displayFields, displayFormat, sortSpec);
         shell = new CommandInterpreter(inputFile);
+        addCommands(null, shell);
+        setPrompt();
+        shell.setDefaultCommand("q");
+        shell.setParseQuotes(false);
+   }
+
+    public QueryTest(SearchEngineImpl engine,
+                     String displayFields,
+                     String displayFormat,
+                     String sortSpec) throws IOException {
+        init(engine, displayFields, displayFormat, sortSpec);
+    }
+
+    private void init(SearchEngineImpl engine,
+                      String displayFields,
+                      String displayFormat,
+                      String sortSpec) throws IOException {
+        
+        this.engine = engine;
+        QueryConfig qc = this.engine.getQueryConfig();
+        qc.setAllUpperIsCI(false);
+        this.engine.setQueryConfig(qc);
         manager = engine.getManager();
         manager.setReapDoesNothing(true);
         searcher = engine;
@@ -233,10 +254,6 @@ public class QueryTest extends SEMain {
         displayPassage = false;
         shigh = new SimpleHighlighter("<font color=\"#FF0000\">", "</font>",
                                       "<b>", "</b>");
-        addCommands();
-        setPrompt();
-        shell.setDefaultCommand("q");
-        shell.setParseQuotes(false);
     }
 
     public static void usage() {
@@ -374,8 +391,13 @@ public class QueryTest extends SEMain {
         }
         return sb.toString();
     }
+    
+    private static String prefixCommand(String prefix, String command) {
+        return prefix == null ? command : prefix + "-" + command;
+    }
 
-    private void addCommands() {
+    public void addCommands(String prefix, final CommandInterpreter shell) {
+        this.shell = shell;
         
         shell.addGroup("Query", "Commands for specifying queries and their result formats");
         shell.addGroup("Info", "Information about the index");
@@ -383,7 +405,7 @@ public class QueryTest extends SEMain {
         shell.addGroup("Maintenance", "Commands that maintain the index");
         shell.addGroup("Other", "Commands for other things");
         
-        shell.add("q", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "q"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -408,7 +430,7 @@ public class QueryTest extends SEMain {
         
         shell.addAlias("q", "Query");
         
-        shell.add("last", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "last"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] strings)
@@ -433,7 +455,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("facet", "Query", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "facet"), "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -477,7 +499,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("wf", "Query", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "wf"), "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -517,7 +539,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("norm", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "norm"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] strings)
@@ -534,7 +556,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("nonorm", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "nonorm"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] strings)
@@ -551,7 +573,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("stats", "Info", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "stats"), "Info", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -565,7 +587,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("qop", "Query", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "qop"), "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -600,7 +622,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("deff", "Query", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "deff"), "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -628,7 +650,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("qstats", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "qstats"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -642,7 +664,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("nd", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "nd"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -655,7 +677,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("ts", "Terms", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "ts"), "Terms", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -695,7 +717,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("n", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "n"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -712,7 +734,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("sort", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "sort"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -727,7 +749,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("fsort", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "fsort"), "Query", new CommandInterface() {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws
                     Exception {
@@ -742,7 +764,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("display", "Query", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "display"), "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -763,7 +785,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("format", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "format"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -781,7 +803,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("gram", "Query", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "gram"), "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -811,7 +833,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("term", "Terms", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "term"), "Terms", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -851,7 +873,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("termi", "Terms", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "termi"), "Terms", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -889,7 +911,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("stem", "Terms", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "stem"), "Terms", new CommandInterface() {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws
                     Exception {
@@ -932,7 +954,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("termByID", "Terms", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "termByID"), "Terms", new CompletorCommandInterface() {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws
                     Exception {
@@ -994,7 +1016,7 @@ public class QueryTest extends SEMain {
         
         shell.addAlias("termByID", "tbid");
         
-        shell.add("wild", "Terms", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "wild"), "Terms", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1036,7 +1058,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("morph", "Terms", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "morph"), "Terms", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1079,7 +1101,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("di", "Terms", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "di"), "Terms", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1125,7 +1147,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("ck", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "ck"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1197,7 +1219,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("postByDictType", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "postByDictType"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -1253,7 +1275,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("post", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "post"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1296,7 +1318,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("postfinds", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "postfinds"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -1351,7 +1373,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("postbuff", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "postbuff"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -1400,7 +1422,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("vpost", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "vpost"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1443,7 +1465,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("vdpost", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "vdpost"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1499,7 +1521,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("dpost", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "dpost"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1555,7 +1577,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("keys", "Info", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "keys"), "Info", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] strings) throws Exception {
@@ -1583,7 +1605,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("svals", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "svals"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1628,7 +1650,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("rts", "Maintenance", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "rts"), "Maintenance", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1642,7 +1664,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("rvl", "Maintenance", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "rvl"), "Maintenance", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1656,7 +1678,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("fields", "Info", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "fields"), "Info", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1671,7 +1693,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("del", "Maintenance", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "del"), "Maintenance", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1695,7 +1717,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("delq", "Maintenance", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "delq"), "Maintenance", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1733,7 +1755,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("deld", "Maintenance", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "deld"), "Maintenance", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1764,7 +1786,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("get", "Info", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "get"), "Info", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1804,7 +1826,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("merge", "Maintenance", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "merge"), "Maintenance", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1836,7 +1858,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("reap", "Maintenance", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "reap"), "Maintenance", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws
@@ -1855,7 +1877,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("sim", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "sim"), new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1885,7 +1907,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("findsim", "Query", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "findsim"), "Query", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1921,7 +1943,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("mfindsim", "Query", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "mfindsim"), "Query", new CompletorCommandInterface() {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws
                     Exception {
@@ -1957,7 +1979,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("rf", "Query", new CommandInterface() {
+        shell.add(prefixCommand(prefix, "rf"), "Query", new CommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -1987,7 +2009,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("simi", "Query", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "simi"), "Query", new CompletorCommandInterface() {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws
                     Exception {
@@ -2022,7 +2044,7 @@ public class QueryTest extends SEMain {
             }
         });
 
-        shell.add("dv", "Terms", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "dv"), "Terms", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -2057,7 +2079,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("describeSimilarity", "Terms", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "describeSimilarity"), "Terms", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args)
@@ -2134,7 +2156,7 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.add("log", "Other", new CompletorCommandInterface() {
+        shell.add(prefixCommand(prefix, "log"), "Other", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -2183,6 +2205,7 @@ public class QueryTest extends SEMain {
                 }
             }
         });
+        
     }
     
     private void listKeys(DiskPartition p) {
@@ -2620,9 +2643,13 @@ public class QueryTest extends SEMain {
      * Provides command line completion based on all currently defined field
      * names.
      */
-    class FieldCompletor implements Completor {
+    static class FieldCompletor implements Completor {
         
         protected MetaFile mf;
+        
+        public FieldCompletor(SearchEngine engine) {
+            this(engine.getPM().getMetaFile());
+        }
         
         public FieldCompletor(MetaFile mf) {
             this.mf = mf;
