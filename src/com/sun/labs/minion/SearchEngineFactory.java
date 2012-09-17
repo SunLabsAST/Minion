@@ -189,10 +189,15 @@ public class SearchEngineFactory {
 
     public static SearchEngine getSearchEngine(ConfigurationManager cm)
             throws SearchEngineException {
+        return getSearchEngine(cm, "search_engine");
+    }
+    
+    public static SearchEngine getSearchEngine(ConfigurationManager cm, String searchEngineName)
+            throws SearchEngineException {
         try {
-            checkConfigurationManager(cm);
-            SearchEngine se =
-                    (SearchEngine) cm.lookup("search_engine");
+            ConfigurationManager dcm = getDefaultConfiguration(null);
+            dcm.addSubConfiguration(cm, true);
+            SearchEngine se = (SearchEngine) dcm.lookup(searchEngineName);
             return se;
         } catch(PropertyException ex) {
             throw new SearchEngineException("Error creating search engine", ex);
@@ -210,8 +215,7 @@ public class SearchEngineFactory {
             throws SearchEngineException {
         try {
             ConfigurationManager cm = new ConfigurationManager();
-            for(int i = 0; i < configFiles.length;
-                    i++) {
+            for(int i = 0; i < configFiles.length; i++) {
                 URL config =
                         (new com.sun.labs.minion.SearchEngineFactory()).getClass().
                         getResource(configFiles[i]);
