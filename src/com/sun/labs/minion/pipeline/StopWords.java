@@ -42,15 +42,15 @@ import java.util.logging.Logger;
  */
 public class StopWords implements Configurable {
 
+    @ConfigStringList(mandatory = false)
+    public static final String PROP_STOPWORDS_FILES = "stopwords_files";
+
     private String name;
 
     private Set<String> stopwords;
 
     static final Logger logger = Logger.getLogger(StopWords.class.getName());
 
-    /**
-     * Creates a StopMap
-     */
     public StopWords() {
         stopwords = new HashSet<String>();
     }
@@ -66,7 +66,10 @@ public class StopWords implements Configurable {
             }
             for(String curr = reader.readLine();
                     curr != null; curr = reader.readLine()) {
-                stopwords.add(curr.toLowerCase());
+                curr = curr.trim();
+                if(!curr.isEmpty() && curr.charAt(0) != '#') {
+                    stopwords.add(curr.toLowerCase());
+                }
             }
         } catch(Exception stopE) {
             logger.warning("Error reading stop words: " + stopE.getMessage());
@@ -101,7 +104,4 @@ public class StopWords implements Configurable {
     public String getName() {
         return name;
     }
-    @ConfigStringList(mandatory = false)
-    public static final String PROP_STOPWORDS_FILES = "stopwords_files";
-
 }
