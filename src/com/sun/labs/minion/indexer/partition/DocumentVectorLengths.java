@@ -118,15 +118,19 @@ public class DocumentVectorLengths {
             throws java.io.IOException {
         Partition p = f.getPartition();
         WriteableBuffer vectorLengthsBuffer = partOut.getVectorLengthsBuffer();
-        header.vectorLengthOffsets[Field.DocumentVectorType.RAW.ordinal()] = vectorLengthsBuffer.position();
-        Dictionary<String> termDict = f.getTermDictionary();
-        calculate(f.getInfo(), 
-                  p.getNDocs(), 
-                  p.maxDocumentID,
-                  p.getPartitionManager(),
-                  (DictionaryIterator<String>) termDict.iterator(),
-                  vectorLengthsBuffer, gts, Field.TermStatsType.RAW);
-        if(f.isStemmed()) {
+        Dictionary<String> termDict = f.getTermDictionary(Field.TermStatsType.RAW);
+        if(termDict != null) {
+            header.vectorLengthOffsets[Field.DocumentVectorType.RAW.ordinal()] = vectorLengthsBuffer.
+                    position();
+            calculate(f.getInfo(),
+                      p.getNDocs(),
+                      p.maxDocumentID,
+                      p.getPartitionManager(),
+                      (DictionaryIterator<String>) termDict.iterator(),
+                      vectorLengthsBuffer, gts, Field.TermStatsType.RAW);
+        }
+        termDict = f.getTermDictionary(Field.TermStatsType.STEMMED);
+        if(termDict != null) {
             header.vectorLengthOffsets[Field.DocumentVectorType.STEMMED.ordinal()] = vectorLengthsBuffer.position();
             termDict = f.getDictionary(DictionaryType.STEMMED_TOKENS);
             calculate(f.getInfo(),

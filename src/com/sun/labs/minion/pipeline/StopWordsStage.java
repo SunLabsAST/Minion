@@ -51,6 +51,7 @@ public class StopWordsStage extends StageAdapter implements
     public void token(Token t) {
         String val = t.getToken().toLowerCase();
         if(stopwords.isStop(val)) {
+//            logger.info(String.format("stop: %s", val));
             return;
         }
 

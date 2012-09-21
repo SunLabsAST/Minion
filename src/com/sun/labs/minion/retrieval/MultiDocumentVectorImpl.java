@@ -7,6 +7,7 @@ import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -32,6 +33,8 @@ public class MultiDocumentVectorImpl extends AbstractDocumentVector {
      */
     private Set<FieldInfo> fields;
     
+    private TermStatsType termStatsType;
+    
     private MultiDocumentVectorImpl() {
         
     }
@@ -48,6 +51,9 @@ public class MultiDocumentVectorImpl extends AbstractDocumentVector {
         // Find the centroid of the components.
         for(DocumentVector component : components) {
             fields.addAll(component.getFields());
+            if(component instanceof AbstractDocumentVector) {
+                termStatsType = ((AbstractDocumentVector) component).termStatsType;
+            }
         }
     }
 
@@ -125,9 +131,9 @@ public class MultiDocumentVectorImpl extends AbstractDocumentVector {
     @Override
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
         if(fields.size() == 1) {
-            return SingleFieldDocumentVector.findSimilar(engine, v, fields.iterator().next(), sortOrder, skimPercent, wf, wc);
+            return SingleFieldDocumentVector.findSimilar(engine, v, fields.iterator().next(), sortOrder, skimPercent, wf, wc, termStatsType);
         } else {
-            return MultiFieldDocumentVector.findSimilar(engine, v, fields.toArray(new FieldInfo[0]), sortOrder, skimPercent, wf, wc);
+            return MultiFieldDocumentVector.findSimilar(engine, v, fields.toArray(new FieldInfo[0]), sortOrder, skimPercent, wf, wc, termStatsType);
         }
     }
     

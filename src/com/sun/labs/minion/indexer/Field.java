@@ -151,11 +151,20 @@ public abstract class Field<N extends Comparable> {
      * they exist.
      * @return a dictionary of terms for the field, if one exists.
      */
-    public Dictionary getTermDictionary() {
-        if(uncased) {
-            return getDictionary(DictionaryType.UNCASED_TOKENS);
-        } else {
-            return getDictionary(DictionaryType.CASED_TOKENS);
+    public Dictionary getTermDictionary(TermStatsType termStatsType) {
+        switch(termStatsType) {
+            case RAW:
+                if(uncased) {
+                    return getDictionary(DictionaryType.UNCASED_TOKENS);
+                } else {
+                    return getDictionary(DictionaryType.CASED_TOKENS);
+                }
+            case STEMMED:
+                return getDictionary(DictionaryType.STEMMED_TOKENS);
+            default:
+                logger.log(Level.SEVERE, String.format(
+                        "Unknown term stats type %s", termStatsType));
+                return null;
         }
     }
 

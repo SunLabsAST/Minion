@@ -35,6 +35,7 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.Field.DictionaryType;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -293,7 +294,6 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
             // from which we'll draw terms, then look up the document.
             DiskDictionary vecDict;
             DiskDictionary termDict;
-            Field.TermStatsType termStatsType;
             if(df.isStemmed()) {
                 termStatsType = Field.TermStatsType.STEMMED;
                 vecDict = (DiskDictionary) df.getDictionary(DictionaryType.STEMMED_VECTOR);
@@ -405,7 +405,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
     @Override
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
         return MultiFieldDocumentVector.findSimilar(engine, getFeatures(), 
-                                                        fields, sortOrder, skimPercent, wf, wc);
+                                                        fields, sortOrder, skimPercent, wf, wc, termStatsType);
     } 
     
     protected static ResultSet findSimilar(SearchEngine e, WeightedFeature[] v, 
@@ -413,7 +413,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
                                                            String sortOrder, 
                                                            double skimPercent,
                                                            WeightingFunction wf, 
-                                                           WeightingComponents wc) {
+                                                           WeightingComponents wc, TermStatsType termStatsType) {
 
         QueryStats qs = new QueryStats();
         qs.queryW.start();
@@ -487,11 +487,22 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
                     if(cdf == null) {
                         continue;
                     }
-                    QueryEntry entry = cdf.getTerm(f.getName(), false);
+                    DiskDictionary termDict = null;
+                    switch(termStatsType) {
+                        case STEMMED:
+                            termDict = (DiskDictionary) cdf.
+                                    getDictionary(DictionaryType.STEMMED_TOKENS);
+                            break;
+                        case RAW:
+                            termDict = (DiskDictionary) cdf.getTermDictionary(
+                                    termStatsType);
+                            break;
+                    }
+                    QueryEntry entry = termDict.get(f.getName());
                     if(entry == null) {
                         continue;
                     }
-                    tsi.add(cdf.getTermStats(f.getName()));
+                    tsi.add(cdf.getTermStats(f.getName(), termStatsType));
                     qs.postReadW.start();
                     PostingsIterator pi = entry.iterator(null);
                     if(pi == null) {

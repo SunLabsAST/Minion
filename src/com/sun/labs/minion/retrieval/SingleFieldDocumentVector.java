@@ -34,6 +34,7 @@ import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.Field.DictionaryType;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -148,6 +149,8 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
      * Builds the features for the feature vector.
      */
     private void initFeatures() {
+        
+//        logger.info(String.format("key: %s field: %s", key, field));
 
         //
         // Get the data for the field in the partition containing this key.
@@ -199,10 +202,12 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             wc.setTerm(tsi).setDocument(pi);
             wf.initTerm(wc);
             WeightedFeature feat = new WeightedFeature(termEntry, pi.getFreq(), wf.termWeight(wc));
+//            logger.info(String.format("%s: %d %.3f ft: %d", feat.getName(), feat.getFreq(), feat.getWeight(), tsi.ft));
             length += feat.getWeight() * feat.getWeight();
             v[p++] = feat;
         }
         length = (float) Math.sqrt(length);
+//        logger.info(String.format("length: %.3f", length));
         normalize();
     }
 
@@ -305,8 +310,10 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
      */
     @Override
     public ResultSet findSimilar(String sortOrder, double skimPercent) {
-        return SingleFieldDocumentVector.findSimilar(engine, getFeatures(), 
-                                                        field, sortOrder, skimPercent, wf, wc);
+        return SingleFieldDocumentVector.findSimilar(engine, getFeatures(),
+                                                     field, sortOrder,
+                                                     skimPercent, wf, wc,
+                                                     termStatsType);
     }
     
     protected static ResultSet findSimilar(SearchEngine e, 
@@ -314,7 +321,8 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
                                            FieldInfo field,
                                            String sortOrder, double skimPercent, 
                                            WeightingFunction wf, 
-                                           WeightingComponents wc) {
+                                           WeightingComponents wc, 
+                                           TermStatsType termStatsType) {
 
         QueryStats qs = new QueryStats();
         qs.queryW.start();
@@ -372,6 +380,20 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             if(cdf == null) {
                 continue;
             }
+
+            //
+            // Get the right term dictionary for this partition.
+            DiskDictionary termDict = null;
+            switch(termStatsType) {
+                case STEMMED:
+                    termDict = (DiskDictionary) cdf.
+                            getDictionary(DictionaryType.STEMMED_TOKENS);
+                    break;
+                case RAW:
+                    termDict = (DiskDictionary) cdf.getTermDictionary(termStatsType);
+                    break;
+            }
+
             
             ScoredQuickOr qor = new ScoredQuickOr(curr, 1024, true);
             qor.setQueryStats(qs);
@@ -383,7 +405,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
                     qor.addWeightOnly(f.getWeight());
                     continue;
                 }
-                TermStatsImpl tsi = cdf.getTermStats(f.getName());
+                TermStatsImpl tsi = cdf.getTermStats(f.getName(), termStatsType);
                 wf.initTerm(wc.setTerm(tsi));
                 PostingsIterator pi = entry.iterator(feat);
 

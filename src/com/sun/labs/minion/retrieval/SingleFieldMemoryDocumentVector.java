@@ -35,6 +35,7 @@ import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.Field.DictionaryType;
 import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.MemoryField;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.MemoryDictionary;
 import com.sun.labs.minion.indexer.entry.IndexEntry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
@@ -83,11 +84,6 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector
      */
     protected transient MemoryField mf;
 
-    /**
-     * What kind of term stats we're using.
-     */
-    Field.TermStatsType termStatsType;
-
     public SingleFieldMemoryDocumentVector() {
     }
 
@@ -132,7 +128,7 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector
         DocumentVectorPostings dvp = (DocumentVectorPostings) vecEntry.
                 getPostings();
         v = dvp.getWeightedFeatures(vecEntry.getID(), field.getID(), null, wf,
-                                    wc);
+                                    wc, termStatsType);
         length = 0;
         for(WeightedFeature feat : v) {
             length += feat.getWeight() * feat.getWeight();
@@ -264,17 +260,30 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector
             }
 
             DiskField cdf = curr.getDF(field);
-
             if(cdf == null) {
                 continue;
+            }
+
+            //
+            // The dictionary from which we'll draw the terms we're searching 
+            // for.
+            DiskDictionary termDict = null;
+            switch(termStatsType) {
+                case STEMMED:
+                    termDict = (DiskDictionary) cdf.
+                            getDictionary(DictionaryType.STEMMED_TOKENS);
+                    break;
+                case RAW:
+                    termDict = (DiskDictionary) cdf.getTermDictionary(termStatsType);
+                    break;
             }
 
             ScoredQuickOr qor = new ScoredQuickOr(curr, 1024, true);
             qor.setQueryStats(qs);
             qor.addField(field);
             for(WeightedFeature f : sf) {
-
-                QueryEntry entry = cdf.getTerm(f.getName(), false);
+                
+                QueryEntry entry = termDict.get(f.getName());
                 if(entry == null) {
                     qor.addWeightOnly(f.getWeight());
                     continue;

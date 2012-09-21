@@ -28,6 +28,7 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -192,7 +193,7 @@ public class MTDictReader implements Runnable {
         int numTerms = 0;
         for(DiskPartition part : partitions) {
             for(DiskField df : ((InvFileDiskPartition) part).getDiskFields()) {
-                DiskDictionary main = (DiskDictionary) df.getTermDictionary();
+                DiskDictionary main = (DiskDictionary) df.getTermDictionary(TermStatsType.RAW);
                 if(main.size() > numTerms) {
                     numTerms = main.size();
                     selectedDict = main;

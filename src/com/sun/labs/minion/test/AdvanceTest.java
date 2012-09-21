@@ -5,6 +5,7 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
 import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
@@ -47,7 +48,7 @@ public class AdvanceTest {
                 InvFileDiskPartition tp = (InvFileDiskPartition) dp;
                 NanoWatch nw = new NanoWatch();
                 nw.start();
-                DiskDictionary<String> tokens = (DiskDictionary<String>) tp.getDF(args[1]).getTermDictionary();
+                DiskDictionary<String> tokens = (DiskDictionary<String>) tp.getDF(args[1]).getTermDictionary(TermStatsType.RAW);
                 logger.info(String.format("Term dict for %s in %s has %d entries", args[1], tp, tokens.size()));
                 LightIterator<String> tsi = tsd.literator();
                 TermStatsQueryEntry ptse = null;

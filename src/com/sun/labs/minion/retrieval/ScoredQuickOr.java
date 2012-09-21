@@ -27,6 +27,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.util.Util;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -80,11 +81,19 @@ public class ScoredQuickOr extends QuickOr {
         added++;
         sqw += (qw * qw);
 
+        boolean printqw = false;
         qs.piW.start();
         qs.unionW.start();
         if(storeAll) {
             while(pi.next()) {
                 weights[pi.getID()] += pi.getWeight() * qw;
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format(
+                                              "%d: %d %.4f",
+                                                     pi.getID(), pi.
+                                              getFreq(), pi.getWeight()));
+                    
+                }
             }
         } else {
             int s = pi.getN() + p;

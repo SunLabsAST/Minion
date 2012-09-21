@@ -1348,16 +1348,15 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
     public void calculateVectorLengths(PartitionOutput partOut) throws java.io.IOException {
         
-        DiskDictionary<String> termDict = (DiskDictionary<String>) field.getTermDictionary();
-        
-        if(termDict == null) {
-            Arrays.fill(header.vectorLengthOffsets, -1);
-        } else {
-            //
-            // Remember where the vector lengths start.
-            WriteableBuffer vectorLengthsBuffer = partOut.getVectorLengthsBuffer();
+        Arrays.fill(header.vectorLengthOffsets, -1);
+        WriteableBuffer vectorLengthsBuffer = partOut.getVectorLengthsBuffer();
+        DiskPartition p = (DiskPartition) field.getPartition();
+        DiskDictionary<String> termDict = (DiskDictionary<String>) field.getTermDictionary(Field.TermStatsType.RAW);
+
+        //
+        // Vector lengths for the raw terms, preferrably the uncased ones.
+        if(termDict != null) {
             header.vectorLengthOffsets[Field.DocumentVectorType.RAW.ordinal()] = vectorLengthsBuffer.position();
-            DiskPartition p = (DiskPartition) field.getPartition();
             DocumentVectorLengths.calculate(field.getInfo(),
                     p.getNDocs(),
                     p.getMaxDocumentID(),
@@ -1366,20 +1365,22 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     vectorLengthsBuffer,
                     p.getPartitionManager().getTermStatsDict(), 
                     Field.TermStatsType.RAW);
-            if(info.hasAttribute(FieldInfo.Attribute.STEMMED)) {
-                termDict = (DiskDictionary<String>) field.getDictionary(DictionaryType.STEMMED_TOKENS);
-                header.vectorLengthOffsets[Field.DocumentVectorType.RAW.
-                        ordinal()] = vectorLengthsBuffer.position();
-                DocumentVectorLengths.calculate(field.getInfo(),
-                                                p.getNDocs(),
-                                                p.getMaxDocumentID(),
-                                                p.getPartitionManager(),
-                                                (DictionaryIterator<String>) termDict.iterator(),
-                                                vectorLengthsBuffer,
-                                                p.getPartitionManager().getTermStatsDict(),
-                                                Field.TermStatsType.STEMMED);
-                
-            }
+        }
+        
+        //
+        // Vector lengths for the stemmed terms.      
+        termDict = (DiskDictionary<String>) field.getDictionary(DictionaryType.STEMMED_TOKENS);
+        if(termDict != null) {
+            header.vectorLengthOffsets[Field.DocumentVectorType.STEMMED.ordinal()] = vectorLengthsBuffer.position();
+            DocumentVectorLengths.calculate(field.getInfo(),
+                                            p.getNDocs(),
+                                            p.getMaxDocumentID(),
+                                            p.getPartitionManager(),
+                                            (DictionaryIterator<String>) termDict.iterator(),
+                                            vectorLengthsBuffer,
+                                            p.getPartitionManager().getTermStatsDict(),
+                                            Field.TermStatsType.STEMMED);
+
         }
 
         //

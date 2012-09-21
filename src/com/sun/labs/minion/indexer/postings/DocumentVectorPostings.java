@@ -26,6 +26,7 @@ package com.sun.labs.minion.indexer.postings;
 
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.dictionary.LightIterator;
@@ -221,7 +222,8 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
             int fieldID,
             Dictionary dict,
             WeightingFunction wf,
-            WeightingComponents wc) {
+            WeightingComponents wc, 
+            TermStatsType termStatsType) {
 
         if(entries == null) {
 
@@ -238,7 +240,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
 
             wc.dvl = df.getDocumentVectorLength(docID);
             List<WeightedFeature> fl = new ArrayList<WeightedFeature>();
-            Dictionary termDictionary = df.getTermDictionary();
+            Dictionary termDictionary = df.getTermDictionary(termStatsType);
             if(getN() > 0.1 * termDictionary.size()) {
                 //
                 // If we have a substantial portion of the entries in the dictionary,

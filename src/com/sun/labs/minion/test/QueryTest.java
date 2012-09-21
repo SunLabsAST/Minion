@@ -2056,7 +2056,6 @@ public class QueryTest extends SEMain {
                 String dockey = args[2];
                 String[] fields = fieldArg.split(",");
                 DocumentVector dv = engine.getDocumentVector(dockey, fields);
-                logger.info(String.format("dv class: %s", dv.getClass()));
                 if(dv == null) {
                     shell.out.println("Unknown key: " + args[1]);
                 } else {

@@ -7,6 +7,7 @@ import com.sun.labs.minion.ResultSet;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
+import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.util.Util;
@@ -50,7 +51,7 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
      * The length of this document vector.
      */
     protected float length;
-
+    
     /**
      * Whether we've been normalized.
      */
@@ -77,6 +78,11 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
      * The weighting function to use for computing term weights.
      */
     protected transient WeightingFunction wf;
+    
+    /**
+     * The kind of term stats that we should be using.
+     */
+    protected TermStatsType termStatsType;
 
     public AbstractDocumentVector() {
     }
@@ -139,6 +145,10 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
     @Override
     public String getKey() {
         return key;
+    }
+
+    public QueryEntry<String> getKeyEntry() {
+        return keyEntry;
     }
 
     /**

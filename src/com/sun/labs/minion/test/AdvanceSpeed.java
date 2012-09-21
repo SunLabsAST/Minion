@@ -55,7 +55,7 @@ public class AdvanceSpeed {
         } else {
             NanoWatch nw = new NanoWatch();
             nw.start();
-            DiskDictionary<String> tokens = (DiskDictionary<String>) tp.getDF(args[1]).getTermDictionary();
+            DiskDictionary<String> tokens = (DiskDictionary<String>) tp.getDF(args[1]).getTermDictionary(Field.TermStatsType.RAW);
             logger.info(String.format("Term Stats dict for %s has %d entries", args[1], tsd.size()));
             logger.info(String.format("Term dict for %s in %s has %d entries", args[1], tp, tokens.size()));
             LightIterator<String> tsi = tsd.literator();
