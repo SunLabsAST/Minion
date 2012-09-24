@@ -43,7 +43,7 @@ public class If extends UnaryOperator {
      */
     @Override
     public ArrayGroup eval(ArrayGroup ag) {
-        QueryElement operand = (QueryElement) operands.get(0);
+        QueryElement operand = operands.get(0);
         operand.strictEval = true;
         return operand.eval(ag);
     }

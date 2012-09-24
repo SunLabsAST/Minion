@@ -177,8 +177,7 @@ public class FieldTerm extends QueryTerm {
         //
         // We'll need to operate based on the type.
         df = ifpart.getDF(name);
-        if(df == null || !df.getInfo().hasAttribute(
-                FieldInfo.Attribute.SAVED)) {
+        if(df == null || !df.getInfo().hasAttribute(FieldInfo.Attribute.SAVED)) {
             return;
         }
 

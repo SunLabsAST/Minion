@@ -66,9 +66,7 @@ public class Near extends Proximity {
      */
     @Override
     protected int calculateEstimatedSize() {
-        return operands.size() > 0 ?
-            ((QueryElement) operands.get(0)).estimateSize() :
-            0;
+        return operands.size() > 0 ? operands.get(0).estimateSize() : 0;
     }
 
     /**

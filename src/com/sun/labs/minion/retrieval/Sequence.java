@@ -35,7 +35,7 @@ public class Sequence extends UnaryOperator {
      */
     @Override
     public ArrayGroup eval(ArrayGroup ag) {
-        QueryElement operand = (QueryElement) operands.get(0);
+        QueryElement operand = operands.get(0);
         return operand.eval(ag);
     }
 

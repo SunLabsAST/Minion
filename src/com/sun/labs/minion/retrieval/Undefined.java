@@ -77,6 +77,7 @@ public class Undefined extends UnaryOperator {
             // If this isn't a saved field, return the empty set.
             return new ArrayGroup(part, new int[0], 0);
         }
+        
         DiskField sf = ((InvFileDiskPartition) part).getDF(fi);
         if(sf == null) {
             

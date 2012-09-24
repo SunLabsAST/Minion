@@ -42,9 +42,7 @@ public class And extends Operator {
      */
     @Override
     protected int calculateEstimatedSize() {
-        return operands.size() > 0 ?
-            ((QueryElement) operands.get(0)).estimateSize() :
-            0;
+        return operands.size() > 0 ? operands.get(0).estimateSize() : 0;
     }
 
     /**
@@ -67,14 +65,13 @@ public class And extends Operator {
      * @param operands The operands to process.
      */
     protected static ArrayGroup and(ArrayGroup ag, List<QueryElement> operands,
-                                    boolean strict) {
+                                    boolean strictEval) {
         ArrayGroup ret = ag;
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
-            QueryElement qe = (QueryElement) i.next();
-            if(strict) {
-                qe.strictEval = strict;
+        for(QueryElement operand : operands) {
+            if(strictEval) {
+                operand.strictEval = strictEval;
             }
-            ret = qe.eval(ret);
+            ret = operand.eval(ret);
         }
         return ret;
     }

@@ -58,12 +58,11 @@ public class Passage extends Proximity {
     protected int calculateEstimatedSize() {
         int tsz = 0;
         int osz = Integer.MAX_VALUE;
-        for(Iterator i = operands.iterator(); i.hasNext();) {
-            QueryElement qe = (QueryElement) i.next();
-            if(qe instanceof DictTerm) {
-                tsz += qe.estimateSize();
+        for(QueryElement operand : operands) {
+            if(operand instanceof DictTerm) {
+                tsz += operand.estimateSize();
             } else {
-                osz = Math.min(osz, qe.estimateSize());
+                osz = Math.min(osz, operand.estimateSize());
             }
         }
         return Math.min(tsz, osz);
@@ -79,13 +78,12 @@ public class Passage extends Proximity {
         // We'll do an or of the terms, and then restrict that with any
         // non-terms in the operands.
         ScoredGroup candidates = null;
-        for(Iterator i = operands.iterator(); i.hasNext();) {
-            QueryElement qe = (QueryElement) i.next();
-            if(qe instanceof DictTerm) {
+        for(QueryElement operand : operands) {
+            if(operand instanceof DictTerm) {
                 if(candidates == null) {
-                    candidates = (ScoredGroup) qe.eval(null);
+                    candidates = (ScoredGroup) operand.eval(null);
                 } else {
-                    candidates = (ScoredGroup) candidates.union(qe.eval(null));
+                    candidates = (ScoredGroup) candidates.union(operand.eval(null));
                 }
             }
         }
@@ -100,10 +98,9 @@ public class Passage extends Proximity {
         //
         // Now, we'll run back through the operands again, intersecting
         // any non-terms that we find with our candidate set.
-        for(Iterator i = operands.iterator(); i.hasNext();) {
-            QueryElement qe = (QueryElement) i.next();
-            if(!(qe instanceof DictTerm)) {
-                candidates = (ScoredGroup) qe.eval(candidates);
+        for(QueryElement operand : operands) {
+            if(!(operand instanceof DictTerm)) {
+                candidates = (ScoredGroup) operand.eval(candidates);
             }
         }
 

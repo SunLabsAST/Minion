@@ -44,8 +44,8 @@ public class Or extends Operator {
     @Override
     protected int calculateEstimatedSize() {
         estSize = 0;
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
-            estSize += ((QueryElement) i.next()).estimateSize();
+        for(QueryElement operand : operands) {
+            estSize += operand.estimateSize();
         }
         return estSize;
     }
@@ -56,15 +56,14 @@ public class Or extends Operator {
     @Override
     public ArrayGroup eval(ArrayGroup ag) {
         ArrayGroup ret = null;
-        for(Iterator i = operands.iterator(); i.hasNext(); ) {
-            QueryElement qe = (QueryElement) i.next();
+        for(QueryElement operand : operands) {
             if(strictEval) {
-                qe.strictEval = strictEval;
+                operand.strictEval = strictEval;
             }
             if(ret == null) {
-                ret = qe.eval(ag);
+                ret = operand.eval(ag);
             } else {
-                ret = ret.union(qe.eval(ag));
+                ret = ret.union(operand.eval(ag));
             }
         }
         return ret;

@@ -142,10 +142,9 @@ public abstract class Proximity extends Operator {
      * retrieval.
      */
     protected void setStorePassages(boolean b) {
-        for(Iterator i = operands.iterator(); i.hasNext();) {
-            QueryElement qe = (QueryElement) i.next();
-            if(qe instanceof Proximity) {
-                ((Proximity) qe).setStorePassages(b);
+        for(QueryElement operand : operands) {
+            if(operand instanceof Proximity) {
+                ((Proximity) operand).setStorePassages(b);
             }
         }
         storePassages = b;

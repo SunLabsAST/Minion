@@ -41,7 +41,7 @@ public abstract class UnaryOperator extends Operator {
      */
     @Override
     protected int calculateEstimatedSize() {
-        return ((QueryElement) operands.get(0)).estimateSize();
+        return operands.get(0).estimateSize();
     }
 
 } // UnaryOperator
