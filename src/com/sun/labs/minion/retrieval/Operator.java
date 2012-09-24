@@ -28,20 +28,19 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.logging.Logger;
 
 public abstract class Operator extends QueryElement {
+
+    protected static final Logger logger = Logger.getLogger(Operator.class.
+            getName());
 
     /**
      * The query elements (<code>QueryTerm</code>s and <code>Operator</code>s)
      * that are the operands of this operator.
      */
     protected List<QueryElement> operands;
-
-    protected static final Logger logger = Logger.getLogger(Operator.class.getName());
 
     public Operator() {
     }
@@ -58,9 +57,9 @@ public abstract class Operator extends QueryElement {
 
         //
         // Set the partition for each of our operands.
-        for(QueryElement qe : operands) {
-            qe.setQueryStats(qs);
-            qe.setPartition(part);
+        for(QueryElement operand : operands) {
+            operand.setQueryStats(qs);
+            operand.setPartition(part);
         }
 
         //
@@ -78,8 +77,8 @@ public abstract class Operator extends QueryElement {
     @Override
     public void setQueryConfig(QueryConfig qc) {
         super.setQueryConfig(qc);
-        for(Iterator i = operands.iterator(); i.hasNext();) {
-            ((QueryElement) i.next()).setQueryConfig(qc);
+        for(QueryElement operand : operands) {
+            operand.setQueryConfig(qc);
         }
     }
 
@@ -107,8 +106,8 @@ public abstract class Operator extends QueryElement {
     @Override
     protected void setWeightingFunction(WeightingFunction wf) {
         super.setWeightingFunction(wf);
-        for(Iterator i = operands.iterator(); i.hasNext();) {
-            ((QueryElement) i.next()).setWeightingFunction(wf);
+        for(QueryElement operand : operands) {
+            operand.setWeightingFunction(wf);
         }
     }
 
@@ -119,8 +118,8 @@ public abstract class Operator extends QueryElement {
     @Override
     protected void setWeightingComponents(WeightingComponents wc) {
         super.setWeightingComponents(wc);
-        for(Iterator i = operands.iterator(); i.hasNext();) {
-            ((QueryElement) i.next()).setWeightingComponents(wc);
+        for(QueryElement operand : operands) {
+            operand.setWeightingComponents(wc);
         }
     }
 
@@ -132,8 +131,8 @@ public abstract class Operator extends QueryElement {
     @Override
     public void addSearchFieldName(String fieldName) {
         super.addSearchFieldName(fieldName);
-        for(Iterator i = operands.iterator(); i.hasNext();) {
-            ((QueryElement) i.next()).addSearchFieldName(fieldName);
+        for(QueryElement operand : operands) {
+            operand.addSearchFieldName(fieldName);
         }
     }
 
@@ -141,12 +140,11 @@ public abstract class Operator extends QueryElement {
     public List getQueryTerms(Comparator c) {
         List terms = new ArrayList();
         List subs = new ArrayList();
-        for(Iterator it = operands.iterator(); it.hasNext();) {
-            QueryElement op = (QueryElement) it.next();
-            if(op instanceof DictTerm) {
-                terms.add(op);
+        for(QueryElement operand : operands) {
+            if(operand instanceof DictTerm) {
+                terms.add(operand);
             } else {
-                subs.addAll(op.getQueryTerms(c));
+                subs.addAll(operand.getQueryTerms(c));
             }
         }
 
@@ -166,11 +164,9 @@ public abstract class Operator extends QueryElement {
         mine.append(super.toString(prefix) + toStringMod() + " estSize: " +
                 estSize + "\n");
         if(operands != null) {
-            ListIterator it = operands.listIterator();
-            while(it.hasNext()) {
-                QueryElement n = (QueryElement) it.next();
-                if(n != null) {
-                    mine.append(n.toString(prefix + " ") + "\n");
+            for(QueryElement operand : operands) {
+                if(operand != null) {
+                    mine.append(operand.toString(prefix + " ") + "\n");
                 }
             }
         }

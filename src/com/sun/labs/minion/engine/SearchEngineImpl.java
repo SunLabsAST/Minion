@@ -594,24 +594,36 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public ResultSet search(String query)
             throws SearchEngineException {
         return search(query, "-score",
-                Searcher.Operator.AND, Searcher.Grammar.STRICT);
+                Searcher.Operator.AND, Searcher.Grammar.STRICT, null);
     }
 
     @Override
     public ResultSet search(String query, String sortOrder)
             throws SearchEngineException {
         return search(query, sortOrder,
-                Searcher.Operator.AND, Searcher.Grammar.STRICT);
+                Searcher.Operator.AND, Searcher.Grammar.STRICT, null);
     }
 
     @Override
-    public ResultSet search(String query, String sortOrder, int defaultOperator,
-                            int grammar) throws SearchEngineException {
-        return search(query, sortOrder,
-                Searcher.Operator.values()[defaultOperator],
-                Searcher.Grammar.values()[grammar]);
+    public ResultSet search(String query, QueryConfig queryConfig) throws SearchEngineException {
+        return search(query, "-score",
+                      Searcher.Operator.AND, Searcher.Grammar.STRICT, queryConfig);
     }
 
+    @Override
+    public ResultSet search(String query, String sortSpec,
+                            QueryConfig queryConfig) throws SearchEngineException {
+        return search(query, sortSpec,
+                      Searcher.Operator.AND, Searcher.Grammar.STRICT,
+                      queryConfig);
+    }
+
+    @Override
+    public ResultSet search(String query, String sortOrder,
+                            Searcher.Operator defaultOperator,
+                            Searcher.Grammar grammar) throws SearchEngineException {
+        return search(query, sortOrder, defaultOperator, grammar, null);
+    }
 
     public static QueryElement parseQuery(String query, 
             Searcher.Operator defaultOperator, 
@@ -684,28 +696,31 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     }
 
     @Override
-    public ResultSet search(String query, String sortOrder,
-            Searcher.Operator defaultOperator, Searcher.Grammar grammar)
-            throws SearchEngineException {
-
-        QueryElement qe = parseQuery(query, defaultOperator, grammar, pipelineFactory.getQueryPipeline(this));
-        return search(qe, sortOrder);
+    public ResultSet search(String query, String sortSpec,
+                            Operator defaultOperator, Grammar grammar,
+                            QueryConfig queryConfig) throws
+            SearchEngineException {
+        QueryElement qe = parseQuery(query, defaultOperator, grammar,
+                                     pipelineFactory.getQueryPipeline(this));
+        return search(qe, sortSpec, queryConfig);
     }
 
-    private ResultSet search(QueryElement qe, String sortOrder) throws
+    private ResultSet search(QueryElement qe, String sortOrder, QueryConfig qc) throws
             SearchEngineException {
         try {
             CollectionStats cs =
                     new CollectionStats(invFilePartitionManager);
             Collection<DiskPartition> parts = invFilePartitionManager.
                     getActivePartitions();
-            QueryConfig cqc = (QueryConfig) queryConfig.clone();
-            qe.setQueryConfig(cqc);
-            cqc.setCollectionStats(cs);
-            cqc.setSortSpec(sortOrder);
+            if(qc == null) {
+                qc = (QueryConfig) queryConfig.clone();
+            }
+            qe.setQueryConfig(qc);
+            qc.setCollectionStats(cs);
+            qc.setSortSpec(sortOrder);
             QueryStats lqs = new QueryStats();
             qe.setQueryStats(lqs);
-            ResultSetImpl rsi = new ResultSetImpl(qe, cqc, lqs, parts, this);
+            ResultSetImpl rsi = new ResultSetImpl(qe, qc, lqs, parts, this);
             qs.accumulate(lqs);
             return rsi;
         } catch(Exception e) {
@@ -720,15 +735,24 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
     @Override
     public ResultSet search(Element el) throws SearchEngineException {
-        return search(el, "-score");
+        return search(el, "-score", null);
     }
 
     @Override
     public ResultSet search(Element el, String sortOrder) throws
             SearchEngineException {
-        checkQuery(null, el);
-        return search(el.getQueryElement(pipelineFactory.getQueryPipeline(this)), sortOrder);
+        return search(el, sortOrder, null);
     }
+
+    @Override
+    public ResultSet search(Element el, String sortOrder,
+                            QueryConfig queryConfig) throws SearchEngineException {
+        checkQuery(null, el);
+        return search(el.getQueryElement(pipelineFactory.getQueryPipeline(this)),
+                      sortOrder, queryConfig);
+    }
+    
+    
 
     /**
      * Checks to make sure that the given query makes sense for this engine.

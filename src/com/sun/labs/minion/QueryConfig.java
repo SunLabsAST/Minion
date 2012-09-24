@@ -202,6 +202,16 @@ public class QueryConfig implements Cloneable, Configurable {
     private boolean stemmedQuerying;
     
     /**
+     * Whether we should store information about the query terms while we're
+     * processing the query, so that the information can be used elsewhere (e.g., 
+     * for re-ranking using L2R techniques.)
+     */
+    @ConfigBoolean(defaultValue=false)
+    public static final String PROP_STORE_QUERY_TERMS = "store_query_terms";
+    
+    private boolean storeQueryTerms;
+    
+    /**
      * The search engine associated with the collection that we're
      * querying.
      */

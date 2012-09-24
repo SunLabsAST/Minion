@@ -338,75 +338,7 @@ public interface SearchEngine extends Searcher {
      * @throws com.sun.labs.minion.SearchEngineException if there is any error
      * deleting the documents from the index
      */
-    public void delete(List<String> keys)
-            throws SearchEngineException;
-
-    /**
-     * Runs a query against the index, returning a set of results.  The result
-     * set will be sorted in descending order of score, by default.
-     *
-     * @param query The query to run, in our query syntax.
-     */
-    @Override
-    public ResultSet search(String query)
-            throws SearchEngineException;
-    
-    /**
-     * Runs a query against the index, returning a set of results.
-     *
-     * @param query The query to run, in our query syntax.
-     * @param sortOrder How the results should be sorted.  This is a set of
-     * comma-separated field names, each preceeded by a <code>+</code> (for
-     * increasing order) or by a <code>-</code> (for decreasing order).
-     * @throws com.sun.labs.minion.SearchEngineException if there are any errors
-     * evaluating the query
-     */
-    @Override
-    public ResultSet search(String query, String sortOrder)
-            throws SearchEngineException;
-
-    /**
-     * Runs a query against the index, returning a set of results.
-     *
-     * @param query The query to run, in our query syntax.
-     * @param sortOrder How the results should be sorted.  This is a set of
-     * comma-separated field names, each preceeded by a <code>+</code> (for
-     * increasing order) or by a <code>-</code> (for decreasing order).
-     * @param defaultOperator specified the default operator to use when no
-     * other operator is provided between terms in the query.  Valid values are
-     * defined in the {@link Searcher} interface
-     * @param grammar specifies the grammar to use to parse the query.  Valid values
-     * ar edefined in the {@link com.sun.labs.minion.Searcher} interface
-     * @return a set of results for this search.
-     * @throws com.sun.labs.minion.SearchEngineException if there is any error during
-     * the search.
-     */
-    @Override
-    public ResultSet search(String query, String sortOrder,
-                            Searcher.Operator defaultOperator,
-                            Searcher.Grammar grammar)
-            throws SearchEngineException;
-
-    /**
-     * Runs a query against the index, returning a set of results.
-     * @param el the query, expressed using the programattic query API
-     * @return the set of documents that match the query
-     * @throws com.sun.labs.minion.SearchEngineException if there are any errors
-     * evaluating the query
-     */
-    ResultSet search(Element el) throws SearchEngineException;
-
-    /**
-     * Runs a query against the index, returning a set of results.
-     * @param el the query, expressed using the programattic query API
-     * @param sortOrder How the results should be sorted.  This is a set of
-     * comma-separated field names, each preceeded by a <code>+</code> (for
-     * increasing order) or by a <code>-</code> (for decreasing order).
-     * @return the set of documents that match the query
-     * @throws com.sun.labs.minion.SearchEngineException if there are any errors
-     * evaluating the query
-     */
-    ResultSet search(Element el, String sortOrder) throws SearchEngineException;
+    public void delete(List<String> keys) throws SearchEngineException;
 
     /**
      * Gets a set of results corresponding to the document keys passed in.

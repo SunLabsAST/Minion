@@ -24,6 +24,8 @@
 
 package com.sun.labs.minion;
 
+import com.sun.labs.minion.query.Element;
+
 /**
  * An interface for things that know how to run a search.
  */
@@ -48,20 +50,42 @@ public interface Searcher {
      * @param query The query to run, in our query syntax.
      * @return a set of results containing the documents that match the query
      */
-    public ResultSet search(String query)
-            throws SearchEngineException;
+    public ResultSet search(String query) throws SearchEngineException;
 
     /**
      * Runs a query against the engines, returning a set of results.
      *
      * @param query The query to run, in our query syntax.
-     * @param sortOrder How the results should be sorted.  This is a set of
+     * @param queryConfig A query configuration to use for this query.  If this
+     * is <code>null</code> then the default configuration will be used.
+     * @return a set of results containing the documents that match the query
+     */
+    public ResultSet search(String query, QueryConfig queryConfig) throws SearchEngineException;
+
+    /**
+     * Runs a query against the engines, returning a set of results.
+     *
+     * @param query The query to run, in our query syntax.
+     * @param sortSpec How the results should be sorted.  This is a set of
      * comma-separated saved field names, each preceeded by a <code>+</code> (for
      * increasing order) or by a <code>-</code> (for decreasing order).
      * @return a set of results containing the documents that match the query
      */
-    public ResultSet search(String query, String sortOrder)
-            throws SearchEngineException;
+    public ResultSet search(String query, String sortSpec) throws SearchEngineException;
+
+    /**
+     * Runs a query against the engines, returning a set of results.
+     *
+     * @param query The query to run, in our query syntax.
+     * @param sortSpec How the results should be sorted. This is a set of
+     * comma-separated saved field names, each preceeded by a <code>+</code>
+     * (for increasing order) or by a <code>-</code> (for decreasing order).
+     * @param queryConfig A query configuration to use for this query. If this
+     * is <code>null</code> then the default configuration will be used.
+     * @return a set of results containing the documents that match the query
+     */
+    public ResultSet search(String query, String sortSpec, QueryConfig queryConfig) throws
+            SearchEngineException;
 
     /**
      * Runs a query against the engines, returning a set of results.
@@ -78,26 +102,7 @@ public interface Searcher {
     public ResultSet search(String query, String sortSpec,
                              Operator defaultOperator, Grammar grammar)
             throws SearchEngineException;
-
-    @Deprecated
-    public static final int OP_PAND = 0;
-
-    @Deprecated
-    public static final int OP_AND = 1; // the default default operator
-
-    @Deprecated
-    public static final int OP_OR = 2;
-
-    @Deprecated
-    public static final int GRAMMAR_WEB = 0;
-
-    @Deprecated
-    public static final int GRAMMAR_STRICT = 1;
-
-    @Deprecated
-    public static final int GRAMMAR_LUCENE = 2;
-
-
+    
     /**
      * Runs a query against the engines, returning a set of results.
      *
@@ -109,10 +114,53 @@ public interface Searcher {
      * none is specified in the query
      * @param grammar specifies the grammar to use to parse the query.  Valid values
      * are defined in the {@link com.sun.labs.minion.Searcher} interface
+     * @param queryConfig A query configuration to use for this query. If this
+     * is <code>null</code> then the default configuration will be used.
      */
-    @Deprecated
     public ResultSet search(String query, String sortSpec,
-                            int defaultOperator, int grammar)
+                            Operator defaultOperator, Grammar grammar,
+                            QueryConfig queryConfig)
             throws SearchEngineException;
+    
+    /**
+     * Runs a query against the index, returning a set of results.
+     *
+     * @param el the query, expressed using the programattic query API
+     * @return the set of documents that match the query
+     * @throws com.sun.labs.minion.SearchEngineException if there are any errors
+     * evaluating the query
+     */
+    ResultSet search(Element el) throws SearchEngineException;
+
+    /**
+     * Runs a query against the index, returning a set of results.
+     *
+     * @param el the query, expressed using the programattic query API
+     * @param sortOrder How the results should be sorted. This is a set of
+     * comma-separated field names, each preceeded by a <code>+</code> (for
+     * increasing order) or by a <code>-</code> (for decreasing order).
+     * @return the set of documents that match the query
+     * @throws com.sun.labs.minion.SearchEngineException if there are any errors
+     * evaluating the query
+     */
+    ResultSet search(Element el, String sortOrder) throws SearchEngineException;
+
+    /**
+     * Runs a query against the index, returning a set of results.
+     *
+     * @param el the query, expressed using the programattic query API
+     * @param sortOrder How the results should be sorted. This is a set of
+     * comma-separated field names, each preceeded by a <code>+</code> (for
+     * increasing order) or by a <code>-</code> (for decreasing order).
+     * @param queryConfig A query configuration to use for this query. If this
+     * is <code>null</code> then the default configuration will be used.
+     * @return the set of documents that match the query
+     * @throws com.sun.labs.minion.SearchEngineException if there are any errors
+     * evaluating the query
+     */
+    ResultSet search(Element el, String sortOrder, QueryConfig queryConfig)
+            throws SearchEngineException;
+
+
 }// Searcher
 
