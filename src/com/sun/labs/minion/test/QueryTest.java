@@ -48,6 +48,7 @@ import com.sun.labs.minion.TextHighlighter;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
+import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.Field.DictionaryType;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
@@ -67,6 +68,8 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
 import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
 import com.sun.labs.minion.retrieval.AbstractDocumentVector;
+import com.sun.labs.minion.retrieval.QueryTermDocStats;
+import com.sun.labs.minion.retrieval.QueryTermStats;
 import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.SortSpec;
@@ -428,7 +431,51 @@ public class QueryTest extends SEMain {
             }
         });
         
-        shell.addAlias("q", "Query");
+        shell.add(prefixCommand(prefix, "tq"), "Query", new CompletorCommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                if(args.length < 4) {
+                    return getHelp();
+                }
+                
+                List<String> terms = new ArrayList<String>();
+                for(int i = 3; i < args.length; i++) {
+                    terms.add(args[i]);
+                }
+                
+                QueryConfig qc = engine.getQueryConfig();
+                QueryTermStats qts = engine.getQueryTermStats(qc, terms, args[1], Field.TermStatsType.valueOf(args[2].toUpperCase()));
+                ci.out.format("%d documents\n", qts.size());
+                for(String term : qts.getQueryTerms()) {
+                    int df = qts.getDocumentFrequency(term);
+                    ci.out.format("%-10s%4d\n", term, df);
+                }
+                for(QueryTermDocStats qtds : qts) {
+                    ResultImpl ri = qtds.getResult();
+                    displaySpec.format("  ", ri);
+                    for(QueryTermDocStats.TermStat ts : qtds) {
+                        ci.out.format("   %s\n", ts);
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field termstatstype term [term] ... - Get query term stats for the given terms";
+            }
+            
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[]{
+                            new FieldCompletor(manager.getMetaFile()),
+                            new EnumCompletor(Field.TermStatsType.class),
+                            new NullCompletor()
+                        };
+            }
+        });
         
         shell.add(prefixCommand(prefix, "last"), "Query", new CommandInterface() {
 

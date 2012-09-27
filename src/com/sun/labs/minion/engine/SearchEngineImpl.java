@@ -43,19 +43,25 @@ import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.Searcher;
 import com.sun.labs.minion.SimpleIndexer;
+import com.sun.labs.minion.Stemmer;
+import com.sun.labs.minion.StemmerFactory;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.WeightedField;
-import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field.TermStatsType;
 import com.sun.labs.minion.indexer.FlushDocument;
 import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.MemoryField;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
 import com.sun.labs.minion.indexer.partition.Marshaller;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
+import com.sun.labs.minion.indexer.postings.PostingsIterator;
+import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.knowledge.KnowledgeSource;
 import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.query.And;
@@ -67,13 +73,18 @@ import com.sun.labs.minion.query.StringRelation;
 import com.sun.labs.minion.query.Term;
 import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.CollectionStats;
+import com.sun.labs.minion.retrieval.FreqGroup;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
 import com.sun.labs.minion.retrieval.QueryElement;
 import com.sun.labs.minion.retrieval.QueryOptimizer;
+import com.sun.labs.minion.retrieval.QueryTermDocStats;
+import com.sun.labs.minion.retrieval.QueryTermStats;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.ScoredGroup;
 import com.sun.labs.minion.retrieval.SingleFieldDocumentVector;
 import com.sun.labs.minion.retrieval.SingleFieldMemoryDocumentVector;
+import com.sun.labs.minion.retrieval.WeightingComponents;
+import com.sun.labs.minion.retrieval.WeightingFunction;
 import com.sun.labs.minion.retrieval.parser.LuceneParser;
 import com.sun.labs.minion.retrieval.parser.LuceneTransformer;
 import com.sun.labs.minion.retrieval.parser.Parser;
@@ -108,6 +119,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -752,6 +764,121 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                       sortOrder, queryConfig);
     }
     
+    /**
+     * Gets the per-document term statistics associated with the set of documents
+     * that contain any of the provided query terms.
+     * @param qc A query configuration to use for weighting functions
+     * @param termColl The set of query terms that we want per-document stats for
+     * @param field The field against which we should run the query.
+     * @param termStatsType The type of term stats that we want. We can choose from stemmed or raw stats.
+     * @return The per-document query term statistics.
+     */
+    public QueryTermStats getQueryTermStats(QueryConfig qc, Collection<String> termColl, String field, TermStatsType termStatsType) {
+        FieldInfo info = getFieldInfo(field);
+        if(info == null || !info.hasAttribute(FieldInfo.Attribute.INDEXED)) {
+            logger.warning(String.format("Field %s isn't indexed or may not exist", field));
+            return null;
+        }
+        
+        Stemmer stemmer = null;
+        if(termStatsType == TermStatsType.STEMMED) {
+            if(!info.hasAttribute(FieldInfo.Attribute.STEMMED)) {
+                logger.warning(String.format("Field %s isn't stemmed", field)); 
+                return null;
+            }
+            String stemmerFactoryName = info.getStemmerFactoryName();
+            if(stemmerFactoryName == null) {
+                logger.warning(String.format("Can't get stemmer factory name for stemmed field %s?", field));
+                return null;
+            }
+            StemmerFactory sf = (StemmerFactory) cm.lookup(info.getStemmerFactoryName());
+            if(sf == null) {
+                logger.warning(String.
+                        format("Unknown stemmer factory name %s",stemmerFactoryName));
+                return null;
+            }
+            stemmer = sf.getStemmer();
+        }
+        
+        String[] terms = new String[termColl.size()];
+        int p = 0;
+        for(String term : termColl) {
+            if(stemmer != null) {
+                terms[p] = stemmer.stem(term);
+                logger.info(String.format("Stemmed %s to %s", term, terms[p]));
+            } else {
+                terms[p] = term;
+            }
+            p++;
+        }
+        QueryTermStats ret = new QueryTermStats(this, info, termStatsType, terms);
+        
+        PostingsIteratorFeatures feat = null;
+        WeightingFunction wf = null;
+        WeightingComponents wc = null;
+        if(qc != null) {
+            wf = qc.getWeightingFunction();
+            wc = qc.getWeightingComponents();
+            wc.setField(info);
+            wc.setTermStatsType(termStatsType);
+            feat = new PostingsIteratorFeatures(wf, wc);
+        }
+
+        for(DiskPartition part : invFilePartitionManager.getActivePartitions()) {
+            DiskField df = ((InvFileDiskPartition) part).getDF(info);
+            if(df == null) {
+                continue;
+            }
+            DiskDictionary dict = (DiskDictionary) df.getTermDictionary(termStatsType);
+            if(dict == null) {
+                continue;
+            }
+            
+            PriorityQueue<FreqGroup.FreqGrouperator> heap = new PriorityQueue<FreqGroup.FreqGrouperator>();
+            
+            for(int i = 0; i < terms.length; i++) {
+                String term = terms[i];
+                QueryEntry qe = dict.get(term);
+                if(wc != null) {
+                    wf.initTerm(wc.setTerm(term));
+                }
+                if(qe != null) {
+                    PostingsIterator pi = qe.iterator(feat);
+                    if(pi != null) {
+                        FreqGroup fg = new FreqGroup(term, pi);
+                        FreqGroup.FreqGrouperator fgrater = fg.grouperator(i);
+                        if(fgrater.next()) {
+                            heap.offer(fgrater);
+                        }
+                    }
+                }
+            }
+            
+            while(!heap.isEmpty()) {
+                int currID = heap.peek().getID();
+                if(part.isDeleted(currID)) {
+                    while(heap.peek().getID() == currID) {
+                        FreqGroup.FreqGrouperator top = heap.poll();
+                        if(top.next()) {
+                            heap.offer(top);
+                        }
+                    }
+                }
+                QueryTermDocStats qts = new QueryTermDocStats((InvFileDiskPartition) part, currID, df.getDocumentVectorLength(currID));
+                while(!heap.isEmpty() && heap.peek().getID() == currID) {
+                    FreqGroup.FreqGrouperator top = heap.poll();
+                    qts.add(terms[top.getIndex()], top.getFreq(), top.getWeight());
+                    if(top.next()) {
+                        heap.offer(top);
+                    }
+                }
+                ret.add(qts);
+                
+            }
+            
+        }
+        return ret;
+    }
     
 
     /**
