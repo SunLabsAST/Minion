@@ -200,6 +200,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
 
         //
         // Load the document vector lengths.
+        setVectorLengths(vectorLengthsFile);
+    }
+    
+    public void setVectorLengths(RandomAccessFile vectorLengthsFile) throws IOException {
         dvl = new DocumentVectorLengths[header.vectorLengthOffsets.length];
         for(int i = 0; i < header.vectorLengthOffsets.length; i++) {
             if(header.vectorLengthOffsets[i] >= 0) {
@@ -207,7 +211,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 dvl[i] = new DocumentVectorLengths(vectorLengthsFile, 8192);
             }
         }
-
     }
 
     public String[] getPostingsChannelNames() {

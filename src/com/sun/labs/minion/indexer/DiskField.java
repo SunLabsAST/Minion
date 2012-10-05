@@ -17,6 +17,7 @@ import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.LocalFacet;
 import com.sun.labs.minion.retrieval.SortSpec;
 import com.sun.labs.minion.retrieval.TermStatsImpl;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.logging.Level;
@@ -53,6 +54,10 @@ public class DiskField<N extends Comparable> extends Field<N> {
     @Override
     public Dictionary getDictionary(DictionaryType type) {
         return bundle.getDictionary(type);
+    }
+    
+    public void setVectorLengths(RandomAccessFile vectorLengthsFile) throws IOException {
+        bundle.setVectorLengths(vectorLengthsFile);
     }
 
     /**

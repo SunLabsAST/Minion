@@ -450,9 +450,12 @@ public class InvFileDiskPartition extends DiskPartition {
         partOut.flushVectorLengths();
         
         //
-        // Open our new vector lengths.
+        // Open our new vector lengths and make sure the fields know about them!
         vectorLengths.close();
         vectorLengths = new RandomAccessFile(manager.makeVectorLengthFile(partNumber), "rw");
+        for(DiskField df : fields) {
+            df.setVectorLengths(vectorLengths);
+        }
     }
 
     /**
