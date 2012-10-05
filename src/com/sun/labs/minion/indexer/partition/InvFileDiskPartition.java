@@ -434,11 +434,7 @@ public class InvFileDiskPartition extends DiskPartition {
         partOut.setPartitionNumber(partNumber);
         for(DiskField df : fields) {
 
-            if(df == null) {
-                continue;
-            }
-            
-            if(!df.getInfo().hasAttribute(FieldInfo.Attribute.INDEXED)) {
+            if(df == null || !df.getInfo().hasAttribute(FieldInfo.Attribute.INDEXED)) {
                 //
                 // Skip fields that don't have term information.
                 continue;
@@ -454,6 +450,12 @@ public class InvFileDiskPartition extends DiskPartition {
         vectorLengths.close();
         vectorLengths = new RandomAccessFile(manager.makeVectorLengthFile(partNumber), "rw");
         for(DiskField df : fields) {
+            if(df == null || !df.getInfo().hasAttribute(
+                    FieldInfo.Attribute.INDEXED)) {
+                //
+                // Skip fields that don't have term information.
+                continue;
+            }
             df.setVectorLengths(vectorLengths);
         }
     }
