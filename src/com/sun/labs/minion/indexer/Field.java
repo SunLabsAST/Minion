@@ -91,7 +91,17 @@ public abstract class Field<N extends Comparable> {
      */
     public enum DocumentVectorType {
         RAW,
-        STEMMED,
+        STEMMED;
+        
+        public static TermStatsType getTermStatsType(DocumentVectorType type) {
+            switch(type) {
+                case RAW:
+                    return TermStatsType.RAW;
+                case STEMMED:
+                    return TermStatsType.STEMMED;
+            }
+            throw new IllegalArgumentException("Unknown document vector type " + type);
+        }
     }
     
     /**
@@ -99,7 +109,18 @@ public abstract class Field<N extends Comparable> {
      */
     public enum TermStatsType {
         RAW,
-        STEMMED
+        STEMMED;
+        
+        public static DocumentVectorType getDocumentVectorType(TermStatsType type) {
+            switch(type) {
+                case RAW:
+                    return DocumentVectorType.RAW;
+                case STEMMED:
+                    return DocumentVectorType.STEMMED;
+            }
+            throw new IllegalArgumentException("Unknown term stats type " + type);
+            
+        }
     }
 
     public Field(Partition partition, FieldInfo info) {

@@ -292,6 +292,7 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector
                                                      termStatsType);
                 wf.initTerm(wc.setTerm(tsi));
                 PostingsIterator pi = entry.iterator(feat);
+                logger.info(String.format("%s", f));
 
                 if(pi != null) {
                     //
@@ -308,7 +309,7 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector
             // of results.
             ScoredGroup sg = (ScoredGroup) qor.getGroup();
             qs.normW.start();
-            sg.normalize();
+            sg.normalize(TermStatsType.getDocumentVectorType(termStatsType));
             qs.normW.stop();
             sg.removeDeleted();
             groups.add(sg);

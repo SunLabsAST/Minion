@@ -23,6 +23,8 @@
  */
 
 package com.sun.labs.minion.retrieval;
+import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.Field.DocumentVectorType;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
@@ -273,41 +275,23 @@ public class ScoredGroup extends ArrayGroup {
     
     @Override
     public ArrayGroup normalize() {
+        return normalize(DocumentVectorType.RAW);
+    }
+
+    @Override
+    public ArrayGroup normalize(DocumentVectorType docVecType) {
         if(!normalized) {
             sqw = (float) Math.sqrt(sqw);
             if(sqw == 0) {
                 sqw = 1;
             }
-            ((InvFileDiskPartition) part).normalize(fields, docs, scores, size, sqw);
+            ((InvFileDiskPartition) part).normalize(fields, docs, scores, size,
+                                                                          sqw, docVecType);
             normalized = true;
         }
         return this;
     }
-    
-    /**
-     * Normalizes the scores by the document length.
-     *
-     * @param field the ID of a vectored field whose length we should use.  If 
-     * this is -1, then the length computed across all vectored fields is used.
-     * If this is 0, then the length for the data not in any explicit field is 
-     * used.  If this is not 0, then the length of that field is used.  Note if
-     * this ID is not for a vectored field, then a default length of 1 will be
-     * used!
-     * @return this group with normalized scores
-     */
-    public ArrayGroup normalize(int field) {
-        
-        if(!normalized) {
-            sqw = (float) Math.sqrt(sqw);
-            if(sqw == 0) {
-                sqw = 1;
-            }
-            ((InvFileDiskPartition) part).getDF(field).normalize(docs, scores, size, sqw);
-            normalized = true;
-        }
-        return this;
-    }
-    
+
     public void setNormalized() {
         normalized = true;
     }

@@ -258,9 +258,13 @@ public class DiskField<N extends Comparable> extends Field<N> {
     public float getDocumentVectorLength(int docID) {
         return bundle.getDocumentVectorLength(docID);
     }
+    
+    public float getDocumentVectorLength(int docID, DocumentVectorType docVecType) {
+        return bundle.getDocumentVectorLength(docID, docVecType);
+    }
 
-    public DocumentVectorLengths getDocumentVectorLengths() {
-        return bundle.getDocumentVectorLengths();
+    public DocumentVectorLengths getDocumentVectorLengths(DocumentVectorType docVecType) {
+        return bundle.getDocumentVectorLengths(docVecType);
     }
 
     /**

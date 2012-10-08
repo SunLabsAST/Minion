@@ -1355,7 +1355,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
         WriteableBuffer vectorLengthsBuffer = partOut.getVectorLengthsBuffer();
         DiskPartition p = (DiskPartition) field.getPartition();
         DiskDictionary<String> termDict = (DiskDictionary<String>) field.getTermDictionary(Field.TermStatsType.RAW);
-
+        
         //
         // Vector lengths for the raw terms, preferrably the uncased ones.
         if(termDict != null) {

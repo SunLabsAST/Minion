@@ -87,13 +87,6 @@ public class ScoredQuickOr extends QuickOr {
         if(storeAll) {
             while(pi.next()) {
                 weights[pi.getID()] += pi.getWeight() * qw;
-                if(logger.isLoggable(Level.FINE)) {
-                    logger.fine(String.format(
-                                              "%d: %d %.4f",
-                                                     pi.getID(), pi.
-                                              getFreq(), pi.getWeight()));
-                    
-                }
             }
         } else {
             int s = pi.getN() + p;

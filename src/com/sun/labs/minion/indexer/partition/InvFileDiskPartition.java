@@ -26,6 +26,7 @@ package com.sun.labs.minion.indexer.partition;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.Field.DocumentVectorType;
 import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
@@ -186,7 +187,7 @@ public class InvFileDiskPartition extends DiskPartition {
     }
     
     public void normalize(Set<FieldInfo> fields, int[] docs, float[] scores,
-                          int size, float sqw) {
+                          int size, float sqw, DocumentVectorType docVecType) {
         if(fields == null || fields.isEmpty()) {
             fields = manager.engine.getDefaultFields();
         }
@@ -194,7 +195,7 @@ public class InvFileDiskPartition extends DiskPartition {
         for(FieldInfo field : fields) {
             DiskField df = getDF(field);
             if(df != null) {
-                dvls.add(df.getDocumentVectorLengths());
+                dvls.add(df.getDocumentVectorLengths(docVecType));
             }
         }
         DocumentVectorLengths.normalize(dvls, docs, scores, size, sqw);

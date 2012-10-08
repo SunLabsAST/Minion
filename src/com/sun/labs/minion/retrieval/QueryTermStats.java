@@ -5,6 +5,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.Field;
+import com.sun.labs.minion.indexer.entry.QueryEntry;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -29,7 +30,10 @@ public class QueryTermStats implements Iterable<QueryTermDocStats> {
     
     private List<QueryTermDocStats> docStats = new ArrayList<QueryTermDocStats>();
     
+    private SearchEngineImpl engine;
+    
     public QueryTermStats(SearchEngineImpl engine, FieldInfo field, Field.TermStatsType termStatsType, String[] terms) {
+        this.engine = engine;
         for(String term : terms) {
             TermStats tsi = engine.getTermStats(term, field, termStatsType);
             if(tsi != null) {
@@ -71,6 +75,22 @@ public class QueryTermStats implements Iterable<QueryTermDocStats> {
      */
     public int size() {
         return docStats.size();
+    }
+    
+    /**
+     * Gets the query term stats associated witht
+     * @param key
+     * @return 
+     */
+    public QueryTermDocStats get(String key) {
+        QueryEntry qe = engine.getDocumentTerm(key);
+        for(QueryTermDocStats qtds : docStats) {
+            ResultImpl ri = qtds.getResult();
+            if(ri.doc == qe.getID() && ri.partition == qe.getPartition()) {
+                return qtds;
+            }
+        }
+        return null;
     }
 
     @Override

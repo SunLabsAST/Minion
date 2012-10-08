@@ -319,6 +319,6 @@ public class WeightedFeature implements Feature, Serializable {
 
     @Override
     public String toString() {
-        return String.format("%s %.6f", name, weight);
+        return String.format("%s %.4f", name, weight);
     }
 } // WeightedFeature

@@ -27,6 +27,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultAccessor;
 import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
+import com.sun.labs.minion.indexer.Field.DocumentVectorType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
@@ -225,6 +226,10 @@ public class ArrayGroup implements Cloneable {
      */
     public ScoredGroup getScored() {
         return new ScoredGroup(this);
+    }
+    
+    public ArrayGroup normalize(DocumentVectorType docVecType) {
+        return this;
     }
 
     /**
