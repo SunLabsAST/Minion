@@ -292,8 +292,6 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector
                                                      termStatsType);
                 wf.initTerm(wc.setTerm(tsi));
                 PostingsIterator pi = entry.iterator(feat);
-                logger.info(String.format("%s", f));
-
                 if(pi != null) {
                     //
                     // If we got an entry in this partition, add its postings
