@@ -2424,6 +2424,35 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public class Merger implements Runnable {
 
         /**
+         * The list of partitions that we wish to merge. This may get modified
+         * during the merge to remove partitions that have had all of their 
+         * documents deleted.
+         */
+        protected List<DiskPartition> toMerge;
+        
+        /**
+         * The original partitions that we were given to merge, without any
+         * deletions.
+         */
+        protected Set<DiskPartition> originalMerge;
+
+        /**
+         * The list of delmaps for the partitions.
+         */
+        protected List<DelMap> preDelMaps;
+
+        /**
+         * The thread that instantiated us. We need to take the merge lock from
+         * them.
+         */
+        protected Thread parent;
+
+        /**
+         * The new partition created in the merge.
+         */
+        protected int newPart;
+
+        /**
          * The new disk partition resulting from the merge.
          */
         protected DiskPartition newDP;
@@ -2448,6 +2477,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             newPart = -1;
 
             toMerge = new ArrayList<DiskPartition>(l);
+            originalMerge = new HashSet<DiskPartition>(l);
             this.localMergeLock = localMergeLock;
 
             //
@@ -2459,10 +2489,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // we started the merge.  This will allow us to construct a
             // deletion bitmap for the merged partition when we're done.
             preDelMaps = new ArrayList<DelMap>();
-            preMaps = new ReadableBuffer[toMerge.size()];
             for(int i = 0; i < toMerge.size(); i++) {
                 preDelMaps.add((DelMap) toMerge.get(i).deletions.clone());
-                preMaps[i] = preDelMaps.get(i).getDelMap();
             }
         }
 
@@ -2527,16 +2555,16 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     for(int i = 0, incr = 0; i < toMerge.size(); i++) {
 
                         DiskPartition curr = toMerge.get(i);
-
+                        
                         //
                         // Synchronize the deletion bitmap for this
                         // partition, and get the result.
+                        ReadableBuffer preMap = preDelMaps.get(i).getDelMap();
                         ReadableBuffer postMap = curr.deletions.syncGetMap();
-//                        logger.finer(curr + " postMap:\n" + postMap);
 
                         //
                         // No deletions, means move on.
-                        if(preMaps[i] == null && postMap == null) {
+                        if(preMap == null && postMap == null) {
                             incr += curr.header.getnDocs();
                             continue;
                         }
@@ -2548,15 +2576,15 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                         // If the preMap wasn't null, we need to find all of the
                         // documents that were deleted during the merge and make
                         // sure to delete those.
-                        if(preMaps[i] != null) {
+                        if(preMap != null) {
 
                             //
                             // Get the ID map in the merged partition.
-                            idMap = curr.getDocIDMap(preMaps[i]);
+                            idMap = curr.getDocIDMap(preMap);
 
                             //
                             // Do the exclusive or.
-                            xor.xor(preMaps[i]);
+                            xor.xor(preMap);
                         }
 
 //                        logger.info(curr + " xor:\n" + xor);
@@ -2566,8 +2594,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                         // newly deleted documents.  We need to find out
                         // what the document IDs are for those documents in
                         // the new partition, and delete them.
-                        for(int origID = 1; origID <= curr.getMaxDocumentID();
-                                origID++) {
+                        for(int origID = 1; origID <= curr.getMaxDocumentID(); origID++) {
                             if(xor.test(origID)) {
 //                                logger.info("deleted during merge: " + origID);
                                 int mapID;
@@ -2603,6 +2630,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     // Put the partitions we merged onto the
                     // list of merged partitions.
                     mergedParts.addAll(toMerge);
+                    
+                    //
+                    // See if there were any partitions that we ignored during
+                    // the merge because all of their documents were deleted
+                    // and add those on too.
+                    originalMerge.removeAll(toMerge);
+                    mergedParts.addAll(originalMerge);
 
                     updateActiveParts(true);
                     if(newDP != null) {
@@ -2650,32 +2684,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         public String toString() {
             return toMerge.toString();
         }
-        /**
-         * The list of partitions that we wish to merge.
-         */
-        protected List<DiskPartition> toMerge;
-
-        /**
-         * The list of delmaps for the partitions.
-         */
-        protected List<DelMap> preDelMaps;
-
-        /**
-         * The deletion bitmaps for the partitions at startup.
-         */
-        protected ReadableBuffer[] preMaps;
-
-        /**
-         * The thread that instantiated us.  We need to take the merge lock
-         * from them.
-         */
-        protected Thread parent;
-
-        /**
-         * The new partition created in the merge.
-         */
-        protected int newPart;
-
     }
 
     /**
