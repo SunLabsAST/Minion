@@ -251,7 +251,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
     /**
      * A container class for data that we find looking up features.
      */
-    private static class LocalTermStats {
+    protected static class LocalTermStats {
 
         int freq;
 

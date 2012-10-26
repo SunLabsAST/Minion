@@ -75,6 +75,7 @@ import com.sun.labs.minion.retrieval.ArrayGroup;
 import com.sun.labs.minion.retrieval.CollectionStats;
 import com.sun.labs.minion.retrieval.FreqGroup;
 import com.sun.labs.minion.retrieval.MultiDocumentVectorImpl;
+import com.sun.labs.minion.retrieval.MultiFieldMemoryDocumentVector;
 import com.sun.labs.minion.retrieval.QueryElement;
 import com.sun.labs.minion.retrieval.QueryOptimizer;
 import com.sun.labs.minion.retrieval.QueryTermDocStats;
@@ -1293,42 +1294,22 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     public DocumentVector getDocumentVector(Document doc, String field)
             throws SearchEngineException {
 
-        //
-        // Push the document through the indexer.
+        FieldInfo fi = getFieldInfo(field);
+        if(fi == null || !fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
+            logger.warning(String.format(
+                    "Can't get document vector for field %s", field));
+            return null;
+        }
         SimpleIndexer si = getSimpleIndexer();
         si.indexDocument(doc);
-
-        //
-        // Get the document key for the indexed document.
-//        IndexEntry dke =
-//                ((MemoryPartition) ((PipelineImpl) si).getIndexer()).
-//                getDocumentDictionary().get(doc.getKey());
-
-        //
-        // Figure out the ID of the field being asked for.
-        int fid = -1;
-        if(field.equals("")) {
-            fid = 0;
-        } else {
-            FieldInfo fi = invFilePartitionManager.getFieldInfo(field);
-            if(fi == null) {
-                fid = -1;
-            } else {
-                fid = fi.getID();
-            }
-        }
-
-        //
-        // Get a document vector for that field.
-        SingleFieldDocumentVector dvi = null;
-//                new DocumentVectorImpl(this,
-//                ((FieldedDocKeyEntry) dke).getWeightedFeatures(fid,
-//                queryConfig.getWeightingFunction(),
-//                queryConfig.getWeightingComponents()));
-//        dvi.setField(field);
-        return dvi;
+        MemoryField mf = ((Indexer) si).getMemoryPartition().getMF(fi);
+        DocumentVector ret = new SingleFieldMemoryDocumentVector(mf, doc.
+                getKey(), this);
+        si.clear();
+        return ret;
     }
     
+    @Override
     public DocumentVector getDocumentVector(Indexable doc, String field) throws SearchEngineException {
         FieldInfo fi = getFieldInfo(field);
         if(fi == null || !fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
@@ -1339,6 +1320,38 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         si.indexDocument(doc);
         MemoryField mf = ((Indexer) si).getMemoryPartition().getMF(fi);
         DocumentVector ret = new SingleFieldMemoryDocumentVector(mf, doc.getKey(), this);
+        si.clear();
+        return ret;
+    }
+
+    @Override
+    public DocumentVector getDocumentVector(Indexable doc, String[] fields) throws
+            SearchEngineException {
+        
+        if(fields.length == 1) {
+            return getDocumentVector(doc, fields[0]);
+        }
+        
+        //
+        // Push the document through the indexing pipeline.
+        SimpleIndexer si = getSimpleIndexer();
+        si.indexDocument(doc);
+        
+        //
+        // Fetch out the fields we want.
+        List<MemoryField> memoryFields = new ArrayList<MemoryField>();
+        for(String field : fields) {
+            FieldInfo fi = getFieldInfo(field);
+            if(fi == null || !fi.hasAttribute(FieldInfo.Attribute.INDEXED)) {
+                logger.warning(String.format(
+                        "Can't get document vector for field %s", field));
+                continue;
+            }
+            MemoryField mf = ((Indexer) si).getMemoryPartition().getMF(fi);
+            memoryFields.add(mf);
+        }
+        
+        DocumentVector ret = new MultiFieldMemoryDocumentVector(memoryFields, doc.getKey(), this);
         si.clear();
         return ret;
     }

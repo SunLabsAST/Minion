@@ -292,6 +292,7 @@ public class DocumentVectorPostings extends IDFreqPostings implements MergeableP
                 wc.fdt = ef.freq;
                 wf.initTerm(wc);
                 ret[x] = new WeightedFeature(term, wf.termWeight(wc));
+                ret[x].setFreq(ef.freq);
                 x++;
             }
 

@@ -125,8 +125,7 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector
             return;
         }
 
-        DocumentVectorPostings dvp = (DocumentVectorPostings) vecEntry.
-                getPostings();
+        DocumentVectorPostings dvp = (DocumentVectorPostings) vecEntry.getPostings();
         v = dvp.getWeightedFeatures(vecEntry.getID(), field.getID(), null, wf,
                                     wc, termStatsType);
         length = 0;
