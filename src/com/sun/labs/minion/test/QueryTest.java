@@ -518,7 +518,7 @@ public class QueryTest extends SEMain {
                 
                 NanoWatch fw = new NanoWatch();
                 fw.start();
-                List<Facet> lf = lastResultSet.getTopFacets(args[1], facetSortSpec, nHits);
+                List<Facet> lf = lastResultSet.getTopFacets(args[1], facetSortSpec, nHits, resultsSortSpec, -1);
                 fw.stop();
                 
                 ci.out.format("Found %d facets for %s in %d hits in %.3fms\n", 

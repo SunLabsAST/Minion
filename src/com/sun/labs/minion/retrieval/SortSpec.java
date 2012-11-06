@@ -405,6 +405,9 @@ public class SortSpec {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        if(fields == null) {
+            return "no fields";
+        }
         for(int i = 0; i < fields.length; i++) {
             if(i > 0) {
                 sb.append(", ");

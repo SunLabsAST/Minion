@@ -585,6 +585,7 @@ public class ResultSetImpl implements ResultSet {
                 localRSS = new SortSpec(resultSortSpec,
                                         (InvFileDiskPartition) ag.getPartition());
             }
+            
             DiskField df = ((InvFileDiskPartition) ag.part).getDF(field);
             if(df != null) {
                 List<LocalFacet> l = df.getFacets(ag, localFSS, nResults, localRSS);
