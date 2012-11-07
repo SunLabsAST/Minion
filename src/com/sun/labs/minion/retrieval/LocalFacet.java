@@ -138,10 +138,12 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
         
         //
         // Local facets are always compared by name.
-        if(o instanceof LocalFacet) {
+        if(value != null) {
+            return value.compareTo(o.getValue());
+        } else if(o instanceof LocalFacet) {
             return valueID - ((LocalFacet) o).valueID;
         } else {
-            return value.compareTo(o.getValue());
+            throw new IllegalStateException(String.format("Not sure what to compare: %s %s", value, o.getClass()));
         }
     }
     
