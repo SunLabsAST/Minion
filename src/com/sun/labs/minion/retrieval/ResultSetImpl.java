@@ -573,7 +573,6 @@ public class ResultSetImpl implements ResultSet {
             if(ag.size == 0) {
                 continue;
             }
-            logger.info(String.format("facets for %s", ag.part));
 
             //
             // Make a partition-local facet sorting spec and result sorting spec,

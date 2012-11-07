@@ -237,7 +237,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
 
     @Override
     public String toString() {
-        return String.format("%s %.3f sort fields: %s (%d)", value, score, Arrays.toString(sortFieldValues), size);
+        return String.format("%s %.3f (%d)", value, score, size);
     }
 
 }
