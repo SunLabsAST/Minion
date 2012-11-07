@@ -6,6 +6,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.util.Pair;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -154,7 +155,9 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
 
     @Override
     public String toString() {
-        return String.format("LocalFacet{facetValueID=%d value=%s size=%d exemplarScore=%f\n\t\tdocs=%s",
-                             valueID, value, size, exemplarScore, docs);
+        return String.format("value: %s id: %d sortVals: %s", value, valueID, 
+                                                                     sortFieldValues == null ? "null":
+                Arrays.toString(
+                sortFieldValues));
     }
 }

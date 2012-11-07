@@ -629,19 +629,16 @@ public class ResultSetImpl implements ResultSet {
                 top = q.peek();
             }
             
-            logger.info(String.format("curr: %s", curr));
             //
             // See if this new facet is good enough to add to the heap of the 
             // top facets that we're building.
             if(nFacets < 0 || sorter.size() < nFacets) {
-                logger.info(String.format("fill"));
                 sorter.offer(curr);
                 curr = new FacetImpl(field, null, this, facetSortSpec);
             } else {
                 FacetImpl topf = sorter.peek();
                 if(sorter.comparator().compare(curr, topf) > 0) {
                     topf = sorter.poll();
-                    logger.info(String.format("replace: %s", topf));
                     sorter.offer(curr);
                     curr = topf;
                 }
