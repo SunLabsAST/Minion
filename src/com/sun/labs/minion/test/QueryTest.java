@@ -192,7 +192,9 @@ public class QueryTest extends SEMain {
     protected LiteMorph morphEn;
 
     protected int nHits = 10;
-
+    
+    protected int nFacets = 10;
+    
     protected long totalTime, nQueries;
 
     protected Searcher.Grammar grammar = Searcher.Grammar.STRICT;
@@ -502,6 +504,23 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add(prefixCommand(prefix, "nf"), "Query", new CommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                if(args.length == 1) {
+                    return "Need to specify the number of facets to show";
+                }
+                nFacets = Integer.parseInt(args[1]);
+                return String.format("Set number of facets to %d", nHits);
+            }
+
+            @Override
+            public String getHelp() {
+                return "num - Set the number of hits to return";
+            }
+        });
+        
         shell.add(prefixCommand(prefix, "facet"), "Query", new CompletorCommandInterface() {
 
             @Override
@@ -512,17 +531,23 @@ public class QueryTest extends SEMain {
                     return getHelp();
                 }
                 
+                int resultsToFacetOn = -1;
+                
+                if(args.length > 2) {
+                    resultsToFacetOn = Integer.parseInt(args[2]);
+                }
+                
                 if(lastResultSet == null) {
                     return "No previous query";
                 }
                 
                 NanoWatch fw = new NanoWatch();
                 fw.start();
-                List<Facet> lf = lastResultSet.getTopFacets(args[1], facetSortSpec, nHits, resultsSortSpec, -1);
+                List<Facet> lf = lastResultSet.getTopFacets(args[1], facetSortSpec, nFacets, resultsSortSpec, resultsToFacetOn);
                 fw.stop();
                 
                 ci.out.format("Found %d facets for %s in %d hits in %.3fms\n", 
-                              lf.size(), args[1], lastResultSet.size(), fw.getAvgTimeMillis());
+                              lf.size(), args[1], lastResultSet.size(), fw.getTimeMillis());
                 for(Facet f : lf) {
                     ci.out.print("  ");
                     ci.out.println(f);
@@ -535,7 +560,7 @@ public class QueryTest extends SEMain {
 
             @Override
             public String getHelp() {
-                return "field - Get the facets for a particular field from the last set of search results";
+                return "field [number of top results to facet on]- Get the facets for a particular field from the last set of search results";
             }
 
             @Override
@@ -800,8 +825,12 @@ public class QueryTest extends SEMain {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws
                     Exception {
-                facetSpecString = join(args, 1, args.length, ",");
-                facetSortSpec = new SortSpec(engine, facetSpecString);
+                if(args.length == 1) {
+                    facetSortSpec = null;
+                } else {
+                    facetSpecString = join(args, 1, args.length, ",");
+                    facetSortSpec = new SortSpec(engine, facetSpecString);
+                }
                 return "";
             }
 

@@ -156,7 +156,14 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     }
 
     public void addLocalFacet(LocalFacet localFacet) {
-        if(localFacets.isEmpty()) {
+        
+        //
+        // If this is the first facet that we've added, then we want to 
+        // do things a litle differently.  That is, we need to make sure that
+        // we have a sort spec and we need to make sure that we set the 
+        // sort field values for this facet to whatever was passed in.
+        boolean first = localFacets.isEmpty();
+        if(first) {
             facetSortSpec = localFacet.facetSortSpec;
         }
         localFacets.add(localFacet);
@@ -170,7 +177,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
             // sorting specification, because we'll use those to (eventually) 
             // sort the facets.
             localFacet.setSortFieldValues();
-            if(sortFieldValues == null || 
+            if(first || 
                     facetSortSpec.compareValues(sortFieldValues, 
                                                 localFacet.sortFieldValues,
                                                 0, score, 0, 
@@ -222,8 +229,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     public static final Comparator REVERSE_COMPARATOR =
             new Comparator<FacetImpl>() {
                 @Override
-                public int compare(FacetImpl o1,
-                                   FacetImpl o2) {
+                public int compare(FacetImpl o1, FacetImpl o2) {
                     return -o1.compareTo(o2);
                 }
             };

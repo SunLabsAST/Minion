@@ -42,7 +42,6 @@ import com.sun.labs.minion.util.QueuableIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -570,6 +569,10 @@ public class ResultSetImpl implements ResultSet {
         // Queue up the facets from each partition.
         PriorityQueue<QueuableIterator<LocalFacet>> q = new PriorityQueue(results.size());
         for(ArrayGroup ag : results) {
+            
+            if(ag.size == 0) {
+                continue;
+            }
 
             //
             // Make a partition-local facet sorting spec and result sorting spec,
@@ -589,8 +592,7 @@ public class ResultSetImpl implements ResultSet {
             DiskField df = ((InvFileDiskPartition) ag.part).getDF(field);
             if(df != null) {
                 List<LocalFacet> l = df.getFacets(ag, localFSS, nResults, localRSS);
-                QueuableIterator<LocalFacet> qi = new QueuableIterator(l.
-                        iterator());
+                QueuableIterator<LocalFacet> qi = new QueuableIterator(l.iterator());
                 if(qi.hasNext()) {
                     qi.next();
                     q.add(qi);
