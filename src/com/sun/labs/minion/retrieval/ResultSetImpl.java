@@ -42,7 +42,6 @@ import com.sun.labs.minion.util.QueuableIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -570,6 +569,11 @@ public class ResultSetImpl implements ResultSet {
         // Queue up the facets from each partition.
         PriorityQueue<QueuableIterator<LocalFacet>> q = new PriorityQueue(results.size());
         for(ArrayGroup ag : results) {
+            
+            if(ag.size == 0) {
+                continue;
+            }
+            logger.info(String.format("facets for %s", ag.part));
 
             //
             // Make a partition-local facet sorting spec and result sorting spec,
@@ -589,8 +593,7 @@ public class ResultSetImpl implements ResultSet {
             DiskField df = ((InvFileDiskPartition) ag.part).getDF(field);
             if(df != null) {
                 List<LocalFacet> l = df.getFacets(ag, localFSS, nResults, localRSS);
-                QueuableIterator<LocalFacet> qi = new QueuableIterator(l.
-                        iterator());
+                QueuableIterator<LocalFacet> qi = new QueuableIterator(l.iterator());
                 if(qi.hasNext()) {
                     qi.next();
                     q.add(qi);
@@ -626,16 +629,19 @@ public class ResultSetImpl implements ResultSet {
                 top = q.peek();
             }
             
+            logger.info(String.format("curr: %s", curr));
             //
             // See if this new facet is good enough to add to the heap of the 
             // top facets that we're building.
             if(nFacets < 0 || sorter.size() < nFacets) {
+                logger.info(String.format("fill"));
                 sorter.offer(curr);
                 curr = new FacetImpl(field, null, this, facetSortSpec);
             } else {
                 FacetImpl topf = sorter.peek();
                 if(sorter.comparator().compare(curr, topf) > 0) {
                     topf = sorter.poll();
+                    logger.info(String.format("replace: %s", topf));
                     sorter.offer(curr);
                     curr = topf;
                 }

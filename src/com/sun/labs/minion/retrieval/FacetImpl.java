@@ -222,8 +222,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     public static final Comparator REVERSE_COMPARATOR =
             new Comparator<FacetImpl>() {
                 @Override
-                public int compare(FacetImpl o1,
-                                   FacetImpl o2) {
+                public int compare(FacetImpl o1, FacetImpl o2) {
                     return -o1.compareTo(o2);
                 }
             };
@@ -231,7 +230,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
 
     @Override
     public String toString() {
-        return String.format("%s %.3f (%d)", value, score, size);
+        return String.format("%s %.3f sort fields: %s (%d)", value, score, Arrays.toString(sortFieldValues), size);
     }
 
 }
