@@ -188,6 +188,12 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
             }
         }
     }
+    
+    public void fixSortFieldValues() {
+        if(facetSortSpec != null) {
+            facetSortSpec.fixSortFieldValues(sortFieldValues, this);
+        }
+    }
 
     public void setValue(T value) {
         this.value = value;
@@ -237,7 +243,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
 
     @Override
     public String toString() {
-        return String.format("%s %.3f (%d)", value, score, size);
+        return String.format("%s %.3f (%d) %s", value, score, size, Arrays.toString(sortFieldValues));
     }
 
 }

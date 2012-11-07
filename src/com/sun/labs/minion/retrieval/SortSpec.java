@@ -243,6 +243,24 @@ public class SortSpec {
     }
     
     /**
+     * Facets have some values that are aggregated from individual partition
+     * facets into the global facet (e.g., the size of the facet), so let's fix
+     * that up here!
+     * @param sortValues the sort values for the facet
+     * @param facet the facet
+     */
+    public void fixSortFieldValues(Object[] sortValues, FacetImpl facet) {
+        if(sortValues == null) {
+            return;
+        }
+        for(int i = 0; i < fields.length; i++) {
+            if(fields[i] == facetSizeField) {
+                sortValues[i] = new Integer(facet.size);
+            }
+        }
+    }
+    
+    /**
      * Gets a single field value, suitable for use in sorting results.
      *
      * @param field The index of the field in our sort specification whose value we

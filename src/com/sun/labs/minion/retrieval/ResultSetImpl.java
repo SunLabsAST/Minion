@@ -629,6 +629,12 @@ public class ResultSetImpl implements ResultSet {
             }
             
             //
+            // There are sorting criteria that are aggregated across local facets
+            // when we make a FacetImpl (e.g., the number of documents in the 
+            // facet.) Let's take a moment to fix them up here.
+            curr.fixSortFieldValues();
+            
+            //
             // See if this new facet is good enough to add to the heap of the 
             // top facets that we're building.
             if(nFacets < 0 || sorter.size() < nFacets) {

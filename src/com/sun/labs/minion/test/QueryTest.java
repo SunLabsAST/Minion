@@ -512,7 +512,7 @@ public class QueryTest extends SEMain {
                     return "Need to specify the number of facets to show";
                 }
                 nFacets = Integer.parseInt(args[1]);
-                return String.format("Set number of facets to %d", nHits);
+                return String.format("Set number of facets to %d", nFacets);
             }
 
             @Override
