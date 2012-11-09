@@ -340,7 +340,7 @@ public class PostTest implements Runnable {
             return;
         }
 
-        String flags = "d:f:p:lo:aqw";
+        String flags = "d:f:p:lo:aqsw";
         String indexDir = null;
         boolean allParts = false;
         boolean quiet = false;

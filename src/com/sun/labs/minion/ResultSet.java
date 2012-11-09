@@ -239,7 +239,8 @@ public interface ResultSet {
      * @param facetSortSpec a specification for sorting the list of facets that
      * are returned. The values within the facet will be sorted according to the
      * same specification. If this value is <code>null</code> then the facets
-     * will be returned in reverse order of size.
+     * will be returned in reverse order of size, and the documents in the facet
+     * will be returned in score order.
      * @return the list of facets associated with this field, ordered according
      * to the sorting specification.
      * @throws SearchEngineException if there is an error building the facets.
@@ -253,11 +254,14 @@ public interface ResultSet {
      * where the top <code>nResults</code> results are determined by the 
      * <code>resultSortSpec</code>. The facets will be returned ordered according
      * to the provided <code>facetSortSpec</code>.
-     * @param fieldName
-     * @param facetSortSpec
-     * @param nFacets
-     * @param resultSortSpec
-     * @param nResults
+     * @param fieldName the name of the field we want to facet on
+     * @param facetSortSpec the sorting specification that we will use to order the
+     * facets
+     * @param nFacets the number of facets to return. A value less than zero means
+     * that all facets should be returned.
+     * @param resultSortSpec the sorting specification that will be used to sort
+     * the documents that occur inside of a facet
+     * @param nResults the number of documents to retrieve for each facet.
      * @return the list of facets associated with this field, ordered according
      * to the facet sorting specification.
      * @throws SearchEngineException 

@@ -12,6 +12,7 @@ import com.sun.labs.minion.pipeline.PipelineFactory;
 import com.sun.labs.minion.pipeline.StageAdapter;
 import com.sun.labs.minion.pipeline.Token;
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,6 +42,8 @@ public class MemoryField extends Field {
     private Pipeline pipeline;
 
     private FieldStage fieldStage;
+    
+    private IndexEntry<String> currDoc;
     
     private boolean debug;
 
@@ -85,6 +88,7 @@ public class MemoryField extends Field {
             pipeline.reset();
         }
         bundle.startDocument(docKey);
+        currDoc = docKey;
     }
 
     /**
@@ -98,8 +102,14 @@ public class MemoryField extends Field {
         //
         // Handle a collection passed as a field value.
         if(data instanceof Collection) {
-            for(Object o : (Collection) data) {
-                addData(docID, o);
+            try {
+                for(Object o : (Collection) data) {
+                    addData(docID, o);
+                }
+            } catch(ConcurrentModificationException ex) {
+                logger.log(Level.SEVERE, String.format("CME in %s for field %s",
+                                                       currDoc, info.getName()),
+                           ex);
             }
             return;
         }
