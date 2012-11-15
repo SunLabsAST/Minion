@@ -373,7 +373,7 @@ public class SortSpec {
      */
     public int compareValues(Object[] val1, Object[] val2, int doc1, float score1, int doc2, float score2, FacetImpl facet1, FacetImpl facet2) {
         for(int i = 0; i < val1.length; i++) {
-
+            
             //
             // Make sure we have this field value in both results.
             if(val1[i] == null) {
