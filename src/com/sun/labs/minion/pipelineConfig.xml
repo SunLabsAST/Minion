@@ -72,7 +72,7 @@
     
     <component name="stopwords" type="com.sun.labs.minion.pipeline.StopWords">
         <propertylist name="stopwords_files">
-        <item>stopwords</item>    
+            <item>stopwords</item>
         </propertylist>
     </component>
 

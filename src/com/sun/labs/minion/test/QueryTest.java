@@ -2174,7 +2174,7 @@ public class QueryTest extends SEMain {
             public String execute(CommandInterpreter ci, String[] args)
                     throws Exception {
                 if (args.length < 4) {
-                    return "Provide two keys or files and at least one field for comparison";
+                    return getHelp();
                 }
                 String[] fields = Arrays.copyOfRange(args, 3, args.length);
                 //
@@ -2200,37 +2200,6 @@ public class QueryTest extends SEMain {
                 return "";
             }
 
-            public DocumentVector getDV(String arg,
-                                        String[] fields,
-                                        CommandInterpreter ci)
-                    throws Exception {
-                DocumentVector dv;
-                File f1 = new File(arg);
-                if (f1.exists()) {
-                    if (fields.length != 1) {
-                        //
-                        // Right now, we can only do a single field for
-                        // in-memory document vectors
-                        ci.getOutput()
-                                .println("Specify only a single field for " +
-                                "file-based DV");
-                    }
-                    BufferedReader reader =
-                            new BufferedReader(new FileReader(f1));
-                    String line = null;
-                    IndexableMap map = new IndexableMap("mySingleDoc");
-                    while ((line = reader.readLine()) != null) {
-                        int sep = line.indexOf(' ');
-                        map.put(line.substring(0, sep),
-                                line.substring(sep + 1));
-                    }
-                    dv = engine.getDocumentVector(map, fields[0]);
-                } else {
-                    dv = engine.getDocumentVector(arg, fields);
-                }
-                return dv;
-            }
-            
             @Override
             public String getHelp() {
                 return "<doc1> <doc2> [field ...] - describe the similarity between two docs";
