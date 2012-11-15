@@ -17,7 +17,9 @@ public class DayCollapser implements Collapser<Date,Date> {
         Calendar c = Calendar.getInstance();
         c.setTime(name);
         Calendar r = Calendar.getInstance();
-        r.set(c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DATE));
-        return r.getTime();
+        r.set(c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DATE), 0, 0, 0);
+        r.set(Calendar.MILLISECOND, 0);
+        Date ret = r.getTime();
+        return ret;
     }
 }
