@@ -433,6 +433,7 @@ public class ResultSetImpl implements ResultSet {
             // A place to organize our hits. We'll use a max heap, since that's the
             // order we want to return the results in.
             PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(start + n);
+            logger.info(String.format("sort: %s", sortSpec));
             for(Iterator i = results.iterator(); i.hasNext();) {
                 ArrayGroup ag = (ArrayGroup) i.next();
                 ag.setScoreModifier(sm);
@@ -524,6 +525,7 @@ public class ResultSetImpl implements ResultSet {
                                             (InvFileDiskPartition) ag.part);
             }
             for(ResultImpl ri : ag.getAllResults(sorted, partSortSpec, rf)) {
+                ri.setSortFieldValues();
                 ret.add(ri);
             }
         }
