@@ -155,7 +155,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
         return ret;
     }
 
-    public void addLocalFacet(LocalFacet localFacet) {
+    public void add(LocalFacet localFacet) {
         
         //
         // If this is the first facet that we've added, then we want to 
@@ -186,6 +186,12 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
                 sortFieldValues = localFacet.sortFieldValues;
                 score = localFacet.exemplarScore;
             }
+        }
+    }
+    
+    public void add(FacetImpl facet) {
+        for(LocalFacet lf : (List<LocalFacet>) facet.localFacets) {
+            add(lf);
         }
     }
     

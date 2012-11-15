@@ -38,12 +38,15 @@ import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.retrieval.facet.Collapser;
 import com.sun.labs.minion.util.QueuableIterator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -542,20 +545,20 @@ public class ResultSetImpl implements ResultSet {
     
     @Override
     public List<Facet> getTopFacets(String fieldName, int nFacets) throws SearchEngineException {
-        return getTopFacets(fieldName, null, nFacets, null, -1);
+        return getTopFacets(fieldName, null, nFacets, null, -1, null);
     }
 
     @Override
     public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec,
                                     int nFacets)
             throws SearchEngineException {
-        return getTopFacets(fieldName, facetSortSpec, nFacets, null, -1);
+        return getTopFacets(fieldName, facetSortSpec, nFacets, null, -1, null);
     }
     
     @Override
     public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec,
                                     int nFacets, SortSpec resultSortSpec,
-                                    int nResults) throws SearchEngineException {
+                                    int nResults, Collapser collapser) throws SearchEngineException {
     
         FieldInfo field = e.getFieldInfo(fieldName);
         if(field == null) {
@@ -601,8 +604,12 @@ public class ResultSetImpl implements ResultSet {
         }
 
         //
-        // A min heap to sort our facets according to the facet sort spec.
+        // If we don't have a collapser, then we can just sort the facets as they
+        // come off the heap because we won't get any names out of order.  If we
+        // do have a collapser, we'll need to keep around the collapsed facets
+        // and then sort them at the end.
         PriorityQueue<FacetImpl> sorter = new PriorityQueue<FacetImpl>(nFacets > 0 ? nFacets : 512, FacetImpl.REVERSE_COMPARATOR);
+        Map<Object,FacetImpl> collapsed = collapser == null ? null : new HashMap<Object,FacetImpl>();
         
         //
         // A facet impl that we can refill as necessary while finding the top 
@@ -620,7 +627,7 @@ public class ResultSetImpl implements ResultSet {
             curr.reset((Comparable) top.getCurrent().getValue());
             while(top != null && top.getCurrent().getValue().equals(curr.getValue())) {
                 top = q.poll();
-                curr.addLocalFacet(top.getCurrent());
+                curr.add(top.getCurrent());
                 if(top.hasNext()) {
                     top.next();
                     q.offer(top);
@@ -635,17 +642,49 @@ public class ResultSetImpl implements ResultSet {
             curr.fixSortFieldValues();
             
             //
-            // See if this new facet is good enough to add to the heap of the 
-            // top facets that we're building.
-            if(nFacets < 0 || sorter.size() < nFacets) {
-                sorter.offer(curr);
-                curr = new FacetImpl(field, null, this, facetSortSpec);
+            // If we have a collapser, then collapse this facet value.
+            if(collapser != null) {
+                Object collapsedValue = collapser.collapse(curr.getValue());
+                FacetImpl collapsedFacet = collapsed.get(collapsedValue);
+                if(collapsedFacet == null) {
+                    curr.value = (Comparable) collapsedValue;
+                    collapsed.put(collapsedValue, curr);
+                    curr = new FacetImpl(field, null, this, facetSortSpec);
+                } else {
+                    collapsedFacet.add(curr);
+                }
             } else {
-                FacetImpl topf = sorter.peek();
-                if(sorter.comparator().compare(curr, topf) > 0) {
-                    topf = sorter.poll();
+
+                //
+                // See if this new facet is good enough to add to the heap of the 
+                // top facets that we're building.
+                if(nFacets < 0 || sorter.size() < nFacets) {
                     sorter.offer(curr);
-                    curr = topf;
+                    curr = new FacetImpl(field, null, this, facetSortSpec);
+                } else {
+                    FacetImpl topf = sorter.peek();
+                    if(sorter.comparator().compare(curr, topf) > 0) {
+                        topf = sorter.poll();
+                        sorter.offer(curr);
+                        curr = topf;
+                    }
+                }
+            }
+        }
+        
+        //
+        // Now we can sort the collapsed facets.
+        if(collapser != null) {
+            for(FacetImpl facet : collapsed.values()) {
+                facet.fixSortFieldValues();
+                if(nFacets < 0 || sorter.size() < nFacets) {
+                    sorter.offer(facet);
+                } else {
+                    FacetImpl topf = sorter.peek();
+                    if(sorter.comparator().compare(facet, topf) > 0) {
+                        sorter.poll();
+                        sorter.offer(facet);
+                    }
                 }
             }
         }

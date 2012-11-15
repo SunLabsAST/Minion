@@ -24,6 +24,7 @@
 package com.sun.labs.minion;
 
 import com.sun.labs.minion.retrieval.SortSpec;
+import com.sun.labs.minion.retrieval.facet.Collapser;
 import java.util.List;
 
 /**
@@ -262,6 +263,8 @@ public interface ResultSet {
      * @param resultSortSpec the sorting specification that will be used to sort
      * the documents that occur inside of a facet
      * @param nResults the number of documents to retrieve for each facet.
+     * @param collapser an object that can collapse field values into smaller
+     * sets with new names.
      * @return the list of facets associated with this field, ordered according
      * to the facet sorting specification.
      * @throws SearchEngineException 
@@ -270,5 +273,6 @@ public interface ResultSet {
                                     SortSpec facetSortSpec,
                                     int nFacets, 
                                     SortSpec resultSortSpec,
-                                    int nResults) throws SearchEngineException;
+                                    int nResults, 
+                                    Collapser collapser) throws SearchEngineException;
 } // ResultSet

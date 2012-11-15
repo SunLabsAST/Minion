@@ -98,7 +98,7 @@ public class LocalFacet<T extends Comparable> extends FacetImpl<T> implements It
         // determine which facets to return to the user.
         //
         // We keep track of this here because at this point we can do the
-        // sorting by considering IDs, rather than values.  See FacetImpl.addLocalFacet
+        // sorting by considering IDs, rather than values.  See FacetImpl.add
         // for the point where we combine exemplar values across partitions.
         if(facetSortSpec == null || facetSortSpec.isJustScoreSort()) {
             if(score > exemplarScore) {

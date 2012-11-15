@@ -74,6 +74,8 @@ import com.sun.labs.minion.retrieval.ResultImpl;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
 import com.sun.labs.minion.retrieval.SortSpec;
 import com.sun.labs.minion.retrieval.WeightingFunction;
+import com.sun.labs.minion.retrieval.facet.Collapser;
+import com.sun.labs.minion.retrieval.facet.ProgressiveDateCollapser;
 import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.Util;
@@ -541,9 +543,21 @@ public class QueryTest extends SEMain {
                     return "No previous query";
                 }
                 
+                FieldInfo ffi = engine.getFieldInfo(args[1]);
+                if(ffi == null) {
+                    return "Unknown field " + args[1];
+                } else if(!ffi.hasAttribute(FieldInfo.Attribute.SAVED)) {
+                    return "Can't facet on unsaved field " + args[1];
+                }
+                
+                Collapser collapser = null;
+                if(ffi.getType() == FieldInfo.Type.DATE) {
+                    collapser = new ProgressiveDateCollapser();
+                }
+                
                 NanoWatch fw = new NanoWatch();
                 fw.start();
-                List<Facet> lf = lastResultSet.getTopFacets(args[1], facetSortSpec, nFacets, resultsSortSpec, resultsToFacetOn);
+                List<Facet> lf = lastResultSet.getTopFacets(args[1], facetSortSpec, nFacets, resultsSortSpec, resultsToFacetOn, collapser);
                 fw.stop();
                 
                 ci.out.format("Found %d facets for %s in %d hits in %.3fms\n", 
