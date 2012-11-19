@@ -39,7 +39,6 @@ public class ProgressiveDateCollapser implements Collapser<Date,ProgressiveDateC
     private EnumMap<Label, Long> cutoffs = new EnumMap<Label, Long>(Label.class);
     
     public ProgressiveDateCollapser() {
-        now -= 10 * dayInMillis;
         cutoffs.put(Label.LAST_24_HOURS, now - dayInMillis);
         cutoffs.put(Label.LAST_7_DAYS, now - 7 * dayInMillis);
         cutoffs.put(Label.LAST_30_DAYS, now - 30 * dayInMillis);
