@@ -25,11 +25,9 @@ package com.sun.labs.minion.query;
 
 import com.sun.labs.minion.QueryPipeline;
 import com.sun.labs.minion.retrieval.DictTerm;
-import com.sun.labs.minion.retrieval.Phrase;
 import com.sun.labs.minion.retrieval.QueryElement;
 import com.sun.labs.minion.util.CharUtils;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.EnumSet;
 
 /**
@@ -171,5 +169,30 @@ public class Term extends Element implements Serializable {
     public String toString() {
         return "Term: " + term + " mods: " + modifiers;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        if(!super.equals(obj)) {
+            return false;
+        }
+        final Term other = (Term) obj;
+        if((this.term == null) ? (other.term != null) : !this.term.equals(other.term)) {
+            return false;
+        }
+        if(this.modifiers != other.modifiers &&
+                (this.modifiers == null ||
+                !this.modifiers.equals(other.modifiers))) {
+            return false;
+        }
+        return this.termWeight == other.termWeight;
+    }
+    
+    
 
 }

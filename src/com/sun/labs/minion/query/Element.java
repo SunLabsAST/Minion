@@ -173,4 +173,28 @@ public abstract class Element implements Serializable {
      */
     public abstract QueryElement getQueryElement(QueryPipeline pipeline);
 
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        final Element other = (Element) obj;
+        if(this.strict != other.strict) {
+            return false;
+        }
+        if(this.fields != other.fields &&
+                (this.fields == null || !this.fields.equals(other.fields))) {
+            return false;
+        }
+        return true;
+    }
 }

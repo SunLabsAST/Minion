@@ -58,4 +58,30 @@ public class ParsedElement extends Element {
         }
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        final ParsedElement other = (ParsedElement) obj;
+        if((this.query == null) ? (other.query != null) : !this.query.equals(other.query)) {
+            return false;
+        }
+        if(this.defaultOperator != other.defaultOperator) {
+            return false;
+        }
+        if(this.queryGrammar != other.queryGrammar) {
+            return false;
+        }
+        return true;
+    }
 }

@@ -55,10 +55,36 @@ public class Weight extends Unary implements Serializable {
         return String.format("<weight> %f %s", factor, element.toQueryString());
     }
     
-    
-    
     @Override
     public String toString() {
         return "(Weight " + (elements.size() > 0 ? elements.get(0).toString() : "") + ")";
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        
+        if(!super.equals(obj)) {
+            return false;
+        }
+        final Weight other = (Weight) obj;
+        if(Float.floatToIntBits(this.factor) !=
+                Float.floatToIntBits(other.factor)) {
+            return false;
+        }
+        return true;
+    }
+    
+    
 }

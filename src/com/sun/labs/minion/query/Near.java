@@ -51,4 +51,27 @@ public class Near extends Proximity implements Serializable {
     public String toString() {
         return String.format("(Near/%d %s)", n, elements);
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        if(!super.equals(obj)) {
+            return false;
+        }
+        final Near other = (Near) obj;
+        return this.n == other.n;
+    }
+    
+    
 }

@@ -41,4 +41,26 @@ public abstract class Unary extends Operator implements Serializable {
         elements = new ArrayList<Element>();
         elements.add(element);
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        final Unary other = (Unary) obj;
+        if(this.element != other.element &&
+                (this.element == null || !this.element.equals(other.element))) {
+            return false;
+        }
+        return true;
+    }
 }

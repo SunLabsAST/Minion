@@ -181,4 +181,27 @@ public class Relation extends Element implements Serializable {
     public String toString() {
         return String.format("(%s %s %s)", operator.getRep(), field, value);
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        final Relation other = (Relation) obj;
+        if((this.field == null) ? (other.field != null) : !this.field.equals(other.field)) {
+            return false;
+        }
+        if(this.operator != other.operator) {
+            return false;
+        }
+        if((this.value == null) ? (other.value != null) : !this.value.equals(other.value)) {
+            return false;
+        }
+        return true;
+    }
+    
+    
 }

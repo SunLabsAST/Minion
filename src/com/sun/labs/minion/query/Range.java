@@ -136,4 +136,37 @@ public class Range extends Element implements Serializable {
                 ") (" +
                 rightOp.getRep() + " " + rightVal + "))";
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        final Range other = (Range) obj;
+        if((this.field == null) ? (other.field != null) : !this.field.equals(other.field)) {
+            return false;
+        }
+        if(this.leftOp != other.leftOp) {
+            return false;
+        }
+        if(this.rightOp != other.rightOp) {
+            return false;
+        }
+        if((this.leftVal == null) ? (other.leftVal != null) : !this.leftVal.equals(other.leftVal)) {
+            return false;
+        }
+        if((this.rightVal == null) ? (other.rightVal != null) : !this.rightVal.equals(other.rightVal)) {
+            return false;
+        }
+        return true;
+    }
 }

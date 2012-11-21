@@ -61,4 +61,27 @@ public class Undefined extends Operator implements Serializable {
         return String.format("(<undefined> %s)", field);
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        if(!super.equals(obj)) {
+            return false;
+        }
+        final Undefined other = (Undefined) obj;
+        if((this.field == null) ? (other.field != null) : !this.field.equals(other.field)) {
+            return false;
+        }
+        return true;
+    }
 }

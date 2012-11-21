@@ -27,6 +27,7 @@ package com.sun.labs.minion.query;
 import com.sun.labs.minion.util.StringUtil;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -58,10 +59,7 @@ public abstract class Operator extends Element implements Iterable<Element>, Ser
      * @param elements the operands for the operator.
      */
     public Operator(Element... elements) {
-        this.elements = new ArrayList<Element>();
-        for(Element e : elements) {
-            this.elements.add(e);
-        }
+        this.elements = new ArrayList<Element>(Arrays.asList(elements));
     }
 
     /**
@@ -148,5 +146,27 @@ public abstract class Operator extends Element implements Iterable<Element>, Ser
         }
         return sb.toString();
     }
-   
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        final Operator other = (Operator) obj;
+        if(this.elements != other.elements &&
+                (this.elements == null || !this.elements.equals(other.elements))) {
+            return false;
+        }
+        return true;
+    }
+    
 }
