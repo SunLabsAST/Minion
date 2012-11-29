@@ -1813,8 +1813,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         //
         // The indexing queue length for the threads.
-        indexingQueueLength =
-                ps.getInt(PROP_INDEXING_QUEUE_LENGTH);
+        indexingQueueLength = ps.getInt(PROP_INDEXING_QUEUE_LENGTH);
 
         //
         // Make our indexing pipelines.
@@ -1824,7 +1823,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         //
         // Make a pool of memory partitions that can be re-used over time, two
-        // per indexing thread (one for indexing, one for dumping.)
+        // per indexing thread (one for indexing, one for marshaling.)
         mpPool = new ArrayBlockingQueue<InvFileMemoryPartition>(numIndexingThreads * 2);
         for(int i = 0; i < numIndexingThreads * 2; i++) {
             InvFileMemoryPartition mp = new InvFileMemoryPartition(invFilePartitionManager);
@@ -1833,6 +1832,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
         
         indexers = new Indexer[numIndexingThreads];
+        
         //
         // Start threads for the indexers.
         indexingThreads = new Thread[indexers.length];

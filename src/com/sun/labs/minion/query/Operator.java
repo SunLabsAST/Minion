@@ -112,7 +112,7 @@ public abstract class Operator extends Element implements Iterable<Element>, Ser
                 sb.append(' ');
             }
             sb.append('(');
-            sb.append(element.toQueryString());
+            sb.append(element == null ? "null" : element.toQueryString());
             sb.append(')');
             first = false;
         }

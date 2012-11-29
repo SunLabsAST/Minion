@@ -46,8 +46,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A class that will be used to marshall the data from partitions in an orderly
- * fashion. This class will take partitions and marshall data into the final
+ * A class that will be used to marshal the data from partitions in an orderly
+ * fashion. This class will take partitions and marshal data into the final
  * form that will be written to disk.
  *
  */
@@ -103,12 +103,12 @@ public class Marshaller implements Configurable {
     protected boolean flushDone;
 
     /**
-     * Threads to do the dumping.
+     * Threads to do the marshaling.
      */
     private Thread[] marshallThreads;
 
     /**
-     * The partition outputs that we'll use for marshalling data.
+     * The partition outputs that we'll use for marshaling data.
      */
     private RAMPartitionOutput[] partitionOutputs;
     

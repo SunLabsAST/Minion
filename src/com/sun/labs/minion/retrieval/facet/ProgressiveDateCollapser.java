@@ -1,6 +1,5 @@
 package com.sun.labs.minion.retrieval.facet;
 
-
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.Map;
@@ -44,6 +43,10 @@ public class ProgressiveDateCollapser implements Collapser<Date,ProgressiveDateC
         cutoffs.put(Label.LAST_30_DAYS, now - 30 * dayInMillis);
         cutoffs.put(Label.LAST_YEAR, now - 365 * dayInMillis);
         cutoffs.put(Label.EARLIER, 0L);
+    }
+    
+    public long getCutoff(Label label) {
+        return cutoffs.get(label);
     }
     
     @Override

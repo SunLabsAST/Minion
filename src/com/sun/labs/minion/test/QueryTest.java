@@ -67,6 +67,10 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
 import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
+import com.sun.labs.minion.query.And;
+import com.sun.labs.minion.query.Equals;
+import com.sun.labs.minion.query.ParsedElement;
+import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.retrieval.AbstractDocumentVector;
 import com.sun.labs.minion.retrieval.QueryTermDocStats;
 import com.sun.labs.minion.retrieval.QueryTermStats;
@@ -411,6 +415,26 @@ public class QueryTest extends SEMain {
         shell.addGroup("Terms", "Information about specific terms");
         shell.addGroup("Maintenance", "Commands that maintain the index");
         shell.addGroup("Other", "Commands for other things");
+        
+        shell.add(prefixCommand(prefix, "foo"), "Query", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] strings)
+                    throws Exception {
+                ParsedElement pe = new ParsedElement("machine learning");
+                Relation r = new Equals("display-groups", "ecampaignsportfolio");
+                r.setCaseSensitive(true);
+                And and = new And(pe, r);
+                ResultSet rs = engine.search(and);
+                displayResults(rs.getResults(0, nHits));
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "Do some random thing.";
+            }
+        });
         
         shell.add(prefixCommand(prefix, "q"), "Query", new CommandInterface() {
 

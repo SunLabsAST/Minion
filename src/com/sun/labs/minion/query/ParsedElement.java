@@ -9,24 +9,26 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * An element in a query that contains text that should be passed through a 
+ * An element in a query that contains text that should be passed through a
  * query parser, which will generate a tree of query elements for evaluation.
  */
 public class ParsedElement extends Element {
-    
-    private static final Logger logger = Logger.getLogger(ParsedElement.class.getName());
-    
+
+    private static final Logger logger = Logger.getLogger(ParsedElement.class.
+            getName());
+
     private String query;
-    
+
     private Searcher.Operator defaultOperator;
-    
+
     private Searcher.Grammar queryGrammar;
-    
+
     public ParsedElement(String query) {
         this(query, Searcher.Operator.PAND, Searcher.Grammar.STRICT);
     }
-    
-    public ParsedElement(String query, Searcher.Operator defaultOperator, Searcher.Grammar queryGrammar) {
+
+    public ParsedElement(String query, Searcher.Operator defaultOperator,
+                         Searcher.Grammar queryGrammar) {
         this.query = query;
         this.defaultOperator = defaultOperator;
         this.queryGrammar = queryGrammar;
@@ -38,9 +40,17 @@ public class ParsedElement extends Element {
     }
 
     @Override
+    public String toString() {
+        return query;
+    }
+
+    @Override
     public QueryElement getQueryElement(QueryPipeline pipeline) {
         try {
-            QueryElement qel = SearchEngineImpl.parseQuery(query, defaultOperator, queryGrammar, pipeline);
+            QueryElement qel = SearchEngineImpl.parseQuery(query,
+                                                           defaultOperator,
+                                                           queryGrammar,
+                                                           pipeline);
             if(fields != null && !fields.isEmpty()) {
                 for(String field : fields) {
                     qel.addSearchFieldName(field);
@@ -53,7 +63,8 @@ public class ParsedElement extends Element {
             if(cause == null) {
                 cause = ex;
             }
-            logger.log(Level.SEVERE, String.format("Error parsing query %s: %s", query, cause));
+            logger.log(Level.SEVERE, String.format("Error parsing query %s: %s",
+                                                   query, cause));
             return null;
         }
     }
@@ -73,7 +84,8 @@ public class ParsedElement extends Element {
             return false;
         }
         final ParsedElement other = (ParsedElement) obj;
-        if((this.query == null) ? (other.query != null) : !this.query.equals(other.query)) {
+        if((this.query == null) ? (other.query != null) : !this.query.
+                equals(other.query)) {
             return false;
         }
         if(this.defaultOperator != other.defaultOperator) {
@@ -84,4 +96,5 @@ public class ParsedElement extends Element {
         }
         return true;
     }
+
 }

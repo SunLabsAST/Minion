@@ -52,6 +52,16 @@ public class Relation extends Element implements Serializable {
 
     protected String value;
 
+    protected boolean caseSensitive;
+
+    public boolean isCaseSensitive() {
+        return caseSensitive;
+    }
+
+    public void setCaseSensitive(boolean caseSensitive) {
+        this.caseSensitive = caseSensitive;
+    }
+
     /**
      * The saved field operators.
      */
@@ -165,7 +175,9 @@ public class Relation extends Element implements Serializable {
 
     @Override
     public QueryElement getQueryElement(QueryPipeline pipeline) {
-        return new FieldTerm(field, operator, value);
+        FieldTerm ret =  new FieldTerm(field, operator, value);
+        ret.setMatchCase(caseSensitive);
+        return ret;
     }
 
     @Override
@@ -179,7 +191,7 @@ public class Relation extends Element implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("(%s %s %s)", operator.getRep(), field, value);
+        return String.format("(%s %s %s %s)", operator.getRep(), field, value, caseSensitive);
     }
 
     @Override

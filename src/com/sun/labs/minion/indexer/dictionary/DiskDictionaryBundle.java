@@ -459,7 +459,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                 + "but this field only has case sensitive values.",
                                 stringVal, field.getInfo().getName()));
                     }
-                    return null;
+                    return rs.get(stringVal);
                 }
                 return us.get(stringVal);
             }
