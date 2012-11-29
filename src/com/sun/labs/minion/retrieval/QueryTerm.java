@@ -118,28 +118,28 @@ public abstract class QueryTerm extends QueryElement {
     public abstract ArrayGroup eval(ArrayGroup ag);
 
 
-    public void setMatchCase(boolean match) {
-        matchCase = match;
+    public void setMatchCase(boolean matchCase) {
+        this.matchCase = matchCase;
     }
 
     public void setLoadPositions(boolean loadPositions) {
         this.loadPositions = loadPositions;
     }
     
-    public void setDoMorph(boolean morph) {
-        doMorph = morph;
+    public void setDoMorph(boolean doMorph) {
+        this.doMorph = doMorph;
     }
 
-    public void setDoStem(boolean stem) {
-        doStem = stem;
+    public void setDoStem(boolean doStem) {
+        this.doStem = doStem;
     }
 
-    public void setDoWild(boolean wild) {
-        doWild = wild;
+    public void setDoWild(boolean doWild) {
+        this.doWild = doWild;
     }
 
-    public void setDoExpand(boolean exp) {
-        doExpand = exp;
+    public void setDoExpand(boolean doExpand) {
+        this.doExpand = doExpand;
     }
 
     @Override
