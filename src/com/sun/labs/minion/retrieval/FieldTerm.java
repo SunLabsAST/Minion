@@ -46,7 +46,7 @@ import java.util.logging.Logger;
  */
 public class FieldTerm extends QueryTerm {
 
-    private static Logger logger = Logger.getLogger(FieldTerm.class.getName());
+    private static final Logger logger = Logger.getLogger(FieldTerm.class.getName());
 
     /**
      * The name of the field that is begin operated on.
@@ -189,7 +189,9 @@ public class FieldTerm extends QueryTerm {
             return;
         }
 
-        matchCase = qc.caseSensitive(val);
+        if(!matchCase) {
+            matchCase = qc.caseSensitive(val);
+        }
         
         // We may need a date.
         Date d = null;
@@ -229,6 +231,7 @@ public class FieldTerm extends QueryTerm {
         // We'll have to special case the date stuff
         switch(op) {
             case EQUALS:
+//                logger.info(String.format("%s %s", part, matchCase));
                 if(d != null && dayResolution) {
 
                     //
