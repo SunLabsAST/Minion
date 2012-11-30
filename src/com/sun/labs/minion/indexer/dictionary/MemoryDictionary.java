@@ -399,16 +399,16 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
     }
 
     /**
-     * Marshalls the dictionary and the associated postings to a partition output
+     * Marshals the dictionary and the associated postings to a partition output
      * that will eventually be flushed out to disk.  Once the
-     * marshalling is complete, the pointer in the file must be pointing to a
+     * marshaling is complete, the pointer in the file must be pointing to a
      * position *after* the data just written.  This is so that we may dump
      * multiple dictionaries and postings types to the same channel.
      *
-     *  @param partOut the output where the dictionary should be marshalled.
-     * @return <code>true</code> if some entries were marshalled, <code>false</code> otherwise.
+     * @param partOut the output where the dictionary should be marshaled.
+     * @return <code>true</code> if some entries were marshaled, <code>false</code> otherwise.
      */
-    public boolean marshall(PartitionOutput partOut) throws java.io.IOException {
+    public boolean marshal(PartitionOutput partOut) throws java.io.IOException {
         
         //
         // Sort the entries in preparation for writing them out.  This will
@@ -420,7 +420,7 @@ public class MemoryDictionary<N extends Comparable> implements Dictionary<N> {
             return false;
         }
 
-//        logger.fine(String.format("Marshalling %d entries %s", nUsed, partOut.getDictionaryRenumber()));
+//        logger.fine(String.format("Marshal %d entries %s", nUsed, partOut.getDictionaryRenumber()));
 
         DictionaryOutput dictOut = partOut.getPartitionDictionaryOutput();
         PostingsOutput[] postOut = partOut.getPostingsOutput();

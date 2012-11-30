@@ -26,7 +26,7 @@ public class Provenance {
         PartitionHeader header = new PartitionHeader(partFile);
         System.out.format("%s%d %s\n", prefix, partNumber, header.
                 getProvenance());
-        if(header.getProvenance().equals("marshalled")) {
+        if(header.getProvenance().equals("marshaled")) {
         } else if(header.getProvenance().startsWith("merged ")) {
             String[] partNums = header.getProvenance().substring(7).split(" ");
             for(String partNum : partNums) {

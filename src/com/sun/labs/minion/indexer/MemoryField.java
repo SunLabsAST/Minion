@@ -25,7 +25,7 @@ public class MemoryField extends Field {
     
     public static final int MULTIVALUE_GAP = 300;
 
-    public enum MarshallResult {
+    public enum MarshalResult {
         NOTHING_DUMPED,
         DICTS_DUMPED,
         EVERYTHING_DUMPED,
@@ -167,14 +167,14 @@ public class MemoryField extends Field {
      * @throws java.io.IOException if there is an error during the
      * writing.
      */
-    public MarshallResult marshall(PartitionOutput partOut) throws
+    public MarshalResult marshal(PartitionOutput partOut) throws
             java.io.IOException {
         //
         // If there's nothing in the field, then call it a day.
         if(!bundle.anyData()) {
-            return MarshallResult.NOTHING_DUMPED;
+            return MarshalResult.NOTHING_DUMPED;
         }
-        return bundle.marshall(partOut);
+        return bundle.marshal(partOut);
     }
     
     public void clear() {

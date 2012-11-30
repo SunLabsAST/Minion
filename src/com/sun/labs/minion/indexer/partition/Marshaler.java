@@ -51,9 +51,9 @@ import java.util.logging.Logger;
  * form that will be written to disk.
  *
  */
-public class Marshaller implements Configurable {
+public class Marshaler implements Configurable {
 
-    private static final Logger logger = Logger.getLogger(Marshaller.class.
+    private static final Logger logger = Logger.getLogger(Marshaler.class.
             getName());
 
     /**
@@ -62,9 +62,9 @@ public class Marshaller implements Configurable {
     protected String name;
 
     /**
-     * A queue onto which partitions will be placed for marshalling.
+     * A queue onto which partitions will be placed for marshaling.
      */
-    protected BlockingQueue<MPHolder> toMarshall;
+    protected BlockingQueue<MPHolder> toMarshal;
 
     /**
      * A queue onto which outputs will be placed for flushing.
@@ -77,10 +77,10 @@ public class Marshaller implements Configurable {
     protected BlockingQueue<PartitionOutput> poPool;
 
     /**
-     * The queue of partition whose data needs to be marshalled for output.
+     * The queue of partition whose data needs to be marshaled for output.
      */
     private BlockingQueue<InvFileMemoryPartition> mpPool;
-
+    
     /**
      * The poll interval for the queue, in milliseconds.
      */
@@ -95,7 +95,7 @@ public class Marshaller implements Configurable {
     /**
      * Whether we are done dumping.
      */
-    protected boolean marshallerDone;
+    protected boolean marshalerDone;
 
     /**
      * Are we done flushing?
@@ -105,8 +105,10 @@ public class Marshaller implements Configurable {
     /**
      * Threads to do the marshaling.
      */
-    private Thread[] marshallThreads;
-
+    private Thread[] marshalThreads;
+    
+    private MarshalThread[] marshalers;
+    
     /**
      * The partition outputs that we'll use for marshaling data.
      */
@@ -129,24 +131,9 @@ public class Marshaller implements Configurable {
     private PartitionManager partitionManager;
 
     /**
-     * The queue length property for configuration.
-     */
-    @ConfigInteger(defaultValue = 1)
-    public static String PROP_MARSHALL_QUEUE_LENGTH = "marshall_queue_length";
-
-    /**
-     * The size of the pool of partition outputs.
-     */
-    @ConfigInteger(defaultValue = 4)
-    public static final String PARTITION_OUTPUT_PROP_POOL_SIZE = "partition_output_pool_size";
-
-    @ConfigInteger(defaultValue = 2)
-    public static final String PROP_MARSHALL_THREADS = "marshall_threads";
-
-    /**
      * Default constructor used for configuration.
      */
-    public Marshaller() {
+    public Marshaler() {
     }
 
     public void setMemoryPartitionQueue(
@@ -160,11 +147,11 @@ public class Marshaller implements Configurable {
         }
     }
 
-    public void marshall(InvFileMemoryPartition part, CountDownLatch completion) {
+    public void marshal(InvFileMemoryPartition part, CountDownLatch completion) {
         try {
-            toMarshall.put(new MPHolder(part, completion, new Date()));
+            toMarshal.put(new MPHolder(part, completion, new Date()));
         } catch(InterruptedException ex) {
-            logger.warning("Marshaller interrupted during put");
+            logger.warning("Marshaler interrupted during put");
         }
     }
 
@@ -173,10 +160,23 @@ public class Marshaller implements Configurable {
      * up.
      */
     public void finish() {
-        marshallerDone = true;
-        for(int i = 0; i < marshallThreads.length; i++) {
+        
+
+        NanoWatch fetchMPw = new NanoWatch();
+        NanoWatch fetchPOw = new NanoWatch();
+        NanoWatch marshalw = new NanoWatch();
+        NanoWatch putMPw = new NanoWatch();
+        NanoWatch putPOw = new NanoWatch();
+
+        marshalerDone = true;
+        for(int i = 0; i < marshalThreads.length; i++) {
             try {
-                marshallThreads[i].join();
+                marshalThreads[i].join();
+                fetchMPw.accumulate(marshalers[i].fetchMPw);
+                putMPw.accumulate(marshalers[i].putMPw);
+                marshalw.accumulate(marshalers[i].marshalw);
+                fetchPOw.accumulate(marshalers[i].fetchPOw);
+                putPOw.accumulate(marshalers[i].putPOw);
             } catch(InterruptedException ex) {
             }
         }
@@ -195,11 +195,18 @@ public class Marshaller implements Configurable {
                            ex);
             }
         }
+        
+        logger.info(String.format("Average (ms) fetch MP: %.2f marshal MP: %.3f put MP: %.2f fetch PO: %.2f put PO: %.2f", 
+                                  fetchMPw.getAvgTimeMillis(), 
+                                  marshalw.getAvgTimeMillis(),
+                                  putMPw.getAvgTimeMillis(),
+                                  fetchPOw.getAvgTimeMillis(), 
+                                  putPOw.getAvgTimeMillis()));
 
     }
 
     /**
-     * Performs a synchronous flush of the marshalling queue, returning only
+     * Performs a synchronous flush of the marshaling queue, returning only
      * when the partitions in the queue have been flushed to disk and are open
      * for querying.
      */
@@ -215,11 +222,16 @@ public class Marshaller implements Configurable {
         boolean longIndexingRun = ((SearchEngineImpl) partitionManager.
                 getEngine()).isLongIndexingRun();
 
-        int queueLength = ps.getInt(PROP_MARSHALL_QUEUE_LENGTH);
-        int poPoolSize = ps.getInt(PARTITION_OUTPUT_PROP_POOL_SIZE);
-        int ndt = ps.getInt(PROP_MARSHALL_THREADS);
+        //
+        // We'll derive our various queue lengths and numbers of threads from
+        // the number of indexing threads that are configured in the engine.
+        int numIndexingThreads = ((SearchEngineImpl) partitionManager.getEngine()).getNumIndexingThreads();
 
-        toMarshall = new ArrayBlockingQueue<MPHolder>(queueLength);
+        int queueLength = numIndexingThreads * 2;
+        int poPoolSize = queueLength;
+        int numMarshalThreads = Math.max(queueLength-1, 2);
+
+        toMarshal = new ArrayBlockingQueue<MPHolder>(queueLength);
         poPool = new ArrayBlockingQueue<PartitionOutput>(poPoolSize);
         partitionOutputs = new RAMPartitionOutput[poPoolSize];
         for(int i = 0; i < partitionOutputs.length; i++) {
@@ -231,17 +243,19 @@ public class Marshaller implements Configurable {
                 poPool.put(partitionOutputs[i]);
             } catch(Exception ex) {
                 throw new PropertyException(ex, ps.getInstanceName(),
-                                            PARTITION_OUTPUT_PROP_POOL_SIZE,
+                                            "PARTITION_OUTPUT_POOL_SIZE",
                                             "Error creating output pool");
             }
         }
 
         pollInterval = ps.getInt(PROP_POLL_INTERVAL);
-        marshallThreads = new Thread[ndt];
-        for(int i = 0; i < marshallThreads.length; i++) {
-            marshallThreads[i] = new Thread(new MarshallThread());
-            marshallThreads[i].setName("Marshall-" + i);
-            marshallThreads[i].start();
+        marshalThreads = new Thread[numMarshalThreads];
+        marshalers = new MarshalThread[numMarshalThreads];
+        for(int i = 0; i < marshalThreads.length; i++) {
+            marshalers[i] = new MarshalThread();
+            marshalThreads[i] = new Thread(marshalers[i]);
+            marshalThreads[i].setName("Marshal-" + i);
+            marshalThreads[i].start();
         }
 
         toFlush = new ArrayBlockingQueue<PartitionOutput>(poPoolSize);
@@ -277,26 +291,36 @@ public class Marshaller implements Configurable {
 
     /**
      * A thread that will run, selecting partitions from the queue and
-     * marshalling their data.
+     * marshaling their data.
      */
-    class MarshallThread implements Runnable {
+    class MarshalThread implements Runnable {
 
         private CountDownLatch flushRequested;
 
         private CountDownLatch readyToFlush;
 
         private CountDownLatch flushCompleted;
+        
+        protected NanoWatch fetchMPw = new NanoWatch();
+        
+        protected NanoWatch fetchPOw = new NanoWatch();
+        
+        protected NanoWatch marshalw = new NanoWatch();
+        
+        protected NanoWatch putMPw = new NanoWatch();
+        
+        protected NanoWatch putPOw = new NanoWatch();
 
         @Override
         public void run() {
-            while(!marshallerDone) {
+            while(!marshalerDone) {
                 try {
-                    marshallOne();
+                    marshalOne();
                 } catch(InterruptedException ex) {
                     logger.warning(String.
                             format(
-                            "Marshaller interrupted during poll with %d waiting",
-                            toMarshall.size()));
+                            "Marshaler interrupted during poll with %d waiting",
+                            toMarshal.size()));
                     return;
                 }
 
@@ -323,7 +347,7 @@ public class Marshaller implements Configurable {
             //
             // Drain the list of partitions to dump and then dump them.
             List<MPHolder> l = new ArrayList<MPHolder>();
-            toMarshall.drainTo(l);
+            toMarshal.drainTo(l);
             if(l.isEmpty()) {
                 return;
             }
@@ -333,10 +357,10 @@ public class Marshaller implements Configurable {
                     if(sh.time.after(partitionManager.getLastPurgeTime())) {
                         try {
                             PartitionOutput partOut = poPool.take();
-                            marshall(sh, partOut);
+                            marshal(sh, partOut);
                         } catch(IOException ex) {
                             logger.log(Level.SEVERE, String.format(
-                                    "Error marshalling partition"), ex);
+                                    "Error marshaling partition"), ex);
                         }
                     }
                 }
@@ -346,30 +370,33 @@ public class Marshaller implements Configurable {
             }
         }
 
-        private void marshallOne() throws InterruptedException {
+        private void marshalOne() throws InterruptedException {
             //
             // We'll poll for a defined interval so that we can catch when
             // we're finished.
-            MPHolder mph = toMarshall.poll(pollInterval,
+            fetchMPw.start();
+            MPHolder mph = toMarshal.poll(pollInterval,
                                            TimeUnit.MILLISECONDS);
+            fetchMPw.stop();
             PartitionOutput partOut = null;
             if(mph != null) {
                 //
                 // If this partition was added after the time of the last
-                // purge, then marshall it.
+                // purge, then marshal it.
                 if(mph.time.after(partitionManager.getLastPurgeTime())) {
                     try {
 
+                        fetchPOw.start();
                         partOut = poPool.take();
-                        marshall(mph, partOut);
-
+                        fetchPOw.stop();
+                        marshal(mph, partOut);
                         Merger m = partitionManager.getMerger();
                         if(m != null) {
                             m.run();
                         }
                     } catch(Exception ex) {
                         logger.log(Level.SEVERE,
-                                   "Error marshalling partition, continuing",
+                                   "Error marshaling partition, continuing",
                                    ex);
                         partOut.cleanUp();
                     }
@@ -400,11 +427,11 @@ public class Marshaller implements Configurable {
                 readyToFlush.await();
 
                 //
-                // Marshall until the queue is empty, since nothing will be
+                // Marshal until the queue is empty, since nothing will be
                 // added to the queue once we start.
-                while(!toMarshall.isEmpty()) {
+                while(!toMarshal.isEmpty()) {
                     try {
-                        marshallOne();
+                        marshalOne();
                     } catch(InterruptedException ex) {
                         logger.
                                 warning(String.
@@ -437,16 +464,20 @@ public class Marshaller implements Configurable {
             flushCompleted.countDown();
         }
 
-        private void marshall(MPHolder mph, PartitionOutput partOut) throws
+        private void marshal(MPHolder mph, PartitionOutput partOut) throws
                 IOException, InterruptedException {
             if(partOut != null) {
                 //
                 // Let the partition output know if there's a latch to signal 
-                // when the marshall and flush has finished.
+                // when the marshal and flush has finished.
                 partOut.setCompletion(mph.completion);
-                PartitionOutput ret = mph.part.marshall(partOut);
+                marshalw.start();
+                PartitionOutput ret = mph.part.marshal(partOut);
+                marshalw.stop();
                 mph.part.clear();
+                putMPw.start();
                 mpPool.put(mph.part);
+                putMPw.stop();
                 if(ret != null) {
                     if(logger.isLoggable(Level.FINEST)) {
                         logger.finest(String.format("Queuing %s for flush",
@@ -457,7 +488,9 @@ public class Marshaller implements Configurable {
                     //
                     // Nothing got dumped, but we still need to put the partition
                     // output back in the pool!
+                    putPOw.start();
                     poPool.put(partOut);
+                    putPOw.stop();
                     
                     //
                     // We also need to countdown the completion latch that we
@@ -471,11 +504,15 @@ public class Marshaller implements Configurable {
     }
 
     /**
-     * A thread that will flush the marshalled data for partitions to the disk.
+     * A thread that will flush the marshaled data for partitions to the disk.
      */
     class FlushThread implements Runnable {
 
-        private NanoWatch nw = new NanoWatch();
+        private NanoWatch flushw = new NanoWatch();
+        
+        private NanoWatch fetchPOw = new NanoWatch();
+        
+        private NanoWatch putPOw = new NanoWatch();
         
         private CountDownLatch queueDrained;
         
@@ -494,14 +531,16 @@ public class Marshaller implements Configurable {
         public void run() {
             while(!flushDone) {
                 try {
+                    fetchPOw.start();
                     PartitionOutput partOut = toFlush.poll(pollInterval,
                                                            TimeUnit.MILLISECONDS);
+                    fetchPOw.stop();
                     if(partOut != null) {
                         try {
                             try {
-                                nw.start();
+                                flushw.start();
                                 partOut.flush();
-                                nw.stop();
+                                flushw.stop();
                             } catch(IllegalStateException ex) {
                                 logger.log(Level.SEVERE, String.format(
                                         "Illegal state for %s", partOut), ex);
@@ -510,10 +549,12 @@ public class Marshaller implements Configurable {
                             if(logger.isLoggable(Level.FINEST)) {
                                 logger.finest(String.format(
                                         "Flushed %s in %.2fms",
-                                                            partOut, nw.
+                                                            partOut, flushw.
                                         getLastTimeMillis()));
                             }
+                            putPOw.start();
                             poPool.put(partOut);
+                            putPOw.stop();
                             if(queueDrained != null && toFlush.size() == 0) {
                                 queueDrained.countDown();
                                 queueDrained = null;

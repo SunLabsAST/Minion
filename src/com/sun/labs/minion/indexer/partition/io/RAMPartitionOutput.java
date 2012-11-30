@@ -19,7 +19,7 @@ public class RAMPartitionOutput extends AbstractPartitionOutput {
     private static final Logger logger = Logger.getLogger(RAMPartitionOutput.class.getName());
 
     /**
-     * Creates a partition output that will marshall data into in-memory buffers
+     * Creates a partition output that will marshal data into in-memory buffers
      * @param manager the manager responsible for the partition that we're dumping
      */
     public RAMPartitionOutput(PartitionManager manager) throws IOException {

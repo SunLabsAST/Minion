@@ -285,7 +285,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
     }
 
     /**
-     * Marshalls this dictionary bundle's dictionaries for eventual flushing
+     * Marshals this dictionary bundle's dictionaries for eventual flushing
      * to disk.
      *
      * @param path the path of the index
@@ -297,10 +297,10 @@ public class MemoryDictionaryBundle<N extends Comparable> {
      * @param maxID the maximum ID for this
      * @throws java.io.IOException
      */
-    public MemoryField.MarshallResult marshall(PartitionOutput partOut) throws
+    public MemoryField.MarshalResult marshal(PartitionOutput partOut) throws
             java.io.IOException {
 
-        MemoryField.MarshallResult ret = MemoryField.MarshallResult.DICTS_DUMPED;
+        MemoryField.MarshalResult ret = MemoryField.MarshalResult.DICTS_DUMPED;
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 
         long headerPos = partDictOut.position();
@@ -420,7 +420,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     
                     //
                     // We preferred uncased tokens when making the raw vectors, 
-                    // so do the same at marshall time.
+                    // so do the same at marshal time.
                     if(dicts[DictionaryType.UNCASED_TOKENS.ordinal()] != null) {
                         partOut.setPostingsIDMap(entryIDMaps[DictionaryType.UNCASED_TOKENS.ordinal()]);
                     } else {
@@ -493,11 +493,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             }
             
             //
-            // The offset where we're about to marshall this dictionary.
+            // The offset where we're about to marshal this dictionary.
             long dictPos = partDictOut.position();
             
             try {
-                if(dicts[ord].marshall(partOut)) {
+                if(dicts[ord].marshal(partOut)) {
                     header.dictionaryOffsets[ord] = dictPos;
                     entryIDMaps[ord] = dicts[ord].getIdMap();
                 } else {
@@ -507,11 +507,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
             } catch(RuntimeException ex) {
                 //
                 // It's nice to log what field and dictionary caused the problem
-                logger.log(Level.SEVERE, String.format("Exception %s marshalling %s from %s",
+                logger.log(Level.SEVERE, String.format("Exception %s marshaling %s from %s",
                         ex.getMessage(), type, field.getInfo().getName()));
 
                 //
-                // But we want the marshalling thread to ultimately catch the exception.
+                // But we want the marshaling thread to ultimately catch the exception.
                 throw (ex);
             }
             dw.stop();
@@ -577,7 +577,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                 DocumentVectorLengths.calculate(field, header, partOut,
                                                 field.getPartition().
                         getPartitionManager().getTermStatsDict());
-                ret = MemoryField.MarshallResult.EVERYTHING_DUMPED;
+                ret = MemoryField.MarshalResult.EVERYTHING_DUMPED;
             } catch (RuntimeException ex) {
                 logger.log(Level.SEVERE, String.format("Exception calculating document vector lengths for %s", info.getName()));
                 throw(ex);
@@ -599,7 +599,7 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         
         nw.stop();
         if(logger.isLoggable(Level.FINER)) {
-            logger.finer(String.format("Marshalling %s took %.2fms (dw: %.2fs)", field.getInfo().getName(), nw.getTimeMillis(), dw.getTimeMillis()));
+            logger.finer(String.format("Marshal %s took %.2fms (dw: %.2fs)", field.getInfo().getName(), nw.getTimeMillis(), dw.getTimeMillis()));
         }
         return ret;
     }

@@ -68,14 +68,14 @@ public abstract class MemoryPartition extends Partition {
     }
 
     /**
-     * Marshalls the data for the current partition so that it can be written to
+     * Marshals the data for the current partition so that it can be written to
      * disk for later use.
      *
      * @return The partition number for the dumped partition.
      * @throws java.io.IOException if there is any error writing the partition
      * data to disk
      */
-    public PartitionOutput marshall(PartitionOutput partOut) throws java.io.IOException {
+    public PartitionOutput marshal(PartitionOutput partOut) throws java.io.IOException {
         
         //
         // Do nothing if we have no data.
@@ -99,7 +99,7 @@ public abstract class MemoryPartition extends Partition {
         }
         
         PartitionHeader partHeader = partOut.getPartitionHeader();
-        partHeader.setProvenance("marshalled");
+        partHeader.setProvenance("marshaled");
         partHeader.setPostingsChannelNames(getPostingsChannelNames());
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 
@@ -115,7 +115,7 @@ public abstract class MemoryPartition extends Partition {
         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
         partOut.setPostingsIDMap(null);
         partOut.setDictionaryEncoder(new StringNameHandler());
-        docDict.marshall(partOut);
+        docDict.marshal(partOut);
 
         //
         // Set the number of documents.
@@ -134,7 +134,7 @@ public abstract class MemoryPartition extends Partition {
 
         //
         // Dump any custom data -- to be filled in by subclasses.
-        customMarshall(partOut);
+        customMarshal(partOut);
         
         //
         // Write the partition header, then return to the top of the file to
@@ -148,7 +148,7 @@ public abstract class MemoryPartition extends Partition {
         
         mw.stop();
         if(logger.isLoggable(Level.FINE)) {
-            logger.fine(String.format("Marshalled %s %d into %s, %d docs took %s",
+            logger.fine(String.format("Marshaled %s %d into %s, %d docs took %s",
                     getPartitionName(),
                     partOut.getPartitionNumber(),
                     partOut.getName(),
@@ -168,7 +168,7 @@ public abstract class MemoryPartition extends Partition {
     }
 
     /**
-     * Performs any custom data marshalling required by a subclass.  This method
+     * Performs any custom data marshaling required by a subclass.  This method
      * exists to be overridden in a subclass and provides no functionality
      * at this level.
      *
@@ -176,7 +176,7 @@ public abstract class MemoryPartition extends Partition {
      * @throws java.io.IOException if there is any error writing the data
      * to disk
      */
-    protected abstract void customMarshall(PartitionOutput dumpState) throws java.io.IOException;
+    protected abstract void customMarshal(PartitionOutput dumpState) throws java.io.IOException;
 
     @Override
     public String toString() {

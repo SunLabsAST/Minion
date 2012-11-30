@@ -100,7 +100,7 @@ public class TestData {
         pout.setDictionaryEncoder(new StringNameHandler());
         pout.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
         pout.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
-        md.marshall(pout);
+        md.marshal(pout);
         dictFile = File.createTempFile("all", ".dict");
         dictFile.deleteOnExit();
         pout.flush();

@@ -58,7 +58,7 @@ import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.DocumentIterator;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileMemoryPartition;
-import com.sun.labs.minion.indexer.partition.Marshaller;
+import com.sun.labs.minion.indexer.partition.Marshaler;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
 import com.sun.labs.minion.indexer.postings.PostingsIterator;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
@@ -97,6 +97,7 @@ import com.sun.labs.minion.retrieval.parser.Transformer;
 import com.sun.labs.minion.retrieval.parser.WebParser;
 import com.sun.labs.minion.retrieval.parser.WebTransformer;
 import com.sun.labs.minion.util.CDateParser;
+import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponent;
 import com.sun.labs.util.props.ConfigDouble;
@@ -203,10 +204,10 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
     private double minMemoryPercent;
 
-    @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Marshaller.class)
-    public static final String PROP_MARSHALLER = "marshaller";
+    @ConfigComponent(type = com.sun.labs.minion.indexer.partition.Marshaler.class)
+    public static final String PROP_MARSHALER = "marshaler";
 
-    private Marshaller marshaller;
+    private Marshaler marshaler;
     
     @ConfigInteger(defaultValue=-1)
     public static final String PROP_DOCS_PER_PARTITION = "docs_per_partition";
@@ -542,8 +543,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         }
         
         //
-        // OK, the document's been indexed by everyone.  Let's flush the marshaller.
-        marshaller.flush();
+        // OK, the document's been indexed by everyone.  Let's flush the marshaler.
+        marshaler.flush();
 
         if(metaDataStore != null) {
             try {
@@ -1565,11 +1566,17 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             indexer.index(closeDoc);
         }
         
+        NanoWatch fetchMPw = new NanoWatch();
+        NanoWatch fetchDw = new NanoWatch();
+        NanoWatch putDw = new NanoWatch();
         //
         // Wait for the threads to finish.
         for(int i = 0; i < indexers.length; i++) {
             try {
                 indexingThreads[i].join();
+                fetchMPw.accumulate(indexers[i].fetchMPw);
+                fetchDw.accumulate(indexers[i].fetchDw);
+                putDw.accumulate(indexers[i].putDw);
             } catch(InterruptedException ex) {
                 logger.warning(String.format("Interrupted during join for indexer %d", i));
             }
@@ -1581,7 +1588,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         //
         // Shutdown the dumper for our partitions.
-        marshaller.finish();
+        marshaler.finish();
         
         //
         // If we didn't do it while we were indexing, then calculate the document
@@ -1616,6 +1623,11 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                                                 e);
             }
         }
+        logger.info(String.format(
+                "Average (ms) fetch MP: %.2f fetch Doc: %.2f put Doc: %.2f",
+                                  fetchMPw.getAvgTimeMillis(),
+                                  fetchDw.getAvgTimeMillis(),
+                                  putDw.getAvgTimeMillis()));
         
     }
 
@@ -1857,8 +1869,16 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
         buildClassifiers = ps.getBoolean(PROP_BUILD_CLASSIFIERS);
         minMemoryPercent = ps.getDouble(PROP_MIN_MEMORY_PERCENT);
-        marshaller = (Marshaller) ps.getComponent(PROP_MARSHALLER);
-        marshaller.setMemoryPartitionQueue(mpPool);
+        marshaler = (Marshaler) ps.getComponent(PROP_MARSHALER);
+        marshaler.setMemoryPartitionQueue(mpPool);
+    }
+
+    /**
+     * Gets the number of indexing threads being used.
+     * @return the number of indexing threads.
+     */
+    public int getNumIndexingThreads() {
+        return numIndexingThreads;
     }
 
     /**
@@ -1882,7 +1902,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     @Override
     public void setLongIndexingRun(boolean longIndexingRun) {
         this.longIndexingRun = longIndexingRun;
-        marshaller.setLongIndexingRun(longIndexingRun);
+        marshaler.setLongIndexingRun(longIndexingRun);
         invFilePartitionManager.setLongIndexingRun(longIndexingRun);
     }
     
@@ -1916,6 +1936,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         private int docsPerPart;
         
         private CountDownLatch dumpNow;
+        
+        protected NanoWatch fetchDw = new NanoWatch();
+        
+        protected NanoWatch putDw = new NanoWatch();
+
+        protected NanoWatch fetchMPw = new NanoWatch();
         
         public Indexer() {
             try {
@@ -1955,19 +1981,21 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         public void run() {
             while(!finished) {
                 try {
+                    fetchDw.start();
                     Indexable doc = indexingQueue.poll(100, TimeUnit.MILLISECONDS);
+                    fetchDw.stop();
                     
                     //
                     // Process a flush request.
                     if(doc instanceof FlushDocument) {
-                        marshall(((FlushDocument) doc).getCompletion());
+                        marshal(((FlushDocument) doc).getCompletion());
                         continue;
                     }
                     
                     //
                     // We're done.  Flush and return.
                     if(doc == closeDoc) {
-                        marshall(null);
+                        marshal(null);
                         break;
                     }
                     
@@ -1975,12 +2003,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                     // Regular kind of document.
                     if(doc != null) {
                         indexInternal(doc);
-                        if(docsPerPart > 0 && nIndexed == docsPerPart) {
-                            marshall(null);
+                        if(docsPerPart > 0 && nIndexed >= docsPerPart) {
+                            marshal(null);
                         }
                     }
                     if(dumpNow != null) {
-                        marshall(dumpNow);
+                        marshal(dumpNow);
                     }
                 } catch(InterruptedException ex) {
                     return;
@@ -1993,7 +2021,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                 indexInternal(doc);
             } else {
                 try {
+                    putDw.start();
                     indexingQueue.put(doc);
+                    putDw.stop();
                 } catch(InterruptedException ex) {
                     Logger.getLogger(SearchEngineImpl.class.getName()).
                             log(Level.SEVERE, null, ex);
@@ -2032,10 +2062,12 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             }
         }
 
-        public void marshall(CountDownLatch completion) {
-            marshaller.marshall(part, completion);
+        public void marshal(CountDownLatch completion) {
+            marshaler.marshal(part, completion);
             try {
+                fetchMPw.start();
                 part = mpPool.take();
+                fetchMPw.stop();
                 part.start();
             } catch(InterruptedException ex) {
                 logger.log(Level.SEVERE, String.format("Error getting memory partition"), ex);
@@ -2047,7 +2079,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         public void finish() {
             finished = true;
             if(indexingQueue == null) {
-                marshaller.marshall(part, null);
+                marshaler.marshal(part, null);
             }
         }
 

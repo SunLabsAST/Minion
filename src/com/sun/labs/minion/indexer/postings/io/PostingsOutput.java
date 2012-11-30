@@ -33,7 +33,7 @@ public interface PostingsOutput {
     
     /**
      * Gets a temporary buffer that we can use to encode postings header data,
-     * avoiding creating thousands of buffers during marshalling.
+     * avoiding creating thousands of buffers during marshaling.
      * @return a temporary buffer that can be used when writing postings data.
      * This buffer should be cleared before use and not be retained past 
      * a single call to write.
@@ -68,7 +68,7 @@ public interface PostingsOutput {
     public void flush() throws java.io.IOException;
     
     /**
-     * Cleans up postings output from a failed marshall or merge operation.
+     * Cleans up postings output from a failed marshal or merge operation.
      */
     public void cleanUp();
     

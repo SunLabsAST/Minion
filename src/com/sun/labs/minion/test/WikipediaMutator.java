@@ -357,7 +357,7 @@ public class WikipediaMutator implements Runnable {
         sl.setLevel(Level.FINE);
         sl = Logger.getLogger(InvFileMemoryPartition.class.getName());
         sl.setLevel(Level.FINE);
-        sl = Logger.getLogger(Marshaller.class.getName());
+        sl = Logger.getLogger(Marshaler.class.getName());
         sl.setLevel(Level.FINE);
         sl = Logger.getLogger(DiskPartition.class.getName());
         sl.setLevel(Level.FINE);
@@ -409,7 +409,7 @@ public class WikipediaMutator implements Runnable {
         sl.setLevel(Level.FINE);
         sl = Logger.getLogger(InvFileMemoryPartition.class.getName());
         sl.setLevel(Level.FINE);
-        sl = Logger.getLogger(Marshaller.class.getName());
+        sl = Logger.getLogger(Marshaler.class.getName());
         sl.setLevel(Level.FINE);
         sl = Logger.getLogger(DiskPartition.class.getName());
         sl.setLevel(Level.FINE);

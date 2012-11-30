@@ -224,12 +224,12 @@ public class InvFileMemoryPartition extends MemoryPartition {
     }
 
     @Override
-    protected void customMarshall(PartitionOutput partOut) throws IOException {
+    protected void customMarshal(PartitionOutput partOut) throws IOException {
 
         DictionaryOutput partDictOut = partOut.getPartitionDictionaryOutput();
 
         //
-        // Dump the fields.  Keep track of the offsets of the field and of the
+        // Marshal the fields.  Keep track of the offsets of the field and of the
         // offsets for the term statistics dictionaries for the fields.
         for(MemoryField mf : fields) {
             if(mf == null) {
@@ -244,7 +244,7 @@ public class InvFileMemoryPartition extends MemoryPartition {
 
             //
             // Dump the dictionary and deal with the result.
-            switch(mf.marshall(partOut)) {
+            switch(mf.marshal(partOut)) {
                 case NOTHING_DUMPED:
                     logger.finer(String.format("No dicts dumped"));
                     fieldOffset = -1;
