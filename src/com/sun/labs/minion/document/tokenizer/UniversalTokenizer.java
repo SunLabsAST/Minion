@@ -256,8 +256,8 @@ public class UniversalTokenizer extends Tokenizer {
 
     @Override
     public void text(CharSequence s) {
-
-        //
+        
+       //
         // We no longer care about character position - only word position.
         // For now, we'll just make "p" zero.  Next pass through this code
         // should include removing p and the character position pos.
@@ -965,6 +965,9 @@ public class UniversalTokenizer extends Tokenizer {
         pcl = 0;
         ngramLength = 2;
         wordNum = 1;
+        if(downstream != null) {
+            downstream.reset();
+        }
     }
 
     /**

@@ -54,6 +54,11 @@ public class StopWords implements Configurable {
     public StopWords() {
         stopwords = new HashSet<String>();
     }
+    
+    public StopWords(String stopwordsFile) {
+        stopwords = new HashSet<String>();
+        addFile(stopwordsFile);
+    }
 
     public void addFile(String stopwordsFile) {
         BufferedReader reader = null;

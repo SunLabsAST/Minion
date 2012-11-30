@@ -46,6 +46,14 @@ public class StopWordsStage extends StageAdapter implements
 
     public StopWordsStage() {
     }
+    
+    public StopWordsStage(StopWords stopwords) {
+        this.stopwords = stopwords;
+    }
+
+    public void setStopwords(StopWords stopwords) {
+        this.stopwords = stopwords;
+    }
 
     @Override
     public void token(Token t) {

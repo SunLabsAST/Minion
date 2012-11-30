@@ -40,6 +40,10 @@ public class PrintStage extends StageAdapter {
     public PrintStage() {
     }
 
+    public PrintStage(boolean printTokens) {
+        this.printTokens = printTokens;
+    }
+
     public PrintStage(Stage d, boolean printTokens) {
         super(d);
         this.printTokens = printTokens;

@@ -46,16 +46,10 @@
     <property name="num_indexing_threads" value="1"/>
     <property name="docs_per_partition" value="500"/>
     <property name="partition_manager_name" value="partition_manager"/>
-    <property name="marshall_queue_length" value="2"/>
-    <property name="partition_output_pool_size" value="2"/>
-    <property name="marshall_threads" value="2"/>
     
-    <!-- A marshaller for partitions -->
-    <component name="marshaller" type="com.sun.labs.minion.indexer.partition.Marshaller">
+    <!-- A marshaler for partitions -->
+    <component name="marshaler" type="com.sun.labs.minion.indexer.partition.Marshaler">
         <property name="partition_manager" value="${partition_manager_name}"/>
-        <property name="marshall_queue_length" value="${marshall_queue_length}"/>
-        <property name="partition_output_pool_size" value="${partition_output_pool_size}"/>
-        <property name="marshall_threads" value="${marshall_threads}"/>
     </component>
 
     <!-- A search engine, which is what the factory method for search engines 
@@ -68,7 +62,7 @@
         <property name="docs_per_partition" value="${docs_per_partition}"/>
         <!-- The pipeline factory and the dumper are defined in the pipeline configuration -->
         <property name="pipeline_factory" value="pipeline_factory"/>
-        <property name="marshaller" value="marshaller"/>
+        <property name="marshaler" value="marshaler"/>
     </component>
     
     <!-- The index configuration -->

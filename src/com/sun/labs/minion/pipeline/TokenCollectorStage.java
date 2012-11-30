@@ -114,7 +114,7 @@ public class TokenCollectorStage extends StageAdapter {
     @Override
     public void reset() {
         for(int i = 0; i < nRanges; i++) {
-            ranges[i].nTokens = 0;
+            ranges[i].reset();
         }
         count = 0;
     }
