@@ -1911,10 +1911,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      */
     public synchronized void optimize() throws IOException, FileLockException {
         
+        //
+        // Get the most up-to-date term stats.
+        calculateTermStats();
+        
         if(activeParts.size() > 1) {
-            //
-            // Get the most up-to-date term stats.
-            calculateTermStats();
 
             //
             // A single partition with new vector lengths.

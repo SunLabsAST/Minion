@@ -1566,6 +1566,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             indexer.index(closeDoc);
         }
         
+        NanoWatch indexw = new NanoWatch();
         NanoWatch fetchMPw = new NanoWatch();
         NanoWatch fetchDw = new NanoWatch();
         NanoWatch putDw = new NanoWatch();
@@ -1574,6 +1575,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         for(int i = 0; i < indexers.length; i++) {
             try {
                 indexingThreads[i].join();
+                indexw.accumulate(indexers[i].indexw);
                 fetchMPw.accumulate(indexers[i].fetchMPw);
                 fetchDw.accumulate(indexers[i].fetchDw);
                 putDw.accumulate(indexers[i].putDw);
@@ -1624,8 +1626,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             }
         }
         logger.info(String.format(
-                "Average (ms) fetch MP: %.2f fetch Doc: %.2f put Doc: %.2f",
+                "Average (ms) fetch MP: %.2f index: %.2f fetch Doc: %.2f put Doc: %.2f",
                                   fetchMPw.getAvgTimeMillis(),
+                                  indexw.getAvgTimeMillis(),
                                   fetchDw.getAvgTimeMillis(),
                                   putDw.getAvgTimeMillis()));
         
@@ -1937,6 +1940,8 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         
         private CountDownLatch dumpNow;
         
+        protected NanoWatch indexw = new NanoWatch();
+        
         protected NanoWatch fetchDw = new NanoWatch();
         
         protected NanoWatch putDw = new NanoWatch();
@@ -1947,6 +1952,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             try {
                 part = mpPool.take();
                 part.start();
+                indexw.start();
             } catch(InterruptedException ex) {
                 throw new IllegalStateException("Error getting memory partition");
             }
@@ -1960,6 +1966,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             try {
                 part = mpPool.take();
                 part.start();
+                indexw.start();
             } catch(InterruptedException ex) {
                 throw new IllegalStateException("Error getting memory partition");
             }
@@ -2004,7 +2011,9 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
                     if(doc != null) {
                         indexInternal(doc);
                         if(docsPerPart > 0 && nIndexed >= docsPerPart) {
+                            indexw.stop();
                             marshal(null);
+                            indexw.start();
                         }
                     }
                     if(dumpNow != null) {
@@ -2079,6 +2088,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         public void finish() {
             finished = true;
             if(indexingQueue == null) {
+                indexw.stop();
                 marshaler.marshal(part, null);
             }
         }
