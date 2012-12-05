@@ -157,14 +157,13 @@ public class NIOFileReadableBuffer extends StdReadableImpl {
      * read.
      * @return The number of bytes actually read from the file.
      */
-    protected int read(long off) {
+    protected int read(long off) throws BufferException {
         try {
             buff.clear();
             reads++;
             return chan.read(buff, off);
         } catch (java.io.IOException ioe) {
-            logger.log(Level.SEVERE, "Error reading from file", ioe);
-            return -1;
+            throw new BufferException("Error reading in NIOFileBuffer", ioe);
         }
     }
 

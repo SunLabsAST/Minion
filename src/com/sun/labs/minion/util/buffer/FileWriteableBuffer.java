@@ -216,7 +216,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
     }
 
     @Override
-    public WriteableBuffer put(byte[] bytes) {
+    public WriteableBuffer put(byte[] bytes) throws BufferException {
 
         if(bPos + bytes.length >= buff.length) {
             flush();
@@ -233,8 +233,7 @@ public class FileWriteableBuffer implements WriteableBuffer {
             try {
                 raf.write(bytes, 0, bytes.length);
             } catch(java.io.IOException ioe) {
-                logger.log(Level.SEVERE, "Error writing file", ioe);
-                buff = null;
+                throw new BufferException("Error writing file", ioe);
             }
             return this;
         } else {

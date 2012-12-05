@@ -28,14 +28,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A buffer that can be used to read data from a file, keeping minimal
- * amounts of data in memory.
+ * A buffer that can be used to read data from a file, keeping minimal amounts
+ * of data in memory.
  *
  * <p>
  *
  * This implementation is mainly used by the {@link
- * com.sun.labs.minion.indexer.dictionary.DiskDictionary DiskDictionary} so that only
- * a small amount of dictionary information needs to be in main memory at
+ * com.sun.labs.minion.indexer.dictionary.DiskDictionary DiskDictionary} so that
+ * only a small amount of dictionary information needs to be in main memory at
  * any given time.
  */
 public class FileReadableBuffer extends StdReadableImpl {
@@ -43,7 +43,8 @@ public class FileReadableBuffer extends StdReadableImpl {
     /**
      * A log.
      */
-    protected static final Logger logger = Logger.getLogger(FileReadableBuffer.class.getName());
+    protected static final Logger logger = Logger.
+            getLogger(FileReadableBuffer.class.getName());
 
     /**
      * The file containing the buffer.
@@ -66,13 +67,12 @@ public class FileReadableBuffer extends StdReadableImpl {
     protected long bs;
 
     /**
-     * The offset in the file of the end of the buffer that we represent. 
+     * The offset in the file of the end of the buffer that we represent.
      */
     protected long be;
 
     /**
-     * The offset of the current position in the buffer we're
-     * representing.
+     * The offset of the current position in the buffer we're representing.
      */
     protected long pos;
 
@@ -87,12 +87,14 @@ public class FileReadableBuffer extends StdReadableImpl {
     protected static final int DEFAULT_BUFF_SIZE = 1024;
 
     /**
-     * Creates a readable buffer that is backed by the given file.  The
-     * buffer starts at the given offset in the file and extends for the
-     * given number of bytes.  The buffer will use the default buffer size
-     * for the in-memory buffer.
+     * Creates a readable buffer that is backed by the given file. The buffer
+     * starts at the given offset in the file and extends for the given number
+     * of bytes. The buffer will use the default buffer size for the in-memory
+     * buffer.
+     *
      * @param raf The file containing the data for our buffer.
-     * @param offset The offset in the file where the data for our buffer can be found.
+     * @param offset The offset in the file where the data for our buffer can be
+     * found.
      * @param limit The number of bytes of data in our buffer.
      */
     public FileReadableBuffer(RandomAccessFile raf, long offset, long limit) {
@@ -100,18 +102,18 @@ public class FileReadableBuffer extends StdReadableImpl {
     }
 
     /**
-     * Creates a readable buffer that is backed by the given file.  The
-     * buffer starts at the given offset in the file and extends for the
-     * given number of bytes.  The given buffer size will be used for the
-     * in-memory buffer.
+     * Creates a readable buffer that is backed by the given file. The buffer
+     * starts at the given offset in the file and extends for the given number
+     * of bytes. The given buffer size will be used for the in-memory buffer.
+     *
      * @param raf The file containing the data for our buffer.
-     * @param offset The offset in the file where the data for our buffer
-     * can be found.
+     * @param offset The offset in the file where the data for our buffer can be
+     * found.
      * @param limit The number of bytes of data in our buffer.
      * @param buffSize The size of the in-memory buffer to use.
      */
     public FileReadableBuffer(RandomAccessFile raf, long offset, long limit,
-            int buffSize) {
+                              int buffSize) {
         this.raf = raf;
         bs = offset;
         be = offset + limit;
@@ -134,27 +136,26 @@ public class FileReadableBuffer extends StdReadableImpl {
 
     /**
      * Reads a given number of bytes from the file.
-     * @param off The offset in the file from which the bytes should be
-     * read.
+     *
+     * @param off The offset in the file from which the bytes should be read.
      * @return The number of bytes actually read from the file.
      */
-    protected int read(long off) {
+    protected int read(long off) throws BufferException {
         synchronized(raf) {
             try {
                 raf.seek(off);
                 return raf.read(buff);
             } catch(java.io.IOException ioe) {
-                logger.log(Level.SEVERE, 
-                        String.format("Error reading from file buffer: bs: %d be: %d pos: %d off: %d", bs, be, pos, off), ioe);
-                return -1;
+                throw new BufferException(String.format(
+                        "Error reading from file buffer: bs: %d be: %d pos: %d off: %d",
+                                                        bs, be, pos, off), ioe);
             }
         }
     }
 
     /**
-     * Checks whether the given position is within the bounds of our in
-     * memory buffer.  If it's not, data will be read into the in-memory
-     * buffer.
+     * Checks whether the given position is within the bounds of our in memory
+     * buffer. If it's not, data will be read into the in-memory buffer.
      *
      * @param p The position that we want to check
      * @return The index in the in-memory buffer that can be read for this
@@ -173,6 +174,7 @@ public class FileReadableBuffer extends StdReadableImpl {
 
     /**
      * Returns the number of bytes remaining to be read in the buffer.
+     *
      * @return The number of bytes remaining in the buffer.
      */
     @Override
@@ -181,12 +183,13 @@ public class FileReadableBuffer extends StdReadableImpl {
     }
 
     /**
-     * Duplicates this buffer, so that it can be used safely by other
-     * readers.  Note that this duplicates the data in the buffer, since it
-     * must not be changed by subsequent reads.
-     * @return A new buffer duplicating the contents of this buffer.  The
-     * buffers are backed by the same underlying file, but they have
-     * different in-memory buffers and positions.
+     * Duplicates this buffer, so that it can be used safely by other readers.
+     * Note that this duplicates the data in the buffer, since it must not be
+     * changed by subsequent reads.
+     *
+     * @return A new buffer duplicating the contents of this buffer. The buffers
+     * are backed by the same underlying file, but they have different in-memory
+     * buffers and positions.
      */
     @Override
     public ReadableBuffer duplicate() {
@@ -194,16 +197,16 @@ public class FileReadableBuffer extends StdReadableImpl {
     }
 
     /**
-     * Slices this buffer so that a sub-buffer can be used.  The buffer is
-     * sliced from the current position.  Note that this actually
-     * duplicates the data in the buffer, since it must not be changed by
-     * subsequent reads.
+     * Slices this buffer so that a sub-buffer can be used. The buffer is sliced
+     * from the current position. Note that this actually duplicates the data in
+     * the buffer, since it must not be changed by subsequent reads.
+     *
      * @param p The position at which the buffer should be sliced.
      * @param s The number of bytes that should be in the sliced buffer.
-     * @return A new buffer containing a slice of this buffer.  The new
-     * buffer shares the underlying file, but has it's own in-memory
-     * buffer.  The first position in the sliced buffer is the given
-     * position, and the limit on the sliced buffer is the given size.
+     * @return A new buffer containing a slice of this buffer. The new buffer
+     * shares the underlying file, but has it's own in-memory buffer. The first
+     * position in the sliced buffer is the given position, and the limit on the
+     * sliced buffer is the given size.
      */
     @Override
     public ReadableBuffer slice(long p, long s) {
@@ -212,6 +215,7 @@ public class FileReadableBuffer extends StdReadableImpl {
 
     /**
      * Gets the limit of this buffer, i.e., the last readable position.
+     *
      * @return The last readable position in this buffer.
      */
     @Override
@@ -221,6 +225,7 @@ public class FileReadableBuffer extends StdReadableImpl {
 
     /**
      * Sets the limit of this buffer, i.e., the last readable position.
+     *
      * @param l The limit that we wish to set for the buffer.
      */
     @Override
@@ -230,6 +235,7 @@ public class FileReadableBuffer extends StdReadableImpl {
 
     /**
      * Gets the byte at the given position in the buffer.
+     *
      * @param i The position from which we wish to get a byte.
      * @return The byte at the given position.
      */
@@ -240,8 +246,9 @@ public class FileReadableBuffer extends StdReadableImpl {
 
     /**
      * Gets the next byte in the buffer.
-     * @return The byte at the current buffer position.  This will advance
-     * the current position.
+     *
+     * @return The byte at the current buffer position. This will advance the
+     * current position.
      */
     @Override
     public byte get() {
@@ -250,6 +257,7 @@ public class FileReadableBuffer extends StdReadableImpl {
 
     /**
      * Gets the position of the buffer.
+     *
      * @return The current position in the buffer.
      */
     @Override
@@ -259,6 +267,7 @@ public class FileReadableBuffer extends StdReadableImpl {
 
     /**
      * Positions the buffer.
+     *
      * @param position The position to which we should set the buffer.
      */
     @Override
@@ -268,11 +277,13 @@ public class FileReadableBuffer extends StdReadableImpl {
 
     /**
      * Gets a string representation of the buffer.
+     *
      * @return A string representation of the buffer.
      */
     @Override
     public String toString() {
-        return "buff: (" + bs + "," + be + ")" +
-                " mem: (" + ms + "," + me + ") " + buff.length;
+        return "buff: (" + bs + "," + be + ")" + " mem: (" + ms + "," + me
+                + ") " + buff.length;
     }
+
 } // FileBackedBuffer

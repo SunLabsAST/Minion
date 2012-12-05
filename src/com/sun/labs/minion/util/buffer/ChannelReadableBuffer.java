@@ -140,13 +140,12 @@ public class ChannelReadableBuffer extends StdReadableImpl {
      * read.
      * @return The number of bytes actually read.
      */
-    protected int read(long off) {
+    protected int read(long off) throws BufferException {
         try {
             buff.clear();
             return chan.read(buff, off);
         } catch(java.io.IOException ioe) {
-            logger.log(Level.SEVERE, "Error reading from channel", ioe);
-            return -1;
+            throw new BufferException("Error reading from channel", ioe);
         }
     }
 

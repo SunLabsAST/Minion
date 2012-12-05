@@ -2841,12 +2841,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     nw.start();
                     try {
                         calculateTermStats();
-                    } catch(FileLockException ex) {
+                    } catch(Exception ex) {
                         logger.log(Level.SEVERE, String.format(
                                 "Error recalculating term stats"), ex);
-                    } catch(IOException ex) {
-                        logger.log(Level.SEVERE, String.format(
-                                "Error recalculating term stats"), ex);
+                        return;
                     }
                     nw.stop();
                     if(logger.isLoggable(Level.FINE)) {
