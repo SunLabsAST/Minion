@@ -25,18 +25,22 @@
 package com.sun.labs.minion;
 
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+import com.sun.labs.minion.retrieval.ArrayGroup;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * A class that composes a number of individual results filter.  In order for a
- * result to pass this filter, it must pass each of the individual filters.  Note
+ * result to pass this filter, it may pass any of the individual filters.  Note
  * that in order for this class to really be serializable, the filters it's holding
  * must be serializable!
  */
-public class CompositeResultsFilter implements ResultsFilter, Serializable {
+public class UnionResultsFilter implements ResultsFilter, Serializable {
+    
+    private static final Logger logger = Logger.getLogger(UnionResultsFilter.class.getName());
 
     private List<ResultsFilter> filters;
     
@@ -48,14 +52,14 @@ public class CompositeResultsFilter implements ResultsFilter, Serializable {
      * Creates a composite filter.
      * @param filters the filters to apply
      */
-    public CompositeResultsFilter(Collection<ResultsFilter> filters) {
+    public UnionResultsFilter(Collection<ResultsFilter> filters) {
         this.filters = new ArrayList<ResultsFilter>(filters);
     }
     
     /**
      * Creates a composite of two filters. 
      */
-    public CompositeResultsFilter(ResultsFilter f1, ResultsFilter f2) {
+    public UnionResultsFilter(ResultsFilter f1, ResultsFilter f2) {
         filters = new ArrayList<ResultsFilter>();
         filters.add(f1);
         filters.add(f2);
@@ -80,12 +84,12 @@ public class CompositeResultsFilter implements ResultsFilter, Serializable {
     public boolean filter(ResultAccessor ra) {
         nTested++;
         for(ResultsFilter rf : filters) {
-            if(!rf.filter(ra)) {
-                return false;
+            if(rf.filter(ra)) {
+                nPassed++;
+                return true;
             }
         }
-        nPassed++;
-        return true;
+        return false;
     }
     
     @Override

@@ -62,4 +62,13 @@ public interface ResultAccessor {
      */
     public Object getSingleFieldValue(String field);
     
+    /**
+     * Tests whether the document under consideration contains any of the 
+     * field values whose ids are in the given list.
+     * 
+     * @param field the field whose values we want to test
+     * @param ids the field value IDs that we want to test.
+     */
+    public boolean contains(String field, int[] ids);
+    
 }

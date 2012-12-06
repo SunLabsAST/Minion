@@ -1,6 +1,7 @@
 package com.sun.labs.minion.indexer.dictionary;
 
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.FieldHeader;
@@ -452,13 +453,13 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 return rs.get(stringVal);
             } else {
                 if(us == null) {
-                    if(!field.isUncased()) {
-                        logger.warning(
-                                String.format(
-                                "Case insensitive request for field value %s in field %s, "
-                                + "but this field only has case sensitive values.",
-                                stringVal, field.getInfo().getName()));
-                    }
+//                    if(!field.isUncased()) {
+//                        logger.warning(
+//                                String.format(
+//                                "Case insensitive request for field value %s in field %s, "
+//                                + "but this field only has case sensitive values.",
+//                                stringVal, field.getInfo().getName()));
+//                    }
                     return rs.get(stringVal);
                 }
                 return us.get(stringVal);
@@ -1432,19 +1433,24 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @return a list of the facets for this partition.
      */
     
-    public List<LocalFacet<N>> getTopFacets(ArrayGroup ag, SortSpec facetSortSpec, int n, SortSpec resultSortSpec) {
+    public List<LocalFacet<N>> getTopFacets(ArrayGroup ag, ResultsFilter filter, SortSpec facetSortSpec, int n, SortSpec resultSortSpec) {
+        if(filter != null) {
+            filter.setPartition((InvFileDiskPartition) field.getPartition());
+        }
         Map<Integer, LocalFacet<N>> m = new HashMap<Integer, LocalFacet<N>>();
         Fetcher fetcher = getFetcher();
         int[] valIDs = new int[16];
         if(n > 0) {
-            for(ResultImpl ri : ag.getTopDocuments(resultSortSpec, n, null)) {
+            for(ResultImpl ri : ag.getTopDocuments(resultSortSpec, n, filter)) {
                 valIDs = processFacets(fetcher, m, valIDs, ri.getDocID(),
                               ri.getScore(), facetSortSpec);
             }
         } else {
-            for(ArrayGroup.DocIterator di = ag.iterator(); di.next(); ) {
-                valIDs = processFacets(fetcher, m, valIDs, di.getDoc(),
-                              di.getScore(), facetSortSpec);
+            for(ArrayGroup.DocIterator di = ag.iterator(); di.next();) {
+                if(filter == null || filter.filter(di)) {
+                    valIDs = processFacets(fetcher, m, valIDs, di.getDoc(),
+                                           di.getScore(), facetSortSpec);
+                }
             }
         }
         List<LocalFacet<N>> ret = new ArrayList<LocalFacet<N>>(m.values());

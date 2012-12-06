@@ -31,6 +31,7 @@ import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.util.SimpleLabsLogFormatter;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -177,6 +178,13 @@ public class CrossIndexDV {
         public int getPassed() {
             return 0;
         }
+
+        @Override
+        public void setPartition(InvFileDiskPartition part) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        
+        
         
     }
 }

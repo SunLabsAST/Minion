@@ -116,4 +116,32 @@ public abstract class Partition implements Comparable<Partition> {
     public void setPartitionName(String partitionName) {
         this.partitionName = partitionName;
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 61 * hash
+                + (this.manager != null ? this.manager.hashCode() : 0);
+        hash = 61 * hash + partNumber;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == null) {
+            return false;
+        }
+        if(getClass() != obj.getClass()) {
+            return false;
+        }
+        final Partition other = (Partition) obj;
+        if(this.manager != other.manager &&
+                (this.manager == null || !this.manager.equals(other.manager))) {
+            return false;
+        }
+        if(this.partNumber != other.partNumber) {
+            return false;
+        }
+        return true;
+    }
 } // Partition

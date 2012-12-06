@@ -270,6 +270,7 @@ public interface ResultSet {
      * @throws SearchEngineException 
      */
     public List<Facet> getTopFacets(String fieldName, 
+                                    ResultsFilter filter,
                                     SortSpec facetSortSpec,
                                     int nFacets, 
                                     SortSpec resultSortSpec,

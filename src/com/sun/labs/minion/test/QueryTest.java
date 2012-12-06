@@ -27,6 +27,7 @@ import com.sun.labs.minion.Document;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
+import com.sun.labs.minion.FieldValueResultsFilter;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.Passage;
@@ -37,6 +38,7 @@ import com.sun.labs.minion.QueryConfig;
 import com.sun.labs.minion.QueryStats;
 import com.sun.labs.minion.Result;
 import com.sun.labs.minion.ResultSet;
+import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.SearchEngineException;
 import com.sun.labs.minion.SearchEngineFactory;
@@ -45,6 +47,7 @@ import com.sun.labs.minion.SimpleHighlighter;
 import com.sun.labs.minion.Stemmer;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.TextHighlighter;
+import com.sun.labs.minion.UnionResultsFilter;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
@@ -69,8 +72,8 @@ import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
 import com.sun.labs.minion.query.And;
 import com.sun.labs.minion.query.Equals;
+import com.sun.labs.minion.query.Or;
 import com.sun.labs.minion.query.ParsedElement;
-import com.sun.labs.minion.query.Relation;
 import com.sun.labs.minion.retrieval.AbstractDocumentVector;
 import com.sun.labs.minion.retrieval.QueryTermDocStats;
 import com.sun.labs.minion.retrieval.QueryTermStats;
@@ -100,6 +103,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -328,20 +332,24 @@ public class QueryTest extends SEMain {
     }
 
     public void displayResults(ResultSet set) {
-        displayResults("", set);
+        displayResults("", set, null);
+    }
+
+    public void displayResults(ResultSet set, ResultsFilter filter) {
+        displayResults("", set, filter);
     }
 
     /**
      * Displays the top n results from a set of results.
      */
-    public void displayResults(String prefix, ResultSet set) {
+    public void displayResults(String prefix, ResultSet set, ResultsFilter filter) {
 
         List results;
         NanoWatch nw = new NanoWatch();
 
         try {
             nw.start();
-            results = set.getResults(0, nHits);
+            results = set.getResults(0, nHits, filter);
             nw.stop();
         } catch(SearchEngineException se) {
             logger.log(Level.SEVERE, "Error getting search results", se);
@@ -421,12 +429,38 @@ public class QueryTest extends SEMain {
             @Override
             public String execute(CommandInterpreter ci, String[] strings)
                     throws Exception {
-                ParsedElement pe = new ParsedElement("machine learning");
-                Relation r = new Equals("display-groups", "ecampaignsportfolio");
-                r.setCaseSensitive(true);
-                And and = new And(pe, r);
-                ResultSet rs = engine.search(and);
-                displayResults(rs.getResults(0, nHits));
+                
+                String q = join(strings, 1, strings.length, " ");
+
+                ParsedElement parse = new ParsedElement(q);
+                Or or = new Or(new Equals("display-groups", "s11-users_ww_grp"),
+                        new Equals("display-groups", "rpe_drivers_help_ww_grp"));
+                And and = new And(parse, or);
+                ResultSet searchr = engine.search(and);
+                List<Result> sl = searchr.getAllResults(false);
+                Set<Result> ss = new HashSet<Result>(sl);
+                
+                ResultsFilter g1 = new FieldValueResultsFilter("display-groups",
+                                                               "s11-users_ww_grp");
+                ResultsFilter g2 = new FieldValueResultsFilter("display-groups",
+                                                               "rpe_drivers_help_ww_grp");
+                UnionResultsFilter uf = new UnionResultsFilter(g1, g2);
+                ResultSet filterr = engine.search(parse);
+                
+                List<Result> fl = filterr.getAllResults(false, uf);
+                shell.out.format("search: %d filter: %d filter results: %d\n",
+                                 searchr.size(), filterr.size(), fl.size());
+                for(Result r : fl) {
+                    boolean found = ss.remove(r);
+                    if(!found) {
+                        shell.out.format("Search set didn't contain %s: %s\n", r, r.getField("display-groups"));
+                    }
+                }
+                if(!ss.isEmpty()) {
+                    for(Result r : ss) {
+                        shell.out.format("Filter set didn't contain %s: %s\n", r, r.getField("display-groups"));
+                    }
+                }
                 return "";
             }
 
@@ -581,7 +615,7 @@ public class QueryTest extends SEMain {
                 
                 NanoWatch fw = new NanoWatch();
                 fw.start();
-                List<Facet> lf = lastResultSet.getTopFacets(args[1], facetSortSpec, nFacets, resultsSortSpec, resultsToFacetOn, collapser);
+                List<Facet> lf = lastResultSet.getTopFacets(args[1], null, facetSortSpec, nFacets, resultsSortSpec, resultsToFacetOn, collapser);
                 fw.stop();
                 
                 ci.out.format("Found %d facets for %s in %d hits in %.3fms\n", 

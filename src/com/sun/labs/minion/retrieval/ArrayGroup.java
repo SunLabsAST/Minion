@@ -27,6 +27,7 @@ import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultAccessor;
 import com.sun.labs.minion.ResultsFilter;
 import com.sun.labs.minion.ScoreModifier;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.Field.DocumentVectorType;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
@@ -817,10 +818,16 @@ public class ArrayGroup implements Cloneable {
         if(sorted) {
             return getTopDocuments(sortSpec, size, rf);
         }
+        if(rf != null) {
+            rf.setPartition((InvFileDiskPartition) part);
+        }
         List<ResultImpl> ret = new ArrayList<ResultImpl>();
         ArrayGroup.DocIterator iter = iterator();
         while(iter.next()) {
-            ret.add(new ResultImpl(null, this, sortSpec, false, iter.getDoc(), iter.getScore()));
+            if(rf == null || rf.filter(iter)) {
+                ret.add(new ResultImpl(null, this, sortSpec, false, iter.
+                        getDoc(), iter.getScore()));
+            }
         }
         return ret.toArray(new ResultImpl[0]);
     }
@@ -842,9 +849,16 @@ public class ArrayGroup implements Cloneable {
         }
         
         //
+        // Tell the results filter what partition we're in, so that we can 
+        // filter using IDs rather than values, if they want to.
+        if(rf != null) {
+            rf.setPartition((InvFileDiskPartition) part);
+        }
+        
+        //
         // Note that this priority queue is supposed to be a min-heap, so 
         // we'll be ordering by the reverse of our sorting spec, so that the
-        // smallest element (according to our sorting spect) will appear at the 
+        // smallest element (according to our sorting spec) will appear at the 
         // top of the heap.
         PriorityQueue<ResultImpl>  sorter = new PriorityQueue<ResultImpl>(n, ResultImpl.REVERSE_COMPARATOR);
         ResultImpl curr = new ResultImpl();
@@ -970,6 +984,10 @@ public class ArrayGroup implements Cloneable {
          * The current position in the set.
          */
         int pos = -1;
+        
+        int[] fieldValueIDs = new int[8];
+
+        private Map<String, Fetcher> fetchers;
 
         public DocIterator() {
             fetchers = new HashMap<String, Fetcher>();
@@ -1025,7 +1043,6 @@ public class ArrayGroup implements Cloneable {
 
         //
         // Implementation of ResultAccessor
-        private Map<String, Fetcher> fetchers;
 
         @Override
         public String getKey() {
@@ -1035,8 +1052,11 @@ public class ArrayGroup implements Cloneable {
         private Fetcher getFetcher(String field) {
             Fetcher f = fetchers.get(field);
             if(f == null) {
-                fetchers.put(field,
-                        ((InvFileDiskPartition) part).getDF(field).getFetcher());
+                DiskField df = ((InvFileDiskPartition) part).getDF(field);
+                if(df == null || !df.getInfo().hasAttribute(FieldInfo.Attribute.SAVED)) {
+                    return null;
+                }
+                fetchers.put(field, df.getFetcher());
             }
             return f;
         }
@@ -1044,13 +1064,13 @@ public class ArrayGroup implements Cloneable {
         @Override
         public List<Object> getField(String field) {
             Fetcher f = getFetcher(field);
-            return f == null ? Collections.emptyList() : f.fetch(docs[pos]);
+            return f == null ? Collections.EMPTY_LIST: f.fetch(docs[pos]);
         }
 
         public List<Object> getField(String field, List<Object> l) {
             l.clear();
             Fetcher f = getFetcher(field);
-            return f == null ? Collections.emptyList() : f.fetch(docs[pos], l);
+            return f == null ? Collections.EMPTY_LIST : f.fetch(docs[pos], l);
         }
 
         @Override
@@ -1058,5 +1078,24 @@ public class ArrayGroup implements Cloneable {
             Fetcher f = getFetcher(field);
             return f == null ? null : f.fetchOne(docs[pos]);
         }
+
+        @Override
+        public boolean contains(String field, int[] ids) {
+            Fetcher f = getFetcher(field);
+            if(f == null) {
+                return false;
+            }
+            fieldValueIDs = f.fetch(docs[pos], fieldValueIDs);
+            for(int id : ids) {
+                for(int i = 1; i < fieldValueIDs[0]+1; i++) {
+                    if(id == fieldValueIDs[i]) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        
+        
     }
 } // ArrayGroup

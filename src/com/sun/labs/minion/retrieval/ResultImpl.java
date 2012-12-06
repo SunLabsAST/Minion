@@ -225,15 +225,20 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
      * @return an <code>Object</code> of the appropriate type.
      */
     @Override
-    public List getField(String name) {
-        return (List) ((InvFileDiskPartition) partition).getSavedFieldData(name,
+    public List getField(String field) {
+        return (List) ((InvFileDiskPartition) partition).getSavedFieldData(field,
                 doc, true);
     }
 
     @Override
-    public Object getSingleFieldValue(String name) {
-        return ((InvFileDiskPartition) partition).getSavedFieldData(name, doc,
+    public Object getSingleFieldValue(String field) {
+        return ((InvFileDiskPartition) partition).getSavedFieldData(field, doc,
                 false);
+    }
+
+    @Override
+    public boolean contains(String field, int[] ids) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -454,6 +459,15 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
 
         ResultImpl other = (ResultImpl) o;
         return partition == other.partition && doc == other.doc;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 61 * hash +
+                (this.partition != null ? this.partition.hashCode() : 0);
+        hash = 61 * hash + this.doc;
+        return hash;
     }
 
     @Override

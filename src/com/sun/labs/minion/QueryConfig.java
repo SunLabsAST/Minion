@@ -234,7 +234,7 @@ public class QueryConfig implements Cloneable, Configurable {
     /**
      * Whether we should always find all case variants.
      */
-    protected boolean alwaysFindCaseVariants = false;
+    protected boolean alwaysFindCaseVariants = true;
 
     /**
      * Whether all lower case terms should be treated case insensitively.

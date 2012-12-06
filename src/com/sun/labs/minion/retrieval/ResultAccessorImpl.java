@@ -2,11 +2,14 @@ package com.sun.labs.minion.retrieval;
 
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.ResultAccessor;
+import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A simple implementation of a results accessor that can be used in cases
@@ -25,18 +28,14 @@ public class ResultAccessorImpl implements ResultAccessor {
     /**
      * Fetchers for field values.
      */
-    private Fetcher[] fetchers;
+    private Map<String,Fetcher> fetchers = new HashMap<String, Fetcher>();
 
     public ResultAccessorImpl() {
     }
 
     public void setPartition(InvFileDiskPartition dp) {
         this.dp = dp;
-        if(fetchers != null) {
-            for(int i = 0; i < fetchers.length; i++) {
-                fetchers[i] = null;
-            }
-        }
+        fetchers.clear();
     }
 
     public void setCurrDoc(int currDoc) {
@@ -61,25 +60,21 @@ public class ResultAccessorImpl implements ResultAccessor {
     }
 
     private Fetcher getFetcher(String field) {
-        FieldInfo fi = dp.getPartitionManager().getMetaFile().getFieldInfo(field);
-        if(fi == null) {
+        
+        Fetcher fetcher = fetchers.get(field);
+        
+        if(fetcher != null) {
+            return fetcher;
+        }
+        
+        DiskField df = dp.getDF(field);
+        if(df == null) {
             return null;
         }
-        if(!fi.hasAttribute(FieldInfo.Attribute.SAVED)) {
-            return null;
-        }
-        int fid = fi.getID();
-        if(fetchers == null) {
-            fetchers = new Fetcher[fid + 1];
-        } else if(fetchers.length < fid) {
-           Fetcher[] temp = new Fetcher[fid + 1];
-            System.arraycopy(fetchers, 0, temp, 0, fetchers.length);
-            fetchers = temp;
-        }
-        if(fetchers[fid] == null) {
-            fetchers[fid] = dp.getDF(fi).getFetcher();
-        }
-        return fetchers[fid];
+        
+        fetcher = df.getFetcher();
+        fetchers.put(field, fetcher);
+        return fetcher;
     }
 
     @Override
@@ -99,4 +94,11 @@ public class ResultAccessorImpl implements ResultAccessor {
         }
         return null;
     }
+
+    @Override
+    public boolean contains(String field, int[] ids) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    
 }

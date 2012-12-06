@@ -55,6 +55,7 @@ import com.sun.labs.minion.util.FileLockException;
 import com.sun.labs.minion.util.SimpleFilter;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
+import com.sun.labs.minion.util.buffer.BufferException;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.props.ConfigBoolean;
@@ -2403,14 +2404,22 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public void calculateTermStats() throws java.io.IOException,
             FileLockException {
         
-        InvFileDiskPartition.calculateTermStats(getActivePartitions().toArray(new DiskPartition[0]), termStatsDictionaryOutput);
-        int tsn = metaFile.getNextTermStatsNumber();
-        File newTSF = makeTermStatsFile(tsn);
-        RandomAccessFile raf = new RandomAccessFile(newTSF, "rw");
-        termStatsDictionaryOutput.flush(raf);
-        raf.close();
-        metaFile.setTermStatsNumber(tsn);
-        updateTermStats();
+        try {
+            InvFileDiskPartition.calculateTermStats(getActivePartitions().
+                    toArray(new DiskPartition[0]), termStatsDictionaryOutput);
+            int tsn = metaFile.getNextTermStatsNumber();
+            File newTSF = makeTermStatsFile(tsn);
+            RandomAccessFile raf = new RandomAccessFile(newTSF, "rw");
+            termStatsDictionaryOutput.flush(raf);
+            raf.close();
+            metaFile.setTermStatsNumber(tsn);
+            updateTermStats();
+        } catch(BufferException ex) {
+            //
+            // Something bad happened. Clean up whatever we did.
+            termStatsDictionaryOutput.cleanUp();
+            throw(ex);
+        }
     }
     
     public void recalculateVectorLengths() throws java.io.IOException {
@@ -2826,6 +2835,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         @Override
         public void run() {
+            
+            //
+            // If we're not doing any more merges, then we should proabably stop.
+            if(noMoreMerges) {
+                return;
+            }
+            
             //
             // We want to make sure that we won't be running more than one update
             // at a time, since some updates might take longer than the interval

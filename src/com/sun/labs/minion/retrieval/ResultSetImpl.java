@@ -546,20 +546,22 @@ public class ResultSetImpl implements ResultSet {
     
     @Override
     public List<Facet> getTopFacets(String fieldName, int nFacets) throws SearchEngineException {
-        return getTopFacets(fieldName, null, nFacets, null, -1, null);
+        return getTopFacets(fieldName, null, null, nFacets, null, -1, null);
     }
 
     @Override
     public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec,
                                     int nFacets)
             throws SearchEngineException {
-        return getTopFacets(fieldName, facetSortSpec, nFacets, null, -1, null);
+        return getTopFacets(fieldName, null, facetSortSpec, nFacets, null, -1, null);
     }
     
     @Override
-    public List<Facet> getTopFacets(String fieldName, SortSpec facetSortSpec,
+    public List<Facet> getTopFacets(String fieldName,
+                                    ResultsFilter filter, SortSpec facetSortSpec,
                                     int nFacets, SortSpec resultSortSpec,
-                                    int nResults, Collapser collapser) throws SearchEngineException {
+                                    int nResults, Collapser collapser) throws
+            SearchEngineException {
     
         FieldInfo field = e.getFieldInfo(fieldName);
         if(field == null) {
@@ -595,7 +597,7 @@ public class ResultSetImpl implements ResultSet {
             
             DiskField df = ((InvFileDiskPartition) ag.part).getDF(field);
             if(df != null) {
-                List<LocalFacet> l = df.getFacets(ag, localFSS, nResults, localRSS);
+                List<LocalFacet> l = df.getFacets(ag, filter, localFSS, nResults, localRSS);
                 QueuableIterator<LocalFacet> qi = new QueuableIterator(l.iterator());
                 if(qi.hasNext()) {
                     qi.next();

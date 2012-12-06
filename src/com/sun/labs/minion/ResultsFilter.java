@@ -24,6 +24,8 @@
 
 package com.sun.labs.minion;
 
+import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
+
 /**
  * A filter for results that can be applied against a result set when retrieving
  * results for display.
@@ -34,6 +36,13 @@ package com.sun.labs.minion;
  * 
  */
 public interface ResultsFilter {
+    
+    /**
+     * Sets the partition that the filter will be running against. This can 
+     * give you the opportunity to pre-compute field value IDs that can be used
+     * to filter values more quickly.
+     */
+    public void setPartition(InvFileDiskPartition part);
 
     /**
      * Runs the filter against the result currently under consideration.
