@@ -116,7 +116,7 @@ public class FacetImpl<T extends Comparable> implements Facet<T> {
     public List<Result> getTopResults(int n, SortSpec sortSpec) {
         NanoWatch nw = new NanoWatch();
         nw.start();
-        if(size < n) {
+        if(n < 0 || size < n) {
             n = size;
         }
         PriorityQueue<ResultImpl> sorter = new PriorityQueue<ResultImpl>(n, ResultImpl.REVERSE_COMPARATOR);

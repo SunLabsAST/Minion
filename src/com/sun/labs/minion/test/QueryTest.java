@@ -427,72 +427,39 @@ public class QueryTest extends SEMain {
         shell.add(prefixCommand(prefix, "foo"), "Query", new CommandInterface() {
 
             @Override
-            public String execute(CommandInterpreter ci, String[] strings)
+            public String execute(CommandInterpreter ci, String[] args)
                     throws Exception {
                 
-                String q = join(strings, 1, strings.length, " ");
-
-                ParsedElement parse = new ParsedElement(q);
-                Equals v1 = new Equals("display-groups", "s11-users_ww_grp");
-                Equals v2 = new Equals("display-groups", "rpe_drivers_help_ww_grp");
+                if(args.length < 4) {
+                    return "Needs more args!";
+                }
                 
-                Or orVals = new Or(v1, v2);
-                ResultSet searchr = engine.search(new And(parse, orVals));
-                List<Result> sl = searchr.getAllResults(false);
-                Set<Result> ss = new HashSet<Result>(sl);
-
-                ResultSet filterr = engine.search(parse);
+                String f1 = args[1];
+                String f2 = args[2];
+                String q = join(args, 3, args.length, " ");
                 ResultsFilter anyFilter = new FieldValueResultsFilter(
                         "display-groups",
-                        "s11-users_ww_grp",
-                        "rpe_drivers_help_ww_grp");
-                List<Result> fl = filterr.getAllResults(false, anyFilter);
-                shell.out.format("search: %d filter: %d filter results: %d\n",
-                                 searchr.size(), filterr.size(), fl.size());
-                for(Result r : fl) {
-                    boolean found = ss.remove(r);
-                    if(!found) {
-                        shell.out.format("Search set didn't contain %s: %s\n", r, r.getField("display-groups"));
-                    }
+                        f1, f2);
+
+                ParsedElement parse = new ParsedElement(q);
+                ResultSet search = engine.search(parse);
+                List<Facet> lf = search.getTopFacets("display-groups", anyFilter,
+                                    new SortSpec(engine, "-facet-size"),
+                                    -1,
+                                    new SortSpec(engine, "-score"),
+                                    -1, null);
+                ci.out.format("Found %d facets for %s in %d hits\n",
+                              lf.size(), "display-groups", search.size());
+                for(Facet f : lf) {
+                    ci.out.print("  ");
+                    ci.out.println(f);
+                    List<Result> lr = f.getTopResults(-1, resultsSortSpec);
+                    displayResults("   ", lr);
                 }
-                if(!ss.isEmpty()) {
-                    for(Result r : ss) {
-                        shell.out.format("Filter set didn't contain %s: %s\n", r, r.getField("display-groups"));
-                    }
-                }
-                
-                And andVals = new And(v1, v2);
-                searchr = engine.search(new And(parse, andVals));
-                sl = searchr.getAllResults(false);
-                ss = new HashSet<Result>(sl);
-                ResultsFilter allFilter = new FieldValueResultsFilter(
-                        FieldValueResultsFilter.FilterType.ALL,
-                        "display-groups",
-                        "s11-users_ww_grp",
-                        "rpe_drivers_help_ww_grp");
-                fl = filterr.getAllResults(false, allFilter);
-                shell.out.format("search: %d filter: %d filter results: %d\n",
-                                 searchr.size(), filterr.size(), fl.size());
-                for(Result r : fl) {
-                    boolean found = ss.remove(r);
-                    if(!found) {
-                        shell.out.
-                                         format(
-                                         "Search set didn't contain %s: %s\n", r,
-                                                r.getField("display-groups"));
-                    }
-                }
-                if(!ss.isEmpty()) {
-                    for(Result r : ss) {
-                        shell.out.
-                                         format(
-                                         "Filter set didn't contain %s: %s\n", r,
-                                                r.getField("display-groups"));
-                    }
-                }
+
                 return "";
             }
-
+            
             @Override
             public String getHelp() {
                 return "Do some random thing.";
