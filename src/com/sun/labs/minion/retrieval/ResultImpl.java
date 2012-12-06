@@ -237,7 +237,12 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
     }
 
     @Override
-    public boolean contains(String field, int[] ids) {
+    public boolean containsAny(String field, int[] ids) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public boolean containsAll(String field, int[] ids) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

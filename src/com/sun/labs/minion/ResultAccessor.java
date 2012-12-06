@@ -69,6 +69,15 @@ public interface ResultAccessor {
      * @param field the field whose values we want to test
      * @param ids the field value IDs that we want to test.
      */
-    public boolean contains(String field, int[] ids);
+    public boolean containsAny(String field, int[] ids);
     
+    /**
+     * Tests whether the document under consideration contains all of the field
+     * values whose ids are in the given list.
+     *
+     * @param field the field whose values we want to test
+     * @param ids the field value IDs that we want to test.
+     */
+    public boolean containsAll(String field, int[] ids);
+
 }

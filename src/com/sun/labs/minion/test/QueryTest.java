@@ -433,20 +433,20 @@ public class QueryTest extends SEMain {
                 String q = join(strings, 1, strings.length, " ");
 
                 ParsedElement parse = new ParsedElement(q);
-                Or or = new Or(new Equals("display-groups", "s11-users_ww_grp"),
-                        new Equals("display-groups", "rpe_drivers_help_ww_grp"));
-                And and = new And(parse, or);
-                ResultSet searchr = engine.search(and);
+                Equals v1 = new Equals("display-groups", "s11-users_ww_grp");
+                Equals v2 = new Equals("display-groups", "rpe_drivers_help_ww_grp");
+                
+                Or orVals = new Or(v1, v2);
+                ResultSet searchr = engine.search(new And(parse, orVals));
                 List<Result> sl = searchr.getAllResults(false);
                 Set<Result> ss = new HashSet<Result>(sl);
 
-                ResultsFilter filter = new FieldValueResultsFilter(
+                ResultSet filterr = engine.search(parse);
+                ResultsFilter anyFilter = new FieldValueResultsFilter(
                         "display-groups",
                         "s11-users_ww_grp",
                         "rpe_drivers_help_ww_grp");
-                ResultSet filterr = engine.search(parse);
-                
-                List<Result> fl = filterr.getAllResults(false, filter);
+                List<Result> fl = filterr.getAllResults(false, anyFilter);
                 shell.out.format("search: %d filter: %d filter results: %d\n",
                                  searchr.size(), filterr.size(), fl.size());
                 for(Result r : fl) {
@@ -458,6 +458,36 @@ public class QueryTest extends SEMain {
                 if(!ss.isEmpty()) {
                     for(Result r : ss) {
                         shell.out.format("Filter set didn't contain %s: %s\n", r, r.getField("display-groups"));
+                    }
+                }
+                
+                And andVals = new And(v1, v2);
+                searchr = engine.search(new And(parse, andVals));
+                sl = searchr.getAllResults(false);
+                ss = new HashSet<Result>(sl);
+                ResultsFilter allFilter = new FieldValueResultsFilter(
+                        FieldValueResultsFilter.FilterType.ALL,
+                        "display-groups",
+                        "s11-users_ww_grp",
+                        "rpe_drivers_help_ww_grp");
+                fl = filterr.getAllResults(false, allFilter);
+                shell.out.format("search: %d filter: %d filter results: %d\n",
+                                 searchr.size(), filterr.size(), fl.size());
+                for(Result r : fl) {
+                    boolean found = ss.remove(r);
+                    if(!found) {
+                        shell.out.
+                                         format(
+                                         "Search set didn't contain %s: %s\n", r,
+                                                r.getField("display-groups"));
+                    }
+                }
+                if(!ss.isEmpty()) {
+                    for(Result r : ss) {
+                        shell.out.
+                                         format(
+                                         "Filter set didn't contain %s: %s\n", r,
+                                                r.getField("display-groups"));
                     }
                 }
                 return "";

@@ -72,7 +72,7 @@ public class ArrayGroup implements Cloneable {
 
     /**
      * The size of the current set, that is the number of documents that it
-     * contains.
+     * containsAny.
      */
     protected int size;
     
@@ -484,7 +484,7 @@ public class ArrayGroup implements Cloneable {
      * Unions a scored group with this group, returning a new scored group.
      *
      * @param ag The group to union with this group.
-     * @return an instance of <code>ScoredGroup</code> that contains scores
+     * @return an instance of <code>ScoredGroup</code> that containsAny scores
      * for the documents that have them.
      */
     public ArrayGroup union(ScoredGroup ag) {
@@ -1080,7 +1080,7 @@ public class ArrayGroup implements Cloneable {
         }
 
         @Override
-        public boolean contains(String field, int[] ids) {
+        public boolean containsAny(String field, int[] ids) {
             Fetcher f = getFetcher(field);
             if(f == null) {
                 return false;
@@ -1096,6 +1096,26 @@ public class ArrayGroup implements Cloneable {
             return false;
         }
         
+        @Override
+        public boolean containsAll(String field, int[] ids) {
+            Fetcher f = getFetcher(field);
+            if(f == null) {
+                return false;
+            }
+            fieldValueIDs = f.fetch(docs[pos], fieldValueIDs);
+            for(int id : ids) {
+                boolean found = false;
+                for(int i = 1; i < fieldValueIDs[0] + 1; i++) {
+                    if(id == fieldValueIDs[i]) {
+                        found = true;
+                    }
+                }
+                if(!found) {
+                    return false;
+                }
+            }
+            return true;
+        }
         
     }
 } // ArrayGroup
