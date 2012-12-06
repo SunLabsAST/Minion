@@ -439,15 +439,14 @@ public class QueryTest extends SEMain {
                 ResultSet searchr = engine.search(and);
                 List<Result> sl = searchr.getAllResults(false);
                 Set<Result> ss = new HashSet<Result>(sl);
-                
-                ResultsFilter g1 = new FieldValueResultsFilter("display-groups",
-                                                               "s11-users_ww_grp");
-                ResultsFilter g2 = new FieldValueResultsFilter("display-groups",
-                                                               "rpe_drivers_help_ww_grp");
-                UnionResultsFilter uf = new UnionResultsFilter(g1, g2);
+
+                ResultsFilter filter = new FieldValueResultsFilter(
+                        "display-groups",
+                        "s11-users_ww_grp",
+                        "rpe_drivers_help_ww_grp");
                 ResultSet filterr = engine.search(parse);
                 
-                List<Result> fl = filterr.getAllResults(false, uf);
+                List<Result> fl = filterr.getAllResults(false, filter);
                 shell.out.format("search: %d filter: %d filter results: %d\n",
                                  searchr.size(), filterr.size(), fl.size());
                 for(Result r : fl) {
