@@ -63,21 +63,15 @@ public interface ResultAccessor {
     public Object getSingleFieldValue(String field);
     
     /**
-     * Tests whether the document under consideration contains any of the 
-     * field values whose ids are in the given list.
+     * Gets an array of the field value IDs for given field from the current document.
+     * @return an array of the field IDs.  The first element of the array will
+     * provide the number of IDs that have been returned, which will be in elements
+     * 1..n+1 of the array.
      * 
-     * @param field the field whose values we want to test
-     * @param ids the field value IDs that we want to test.
+     * <p>
+     * 
+     * Note that this array will be reused by subsequent calls to this method!
      */
-    public boolean containsAny(String field, int[] ids);
+    public int[] getFieldValueIDs(String field);
     
-    /**
-     * Tests whether the document under consideration contains all of the field
-     * values whose ids are in the given list.
-     *
-     * @param field the field whose values we want to test
-     * @param ids the field value IDs that we want to test.
-     */
-    public boolean containsAll(String field, int[] ids);
-
 }

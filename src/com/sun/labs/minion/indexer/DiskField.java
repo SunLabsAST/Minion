@@ -124,7 +124,7 @@ public class DiskField<N extends Comparable> extends Field<N> {
      * @param caseSensitive whether to do a case sensitive lookup
      * @return
      */
-    public QueryEntry getSaved(String val, boolean caseSensitive) {
+    public QueryEntry getSaved(N val, boolean caseSensitive) {
         return bundle.getSaved(val, caseSensitive);
     }
 

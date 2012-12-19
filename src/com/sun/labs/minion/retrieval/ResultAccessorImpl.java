@@ -24,6 +24,8 @@ public class ResultAccessorImpl implements ResultAccessor {
     private QueryEntry dke;
 
     private float currScore;
+    
+    private int[] fieldValueIDs = new int[8];
 
     /**
      * Fetchers for field values.
@@ -96,13 +98,14 @@ public class ResultAccessorImpl implements ResultAccessor {
     }
 
     @Override
-    public boolean containsAny(String field, int[] ids) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public boolean containsAll(String field, int[] ids) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public int[] getFieldValueIDs(String field) {
+        Fetcher f = getFetcher(field);
+        if(f == null) {
+            fieldValueIDs[0] = 0;
+        } else {
+            fieldValueIDs = f.fetch(currDoc, fieldValueIDs);
+        }
+        return fieldValueIDs;
     }
     
 }

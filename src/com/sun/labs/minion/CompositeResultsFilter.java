@@ -44,6 +44,10 @@ public class CompositeResultsFilter implements ResultsFilter, Serializable {
     
     private int nPassed;
     
+    public CompositeResultsFilter() {
+        this.filters = new ArrayList<ResultsFilter>();
+    }
+    
     /**
      * Creates a composite filter.
      * @param filters the filters to apply
@@ -65,7 +69,7 @@ public class CompositeResultsFilter implements ResultsFilter, Serializable {
      * Adds a filter to the list of filters to apply.
      * @param rf the filter to add.
      */
-    public void addFilter(ResultsFilter rf) {
+    public void add(ResultsFilter rf) {
         filters.add(rf);
     }
 

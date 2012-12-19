@@ -4,7 +4,6 @@ import com.sun.labs.minion.indexer.DiskField;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-import com.sun.labs.minion.retrieval.ArrayGroup;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -12,11 +11,11 @@ import java.util.logging.Logger;
  * A results filter that will only select results where a given field containsAny 
  * any one of a number of values.
  */
-public class FieldValueResultsFilter<V extends Comparable> implements
+public class DistinctValuesFilter<V extends Comparable> implements
         ResultsFilter {
 
     private static final Logger logger = Logger.
-            getLogger(FieldValueResultsFilter.class.getName());
+            getLogger(DistinctValuesFilter.class.getName());
     
     /**
      * The type of filter that should be applied to the values. 
@@ -45,14 +44,16 @@ public class FieldValueResultsFilter<V extends Comparable> implements
     int nTested = 0;
 
     int nPassed = 0;
-
+    
+    boolean passNone;
+    
     /**
      * Creates a results filter that will pass documents that have any one
      * of the provided field values.
      * @param field the field that we wish to filter on
      * @param values the values that we wish to restrict our results to having
      */
-    public FieldValueResultsFilter(String field, V... values) {
+    public DistinctValuesFilter(String field, V... values) {
         this(FilterType.ANY, field, values);
     }
     
@@ -64,7 +65,7 @@ public class FieldValueResultsFilter<V extends Comparable> implements
      * @param field the field that we wish to filter on
      * @param values the values that we wish to restrict our results to having
      */
-    public FieldValueResultsFilter(FilterType type, String field, V... values) {
+    public DistinctValuesFilter(FilterType type, String field, V... values) {
         this.type = type;
         this.field = field;
         this.values = values;
@@ -77,7 +78,8 @@ public class FieldValueResultsFilter<V extends Comparable> implements
         this.part = part;
         valueIDs[0] = -1;
         DiskField df = part.getDF(field);
-        if(df != null && df.getInfo().hasAttribute(FieldInfo.Attribute.SAVED)) {
+        passNone = df == null || !df.getInfo().hasAttribute(FieldInfo.Attribute.SAVED);
+        if(!passNone) {
             DiskDictionary dd = df.getSavedValuesDictionary();
             if(dd != null) {
                 for(int i = 0; i < values.length; i++) {
@@ -88,6 +90,8 @@ public class FieldValueResultsFilter<V extends Comparable> implements
                         valueIDs[i] = -1;
                     }
                 }
+            } else {
+                passNone = true;
             }
         }
     }
@@ -95,20 +99,24 @@ public class FieldValueResultsFilter<V extends Comparable> implements
     @Override
     public boolean filter(ResultAccessor ra) {
         nTested++;
-        boolean debug = ra instanceof ArrayGroup.DocIterator && ((ArrayGroup.DocIterator) ra).getDoc() == 340;
-        if(debug) {
-            logger.info(String.format("type: %s doc: %d", type, ((ArrayGroup.DocIterator) ra).getDoc()));
+        if(passNone) {
+            return false;
         }
+        int[] fieldValueIDs = ra.getFieldValueIDs(field);
         switch(type) {
             case ALL:
-                if(!ra.containsAll(field, valueIDs)) {
-                    return false;
+                for(int id : valueIDs) {
+                    if(!contains(fieldValueIDs, id)) {
+                        return false;
+                    }
                 }
                 break;
             case ANY:
-                if(ra.containsAny(field, valueIDs)) {
-                    nPassed++;
-                    return true;
+                for(int id : valueIDs) {
+                    if(contains(fieldValueIDs, id)) {
+                        nPassed++;
+                        return true;
+                    }
                 }
                 break;
         }
@@ -121,6 +129,15 @@ public class FieldValueResultsFilter<V extends Comparable> implements
             default:
                 return false;
         }
+    }
+    
+    private boolean contains(int[] fieldValueIDs, int id) {
+        for(int i = 1; i < fieldValueIDs[0]+1; i++) {
+            if(id == fieldValueIDs[i]) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

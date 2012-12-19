@@ -1080,42 +1080,14 @@ public class ArrayGroup implements Cloneable {
         }
 
         @Override
-        public boolean containsAny(String field, int[] ids) {
+        public int[] getFieldValueIDs(String field) {
             Fetcher f = getFetcher(field);
             if(f == null) {
-                return false;
+                fieldValueIDs[0] = 0;
+            } else {
+                fieldValueIDs = f.fetch(docs[pos], fieldValueIDs);
             }
-            fieldValueIDs = f.fetch(docs[pos], fieldValueIDs);
-            for(int id : ids) {
-                for(int i = 1; i < fieldValueIDs[0]+1; i++) {
-                    if(id == fieldValueIDs[i]) {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            return fieldValueIDs;
         }
-        
-        @Override
-        public boolean containsAll(String field, int[] ids) {
-            Fetcher f = getFetcher(field);
-            if(f == null) {
-                return false;
-            }
-            fieldValueIDs = f.fetch(docs[pos], fieldValueIDs);
-            for(int id : ids) {
-                boolean found = false;
-                for(int i = 1; i < fieldValueIDs[0] + 1; i++) {
-                    if(id == fieldValueIDs[i]) {
-                        found = true;
-                    }
-                }
-                if(!found) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        
     }
 } // ArrayGroup

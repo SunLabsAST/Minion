@@ -69,7 +69,7 @@ public class UnionResultsFilter implements ResultsFilter, Serializable {
      * Adds a filter to the list of filters to apply.
      * @param rf the filter to add.
      */
-    public void addFilter(ResultsFilter rf) {
+    public void add(ResultsFilter rf) {
         filters.add(rf);
     }
 

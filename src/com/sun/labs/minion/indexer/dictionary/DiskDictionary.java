@@ -470,7 +470,18 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         //
         // Perform the get using an existing lookup state for this thread (or
         // create a lookup state if there isn't one).
-        return get(name, getLookupState());
+        return get(name, getLookupState(), false);
+    }
+    
+    /**
+     * Gets the entry with the name closest to the given name. If the given
+     * name does not occur in the dictionary, then the entry for the next 
+     * greater name is returned.
+     * @param name the name we're looking for.
+     * @return the entry for the given name, or for the next larger name.
+     */
+    public QueryEntry<N> getClosest(N name) {
+        return get(name, getLookupState(), true);
     }
 
     /**
@@ -483,7 +494,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
      * @return The entry associated with the name, or <code>null</code> if
      * the name doesn't appear in the dictionary.
      */
-    protected QueryEntry<N> get(N name, LookupState lus) {
+    protected QueryEntry<N> get(N name, LookupState lus, boolean getClosest) {
 
         if(lus == null) {
             lus = new LookupState<N>(this);
@@ -508,6 +519,10 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
             //
             // The entry exists in the dictionary.  Look it up by position.
             ret = find(pos, lus);
+        } else if(getClosest) {
+            //
+            // Find the next higher entry in the dictionary, if there is one.
+            ret = find(-pos, lus);
         }
 
         lus.qs.dictLookupW.stop();
@@ -694,7 +709,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
                 //
                 // The key is greater than the entry in the block.  We're
                 // done.
-                return (0 - index) - 1;
+                return -index - 1;
             }
         }
 
@@ -704,7 +719,7 @@ public class DiskDictionary<N extends Comparable> implements Dictionary<N> {
         if(((mid * 4) + 4) >= dh.size) {
             return (int) dh.size;
         } else {
-            return (0 - ((mid * 4) + 4)) - 1;
+            return -((mid * 4) + 4) - 1;
         }
     }
 

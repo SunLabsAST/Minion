@@ -419,7 +419,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
      * @param caseSensitive whether to do a case sensitive lookup
      * @return
      */
-    public QueryEntry getSaved(String stringVal, boolean caseSensitive) {
+    public QueryEntry getSaved(N val, boolean caseSensitive) {
         if(!field.isSaved()) {
             logger.warning(String.format(
                     "Can't fetch saved value for non-SAVED field %s", info.getName()));
@@ -446,11 +446,11 @@ public class DiskDictionaryBundle<N extends Comparable> {
                                 String.format(
                                 "Case sensitive request for field value %s in field %s, "
                                 + "but this field only has case insensitive values.",
-                                stringVal, field.getInfo().getName()));
+                                val, field.getInfo().getName()));
                     }
                     return null;
                 }
-                return rs.get(stringVal);
+                return rs.get(val);
             } else {
                 if(us == null) {
 //                    if(!field.isUncased()) {
@@ -460,9 +460,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
 //                                + "but this field only has case sensitive values.",
 //                                stringVal, field.getInfo().getName()));
 //                    }
-                    return rs.get(stringVal);
+                    return rs.get(val);
                 }
-                return us.get(stringVal);
+                return us.get(val);
             }
         }
         
@@ -470,7 +470,7 @@ public class DiskDictionaryBundle<N extends Comparable> {
             return null;
         }
         
-        return rs.get(MemoryDictionaryBundle.getEntryName(stringVal, info, dateParser));
+        return rs.get(MemoryDictionaryBundle.getEntryName(val, info, dateParser));
     }
 
     /**

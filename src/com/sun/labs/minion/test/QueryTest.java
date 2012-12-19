@@ -27,7 +27,7 @@ import com.sun.labs.minion.Document;
 import com.sun.labs.minion.DocumentVector;
 import com.sun.labs.minion.Facet;
 import com.sun.labs.minion.FieldInfo;
-import com.sun.labs.minion.FieldValueResultsFilter;
+import com.sun.labs.minion.DistinctValuesFilter;
 import com.sun.labs.minion.IndexableFile;
 import com.sun.labs.minion.IndexableMap;
 import com.sun.labs.minion.Passage;
@@ -437,7 +437,7 @@ public class QueryTest extends SEMain {
                 String f1 = args[1];
                 String f2 = args[2];
                 String q = join(args, 3, args.length, " ");
-                ResultsFilter anyFilter = new FieldValueResultsFilter(
+                ResultsFilter anyFilter = new DistinctValuesFilter(
                         "display-groups",
                         f1, f2);
 

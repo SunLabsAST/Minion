@@ -200,8 +200,8 @@ public class FieldTerm extends QueryTerm {
         boolean getIterator = true;
 
         //
-        // An object to pass to the iterator call.
-        Object o = val;
+        // An object of the appropriate type to pass to the iterator call.
+        Comparable o = null;
 
         if(dp == null && df.getInfo().getType() == FieldInfo.Type.DATE) {
             dp = new CDateParser();
@@ -212,18 +212,30 @@ public class FieldTerm extends QueryTerm {
         // we're supposed to have a date, parse it and then figure out
         // whether it is for a whole day.  The range case is handled specially
         // below since it requires two dates.
-        if(df.getInfo().getType() == FieldInfo.Type.DATE && op
-                != Operator.RANGE) {
-            try {
-                d = dp.parse(val);
-                time = d.getTime();
-                dayResolution = isDayResolution(d);
-                o = new Date(time);
-            } catch(java.text.ParseException pe) {
-                logger.warning(String.format("Invalid date format: \"%s\" for date field %s", 
-                        val, name));
-                return;
-            }
+        switch(df.getInfo().getType()) {
+            case DATE:
+                if(op != Operator.RANGE) {
+                    try {
+                        d = dp.parse(val);
+                        time = d.getTime();
+                        dayResolution = isDayResolution(d);
+                        o = new Date(time);
+                    } catch(java.text.ParseException pe) {
+                        logger.warning(String.format(
+                                "Invalid date format: \"%s\" for date field %s",
+                                                     val, name));
+                        return;
+                    }
+                }
+                break;
+            case FLOAT:
+                o = Double.parseDouble(val);
+                break;
+            case INTEGER:
+                o = Long.parseLong(val);
+                break;
+            default:
+                o = val;
         }
 
         //
@@ -243,7 +255,7 @@ public class FieldTerm extends QueryTerm {
                     upperBound = new Date(time + dayMilliSeconds);
                     includeUpper = false;
                 } else {
-                    QueryEntry qe = df.getSaved(val, matchCase);
+                    QueryEntry qe = df.getSaved(o, matchCase);
                     if(qe != null) {
                         pi = qe.iterator(null);
                     }
