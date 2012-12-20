@@ -1242,9 +1242,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // We need a lock that we can retry on to give the merge time to finish.
         // We're going to use a long timeout, because if we're in here, the indexer
         // is in trouble, and this needs to get taken care of!
-        FileLock ourMergeLock = new FileLock(mergeLock, 5, TimeUnit.SECONDS);
         try {
-            ourMergeLock.acquireLock();
+            mergeLock.acquireLock(5, TimeUnit.SECONDS);
         } catch(IOException ex) {
             logger.log(Level.SEVERE,
                     "Error getting merge lock when too many partitions", ex);
@@ -1280,7 +1279,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         logger.warning(String.format("Highwater merge: %s", parts));
 
-        Merger m = getMerger(parts, ourMergeLock);
+        Merger m = getMerger(parts);
         m.merge();
 
         //
@@ -2357,7 +2356,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * these partitions, or <code>null</code> if no merge is currently
      * possible.
      */
-    public Merger getMerger(List<DiskPartition> l, FileLock localMergeLock) {
+    public Merger getMerger(List<DiskPartition> l, long timeout, TimeUnit unit) {
 
         //
         // They may not have checked the results of mergeGeo.
@@ -2370,8 +2369,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
 
         try {
-            localMergeLock.acquireLock();
-            Merger m = new Merger(l, localMergeLock);
+            Merger m = new Merger(l, timeout, unit);
             return m;
         } catch(Exception e) {
 
@@ -2466,11 +2464,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
          * The new disk partition resulting from the merge.
          */
         protected DiskPartition newDP;
-
+        
         /**
-         * The lock that we'll need to acquire to merge.
+         * The timeout to wait for the merge lock.
          */
-        private FileLock localMergeLock;
+        protected long timeout;
 
         /**
          * Instantiates a merger for the given list of partitions.  The
@@ -2481,14 +2479,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
          * @param localMergeLock the lock file to use when releasing the merge
          * lock.
          */
-        public Merger(List<DiskPartition> l, FileLock localMergeLock) {
+        public Merger(List<DiskPartition> l, long timeout, TimeUnit units) {
 
-            parent = Thread.currentThread();
             newPart = -1;
 
             toMerge = new ArrayList<DiskPartition>(l);
             originalMerge = new HashSet<DiskPartition>(l);
-            this.localMergeLock = localMergeLock;
 
             //
             // Sort the list by partition number.
