@@ -480,11 +480,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         activeFile = new ActiveFile(indexDirFile, lockDirFile, managerTag);
 
         //
-        // Set up the lock for the merge.  We make this a single try, no
-        // pause lock because we don't want to wait until the lock is
-        // ready, we simply want to see whether we can get it.
-        mergeLock = new FileLock(lockDirFile, new File("merge." + managerTag), 0,
-                TimeUnit.SECONDS);
+        // Set up the lock for the merge.  We give it a very short default 
+        // timeout, since most of the time it won't matter if we get the lock or not.
+        mergeLock = new FileLock(lockDirFile, new File("merge." + managerTag), 100,
+                TimeUnit.MILLISECONDS);
 
         //
         // Read the active file.
@@ -560,7 +559,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
 
         //
-        // Start our housekeeping thread.
+        // Start our housekeeping and term stats generating tasks.
         timer = new Timer("PM-timer");
         timer.scheduleAtFixedRate(new HouseKeeper(),
                 activeCheckInterval,
@@ -1237,11 +1236,12 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // If we're doing async merges, then we need to acquire the merge lock
         // before we can do anything else.  Acquiring the lock will mean that there
-        // are no outstanding merges proceeding.  Note that we're not using the
-        // merge lock defined in this class because that's a single try lock.
-        // We need a lock that we can retry on to give the merge time to finish.
+        // are no outstanding merges proceeding.  
+        //
         // We're going to use a long timeout, because if we're in here, the indexer
         // is in trouble, and this needs to get taken care of!
+        // Note that we'll try to re-acquire the lock in getMerger below, but that
+        // will be fine if we already have it from here.
         try {
             mergeLock.acquireLock(5, TimeUnit.SECONDS);
         } catch(IOException ex) {
@@ -1254,6 +1254,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
         
         if(activeParts.size() < openPartitionHighWaterMark) {
+            //
+            // While we were waiting for the lock, the problem resolved itself.
+            // Hurray for procrastination.
+            try {
+                mergeLock.releaseLock();
+            } catch(FileLockException ex) {
+                logger.log(Level.SEVERE, "Error releasing lock when too many partitions", ex);
+            }
             return true;
         }
         
@@ -1261,13 +1269,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // Get a list of partitions sorted by increasing size:  smaller partitions
         // will merge faster.
         List<DiskPartition> parts = new ArrayList<DiskPartition>(activeParts);
-        Collections.sort(parts,
-                new Comparator<DiskPartition>() {
+        Collections.sort(parts, new Comparator<DiskPartition>() {
             @Override
-                    public int compare(DiskPartition o1, DiskPartition o2) {
-                        return o1.getMaxDocumentID() - o2.getMaxDocumentID();
-                    }
-                });
+            public int compare(DiskPartition o1, DiskPartition o2) {
+                return o1.getMaxDocumentID() - o2.getMaxDocumentID();
+            }
+
+        });
 
         //
         // Take a sublist that will get us to the low water mark.
@@ -1279,7 +1287,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         logger.warning(String.format("Highwater merge: %s", parts));
 
-        Merger m = getMerger(parts);
+        Merger m = getMerger(parts, 5, TimeUnit.SECONDS);
+        if(m == null) {
+            logger.log(Level.SEVERE, String.format("Didn't get merger, but we already held the lock?"));
+            return false;
+        }
         m.merge();
 
         //
@@ -1942,8 +1954,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Do the merge and reap any deleted partitions.  We're willing to wait
         // a while to get the merge lock, if necessary.
-        FileLock ourMergeLock = new FileLock(mergeLock, 200, TimeUnit.SECONDS);
-        Merger m = getMerger((List<DiskPartition>) getActivePartitions(), ourMergeLock);
+        Merger m = getMerger((List<DiskPartition>) getActivePartitions(), 200, TimeUnit.SECONDS);
         if(m == null) {
             logger.warning(String.format("Unable to get merge lock for optimize"));
             return null;
@@ -2328,7 +2339,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * possible.
      */
     public Merger getMerger() {
-        return getMerger(mergeGeometric(), mergeLock);
+        return getMerger(mergeGeometric(), 100, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -2342,7 +2353,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * possible.
      */
     public Merger getMerger(List<DiskPartition> l) {
-        return getMerger(l, mergeLock);
+        return getMerger(l, 100, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -2351,12 +2362,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      *
      * @param l A list of partitions to merge, such as that returned by
      * <code>mergeGeometric</code>.
-     * @param localMergeLock the lock to use for running the merge.
+     * @param timeout the length of the timeout to use when acquiring the 
+     * lock for the merge.
+     * @param units the units of time to use for the lock acquisition timeout.
      * @return An instance of <code>Merger</code> that can be used to merge
      * these partitions, or <code>null</code> if no merge is currently
      * possible.
      */
-    public Merger getMerger(List<DiskPartition> l, long timeout, TimeUnit unit) {
+    public Merger getMerger(List<DiskPartition> l, long timeout, TimeUnit units) {
 
         //
         // They may not have checked the results of mergeGeo.
@@ -2369,12 +2382,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
 
         try {
-            Merger m = new Merger(l, timeout, unit);
-            return m;
+            return new Merger(l, timeout, units);
         } catch(Exception e) {
 
             //
-            // We didn't get the merge lock.  Return null.
+            // Most likely, we didn't get the merge lock.
             return null;
         }
     }
@@ -2479,8 +2491,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
          * @param localMergeLock the lock file to use when releasing the merge
          * lock.
          */
-        public Merger(List<DiskPartition> l, long timeout, TimeUnit units) {
+        public Merger(List<DiskPartition> l, long timeout, TimeUnit units) throws IOException, FileLockException {
 
+            //
+            // We need to acquire the lock to do a merge. We'll throw an exception
+            // if things go badly.
+            mergeLock.acquireLock(timeout, units);
+            
             newPart = -1;
 
             toMerge = new ArrayList<DiskPartition>(l);
@@ -2515,13 +2532,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         public void run() {
             
             newDP = null;
-
-            try {
-                localMergeLock.tradeLock(parent, Thread.currentThread());
-            } catch(FileLockException fle) {
-                logger.severe("Failed to trade merge lock");
-                return;
-            }
 
             //
             // Do the merge.
@@ -2661,13 +2671,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 } catch(FileLockException fle) {
                     logger.log(Level.SEVERE, "Error locking active file after merge: "
                             + activeFile, fle);
-                    try {
-                        localMergeLock.releaseLock();
-                    } catch(FileLockException fle2) {
-                        logger.log(Level.SEVERE,
-                                "Error releasing merge lock after error after merge.",
-                                fle2);
-                    }
                 } catch(java.io.IOException ioe) {
                     logger.log(Level.SEVERE, "I/O Error after merge.", ioe);
                 } catch(Exception e) {
@@ -2677,7 +2680,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     // Release the locks we're holding.
                     try {
                         activeFile.unlock();
-                        localMergeLock.releaseLock();
+                        mergeLock.releaseLock();
                     } catch(FileLockException fle) {
                         logger.log(Level.SEVERE, "Error unlocking after error after merge: "
                                 + activeFile, fle);

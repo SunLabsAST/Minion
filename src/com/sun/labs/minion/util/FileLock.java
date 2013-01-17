@@ -28,11 +28,8 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -163,6 +160,13 @@ public class FileLock {
     }
     
 
+    /**
+     * Attempts to acquire the lock on the file.
+     * @param timeout the number of milliseconds to wait when acquiring the lock.
+     * @throws java.io.IOException if there is an error creating the lock
+     * @throws FileLockException if the lock cannot be acquired in the given
+     * amount of time.
+     */
     public void acquireLock(long timeout)
             throws java.io.IOException, FileLockException {
         
@@ -210,10 +214,14 @@ public class FileLock {
      */
     public void releaseLock() throws FileLockException {
 
+        //
+        // First, make sure that we have the lock.
         if(!lock.isHeldByCurrentThread()) {
             throw new FileLockException(String.format("Can't release lock not held on %s", lockFile));
         }
         
+        //
+        // Release the interprocess lock.
         if(fileLock != null) {
             try {
                 fileLock.release();
@@ -227,6 +235,10 @@ public class FileLock {
                 throw new FileLockException(String.format("Error cleaning up for %s", lockFile), ex);
             }
         }
+        
+        //
+        // Now the inter-process lock
+        lock.unlock();
     }
 
 
