@@ -186,7 +186,6 @@
         <propertylist name="stages">
             <item>universal_tokenizer</item>
             <item>lower_case</item>
-            <item>simple_memory_partition</item>
         </propertylist>
         
         <!-- The stages in the highlighting pipeline -->
@@ -213,7 +212,6 @@
             <item>universal_tokenizer</item>
             <item>lower_case</item>
             <item>stemmer</item>
-            <item>simple_memory_partition</item>
         </propertylist>
         
         <!-- The stages in the highlighting pipeline -->
@@ -263,7 +261,6 @@
             <item>lower_case</item>
             <item>stopper</item>
             <item>stemmer</item>
-            <item>simple_memory_partition</item>
         </propertylist>
         
         <!-- The stages in the highlighting pipeline -->
