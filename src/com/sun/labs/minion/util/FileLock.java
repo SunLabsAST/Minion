@@ -58,6 +58,10 @@ import java.util.logging.Logger;
 public class FileLock {
 
     private static final Logger logger = Logger.getLogger(FileLock.class.getName());
+    
+    private static final long baseTime = System.nanoTime();
+    
+    private String name;
 
     /**
      * The lock file for the file that we want to lock.
@@ -68,7 +72,11 @@ public class FileLock {
      * The timeout for the lock.
      */
     private long defaultTimeout;
-
+    
+    private long lastAcquireTime;
+    
+    private long lastReleaseTime;
+    
     /**
      * A lock for in-process exclusion.
      */
@@ -204,6 +212,11 @@ public class FileLock {
                 lock.unlock();
             }
         }
+//        lastAcquireTime = System.nanoTime();
+//        if(name != null) {
+//            logger.info(String.format("%s acquired lock %s", Thread.
+//                    currentThread(), toString(lastAcquireTime - lastReleaseTime)));
+//        }
     }
 
     /**
@@ -239,6 +252,12 @@ public class FileLock {
         //
         // Now the inter-process lock
         lock.unlock();
+//        lastReleaseTime = System.nanoTime();
+//        if(name != null) {
+//            logger.info(String.format("%s released lock %s", Thread.
+//                    currentThread(), toString(lastReleaseTime - lastAcquireTime)));
+//        }
+
     }
 
 
@@ -251,13 +270,25 @@ public class FileLock {
         return lock.isHeldByCurrentThread();
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     /**
      * Gets a string describing the lock.
      * @return A string describing the lock.
      */
     @Override
     public String toString() {
-        return lock.toString() + " " + fileLock.toString();
+        return toString(0);
+    }
+    
+    public String toString(long time) {
+        return (name != null ? (name + " ") : "") + lockFile + (time == 0 ? "" : (" " + time + " ")) + lock.toString() + " " + fileLock.toString();
     }
 
 } // FileLock

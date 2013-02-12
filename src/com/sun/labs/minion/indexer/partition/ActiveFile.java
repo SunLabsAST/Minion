@@ -28,12 +28,11 @@ public class ActiveFile {
     public ActiveFile(File indexDir, File lockDir, String type) {
         activeFile = new File(indexDir, "AL." + type);
         activeLock = new FileLock(lockDir, activeFile, 300, TimeUnit.SECONDS);
+        activeLock.setName("active");
     }
 
     public void lock() throws IOException, FileLockException {
-        if(!activeLock.hasLock()) {
-            activeLock.acquireLock();
-        }
+        activeLock.acquireLock();
     }
     
     public boolean isLocked() {

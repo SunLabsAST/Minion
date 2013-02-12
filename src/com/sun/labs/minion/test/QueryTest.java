@@ -1160,6 +1160,58 @@ public class QueryTest extends SEMain {
         
         shell.addAlias("termByID", "tbid");
         
+        shell.add(prefixCommand(prefix, "termByName"), "Terms", new CompletorCommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                if(args.length < 4) {
+                    return "Must specify a field, a dictionary type and name";
+                }
+
+                String fieldName = args[1];
+                DictionaryType type = DictionaryType.valueOf(args[2].
+                        toUpperCase());
+
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    DiskField df = ((InvFileDiskPartition) p).getDF(
+                            fieldName);
+                    if(df == null) {
+                        continue;
+                    }
+                    DiskDictionary dict = (DiskDictionary) df.
+                            getDictionary(type);
+                    if(dict == null) {
+                        return String.format(
+                                "No dictionary of type %s for %s", type,
+                                fieldName);
+                    }
+                    for(int i = 3; i < args.length; i++) {
+                        QueryEntry qe = dict.get(args[i]);
+                        if(qe != null) {
+                            shell.out.format("%s Entry: %s (%d)\n", p, qe, qe.getID());
+                        }
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field dict id [id]...- Gets a term by name from a particular field's dictionary";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new EnumCompletor(DictionaryType.class),
+                    new NullCompletor()
+                };
+            }
+        });
+        
+        shell.addAlias("termByName", "tbn");
+
         shell.add(prefixCommand(prefix, "wild"), "Terms", new CommandInterface() {
 
             @Override

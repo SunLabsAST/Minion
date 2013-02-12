@@ -24,7 +24,6 @@
 package com.sun.labs.minion.util;
 
 import com.sun.labs.minion.document.tokenizer.UniversalTokenizer;
-import com.sun.labs.minion.retrieval.ResultImpl;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +54,18 @@ public class Util {
         // Make sure we clean up temp files when we're done.
         ret.deleteOnExit();
         return ret;
+    }
+    
+    public static String toString(List l, String join) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for(Object o : l) {
+            if(!first) {
+                sb.append(join);
+            }
+            sb.append(o.toString());
+        }
+        return sb.toString();
     }
 
     public static int[] addExpand(int[] a, int n, int x) {

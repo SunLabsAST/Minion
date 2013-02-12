@@ -484,6 +484,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // timeout, since most of the time it won't matter if we get the lock or not.
         mergeLock = new FileLock(lockDirFile, new File("merge." + managerTag), 100,
                 TimeUnit.MILLISECONDS);
+        mergeLock.setName("merge");
 
         //
         // Read the active file.
@@ -611,7 +612,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // We need to close partitions that were merged and not add
         // them again.
-        List<Integer> mp = getPartNumbers(mergedParts);
+        List<Integer> mp = ActiveFile.getPartitionNumbers(mergedParts);
         close.addAll(mp);
         add.removeAll(mp);
         mergedParts.clear();
@@ -1258,6 +1259,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // While we were waiting for the lock, the problem resolved itself.
             // Hurray for procrastination.
             try {
+                logger.info(String.format("Releasing mergeLock %s", mergeLock));
                 mergeLock.releaseLock();
             } catch(FileLockException ex) {
                 logger.log(Level.SEVERE, "Error releasing lock when too many partitions", ex);
@@ -2243,24 +2245,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     }
 
     /**
-     * Gets a list of the partition numbers for the given partitions.  This can
-     * be used when we want to act on collections of partition numbers, rather
-     * than the partitions themselves.
-     *
-     * @param parts the partitions for which we want the numbers
-     * @return an list of the active partition numbers.
-     */
-    protected List<Integer> getPartNumbers(Collection<DiskPartition> parts) {
-        List<Integer> ret = new ArrayList<Integer>();
-        synchronized(parts) {
-            for(DiskPartition dp : parts) {
-                ret.add(dp.getPartitionNumber());
-            }
-        }
-        return ret;
-    }
-
-    /**
      * Gets a list of partitions from the corresponding partition numbers.
      * Partitions will be loaded as necessary, and numbers for partitions that
      * do not exist will be logged and ignored.
@@ -2339,7 +2323,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * possible.
      */
     public Merger getMerger() {
-        return getMerger(mergeGeometric(), 100, TimeUnit.MILLISECONDS);
+        return getMerger(null, 100, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -2370,16 +2354,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * possible.
      */
     public Merger getMerger(List<DiskPartition> l, long timeout, TimeUnit units) {
-
-        //
-        // They may not have checked the results of mergeGeo.
-        if(l == null) {
-            return null;
-        }
-        
-        if(noMoreMerges) {
-            return null;
-        }
 
         try {
             return new Merger(l, timeout, units);
@@ -2488,7 +2462,8 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
          * given manager.
          *
          * @param l The list of partitions to merge.
-         * @param localMergeLock the lock file to use when releasing the merge
+         * @param timeout How long to wait to get the merge lock.
+         * @param units The time units to use for the timeout value.
          * lock.
          */
         public Merger(List<DiskPartition> l, long timeout, TimeUnit units) throws IOException, FileLockException {
@@ -2497,6 +2472,16 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             // We need to acquire the lock to do a merge. We'll throw an exception
             // if things go badly.
             mergeLock.acquireLock(timeout, units);
+            
+            //
+            // If we weren't given any partitions, then see if there are any that need merging.
+            if(l == null) {
+                l = mergeGeometric();
+                if(l == null) {
+                    mergeLock.releaseLock();
+                    return;
+                }
+            }
             
             newPart = -1;
 
@@ -2532,12 +2517,23 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         public void run() {
             
             newDP = null;
+            
+            if(noMoreMerges || toMerge == null) {
+                return;
+            }
 
             //
             // Do the merge.
             try {
-                newDP = toMerge.get(0).merge(toMerge, preDelMaps, mergePartitionOutput, !engine.isLongIndexingRun());
+                newDP = toMerge.get(0).merge(toMerge, preDelMaps,
+                                             mergePartitionOutput, !engine.
+                        isLongIndexingRun());
             } catch(Exception e) {
+                
+                //
+                // We're going to build our own string to display rather than
+                // using List.toString because that lets us cut and paste lists
+                // of partition numbers when debugging.
                 StringBuilder sb = new StringBuilder();
                 boolean first = true;
                 for(DiskPartition tm : toMerge) {
