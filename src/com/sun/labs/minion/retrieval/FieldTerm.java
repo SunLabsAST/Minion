@@ -529,8 +529,8 @@ public class FieldTerm extends QueryTerm {
     }
 
     @Override
-    public List getQueryTerms(Comparator c) {
-        return new ArrayList();
+    public List<QueryTerm> getQueryTerms(Comparator c) {
+        return new ArrayList<QueryTerm>();
     }
 
     private int nonWildCardLength(String s) {

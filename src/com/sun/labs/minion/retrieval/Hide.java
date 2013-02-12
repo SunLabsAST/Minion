@@ -33,8 +33,8 @@ public class Hide extends UnaryOperator {
     } // Hide constructor
 
     @Override
-    public List getQueryTerms() {
-        return new ArrayList();
+    public List<QueryTerm> getQueryTerms() {
+        return new ArrayList<QueryTerm>();
     }
 
 } // Hide

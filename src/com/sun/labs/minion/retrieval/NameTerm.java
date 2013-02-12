@@ -55,7 +55,7 @@ public class NameTerm extends QueryElement {
     }
 
     @Override
-    protected List getQueryTerms(Comparator c) {
+    protected List<QueryTerm> getQueryTerms(Comparator c) {
         return Collections.EMPTY_LIST;
     }
 
