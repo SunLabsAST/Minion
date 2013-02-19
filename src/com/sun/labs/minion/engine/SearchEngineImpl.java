@@ -719,7 +719,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
         return search(qe, sortSpec, queryConfig);
     }
 
-    private ResultSet search(QueryElement qe, String sortOrder, QueryConfig qc) throws
+    public ResultSet search(QueryElement qe, String sortOrder, QueryConfig qc) throws
             SearchEngineException {
         try {
             CollectionStats cs =

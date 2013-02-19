@@ -47,8 +47,8 @@ public class Not extends UnaryOperator {
     }
 
     @Override
-    public List getQueryTerms() {
-        return new ArrayList();
+    public List<QueryTerm> getQueryTerms() {
+        return new ArrayList<QueryTerm>();
     }
 
 } // Not
