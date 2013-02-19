@@ -57,6 +57,7 @@ import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.BufferException;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponent;
@@ -222,10 +223,24 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
     private String lockDir;
 
+    /**
+     * A configuration property indicating that reap should not remove 
+     * partitions.  Useful for debugging merge problems.
+     */
     @ConfigBoolean(defaultValue = false)
     public static final String PROP_REAP_DOES_NOTHING = "reap_does_nothing";
 
     private boolean reapDoesNothing;
+    
+    /**
+     * A configuration property indicating that we should store the deletion bitmaps
+     * that were used for a merge after the merge is complete.  Useful for 
+     * debugging merge problems.
+     */
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_KEEP_PRE_MERGE_DELETION_MAPS = "keep_pre_merge_deletion_maps";
+    
+    private boolean keepPreMergeDeletionMaps;
 
     /**
      * A configuration property that can be used to name an index directory
@@ -2055,8 +2070,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // Take a copy of the list.
-        List<DiskPartition> local =
-                new ArrayList<DiskPartition>(parts);
+        List<DiskPartition> local = new ArrayList<DiskPartition>(parts);
 
         //
         // Sort the copy.
@@ -2176,10 +2190,15 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Run the merge, using the first element.
         DiskPartition ndp = null;
+        boolean mergeException = false;
         try {
             ndp = diskParts.get(0).merge(diskParts, delMaps, mergePartitionOutput, calculateDVL);
-        } catch(Exception e) {
-            logger.log(Level.SEVERE, "Error merging partitions: " + diskParts, e);
+        } catch(Exception ex) {
+            mergeException = true;
+        }
+        
+        if(mergeException || keepPreMergeDeletionMaps) {
+            dumpDeletionMaps(diskParts, delMaps);
         }
 
         //
@@ -2206,6 +2225,48 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Return the new partition number.
         return ndp;
+    }
+    
+    /**
+     * Dumps the deletion bitmaps for a set of partitions. Mostly used for 
+     * debugging merge failures.
+     * @param partitions the partititons whose delmaps should be dumped
+     * @param delMaps the delmaps to dump.
+     */
+    protected void dumpDeletionMaps(List<DiskPartition> partitions,
+                                    List<DelMap> delMaps) {
+        logger.info(String.format("Dumping merge delmaps"));
+        for(int i = 0; i < partitions.size(); i++) {
+            //
+            // We might try to dump the delmap multiple times if there is an
+            // error during a merge, so make sure that we write a delmap for 
+            // just this merge!
+            int mnum = 1;
+            while(true) {
+                File f = new File(indexDir, String.format("%d.%d.mdel",
+                                                          partitions.get(i).
+                        getPartitionNumber(), mnum));
+                if(!f.exists()) {
+                    WriteableBuffer delbuff = (WriteableBuffer) delMaps.get(i).delMap;
+                    if(delbuff == null) {
+                        logger.info(String.format("No deletions for %s",
+                                                  partitions.get(i)));
+                    } else {
+                        logger.info(String.format("Writing %s delmap to %s",
+                                                  partitions.get(i), f));
+                        try {
+                            DelMap.write(f, delbuff);
+                        } catch(IOException ex) {
+                            logger.log(Level.SEVERE, String.format(
+                                    "Error writing del map for %s", partitions.
+                                    get(i)), ex);
+                        }
+                    }
+                    break;
+                }
+                mnum++;
+            }
+        }
     }
 
     /**
@@ -2524,11 +2585,14 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
             //
             // Do the merge.
+           boolean mergeException = false;
             try {
                 newDP = toMerge.get(0).merge(toMerge, preDelMaps,
                                              mergePartitionOutput, !engine.
                         isLongIndexingRun());
             } catch(Exception e) {
+                
+                mergeException = true;
                 
                 //
                 // We're going to build our own string to display rather than
@@ -2547,10 +2611,17 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 logger.log(Level.SEVERE,
                         String.format("Exception merging partitions [%s]", sb.toString()), e);
             }
+            
+            //
+            // If there was an exception, or we're supposed to, dump out the 
+            // deletion bitmaps state before the merge.
+            if(mergeException || keepPreMergeDeletionMaps) {
+                dumpDeletionMaps(toMerge, preDelMaps);
+            }
 
-            if(newDP != null) {
+            try {
+                if(newDP != null) {
 
-                try {
                     activeFile.lock();
 
                     //
@@ -2567,7 +2638,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     for(int i = 0, incr = 0; i < toMerge.size(); i++) {
 
                         DiskPartition curr = toMerge.get(i);
-                        
+
                         //
                         // Synchronize the deletion bitmap for this
                         // partition, and get the result.
@@ -2642,7 +2713,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     // Put the partitions we merged onto the
                     // list of merged partitions.
                     mergedParts.addAll(toMerge);
-                    
+
                     //
                     // See if there were any partitions that we ignored during
                     // the merge because all of their documents were deleted
@@ -2664,23 +2735,27 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 //
 //                        }
 //                    }
-                } catch(FileLockException fle) {
-                    logger.log(Level.SEVERE, "Error locking active file after merge: "
-                            + activeFile, fle);
-                } catch(java.io.IOException ioe) {
-                    logger.log(Level.SEVERE, "I/O Error after merge.", ioe);
-                } catch(Exception e) {
-                    logger.log(Level.SEVERE, "Exception after merge", e);
-                } finally {
-                    //
-                    // Release the locks we're holding.
-                    try {
+                }
+            } catch(FileLockException ex) {
+                logger.log(Level.SEVERE,
+                           "Error locking active file after merge: "
+                        + activeFile, ex);
+            } catch(java.io.IOException ex) {
+                logger.log(Level.SEVERE, "I/O Error after merge.", ex);
+            } catch(Exception ex) {
+                logger.log(Level.SEVERE, "Exception after merge", ex);
+            } finally {
+                //
+                // Release the locks we're holding.
+                try {
+                    if(activeFile.isLocked()) {
                         activeFile.unlock();
-                        mergeLock.releaseLock();
-                    } catch(FileLockException fle) {
-                        logger.log(Level.SEVERE, "Error unlocking after error after merge: "
-                                + activeFile, fle);
                     }
+                    mergeLock.releaseLock();
+                } catch(FileLockException ex) {
+                    logger.log(Level.SEVERE,
+                               "Error unlocking after error after merge: "
+                            + activeFile, ex);
                 }
             }
         }
@@ -2910,6 +2985,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         openPartitionLowWaterMark =
                 ps.getInt(PROP_OPEN_PARTITION_LOW_WATER_MARK);
         reapDoesNothing = ps.getBoolean(PROP_REAP_DOES_NOTHING);
+        keepPreMergeDeletionMaps = ps.getBoolean(PROP_KEEP_PRE_MERGE_DELETION_MAPS);
         String startingData = ps.getString(PROP_STARTING_DATA);
         if(!startingData.equals("")) {
             startingDataDir = new File(startingData);

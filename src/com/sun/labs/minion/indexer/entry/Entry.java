@@ -173,7 +173,7 @@ public abstract class Entry<N extends Comparable> implements Comparable<Entry>, 
 
     @Override
     public String toString() {
-        return String.format("%s (%s)", name, type);
+        return String.format("%s %d (%s)", name, id, type);
     }
     
     public String toVerboseString() {

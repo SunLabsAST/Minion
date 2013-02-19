@@ -843,28 +843,6 @@ public class DiskPartition extends Partition implements Closeable {
         } catch(Exception e) {
 
             logger.log(Level.SEVERE, "Exception merging partitions", e);
-            logger.info(String.format("Dumping merge delmaps"));
-            String dd = System.getProperty("delDir");
-            if(dd == null) {
-                dd = "del";
-            }
-            File delDir = new File(dd);
-            if(!delDir.exists()) {
-                delDir.mkdirs();
-            }
-            for(int i = 0; i < mergeState.partitions.length; i++) {
-                File f = new File(delDir, String.format("%d.mdel", mergeState.partitions[i].partNumber));
-                if(!f.exists()) {
-                    WriteableBuffer delbuff = (WriteableBuffer) delMaps.get(i).delMap;
-                    if(delbuff == null) {
-                        logger.info(String.format("No deletions for %s", mergeState.partitions[i]));
-                    } else {
-                        logger.info(String.format("Writing %s delmap to %s", mergeState.partitions[i], f));
-                        DelMap.write(f, delbuff);
-                    }
-                }
-            }
-
             //
             // Clean up the unfinished partition.
             DiskPartition.reap(pm, mergeState.partOut.getPartitionNumber());

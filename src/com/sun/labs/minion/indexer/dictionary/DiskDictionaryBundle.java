@@ -917,11 +917,14 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     }
                     continue;
             }
-
+            
             if(logger.isLoggable(Level.FINER)) {
                 dw.start();
             }
 
+//            if(mergeState.info.getName().equals("title")) {
+//                Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINER);
+//            }
             try {
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                         encoder,
@@ -937,6 +940,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         type, mergeState.info.getName()));
                 throw (ex);
             }
+//            Logger.getLogger(DiskDictionary.class.getName()).setLevel(
+//                    Level.INFO);
             
             if(logger.isLoggable(Level.FINER)) {
                 dw.stop();
@@ -949,7 +954,8 @@ public class DiskDictionaryBundle<N extends Comparable> {
         
         //
         // Merge the docs to values data, if we wrote and dictionaries!
-        if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED) && entryIDMaps[DictionaryType.RAW_SAVED.ordinal()] != null) {
+        if(mergeState.info.hasAttribute(FieldInfo.Attribute.SAVED) && 
+                entryIDMaps[DictionaryType.RAW_SAVED.ordinal()] != null) {
 
             File id = mergeState.manager.getIndexDir();
 
@@ -962,11 +968,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
             File dtvOffsetFile = File.createTempFile("dtvOff", "buff", id);
             RandomAccessFile dtvOffsetRAF = new RandomAccessFile(dtvOffsetFile,
                     "rw");
-            FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(
-                    dtvOffsetRAF, 1 << 16);
+            FileWriteableBuffer mdtvOffsetBuff = new FileWriteableBuffer(dtvOffsetRAF, 1 << 16);
 
             if(logger.isLoggable(Level.FINER)) {
-                logger.finer(String.format("Merging docs to values"));
                 dw.start();
             }
             for(int i = 0; i < bundles.length; i++) {
@@ -981,18 +985,19 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     }
                     continue;
                 }
-
+                
                 //
                 // Copy the values from this field.
                 ReadableBuffer dtvDup = bundles[i].dtvData.duplicate();
                 int[] docIDMap = mergeState.docIDMaps[i];
                 int[] valIDMap = entryIDMaps[DictionaryType.RAW_SAVED.ordinal()][i];
+                int maxDocID = bundles[i].header.maxDocID;
 
-                for(int j = 0; j < bundles[i].header.maxDocID; j++) {
+                for(int j = 1; j <= maxDocID; j++) {
 
                     int n = dtvDup.byteDecode();
-
-                    if(docIDMap != null && docIDMap[j + 1] < 0) {
+                    
+                    if(docIDMap != null && docIDMap[j] < 0) {
                         //
                         // Skip this document's data.
                         for(int k = 0; k < n; k++) {
@@ -1012,14 +1017,22 @@ public class DiskDictionaryBundle<N extends Comparable> {
                             int eid = dtvDup.byteDecode();
                             int mappedID = valIDMap[eid];
                             try {
-                            mdtvBuff.byteEncode(mappedID);
-                            } catch (ArithmeticException ex) {
-                                logger.log(Level.SEVERE, 
-                                        String.format("Error encoding data for field %s from %s orig ID %d",
+                                mdtvBuff.byteEncode(mappedID);
+                            } catch(ArithmeticException ex) {
+                                logger.log(Level.SEVERE,
+                                           String.format(
+                                        "Error encoding data for field %s from %s orig docID: %d map docID: %d key: %s orig ID %d value %s",
                                         mergeState.info.getName(),
-                                        bundles[i].dicts[DictionaryType.RAW_SAVED.ordinal()].getPartition(), 
-                                        eid));
-                                throw(ex);
+                                        bundles[i].dicts[DictionaryType.RAW_SAVED.
+                                        ordinal()].getPartition(),
+                                        j,
+                                        docIDMap == null ? j : docIDMap[j],
+                                        bundles[i].dicts[DictionaryType.RAW_VECTOR.
+                                        ordinal()].getByID(docIDMap == null ? j : docIDMap[j]),
+                                        eid,
+                                        bundles[i].dicts[DictionaryType.RAW_SAVED.
+                                        ordinal()].getByID(eid)));
+                                throw (ex);
                             }
                         }
                     }
@@ -1604,6 +1617,10 @@ public class DiskDictionaryBundle<N extends Comparable> {
         
         public LightIterator<N> literator() {
             return rawSaved.literator(lus);
+        }
+        
+        public ReadableBuffer getDToVBuffer() {
+            return dtvData.duplicate();
         }
     }
 }
