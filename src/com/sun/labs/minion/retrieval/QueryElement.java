@@ -296,7 +296,7 @@ public abstract class QueryElement implements Comparable {
      * that they appeared in the query.  Field Terms and terms within a
      * not or a hide expression will not be returned.
      */
-    public List getQueryTerms() {
+    public List<QueryTerm> getQueryTerms() {
         return getQueryTerms(new TermOrderer());
     }
 
@@ -307,7 +307,7 @@ public abstract class QueryElement implements Comparable {
      *
      * @param c A comparator used to order the terms.
      */
-    protected abstract List getQueryTerms(Comparator c);
+    protected abstract List<QueryTerm> getQueryTerms(Comparator c);
 
     /**
      * Compares a query element to another, based on its estimated size.

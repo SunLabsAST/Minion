@@ -650,8 +650,8 @@ public class DictTerm extends QueryTerm implements Comparator {
     }
 
     @Override
-    public List getQueryTerms(java.util.Comparator c) {
-        List l = new ArrayList();
+    public List<QueryTerm> getQueryTerms(java.util.Comparator c) {
+        List<QueryTerm> l = new ArrayList<QueryTerm>();
         l.add(this);
         return l;
     }

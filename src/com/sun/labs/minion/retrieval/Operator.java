@@ -137,12 +137,12 @@ public abstract class Operator extends QueryElement {
     }
 
     @Override
-    public List getQueryTerms(Comparator c) {
-        List terms = new ArrayList();
-        List subs = new ArrayList();
+    public List<QueryTerm> getQueryTerms(Comparator c) {
+        List<QueryTerm> terms = new ArrayList<QueryTerm>();
+        List<QueryTerm> subs = new ArrayList<QueryTerm>();
         for(QueryElement operand : operands) {
             if(operand instanceof DictTerm) {
-                terms.add(operand);
+                terms.add((DictTerm)operand);
             } else {
                 subs.addAll(operand.getQueryTerms(c));
             }
