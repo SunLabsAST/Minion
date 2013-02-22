@@ -30,37 +30,39 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.OverlappingFileLockException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Provides a class that locks a file so that only a single thread or
- * process may access it.  Note that all the classes have to try to get the
- * lock, this is simply a synchronization tool and will not work if some
- * threads or processes do not first try to acquire the lock.
- * 
+ * Provides a class that locks a file so that only a single thread or process
+ * may access it. Note that all the classes have to try to get the lock, this is
+ * simply a synchronization tool and will not work if some threads or processes
+ * do not first try to acquire the lock.
+ *
  * <p>
- * 
- * The locking is done using Java NIO file locks.  Such locks are VM-wide, so 
- * we need to be careful to ensure that the locks are also thread safe.  To that
- * end, the class stores a map of threads to the locks that they hold.  Threads
+ *
+ * The locking is done using Java NIO file locks. Such locks are VM-wide, so we
+ * need to be careful to ensure that the locks are also thread safe. To that
+ * end, the class stores a map of threads to the locks that they hold. Threads
  * within a VM will synchronize on this map when acquiring, releasing or testing
  * locks.
- * 
+ *
  * <p>
- * 
+ *
  * This, unfortunately, requires that multiple instances of this class that want
  * to lock the same file <em>must</em> share the same map, otherwise the desired
- * locking behavior will not work across the threads using the different instances.
- * To that end, a copy constructor is provided that ensures that two locks for
- * the same file share the same map, even if the number of retries and the sleep
- * periods are different.
+ * locking behavior will not work across the threads using the different
+ * instances. To that end, a copy constructor is provided that ensures that two
+ * locks for the same file share the same map, even if the number of retries and
+ * the sleep periods are different.
  */
 public class FileLock {
 
-    private static final Logger logger = Logger.getLogger(FileLock.class.getName());
-    
+    private static final Logger logger = Logger.getLogger(FileLock.class.
+            getName());
+
     private static final long baseTime = System.nanoTime();
-    
+
     private String name;
 
     /**
@@ -72,36 +74,39 @@ public class FileLock {
      * The timeout for the lock.
      */
     private long defaultTimeout;
-    
+
     private long lastAcquireTime;
-    
+
     private long lastReleaseTime;
-    
+
     /**
      * A lock for in-process exclusion.
      */
-    private ReentrantLock lock = new ReentrantLock(true);
+    private ReentrantLock inProcessLock = new ReentrantLock(true);
 
     /**
      * The file we want to lock, as a file.
      */
     private RandomAccessFile openFile;
-    
+
     /**
      * The channel underlying the file.
      */
     private FileChannel openChannel;
-    
+
     /**
-     * The inter-process filesystem lock.
+     * The inter-process file system lock.
      */
-    private java.nio.channels.FileLock fileLock;
+    private java.nio.channels.FileLock interProcessLock;
 
+    private boolean verbose;
+
+    private String vname;
 
     /**
-     * Makes a lock that will use the default timeout of 5 seconds.
-     * This <em><b>does not</b></em> lock the file.  Use
-     * the <code>acquireLock</code> method for that.
+     * Makes a lock that will use the default timeout of 5 seconds. This
+     * <em><b>does not</b></em> lock the file. Use the
+     * <code>acquireLock</code> method for that.
      *
      * @param dir The directory where the lock should reside.
      * @param f The file that we want to lock.
@@ -112,9 +117,9 @@ public class FileLock {
     }
 
     /**
-     * Makes a lock that will use the default timeout of 5 seconds.
-     * This <em><b>does not</b></em> lock the file.  Use
-     * the <code>acquireLock</code> method for that.
+     * Makes a lock that will use the default timeout of 5 seconds. This
+     * <em><b>does not</b></em> lock the file. Use the
+     * <code>acquireLock</code> method for that.
      *
      * @param f The <code>File</code> that we want to lock.
      * @see #acquireLock
@@ -125,23 +130,25 @@ public class FileLock {
 
     /**
      * Creates a lock for a file in the current directory.
+     *
      * @param f the name of the file to lock
      * @param timeout the timeout to use when trying to acquire the lock
-     * @param units the units for the timeout.  This will be converted to milliseconds, 
-     * so beware of truncation!
+     * @param units the units for the timeout. This will be converted to
+     * milliseconds, so beware of truncation!
      */
     public FileLock(File f, long timeout, TimeUnit units) {
         this(null, f, timeout, units);
     }
 
     /**
-     * Creates a lock for a file in a given directory.  
-     * @param dir the directory where the lock file should be created.  If this
+     * Creates a lock for a file in a given directory.
+     *
+     * @param dir the directory where the lock file should be created. If this
      * is <code>null</code>, the current working directory will be used
      * @param f the name of the file to lock
      * @param timeout the timeout to use when trying to acquire the lock
-     * @param units the units for the timeout.  This will be converted to milliseconds, 
-     * so beware of truncation!
+     * @param units the units for the timeout. This will be converted to
+     * milliseconds, so beware of truncation!
      */
     public FileLock(File dir, File f, long timeout, TimeUnit units) {
         lockFile = new File(dir, f.getName() + ".lock");
@@ -149,43 +156,71 @@ public class FileLock {
     }
 
     /**
-     * Acquires the lock on the file.  This code will try repeatedly to
-     * acquire the lock.
+     * Acquires the lock on the file. This code will try repeatedly to acquire
+     * the lock.
      *
-     * @throws FileLockException when the lock cannot be acquired within
-     * the specified parameters.
-     * @throws java.io.IOException if there is an I/O error while obtaining
-     * the lock
+     * @throws FileLockException when the lock cannot be acquired within the
+     * specified parameters.
+     * @throws java.io.IOException if there is an I/O error while obtaining the
+     * lock
      */
     public void acquireLock()
             throws java.io.IOException, FileLockException {
         acquireLock(defaultTimeout);
     }
-    
-    public void acquireLock(long timeout, TimeUnit units) 
+
+    public void acquireLock(long timeout, TimeUnit units)
             throws java.io.IOException, FileLockException {
         acquireLock(units.toMillis(timeout));
     }
-    
 
     /**
      * Attempts to acquire the lock on the file.
-     * @param timeout the number of milliseconds to wait when acquiring the lock.
+     *
+     * @param timeout the number of milliseconds to wait when acquiring the
+     * lock.
      * @throws java.io.IOException if there is an error creating the lock
      * @throws FileLockException if the lock cannot be acquired in the given
      * amount of time.
      */
     public void acquireLock(long timeout)
             throws java.io.IOException, FileLockException {
-        
+
+        //
+        // If we hold the lock already, then we're done.
+        if(hasLock()) {
+            if(verbose) {
+                logger.info(String.
+                        format("%s [%s] already acquired process lock %s", vname,
+                               Thread.currentThread().getName(),
+                               inProcessLock));
+            }
+            return;
+        }
+
         //
         // See whether we can acquire this lock within the process.
         try {
-            if(!lock.tryLock(timeout, TimeUnit.MILLISECONDS)) {
-                throw new FileLockException(String.format("Timed out waiting for lock on %s", lockFile));
+            if(!inProcessLock.tryLock(timeout, TimeUnit.MILLISECONDS)) {
+                if(verbose) {
+                    logger.info(String.format(
+                            "%s [%s] failed to acquire process lock %s",
+                            vname,
+                            Thread.currentThread().getName(),
+                            inProcessLock));
+                }
+                throw new FileLockException(String.format(
+                        "Timed out waiting for lock on %s", lockFile));
             }
-        } catch (InterruptedException ex) {
-            throw new FileLockException(String.format("Interrupted waiting for %s", lockFile), ex);
+        } catch(InterruptedException ex) {
+            throw new FileLockException(String.format(
+                    "Interrupted waiting for %s", lockFile), ex);
+        }
+        if(verbose) {
+            logger.info(String.
+                    format("%s [%s] acquired process lock %s",
+                           vname, Thread.currentThread().getName(),
+                           inProcessLock));
         }
 
         //
@@ -195,33 +230,57 @@ public class FileLock {
         try {
             openFile = new RandomAccessFile(lockFile, "rw");
             openChannel = openFile.getChannel();
-            fileLock = openChannel.tryLock();
-            locked = fileLock != null;
+            interProcessLock = openChannel.tryLock();
+            locked = interProcessLock != null;
             if(!locked) {
-                throw new FileLockException(String.format("Unable to acquire interprocess lock on %s", lockFile));
+                if(verbose) {
+                    logger.info(String.format(
+                            "%s [%s] failed to acquired interprocess lock on %s",
+                            vname, Thread.currentThread().getName(), lockFile));
+                }
+                throw new FileLockException(String.format(
+                        "%s unable to acquire interprocess lock on %s", Thread.
+                        currentThread().getName(), lockFile));
             }
-        } catch (OverlappingFileLockException ex) {
-            throw new FileLockException(String.format("Tried to get lock with other thread waiting: %s", lockFile), ex);
-        } catch (IOException ex) {
-            throw new FileLockException(String.format("Error locking: %s", lockFile), ex);
+            if(verbose) {
+                logger.info(String.format(
+                        "%s [%s] acquired interprocess lock on %s", vname,
+                        Thread.currentThread().getName(), lockFile));
+            }
+        } catch(OverlappingFileLockException ex) {
+            if(verbose) {
+                logger.info(String.format(
+                        "%s [%s] overlapped interprocess lock on %s",
+                        vname, Thread.currentThread().getName(), lockFile));
+            }
+            throw new FileLockException(String.format(
+                    "Tried to get lock with other thread waiting: %s", lockFile),
+                                        ex);
+        } catch(IOException ex) {
+            throw new FileLockException(String.format("Error locking: %s",
+                                                      lockFile), ex);
+        } catch(Exception ex) {
+            if(verbose) {
+                logger.log(Level.SEVERE, String.format(
+                        "%s [%s] Another exception while getting interprocess lock %s %s",
+                        vname, Thread.currentThread().getName(), inProcessLock,
+                        lockFile),
+                           ex);
+            }
+
         } finally {
             //
             // If we didn't get the interprocess lock, then release the 
             // intraprocess lock.
             if(!locked) {
-                lock.unlock();
+                inProcessLock.unlock();
             }
         }
-//        lastAcquireTime = System.nanoTime();
-//        if(name != null) {
-//            logger.info(String.format("%s acquired lock %s", Thread.
-//                    currentThread(), toString(lastAcquireTime - lastReleaseTime)));
-//        }
     }
 
     /**
-     * Release the lock on the file, if the calling thread currently holds
-     * it.  This is accomplished by deleting our lock file.
+     * Release the lock on the file, if the calling thread currently holds it.
+     * This is accomplished by deleting our lock file.
      *
      * @throws FileLockException when the lock cannot be released.
      */
@@ -229,45 +288,57 @@ public class FileLock {
 
         //
         // First, make sure that we have the lock.
-        if(!lock.isHeldByCurrentThread()) {
-            throw new FileLockException(String.format("Can't release lock not held on %s", lockFile));
+        if(!inProcessLock.isHeldByCurrentThread()) {
+            throw new FileLockException(String.format(
+                    "%s Can't release process lock not held on %s", Thread.
+                    currentThread().getName(), lockFile));
         }
-        
+
         //
         // Release the interprocess lock.
-        if(fileLock != null) {
+        if(interProcessLock != null) {
             try {
-                fileLock.release();
-            } catch (IOException ex) {
-                throw new FileLockException(String.format("Error unlocking %s", lockFile));
+                interProcessLock.release();
+                if(verbose) {
+                    logger.info(String.format(
+                            "%s [%s] released interprocess lock on %s", vname,
+                            Thread.currentThread().getName(), lockFile));
+                }
+            } catch(IOException ex) {
+                throw new FileLockException(String.format("Error unlocking %s",
+                                                          lockFile), ex);
             }
             try {
                 openChannel.close();
                 openFile.close();
-            } catch (IOException ex) {
-                throw new FileLockException(String.format("Error cleaning up for %s", lockFile), ex);
+            } catch(IOException ex) {
+                throw new FileLockException(String.format(
+                        "Error cleaning up for %s", lockFile), ex);
             }
         }
-        
+
         //
         // Now the inter-process lock
-        lock.unlock();
-//        lastReleaseTime = System.nanoTime();
-//        if(name != null) {
-//            logger.info(String.format("%s released lock %s", Thread.
-//                    currentThread(), toString(lastReleaseTime - lastAcquireTime)));
-//        }
-
+        try {
+            inProcessLock.unlock();
+        } catch(IllegalMonitorStateException ex) {
+            throw new FileLockException(String.format(
+                    "Error unlocking process lock %s", inProcessLock), ex);
+        }
+        if(verbose) {
+            logger.info(String.format("%s [%s] released process lock on %s",
+                                      vname, Thread.currentThread().getName(),
+                                      inProcessLock));
+        }
     }
-
 
     /**
      * Tells us whether we currently hold a lock on the file.
-     * @return <CODE>true</CODE> if the current thread holds the lock, <CODE>false</CODE>
-     * otherwise.
+     *
+     * @return <CODE>true</CODE> if the current thread holds the      * lock, <CODE>false</CODE> otherwise.
      */
     public boolean hasLock() {
-        return lock.isHeldByCurrentThread();
+        return inProcessLock.isHeldByCurrentThread();
     }
 
     public String getName() {
@@ -278,17 +349,34 @@ public class FileLock {
         this.name = name;
     }
 
+    public boolean isVerbose() {
+        return verbose;
+    }
+
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+        if(verbose) {
+            vname = name == null ? toString() : name;
+        } else {
+            vname = null;
+        }
+    }
+
     /**
      * Gets a string describing the lock.
+     *
      * @return A string describing the lock.
      */
     @Override
     public String toString() {
         return toString(0);
     }
-    
+
     public String toString(long time) {
-        return (name != null ? (name + " ") : "") + lockFile + (time == 0 ? "" : (" " + time + " ")) + lock.toString() + " " + fileLock.toString();
+        return (name != null ? (name + " ") : "") + lockFile
+                + (time == 0 ? "" : (" " + time + " ")) + inProcessLock.
+                toString() + " "
+                + interProcessLock.toString();
     }
 
 } // FileLock
