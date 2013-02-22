@@ -204,6 +204,18 @@ public class Marshaler implements Configurable {
                                   putPOw.getAvgTimeMillis()));
 
     }
+    
+    /**
+     * Tells the marshaler to pauseIndexing until the given latch counts down to zero.
+     * We can use this in situations where the indexer is feeding data quickly
+     * enough that we need to hold off on making new partitions until we've
+     * completed (for example) a long merge.
+     */
+    public void pause(CountDownLatch pauseLatch) {
+        for(MarshalThread mt : marshalers) {
+            mt.pause(pauseLatch);
+        }
+    }
 
     /**
      * Performs a synchronous flush of the marshaling queue, returning only
@@ -295,8 +307,10 @@ public class Marshaler implements Configurable {
      */
     class MarshalThread implements Runnable {
 
+        private CountDownLatch pauseRequested;
+        
         private CountDownLatch flushRequested;
-
+        
         private CountDownLatch readyToFlush;
 
         private CountDownLatch flushCompleted;
@@ -322,6 +336,18 @@ public class Marshaler implements Configurable {
                             "Marshaler interrupted during poll with %d waiting",
                             toMarshal.size()));
                     return;
+                }
+                
+                if(pauseRequested != null) {
+                    try {
+                        logger.fine(String.format("%s pausing", Thread.currentThread().getName()));
+                        pauseRequested.await();
+                        logger.fine(String.format("%s resuming", Thread.currentThread().getName()));
+                    } catch (InterruptedException ex) {
+                        logger.warning(String.format("Interrupted while pausing"));
+                        return;
+                    }
+                    pauseRequested = null;
                 }
 
                 //
@@ -410,6 +436,10 @@ public class Marshaler implements Configurable {
                     }
                 }
             }
+        }
+        
+        public void pause(CountDownLatch pauseRequested) {
+            this.pauseRequested = pauseRequested;
         }
 
         /**
@@ -551,7 +581,7 @@ public class Marshaler implements Configurable {
                                         "Flushed %s in %.2fms",
                                                             partOut, flushw.
                                         getLastTimeMillis()));
-                            }
+                            } 
                             putPOw.start();
                             poPool.put(partOut);
                             putPOw.stop();
