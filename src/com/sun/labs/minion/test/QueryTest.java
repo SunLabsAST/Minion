@@ -1454,7 +1454,7 @@ public class QueryTest extends SEMain {
                         for(DiskField df : ((InvFileDiskPartition) p).getDiskFields()) {
 
                             if(!df.getInfo().hasAttribute(
-                                    FieldInfo.Attribute.TOKENIZED)) {
+                                    FieldInfo.Attribute.INDEXED)) {
                                 continue;
                             }
                             shell.out.format("Field: %s\n", df.getInfo().getName());
@@ -1593,7 +1593,7 @@ public class QueryTest extends SEMain {
 
                             DiskField df = ((InvFileDiskPartition) p).getDF(fi);
 
-                            DiskDictionary rvd = (DiskDictionary) df.getDictionary(DictionaryType.RAW_VECTOR);
+                            DiskDictionary rvd = (DiskDictionary) df.getDictionary(DictionaryType.CASED_VECTOR);
                             QueryEntry re;
                             String res = "no raw";
                             if(rvd != null) {
@@ -1605,7 +1605,7 @@ public class QueryTest extends SEMain {
                                 }
                             }
 
-                            DiskDictionary svd = (DiskDictionary) df.getDictionary(DictionaryType.RAW_VECTOR);
+                            DiskDictionary svd = (DiskDictionary) df.getDictionary(DictionaryType.CASED_VECTOR);
                             QueryEntry se;
                             String ses = "no stemmed";
                             if(svd != null) {

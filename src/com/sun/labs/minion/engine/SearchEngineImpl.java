@@ -361,7 +361,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
     @Override
     public TermStats getTermStats(String term, String field) {
-        return getTermStats(term, field, TermStatsType.RAW);
+        return getTermStats(term, field, TermStatsType.CASED);
     }    
 
     public TermStats getTermStats(String term, String field, TermStatsType termStatsType) {
@@ -370,7 +370,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
 
     @Override
     public TermStats getTermStats(String term, FieldInfo field) {
-        return getTermStats(term, field, TermStatsType.RAW);
+        return getTermStats(term, field, TermStatsType.CASED);
     }
     
     public TermStats getTermStats(String term, FieldInfo field, TermStatsType termStatsType) {
@@ -512,6 +512,10 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
     @Override
     public void flush() throws SearchEngineException {
         internalFlush(new CountDownLatch(indexers.length));
+    }
+    
+    public void pauseIndexing(CountDownLatch pauseLatch) {
+        marshaler.pause(pauseLatch);
     }
 
     @Override

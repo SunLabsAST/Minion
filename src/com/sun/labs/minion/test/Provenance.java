@@ -88,7 +88,7 @@ public class Provenance {
 
         if(gopt.optInd >= args.length) {
             try {
-                ActiveFile af = new ActiveFile(indexDir, indexDir, "PM");
+                ActiveFile af = new ActiveFile(indexDir, indexDir, "PM", false);
                 for(Integer partNumber : af.read()) {
                     checkProvenance(indexDir, partNumber, "");
                 }

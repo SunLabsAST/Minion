@@ -68,7 +68,7 @@ public class TermStatsHeader implements Iterable<Map.Entry<Integer, long[]>> {
     }
 
     public long getOffset(int fieldID) {
-        return getOffset(fieldID, Field.TermStatsType.RAW);
+        return getOffset(fieldID, Field.TermStatsType.CASED);
     }
     
     public long getOffset(int fieldID, Field.TermStatsType type) {

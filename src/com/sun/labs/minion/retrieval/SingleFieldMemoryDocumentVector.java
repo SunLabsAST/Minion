@@ -107,11 +107,15 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector
         if(mf.isStemmed()) {
             termStatsType = Field.TermStatsType.STEMMED;
             vecDict = (MemoryDictionary<String>) mf.
-                    getDictionary(DictionaryType.STEMMED_VECTOR);
-        } else {
-            termStatsType = Field.TermStatsType.RAW;
+                    getDictionary(Field.DictionaryType.STEMMED_VECTOR);
+        } else if(mf.isUncased()) {
+            termStatsType = Field.TermStatsType.UNCASED;
             vecDict = (MemoryDictionary<String>) mf.
-                    getDictionary(DictionaryType.RAW_VECTOR);
+                    getDictionary(Field.DictionaryType.UNCASED_VECTOR);
+        } else {
+            termStatsType = Field.TermStatsType.CASED;
+            vecDict = (MemoryDictionary<String>) mf.
+                    getDictionary(Field.DictionaryType.CASED_VECTOR);
         }
 
         //
@@ -266,16 +270,8 @@ public class SingleFieldMemoryDocumentVector extends AbstractDocumentVector
             //
             // The dictionary from which we'll draw the terms we're searching 
             // for.
-            DiskDictionary termDict = null;
-            switch(termStatsType) {
-                case STEMMED:
-                    termDict = (DiskDictionary) cdf.
-                            getDictionary(DictionaryType.STEMMED_TOKENS);
-                    break;
-                case RAW:
-                    termDict = (DiskDictionary) cdf.getTermDictionary(termStatsType);
-                    break;
-            }
+            DiskDictionary termDict = (DiskDictionary) cdf.
+                    getDictionary(TermStatsType.getDictionaryType(termStatsType));
 
             ScoredQuickOr qor = new ScoredQuickOr(curr, 1024, true);
             qor.setQueryStats(qs);

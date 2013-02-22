@@ -24,8 +24,9 @@
 
 package com.sun.labs.minion.classification;
 
+import com.sun.labs.minion.Feature;
+import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
-import com.sun.labs.minion.retrieval.cache.DocCache;
 import com.sun.labs.minion.util.PorterStemmer;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,10 +63,6 @@ public class WeightedFeatureClusterer implements FeatureClusterer {
     public void setField(String field) {
     }
 
-    @Override
-    public void setDocCache(DocCache dc) {
-    }
-    
     public void add(WeightedFeature[] v) {
         for(WeightedFeature f : v) {
             String name = f.getName().toLowerCase();

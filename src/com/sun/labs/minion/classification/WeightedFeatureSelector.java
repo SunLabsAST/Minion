@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.classification;
 
+import com.sun.labs.minion.Feature;
 import com.sun.labs.minion.SearchEngine;
 import com.sun.labs.minion.pipeline.StopWords;
 import com.sun.labs.minion.retrieval.WeightingComponents;

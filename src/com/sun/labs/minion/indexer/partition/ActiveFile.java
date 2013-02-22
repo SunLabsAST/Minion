@@ -25,10 +25,11 @@ public class ActiveFile {
 
     private FileLock activeLock;
 
-    public ActiveFile(File indexDir, File lockDir, String type) {
+    public ActiveFile(File indexDir, File lockDir, String type, boolean verboseLocking) {
         activeFile = new File(indexDir, "AL." + type);
         activeLock = new FileLock(lockDir, activeFile, 300, TimeUnit.SECONDS);
         activeLock.setName("active");
+        activeLock.setVerbose(verboseLocking);
     }
 
     public void lock() throws IOException, FileLockException {
@@ -65,10 +66,14 @@ public class ActiveFile {
             FileLockException {
 
         boolean releaseNeeded = false;
-        List<Integer> ret =
-                new ArrayList<Integer>();
+        List<Integer> ret = new ArrayList<Integer>();
 
-        if(!activeLock.hasLock()) {
+        if(!isLocked()) {
+            if(logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("[%s] Locked to read active file: %s",
+                                            Thread.currentThread().getName(), 
+                                            activeFile));
+            }
             activeLock.acquireLock();
             releaseNeeded = true;
         }
@@ -105,10 +110,13 @@ public class ActiveFile {
         try {
             nParts = active.readInt();
         } catch(java.io.IOException ioe) {
-            logger.severe("Error reading number of " +
-                    "active partitions.");
+            logger.severe("Error reading number of active partitions.");
             active.close();
             if(releaseNeeded) {
+                if(logger.isLoggable(Level.FINER)) {
+                    logger.finer(String.format("[%s] release required for AL",
+                                                Thread.currentThread().getName()));
+                }
                 activeLock.releaseLock();
             }
             throw ioe;
@@ -124,6 +132,10 @@ public class ActiveFile {
             logger.severe("Error reading partition numbers.");
             active.close();
             if(releaseNeeded) {
+                if(logger.isLoggable(Level.FINER)) {
+                    logger.finer(String.format("[%s] release required for AL",
+                                                Thread.currentThread().getName()));
+                }
                 activeLock.releaseLock();
             }
             throw ioe;
@@ -138,6 +150,9 @@ public class ActiveFile {
         // If we locked it just for reading, then we can release the lock
         // now.
         if(releaseNeeded) {
+            if(logger.isLoggable(Level.FINER)) {
+                logger.finer(String.format("[%s] release required for AL", Thread.currentThread().getName()));
+            }
             activeLock.releaseLock();
         }
 

@@ -150,7 +150,7 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
     public QueryEntry<String> getKeyEntry() {
         return keyEntry;
     }
-
+    
     /**
      * Gets the number of distinct terms in this document vector (the
      * cardinality, rather than the length)

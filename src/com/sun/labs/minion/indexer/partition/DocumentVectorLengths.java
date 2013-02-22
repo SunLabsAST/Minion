@@ -26,6 +26,7 @@ package com.sun.labs.minion.indexer.partition;
 import com.sun.labs.minion.FieldInfo;
 import com.sun.labs.minion.indexer.Field;
 import com.sun.labs.minion.indexer.Field.DictionaryType;
+import com.sun.labs.minion.indexer.Field.DocumentVectorType;
 import com.sun.labs.minion.indexer.FieldHeader;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
@@ -118,28 +119,22 @@ public class DocumentVectorLengths {
             throws java.io.IOException {
         Partition p = f.getPartition();
         WriteableBuffer vectorLengthsBuffer = partOut.getVectorLengthsBuffer();
-        Dictionary<String> termDict = f.getTermDictionary(Field.TermStatsType.RAW);
-        if(termDict != null) {
-            header.vectorLengthOffsets[Field.DocumentVectorType.RAW.ordinal()] = vectorLengthsBuffer.
-                    position();
-            calculate(f.getInfo(),
-                      p.getNDocs(),
-                      p.maxDocumentID,
-                      p.getPartitionManager(),
-                      (DictionaryIterator<String>) termDict.iterator(),
-                      vectorLengthsBuffer, gts, Field.TermStatsType.RAW);
-        }
-        termDict = f.getTermDictionary(Field.TermStatsType.STEMMED);
-        if(termDict != null) {
-            header.vectorLengthOffsets[Field.DocumentVectorType.STEMMED.ordinal()] = vectorLengthsBuffer.position();
-            termDict = f.getDictionary(DictionaryType.STEMMED_TOKENS);
-            calculate(f.getInfo(),
-                      p.getNDocs(),
-                      p.maxDocumentID,
-                      p.getPartitionManager(),
-                      (DictionaryIterator<String>) termDict.iterator(),
-                      vectorLengthsBuffer, gts, Field.TermStatsType.STEMMED);
-            
+        for(DocumentVectorType vectorType : DocumentVectorType.values()) {
+            DictionaryType dictType = DocumentVectorType.getDictionaryType(
+                    vectorType);
+            Dictionary<String> termDict = (Dictionary<String>) f.getDictionary(
+                    dictType);
+            if(termDict != null) {
+                header.vectorLengthOffsets[vectorType.ordinal()] = vectorLengthsBuffer.
+                        position();
+                calculate(f.getInfo(),
+                          p.getNDocs(),
+                          p.maxDocumentID,
+                          p.getPartitionManager(),
+                          (DictionaryIterator<String>) termDict.iterator(),
+                          vectorLengthsBuffer, gts, DocumentVectorType.
+                        getTermStatsType(vectorType));
+            }
         }
     }
 

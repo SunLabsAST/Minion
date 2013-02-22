@@ -54,40 +54,40 @@ import java.util.logging.Logger;
  * partitions.
  */
 public class PostTest implements Runnable {
-    
-    private static final Logger logger = Logger.getLogger(PostTest.class.getName());
-    
-    private SearchEngineImpl engine; 
-    
+
+    private static final Logger logger = Logger.getLogger(PostTest.class.
+            getName());
+
+    private SearchEngineImpl engine;
+
     private InvFileDiskPartition part;
-    
+
     private List<String> terms;
-    
+
     private Collection<FieldInfo> fields;
-    
+
     private boolean caseSensitive;
-    
+
     private boolean quiet;
-    
+
     private boolean getWords;
-    
+
     private PrintWriter output;
-    
+
     private Random rand;
-    
+
     private CountDownLatch latch;
-    
+
     private NanoWatch fw = new NanoWatch();
-    
+
     private NanoWatch iw = new NanoWatch();
-    
+
     private long docsIterated = 0;
 
     public PostTest(SearchEngineImpl engine,
-            DiskPartition part, Collection<FieldInfo> fields, 
-            List<String> terms, boolean caseSensitive, 
-            boolean getWords,
-            boolean quiet, PrintWriter output, CountDownLatch latch) {
+                    DiskPartition part, Collection<FieldInfo> fields,
+                    List<String> terms, boolean caseSensitive,
+                    boolean quiet, PrintWriter output, CountDownLatch latch) {
         this.engine = engine;
         this.part = (InvFileDiskPartition) part;
         this.fields = fields;
@@ -102,192 +102,231 @@ public class PostTest implements Runnable {
     @Override
     public void run() {
 
-        PostingsIteratorFeatures feat = new PostingsIteratorFeatures(engine.getQueryConfig().getWeightingFunction(),
-                engine.getQueryConfig().getWeightingComponents());
+        PostingsIteratorFeatures feat = new PostingsIteratorFeatures(engine.
+                getQueryConfig().getWeightingFunction(),
+                                                                     engine.
+                getQueryConfig().getWeightingComponents());
         feat.setPositions(getWords);
 
         for(FieldInfo fi : fields) {
 
-            output.println(String.format(" Field %s", fi.getName()));
+            output.format(" Field %s\n", fi.getName());
 
-            Iterator termIter;
+            Iterator<QueryEntry> termIter;
             DiskField df = part.getDF(fi);
-
-            int nEntries = 1;
-
-            if(terms.isEmpty()) {
-                DiskDictionary dd;
-                if(caseSensitive) {
-                    dd = (DiskDictionary) df.getDictionary(DictionaryType.CASED_TOKENS);
-                } else {
-                    dd = (DiskDictionary) df.
-                            getDictionary(
-                            DictionaryType.UNCASED_TOKENS);
-                }
-                if(dd == null) {
-                    output.format("No dictionary for %s?\n", fi.getName());
-                    continue;
-                }
-                termIter = dd.iterator();
-            } else {
-                List<QueryEntry> el = new ArrayList<QueryEntry>();
-                for(String term : terms) {
-                    QueryEntry qe = df.getTerm(term, caseSensitive);
-                    if(qe != null) {
-                        el.add(qe);
-                    }
-                }
-                termIter = el.iterator();
+            
+            if(df == null) {
+                continue;
             }
 
-            termLoop:
-            while(termIter.hasNext()) {
+            for(DictionaryType dictType : DictionaryType.values()) {
 
-                if(quiet && nEntries % 50000 == 0) {
-                    output.println("  Processed: " + nEntries);
-                }
-                nEntries++;
-
-
-                QueryEntry e = (QueryEntry) termIter.next();
-
-                if(!quiet) {
-                    output.format("  %s %d docs\n", e.getName(), e.getN());
-                }
-
-                int nDocs = e.getN();
-                int[] docs = new int[nDocs];
-                int[] idSkipPos = new int[nDocs];
-                int[] posSkipPos = new int[nDocs];
-                int[] idSkipTable = null;
-                int[] offSkipTable = null;
-                PostingsIterator pi = e.iterator(feat);
-
-                if(pi == null) {
+                if(dictType == DictionaryType.TOKEN_BIGRAMS || dictType
+                        == DictionaryType.SAVED_VALUE_BIGRAMS) {
                     continue;
                 }
 
-                if(pi instanceof PositionPostings.CompressedIterator) {
-                    idSkipTable = ((PositionPostings.CompressedIterator) pi).getSkipID();
-                    offSkipTable = ((PositionPostings.CompressedIterator) pi).getSkipIDOffsets();
+                DiskDictionary dd = (DiskDictionary) df.getDictionary(dictType);
+                if(dd == null) {
+                    continue;
                 }
 
-                int n = 0;
+                output.format("  Dictionary %s\n", dictType);
+                int nEntries = 1;
+
+                if(terms.isEmpty()) {
+                    termIter = dd.iterator();
+                } else {
+                    List<QueryEntry> el = new ArrayList<QueryEntry>();
+                    for(String term : terms) {
+                        QueryEntry qe = df.getTerm(term, caseSensitive);
+                        if(qe != null) {
+                            el.add(qe);
+                        }
+                    }
+                    termIter = el.iterator();
+                }
+
                 try {
-                    if(pi instanceof PositionPostings.CompressedIterator) {
-                        idSkipPos[n] = (int) ((PositionPostings.CompressedIterator) pi).getIDPos();
-                        posSkipPos[n] = (int) ((PositionPostings.CompressedIterator) pi).getPosPos();
-                    }
-                    iw.start();
-                    while(pi.next()) {
-                        docs[n] = pi.getID();
-                        if(getWords) {
-                            ((PostingsIteratorWithPositions) pi).getPositions();
-                        }
-                        n++;
-                        if(n < idSkipPos.length && pi instanceof PositionPostings.CompressedIterator) {
-                            idSkipPos[n] = (int) ((PositionPostings.CompressedIterator) pi).getIDPos();
-                            posSkipPos[n] = (int) ((PositionPostings.CompressedIterator) pi).getPosPos();
-                        }
-                    }
-                    iw.stop();
-                    docsIterated += nDocs;
-                } catch(Exception ex) {
-                    output.format("Error iterating through entry %s %d\n", e.getName(), e.getN());
-                    ex.printStackTrace(output);
-                    continue termLoop;
-                }
+                    termLoop:
+                    while(termIter.hasNext()) {
 
-                pi.reset();
+                        if(quiet && nEntries % 50000 == 0) {
+                            output.format("   Processed %d\n", nEntries);
+                        }
+                        nEntries++;
 
-                if(idSkipPos != null && idSkipTable != null) {
-                    for(int i = 1; i < idSkipTable.length; i++) {
-                        int id = idSkipTable[i];
-                        int pos = Arrays.binarySearch(docs, id);
-                        if(pos < 0) {
-                            logger.info(String.format("Couldn't find skip ID %d for %s in %s", id, e.getName(), fi.getName()));
+                        QueryEntry e = termIter.next();
+
+                        if(!quiet) {
+                            output.format("   %s %d docs\n", e.getName(), e.
+                                    getN());
+                        }
+
+                        int nDocs = e.getN();
+                        int[] docs = new int[nDocs];
+                        int[] idSkipPos = new int[nDocs];
+                        int[] posSkipPos = new int[nDocs];
+                        int[] idSkipTable = null;
+                        int[] offSkipTable = null;
+                        PostingsIterator pi = e.iterator(feat);
+
+                        if(pi == null) {
                             continue;
                         }
-                        if(idSkipPos[pos] != offSkipTable[i]) {
-                            logger.info(String.format("Mismatch in skip table for skip ID %d for %s in %s expected: %d found: %d",
-                                    id, e.getName(), fi.getName(), offSkipTable[i], idSkipPos[pos]));
+
+                        if(pi instanceof PositionPostings.CompressedIterator) {
+                            idSkipTable = ((PositionPostings.CompressedIterator) pi).
+                                    getSkipID();
+                            offSkipTable = ((PositionPostings.CompressedIterator) pi).
+                                    getSkipIDOffsets();
                         }
-                    }
-                }
 
-                if(n == 0) {
-                    if(!quiet) {
-                        output.println("  No docs");
-                    }
-                    continue termLoop;
-                }
-
-                int reps = nDocs * 5;
-                int pos = 0;
-                boolean headerPrinted = false;
-                for(int j = 0; j < reps; j++) {
-                    pos = rand.nextInt(n);
-                    try {
-                        fw.start();
-                        boolean found = pi.findID(docs[pos]);
-                        fw.stop();
-                        if(!found) {
-                            if(!headerPrinted) {
-                                if(quiet) {
-                                    output.println("   Problem with term: " + e);
+                        int n = 0;
+                        try {
+                            if(pi instanceof PositionPostings.CompressedIterator) {
+                                idSkipPos[n] = (int) ((PositionPostings.CompressedIterator) pi).
+                                        getIDPos();
+                                posSkipPos[n] = (int) ((PositionPostings.CompressedIterator) pi).
+                                        getPosPos();
+                            }
+                            iw.start();
+                            while(pi.next()) {
+                                docs[n] = pi.getID();
+                                if(getWords) {
+                                    ((PostingsIteratorWithPositions) pi).
+                                            getPositions();
                                 }
-                                output.println("    Known present docs");
-                                headerPrinted = true;
+                                n++;
+                                if(n < idSkipPos.length
+                                        && pi instanceof PositionPostings.CompressedIterator) {
+                                    idSkipPos[n] = (int) ((PositionPostings.CompressedIterator) pi).
+                                            getIDPos();
+                                    posSkipPos[n] = (int) ((PositionPostings.CompressedIterator) pi).
+                                            getPosPos();
+                                }
                             }
-                            output.println("     BAD:  " + docs[pos]);
-                        } else {
-                            if(getWords) {
-                                ((PostingsIteratorWithPositions) pi).getPositions();
+                            iw.stop();
+                            docsIterated += nDocs;
+                        } catch(Exception ex) {
+                            output.format(
+                                    "Error iterating through entry %s %d\n",
+                                    e.getName(), e.getN());
+                            ex.printStackTrace(output);
+                            continue termLoop;
+                        }
+
+                        pi.reset();
+
+                        if(idSkipPos != null && idSkipTable != null) {
+                            for(int i = 1; i < idSkipTable.length; i++) {
+                                int id = idSkipTable[i];
+                                int pos = Arrays.binarySearch(docs, id);
+                                if(pos < 0) {
+                                    output.format(
+                                            "Couldn't find skip ID %d for %s in %s\n",
+                                            id, e.getName(), fi.getName());
+                                    continue;
+                                }
+                                if(idSkipPos[pos] != offSkipTable[i]) {
+                                    output.format(
+                                            "Mismatch in skip table for skip ID %d for %s in %s expected: %d found: %d\n",
+                                            id, e.getName(), fi.getName(),
+                                            offSkipTable[i], idSkipPos[pos]);
+                                }
                             }
                         }
-                    } catch(Exception ex) {
-                        output.format("Error finding known documents for %s doc: %d\n",
-                                e, docs[pos]);
-                        ex.printStackTrace(output);
-                        continue termLoop;
-                    }
 
-                }
+                        if(n == 0) {
+                            if(!quiet) {
+                                output.println("  No docs");
+                            }
+                            continue termLoop;
+                        }
 
-                headerPrinted = false;
-                if(n > 1) {
-                    try {
+                        int reps = nDocs * 5;
+                        int pos = 0;
+                        boolean headerPrinted = false;
                         for(int j = 0; j < reps; j++) {
-                            pos = rand.nextInt(n - 1);
-                            if(docs[pos] + 1 != docs[pos + 1]) {
+                            pos = rand.nextInt(n);
+                            try {
                                 fw.start();
-                                boolean found = pi.findID(docs[pos] + 1);
+                                boolean found = pi.findID(docs[pos]);
                                 fw.stop();
-                                if(found) {
+                                if(!found) {
                                     if(!headerPrinted) {
                                         if(quiet) {
-                                            output.format("   Problem with term: %s\n", e);
+                                            output.println(
+                                                    "   Problem with term: "
+                                                    + e);
                                         }
-                                        output.println("    Known absent docs");
+                                        output.println("    Known present docs");
                                         headerPrinted = true;
                                     }
                                     output.println("     BAD:  " + docs[pos]);
+                                } else {
+                                    if(getWords) {
+                                        ((PostingsIteratorWithPositions) pi).
+                                                getPositions();
+                                    }
                                 }
+                            } catch(Exception ex) {
+                                output.format(
+                                        "Error finding known documents for %s doc: %d\n",
+                                        e, docs[pos]);
+                                ex.printStackTrace(output);
+                                continue termLoop;
+                            }
+
+                        }
+
+                        headerPrinted = false;
+                        if(n > 1) {
+                            try {
+                                for(int j = 0; j < reps; j++) {
+                                    pos = rand.nextInt(n - 1);
+                                    if(docs[pos] + 1 != docs[pos + 1]) {
+                                        fw.start();
+                                        boolean found = pi.findID(docs[pos] + 1);
+                                        fw.stop();
+                                        if(found) {
+                                            if(!headerPrinted) {
+                                                if(quiet) {
+                                                    output.format(
+                                                            "   Problem with term: %s\n",
+                                                            e);
+                                                }
+                                                output.println(
+                                                        "    Known absent docs");
+                                                headerPrinted = true;
+                                            }
+                                            output.
+                                                    println("     BAD:  "
+                                                    + docs[pos]);
+                                        }
+                                    }
+                                }
+                            } catch(Exception ex) {
+                                output.format(
+                                        "    Error finding absent documents for %s doc: %d\n",
+                                        e, docs[pos]);
+                                ex.printStackTrace(output);
+                                continue termLoop;
                             }
                         }
-                    } catch(Exception ex) {
-                        output.format("    Error finding absent documents for %s doc: %d\n",
-                                e, docs[pos]);
-                        ex.printStackTrace(output);
-                        continue termLoop;
-                    }
-                }
-                
-            }
 
-            if(quiet && nEntries % 50000 != 0) {
-                output.println("  Processed: " + nEntries);
-                output.flush();
+                    }
+                    if(quiet && nEntries % 50000 != 0) {
+                        output.println("  Processed: " + nEntries);
+                        output.flush();
+                    }
+                    logger.info(String.format("Finished %s in %s in %s",
+                                              dictType, fi.getName(), part));
+                } catch(Exception ex) {
+                    logger.log(Level.SEVERE, String.format(
+                            "Exception for %s in %s in %s", dictType, fi.
+                            getName(), part), ex);
+                }
             }
             logger.info(String.format("Finished %s in %s", fi.getName(), part));
         }
@@ -304,14 +343,10 @@ public class PostTest implements Runnable {
                 + "Directory containing index (Required)\n"
                 + "  -f <field name>  "
                 + "Restrict iterators to this field\n"
-                + "  -w               "
-                + "Get words for the documents retrieved\n"
                 + "  -p <number>      "
                 + "Exercise postings from the given partition\n"
                 + "  -a               "
                 + "Do all partitions in the index\n"
-                + "  -l               "
-                + "Do all terms in a partition\n"
                 + "  -q               Stay quiet");
         System.out.println("\n"
                 + "The p and f options may be specified multiple times,"
@@ -326,25 +361,26 @@ public class PostTest implements Runnable {
             if(i > 0) {
                 s.append(", ");
             }
-            s.append('<').append(a[i] - prev).append(',').append(a[i]).append(',').append(b[i]).append('>');
+            s.append('<').append(a[i] - prev).append(',').append(a[i]).append(
+                    ',').append(b[i]).append('>');
 
             prev = a[i];
         }
         return s.toString();
     }
 
-    public static void main(String[] args) throws java.io.IOException, SearchEngineException {
+    public static void main(String[] args) throws java.io.IOException,
+            SearchEngineException {
 
         if(args.length == 0) {
             usage();
             return;
         }
 
-        String flags = "d:f:p:lo:aqsw";
+        String flags = "d:f:p:o:aqs";
         String indexDir = null;
         boolean allParts = false;
         boolean quiet = false;
-        boolean getWords = false;
         boolean caseSensitive = false;
         File outputDir = new File(System.getProperty("user.dir"));
         Getopt gopt = new Getopt(args, flags);
@@ -380,7 +416,8 @@ public class PostTest implements Runnable {
                     try {
                         partNums.add(new Integer(gopt.optArg));
                     } catch(NumberFormatException nfe) {
-                        logger.severe(String.format("Bad partition number %s", gopt.optArg));
+                        logger.severe(String.format("Bad partition number %s",
+                                                    gopt.optArg));
                         return;
                     }
                     break;
@@ -389,13 +426,17 @@ public class PostTest implements Runnable {
                     outputDir = new File(gopt.optArg);
                     if(!outputDir.exists()) {
                         if(!outputDir.mkdirs()) {
-                            logger.log(Level.SEVERE, String.format("Unable to make output directory %s", outputDir));
+                            logger.log(Level.SEVERE, String.format(
+                                    "Unable to make output directory %s",
+                                    outputDir));
                             usage();
                             return;
                         }
                     }
                     if(!outputDir.isDirectory()) {
-                        logger.log(Level.SEVERE, String.format("Output directory %s is not a directory", outputDir));
+                        logger.log(Level.SEVERE, String.format(
+                                "Output directory %s is not a directory",
+                                outputDir));
                         usage();
                         return;
                     }
@@ -413,12 +454,10 @@ public class PostTest implements Runnable {
                     quiet = true;
                     break;
 
-                case 'w':
-                    getWords = true;
-                    break;
-
                 default:
-                    logger.warning(String.format("Unknown option: %s", (char) c));
+                    logger.
+                            warning(String.
+                            format("Unknown option: %s", (char) c));
                     break;
             }
         }
@@ -429,10 +468,12 @@ public class PostTest implements Runnable {
         }
 
         SearchEngineImpl engine =
-                (SearchEngineImpl) com.sun.labs.minion.SearchEngineFactory.getSearchEngine(indexDir);
+                (SearchEngineImpl) com.sun.labs.minion.SearchEngineFactory.
+                getSearchEngine(indexDir);
         PartitionManager pm = engine.getManager();
-        
-        logger.info(String.format("Opened index with %d docs", engine.getNDocs()));
+
+        logger.info(String.
+                format("Opened index with %d docs", engine.getNDocs()));
 
         //
         // The partitions.
@@ -449,20 +490,21 @@ public class PostTest implements Runnable {
                 }
             }
         }
-        
+
         logger.info(String.format("Using parts: %s", parts));
-        
+
         //
         // Get the fields of interest.
         Collection<FieldInfo> doFields;
         if(fields.size() > 0) {
             doFields = pm.getMetaFile().getFieldInfo(fields);
         } else {
-            doFields = pm.getMetaFile().getFieldInfo(FieldInfo.Attribute.INDEXED);
+            doFields = pm.getMetaFile().
+                    getFieldInfo(FieldInfo.Attribute.INDEXED);
         }
-        
+
         logger.info(String.format("Using fields %s", doFields));
-        
+
         List<String> terms = new ArrayList<String>();
         for(int i = gopt.optInd; i < args.length; i++) {
             terms.add(args[i]);
@@ -474,25 +516,27 @@ public class PostTest implements Runnable {
         Thread[] partThreads = new Thread[parts.size()];
         for(int i = 0; i < postTest.length; i++) {
             DiskPartition part = parts.get(i);
-            File outFile = new File(outputDir, String.format("%06d.out", part.getPartitionNumber()));
+            File outFile = new File(outputDir, String.format("%06d.out", part.
+                    getPartitionNumber()));
             logger.info(String.format("New output file %s", outFile));
             outputs[i] = new PrintWriter(new FileWriter(outFile));
-            postTest[i] = new PostTest(engine, part, doFields, terms, caseSensitive, getWords, quiet, outputs[i], latch);
+            postTest[i] = new PostTest(engine, part, doFields, terms,
+                                       caseSensitive, quiet, outputs[i], latch);
             partThreads[i] = new Thread(postTest[i]);
             partThreads[i].setDaemon(true);
             partThreads[i].setName("PostTest-" + i);
             partThreads[i].start();
         }
-        
+
         try {
             latch.await();
         } catch(InterruptedException ex) {
         }
-        
+
         for(PrintWriter output : outputs) {
             output.close();
         }
-        
+
         NanoWatch fw = new NanoWatch();
         NanoWatch iw = new NanoWatch();
         long docsIterated = 0;
@@ -501,19 +545,20 @@ public class PostTest implements Runnable {
             iw.accumulate(pt.iw);
             docsIterated += pt.docsIterated;
         }
-        
+
         logger.info(String.format("Iterated %,d docs in %,.2fms %,.2fdocs/ms."
-                + " Average iteration time %,.2fns/docs", 
-                          docsIterated, 
-                          iw.getTimeMillis(),
-                          docsIterated / iw.getTimeMillis(), 
-                iw.getTimeNanos() / (double) docsIterated));
+                + " Average iteration time %,.2fns/docs",
+                                  docsIterated,
+                                  iw.getTimeMillis(),
+                                  docsIterated / iw.getTimeMillis(),
+                                  iw.getTimeNanos() / (double) docsIterated));
         logger.info(String.format("Found %,d docs in %,.2fms. %,.2f finds/ms. "
-                + "Average findID time %,.2fns", 
-                fw.getClicks(), fw.getTimeMillis(), 
-                fw.getClicks() / fw.getTimeMillis(),
-                fw.getAvgTime()));
-        
+                + "Average findID time %,.2fns",
+                                  fw.getClicks(), fw.getTimeMillis(),
+                                  fw.getClicks() / fw.getTimeMillis(),
+                                  fw.getAvgTime()));
+
         engine.close();
     }
+
 }

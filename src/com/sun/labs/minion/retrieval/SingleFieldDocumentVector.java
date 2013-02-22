@@ -170,15 +170,17 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             termStatsType = Field.TermStatsType.STEMMED;
             vecDict = (DiskDictionary<String>) df.getDictionary(DictionaryType.STEMMED_VECTOR);
             termDict = (DiskDictionary<String>) df.getDictionary(DictionaryType.STEMMED_TOKENS);
+        } else if(df.isUncased()) {
+            termStatsType = Field.TermStatsType.UNCASED;
+            vecDict = (DiskDictionary<String>) df.getDictionary(DictionaryType.UNCASED_VECTOR);
+            termDict = (DiskDictionary<String>) df.getDictionary(
+                    DictionaryType.UNCASED_TOKENS);
         } else {
-            termStatsType = Field.TermStatsType.RAW;
-            vecDict = (DiskDictionary<String>) df.getDictionary(DictionaryType.RAW_VECTOR);
-            if(df.isUncased()) {
-                termDict = (DiskDictionary<String>) df.getDictionary(DictionaryType.UNCASED_TOKENS);
-            } else {
-                termDict = (DiskDictionary<String>) df.getDictionary(DictionaryType.CASED_TOKENS);
-            }
-            
+            termStatsType = Field.TermStatsType.CASED;
+            vecDict = (DiskDictionary<String>) df.getDictionary(
+                    DictionaryType.CASED_VECTOR);
+            termDict = (DiskDictionary<String>) df.getDictionary(
+                    DictionaryType.CASED_TOKENS);
         }
 
         QueryEntry<String> vecEntry = vecDict.getByID(keyEntry.getID());
@@ -381,20 +383,6 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
                 continue;
             }
 
-            //
-            // Get the right term dictionary for this partition.
-            DiskDictionary termDict = null;
-            switch(termStatsType) {
-                case STEMMED:
-                    termDict = (DiskDictionary) cdf.
-                            getDictionary(DictionaryType.STEMMED_TOKENS);
-                    break;
-                case RAW:
-                    termDict = (DiskDictionary) cdf.getTermDictionary(termStatsType);
-                    break;
-            }
-
-            
             ScoredQuickOr qor = new ScoredQuickOr(curr, 1024, true);
             qor.setQueryStats(qs);
             qor.addField(field);

@@ -24,6 +24,8 @@
 
 package com.sun.labs.minion.classification;
 
+import com.sun.labs.minion.Feature;
+import com.sun.labs.minion.WeightedFeature;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;

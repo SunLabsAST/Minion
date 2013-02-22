@@ -114,7 +114,7 @@ public class TermStatsDiskDictionary implements Closeable {
      * if that term does not occur in the index
      */
     public TermStatsQueryEntry getTermStats(String term, String field) {
-        return getTermStats(term, field, Field.TermStatsType.RAW);
+        return getTermStats(term, field, Field.TermStatsType.UNCASED);
     }    
 
     public TermStatsQueryEntry getTermStats(String term, String field, Field.TermStatsType type) {
@@ -129,7 +129,7 @@ public class TermStatsDiskDictionary implements Closeable {
      * @return the combined term statistics
      */
     public TermStatsImpl getTermStats(String term) {
-        return getTermStats(term, Field.TermStatsType.RAW);
+        return getTermStats(term, Field.TermStatsType.UNCASED);
     }
 
     /**
@@ -161,7 +161,7 @@ public class TermStatsDiskDictionary implements Closeable {
      * if that term does not occur in the index
      */
     public TermStatsQueryEntry getTermStats(String term, FieldInfo fi) {
-        return getTermStats(term, fi, Field.TermStatsType.RAW); 
+        return getTermStats(term, fi, Field.TermStatsType.UNCASED); 
     }
     
     public TermStatsQueryEntry getTermStats(String term, FieldInfo fi, Field.TermStatsType type) {
@@ -175,7 +175,7 @@ public class TermStatsDiskDictionary implements Closeable {
      * @return an iterator for the term stats.
      */
     public DictionaryIterator<String> iterator(String field) {
-        return iterator(field, Field.TermStatsType.RAW);
+        return iterator(field, Field.TermStatsType.UNCASED);
     }
     
     public DictionaryIterator<String> iterator(String field, Field.TermStatsType type) {
@@ -184,7 +184,7 @@ public class TermStatsDiskDictionary implements Closeable {
     }
     
     public LightIterator<String> literator(String field) {
-        return literator(field, Field.TermStatsType.RAW);
+        return literator(field, Field.TermStatsType.UNCASED);
     }
     
     public LightIterator<String> literator(String field, Field.TermStatsType type) {
@@ -198,7 +198,7 @@ public class TermStatsDiskDictionary implements Closeable {
      * @return an iterator for the term stats.
      */
     public DictionaryIterator<String> iterator(FieldInfo field) {
-        return iterator(field, Field.TermStatsType.RAW);
+        return iterator(field, Field.TermStatsType.UNCASED);
     }    
 
     public DictionaryIterator<String> iterator(FieldInfo field, Field.TermStatsType type) {
@@ -207,7 +207,7 @@ public class TermStatsDiskDictionary implements Closeable {
     }
 
     public LightIterator literator(FieldInfo field) {
-        return literator(field, Field.TermStatsType.RAW);
+        return literator(field, Field.TermStatsType.UNCASED);
     }
     
     public LightIterator literator(FieldInfo field, Field.TermStatsType type) {

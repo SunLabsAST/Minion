@@ -39,7 +39,7 @@ public class AdvanceTest {
         SearchEngine engine = SearchEngineFactory.getSearchEngine(args[0]);
         PartitionManager pm = engine.getPM();
         TermStatsDiskDictionary tsds = pm.getTermStatsDict();
-        DiskDictionary tsd = tsds.getDictionary(args[1], Field.TermStatsType.RAW);
+        DiskDictionary tsd = tsds.getDictionary(args[1], Field.TermStatsType.CASED);
         logger.info(String.format("Term Stats dict for %s has %d entries", args[1], tsd.size()));
         if(tsd == null) {
             logger.info(String.format("No field %s in term stats", args[1]));
@@ -48,7 +48,7 @@ public class AdvanceTest {
                 InvFileDiskPartition tp = (InvFileDiskPartition) dp;
                 NanoWatch nw = new NanoWatch();
                 nw.start();
-                DiskDictionary<String> tokens = (DiskDictionary<String>) tp.getDF(args[1]).getTermDictionary(TermStatsType.RAW);
+                DiskDictionary<String> tokens = (DiskDictionary<String>) tp.getDF(args[1]).getTermDictionary(TermStatsType.CASED);
                 logger.info(String.format("Term dict for %s in %s has %d entries", args[1], tp, tokens.size()));
                 LightIterator<String> tsi = tsd.literator();
                 TermStatsQueryEntry ptse = null;

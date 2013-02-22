@@ -101,7 +101,7 @@ public class DiskField<N extends Comparable> extends Field<N> {
     }
 
     public TermStatsImpl getTermStats(String name) {
-        return getTermStats(name, TermStatsType.RAW);
+        return getTermStats(name, TermStatsType.CASED);
     }
 
     public TermStatsImpl getTermStats(String name, TermStatsType termStatsType) {

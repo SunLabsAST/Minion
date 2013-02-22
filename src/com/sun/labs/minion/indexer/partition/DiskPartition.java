@@ -643,10 +643,6 @@ public class DiskPartition extends Partition implements Closeable {
         try {
             NanoWatch mw = new NanoWatch();
             mw.start();
-            if(logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format("Merging %s into DP: %d", partsWithMaps,
-                        mergeState.partOut.getPartitionNumber()));
-            }
 
             //
             // Get an array of partitions, and a similar sized array of
@@ -739,6 +735,13 @@ public class DiskPartition extends Partition implements Closeable {
                 mergeState.partOut.setMaxDocID(mergeState.partOut.getMaxDocID() + mergeState.nUndel[i]);
             }
             
+            if(logger.isLoggable(Level.FINE)) {
+                logger.fine(String.format("Merging %s into DP: %d (%d docs)",
+                                          partsWithMaps,
+                                          mergeState.partOut.
+                        getPartitionNumber(), 
+                                          mergeState.partOut.getMaxDocID()));
+            }
             
 //            logger.info(String.format("starts: %s nUndel: %s maxDocID: %d", 
 //                    Arrays.toString(mergeState.docIDStarts), 

@@ -83,7 +83,7 @@ public class WeightingComponents {
      * What type of terms are we holding statistics for?  Raw terms or stemmed?
      * We'll default to raw terms.
      */
-    public TermStatsType termStatsType = TermStatsType.RAW;
+    public TermStatsType termStatsType = TermStatsType.CASED;
 
     /**
      * The statistics that we were given or that we retrieved for the last

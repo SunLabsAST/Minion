@@ -24,8 +24,8 @@
 
 package com.sun.labs.minion.classification;
 
+import com.sun.labs.minion.Feature;
 import com.sun.labs.minion.retrieval.ResultSetImpl;
-import com.sun.labs.minion.retrieval.cache.DocCache;
 
 /**
  * The Feature Clusterer provides the interface to create clusters of
@@ -70,12 +70,6 @@ public interface FeatureClusterer {
      *
      */
     public void setField(String field);
-    
-    /**
-     * Sets the cache of document vectors that we can use to fetch the words
-     * in a given document.
-     */
-    public void setDocCache(DocCache dc);
     
     /**
      * Creates a set of clusters based on all of the terms in

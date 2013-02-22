@@ -24,6 +24,7 @@
 
 package com.sun.labs.minion.classification;
 
+import com.sun.labs.minion.Feature;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -228,10 +229,9 @@ public class FeatureClusterSet implements Iterable<FeatureCluster> {
      */
     public FeatureClusterSet subsetFirstN(int n) {
         FeatureClusterSet fcs = new FeatureClusterSet();
-        Iterator it = contents.iterator();
-        for (int i = 0; it.hasNext();
-                i++) {
-            FeatureCluster fc = (FeatureCluster) it.next();
+        Iterator<FeatureCluster> it = contents.iterator();
+        for (int i = 0; it.hasNext(); i++) {
+            FeatureCluster fc = it.next();
             if (i >= n && hs != null) {
                 //
                 // If we're past the number we were given and there are human
@@ -254,7 +254,7 @@ public class FeatureClusterSet implements Iterable<FeatureCluster> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for (FeatureCluster fc : contents) {
-            sb.append(fc + "\n");
+            sb.append(fc).append('\n');
         }
         return sb.toString();
     }

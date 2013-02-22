@@ -35,7 +35,7 @@ public class AdvanceBug {
         SearchEngine engine = SearchEngineFactory.getSearchEngine(args[0]);
         PartitionManager pm = engine.getPM();
         TermStatsDiskDictionary tsds = pm.getTermStatsDict();
-        DiskDictionary tsd = tsds.getDictionary(args[1], Field.TermStatsType.RAW);
+        DiskDictionary tsd = tsds.getDictionary(args[1], Field.TermStatsType.CASED);
         logger.info(String.format("Term Stats dict for %s has %d entries", args[1], tsd.size()));
         
         QueryEntry<String> lastEntry = tsd.getByID(tsd.size());
