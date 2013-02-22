@@ -22,46 +22,55 @@
  * information or have any questions.
  */
 
-package com.sun.labs.minion.classification;
+package com.sun.labs.minion.clustering;
 
-import com.sun.labs.minion.indexer.postings.Occurrence;
-import com.sun.labs.minion.util.buffer.ReadableBuffer;
-import com.sun.labs.minion.util.buffer.WriteableBuffer;
+import com.sun.labs.minion.Result;
 
 /**
- * An interface for the features defined by classifiers.  Features have
- * names and can be encoded and decoded from buffers.
+ * A single element in a results cluster.
+ *
+ * @author Stephen Green <stephen.green@sun.com>
  */
-public interface Feature extends Comparable<Feature>, Occurrence {
-
-    /**
-     * Sets the name of this feature.
-     *
-     * @param name The name of the feature.
-     */
-    public void setName(String name);
+public class ClusterElement {
     
-
     /**
-     * Gets the name of this feature.
-     *
-     * @return the name of the feature.
+     * The point in N-space representing this element.
      */
-    public String getName();
-
+    public double[] point;
+    
     /**
-     * Encodes the information in this feature onto the given buffer.
-     *
-     * @param b a buffer onto which the feature's information can be
-     * encoded.
+     * The actual result that this element represents.
      */
-    public void encode(WriteableBuffer b);
-
+    protected Result r;
+    
     /**
-     * Decodes the information in this feature from the given buffer.
-     *
-     * @param b a buffer from which the feature's information can be
-     * decoded.
+     * The cluster that this element is a member of.
      */
-    public void decode(ReadableBuffer b);
-}// Feature
+    public int member;
+    
+    /**
+     * Creates a ClusterElement
+     */
+    public ClusterElement(Result r, double[] point) {
+        this.r = r;
+        this.point = point;
+        this.member = -1;
+    }
+    
+    public double[] getPoint() {
+        return point;
+    }
+    
+    /**
+     * Computes the distance between this cluster element an a given point in
+     * the same space.
+     */
+    public double dist(double[] p) {
+        return ClusterUtil.euclideanDistance(point, p);
+    }
+    
+    @Override
+    public String toString() {
+        return r.getKey();
+    }
+}
