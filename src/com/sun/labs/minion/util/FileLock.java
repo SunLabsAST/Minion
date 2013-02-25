@@ -305,7 +305,7 @@ public class FileLock {
                 lockFile.delete();
             } catch(IOException ex) {
                 throw new FileLockException(String.format(
-                        "Error cleaning up for %s", lockFile), ex);
+                        "Error unlocking inter-process lock for %s", lockFile), ex);
             }
         }
 
@@ -313,15 +313,11 @@ public class FileLock {
         // Now the inter-process lock
         try {
             inProcessLock.unlock();
-            openChannel.close();
-            openFile.close();
         } catch(IllegalMonitorStateException ex) {
             throw new FileLockException(String.format(
                     "Error unlocking process lock %s", inProcessLock), ex);
-        } catch (IOException ex) {
-            throw new FileLockException(String.format(
-                    "Error unlocking process lock %s", inProcessLock), ex);
         }
+        
         if(verbose) {
             logger.info(String.format("%s [%s] released process lock on %s",
                                       vname, Thread.currentThread().getName(),
