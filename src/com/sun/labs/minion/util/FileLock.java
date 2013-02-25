@@ -61,8 +61,6 @@ public class FileLock {
     private static final Logger logger = Logger.getLogger(FileLock.class.
             getName());
 
-    private static final long baseTime = System.nanoTime();
-
     private String name;
 
     /**
@@ -74,10 +72,6 @@ public class FileLock {
      * The timeout for the lock.
      */
     private long defaultTimeout;
-
-    private long lastAcquireTime;
-
-    private long lastReleaseTime;
 
     /**
      * A lock for in-process exclusion.
@@ -187,18 +181,6 @@ public class FileLock {
             throws java.io.IOException, FileLockException {
 
         //
-        // If we hold the lock already, then we're done.
-        if(hasLock()) {
-            if(verbose) {
-                logger.info(String.
-                        format("%s [%s] already acquired process lock %s", vname,
-                               Thread.currentThread().getName(),
-                               inProcessLock));
-            }
-            return;
-        }
-
-        //
         // See whether we can acquire this lock within the process.
         try {
             if(!inProcessLock.tryLock(timeout, TimeUnit.MILLISECONDS)) {
@@ -216,11 +198,20 @@ public class FileLock {
             throw new FileLockException(String.format(
                     "Interrupted waiting for %s", lockFile), ex);
         }
+        
+        int holdCount = inProcessLock.getHoldCount();
         if(verbose) {
             logger.info(String.
-                    format("%s [%s] acquired process lock %s",
+                    format("%s [%s] acquired process lock %s %d",
                            vname, Thread.currentThread().getName(),
-                           inProcessLock));
+                           inProcessLock, holdCount));
+        }
+
+        //
+        // If we've acquired this lock multiple times, then we don't have to 
+        // re-acquire the file lock.
+        if(holdCount > 1) {
+            return;
         }
 
         //
@@ -288,15 +279,15 @@ public class FileLock {
 
         //
         // First, make sure that we have the lock.
-        if(!inProcessLock.isHeldByCurrentThread()) {
+        if(!hasLock()) {
             throw new FileLockException(String.format(
                     "%s Can't release process lock not held on %s", Thread.
                     currentThread().getName(), lockFile));
         }
 
         //
-        // Release the interprocess lock.
-        if(interProcessLock != null) {
+        // If we're ready to give up the in-process lock, then release the interprocess lock.
+        if(inProcessLock.getHoldCount() == 1 && interProcessLock != null) {
             try {
                 interProcessLock.release();
                 if(verbose) {
@@ -311,6 +302,7 @@ public class FileLock {
             try {
                 openChannel.close();
                 openFile.close();
+                lockFile.delete();
             } catch(IOException ex) {
                 throw new FileLockException(String.format(
                         "Error cleaning up for %s", lockFile), ex);
@@ -321,7 +313,12 @@ public class FileLock {
         // Now the inter-process lock
         try {
             inProcessLock.unlock();
+            openChannel.close();
+            openFile.close();
         } catch(IllegalMonitorStateException ex) {
+            throw new FileLockException(String.format(
+                    "Error unlocking process lock %s", inProcessLock), ex);
+        } catch (IOException ex) {
             throw new FileLockException(String.format(
                     "Error unlocking process lock %s", inProcessLock), ex);
         }

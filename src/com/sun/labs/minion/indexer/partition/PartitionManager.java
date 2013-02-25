@@ -628,14 +628,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             logger.warning("Error reading meta file in update: " + e);
         }
 
-        boolean activeReleaseNeeded = false;
         List<DiskPartition> newlyLoadedParts = new ArrayList<DiskPartition>();
         
         try {
-            if(!activeFile.isLocked()) {
-                activeFile.lock();
-                activeReleaseNeeded = true;
-            }
+            activeFile.lock();
 
             List<Integer> add = activeFile.read();
             List<Integer> currList = ActiveFile.getPartitionNumbers(activeParts);
@@ -712,9 +708,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         } catch (Exception ex) {
             logger.log(Level.SEVERE, String.format("Error updating active partitions"), ex);
         } finally {
-            if(activeReleaseNeeded) {
-                activeFile.unlock();
-            }
+            activeFile.unlock();
         }
 
         return newlyLoadedParts;
@@ -1298,7 +1292,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     "Error getting merge lock when too many partitions", ex);
             return false;
         } catch(FileLockException fle) {
-            logger.log(Level.INFO, "Unable to get merge lock when too many partitions");
+//            logger.log(Level.INFO, "Unable to get merge lock when too many partitions");
             highwaterMergeAttempts++;
             if(highwaterMergeAttempts >= 3) {
                 
@@ -2463,7 +2457,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
             //
             // Most likely, we didn't get the merge lock.
-            logger.info(String.format("Couldn't get lock for merge!"));
             return null;
         } catch(IOException ex) {
             logger.log(Level.SEVERE, String.format("Error getting lock for merger"), ex);
@@ -2664,14 +2657,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 dumpDeletionMaps(toMerge, preDelMaps);
             }
 
-            boolean activeReleaseNeeded = false;
             try {
                 if(newDP != null) {
 
-                    if(!activeFile.isLocked()) {
-                        activeFile.lock();
-                        activeReleaseNeeded = true;
-                    }
+                    activeFile.lock();
 
                     //
                     // Fix up the deletion bitmap for the new
@@ -2797,9 +2786,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 //
                 // Release the locks we're holding.
                 try {
-                    if(activeReleaseNeeded) {
-                        activeFile.unlock();
-                    }
+                    activeFile.unlock();
                     mergeLock.releaseLock();
                 } catch(FileLockException ex) {
                     logger.log(Level.SEVERE,
