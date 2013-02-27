@@ -319,9 +319,9 @@ public class FileLock {
         }
         
         if(verbose) {
-            logger.info(String.format("%s [%s] released process lock on %s",
+            logger.info(String.format("%s [%s] released process lock on %s %d",
                                       vname, Thread.currentThread().getName(),
-                                      inProcessLock));
+                                      inProcessLock, inProcessLock.getHoldCount()));
         }
     }
 
