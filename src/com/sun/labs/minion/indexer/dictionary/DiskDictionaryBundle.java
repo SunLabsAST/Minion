@@ -402,12 +402,14 @@ public class DiskDictionaryBundle<N extends Comparable> {
                     info.getName()));
             return null;
         }
-        if(!field.isStemmed()) {
-            ret = dicts[DictionaryType.CASED_VECTOR.ordinal()].get(key);
-        } else {
+        if(field.isStemmed()) {
             ret = dicts[DictionaryType.STEMMED_VECTOR.ordinal()].get(key);
+        } else if(field.isUncased()) {
+            ret = dicts[DictionaryType.UNCASED_VECTOR.ordinal()].get(key);
+        } else if(field.isCased()) {
+            ret = dicts[DictionaryType.CASED_VECTOR.ordinal()].get(key);
         }
-
+    
         if(ret != null) {
             ret.setField(info);
         }
