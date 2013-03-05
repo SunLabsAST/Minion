@@ -100,7 +100,7 @@ public abstract class AbstractPartitionOutput implements PartitionOutput {
      */
     protected WriteableBuffer deletionsBuffer;
 
-    private String name;
+    protected String name;
 
     private boolean started = false;
     

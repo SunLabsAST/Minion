@@ -1277,84 +1277,78 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     private boolean handleTooManyPartitions() {
 
         //
-        // If we're doing async merges, then we need to acquire the merge lock
-        // before we can do anything else.  Acquiring the lock will mean that there
-        // are no outstanding merges proceeding.  
-        //
         // We're going to use a long timeout, because if we're in here, the indexer
         // is in trouble, and this needs to get taken care of!
         // Note that we'll try to re-acquire the lock in getMerger below, but that
         // will be fine if we already have it from here.
         try {
             mergeLock.acquireLock(5, TimeUnit.SECONDS);
-        } catch(IOException ex) {
+        } catch (IOException ex) {
             logger.log(Level.SEVERE,
                     "Error getting merge lock when too many partitions", ex);
             return false;
-        } catch(FileLockException fle) {
-//            logger.log(Level.INFO, "Unable to get merge lock when too many partitions");
+        } catch (FileLockException fle) {
             highwaterMergeAttempts++;
-            if(highwaterMergeAttempts >= 3) {
-                
+            if (highwaterMergeAttempts >= 3) {
             }
             return false;
         }
-        
-        if(activeParts.size() < openPartitionHighWaterMark) {
+
+        try {
+            if (activeParts.size() < openPartitionHighWaterMark) {
+                //
+                // While we were waiting for the lock, the problem resolved itself.
+                // Hurray for procrastination.
+                return true;
+            }
+
             //
-            // While we were waiting for the lock, the problem resolved itself.
-            // Hurray for procrastination.
+            // Get a list of partitions sorted by increasing size:  smaller partitions
+            // will merge faster.
+            List<DiskPartition> parts = new ArrayList<DiskPartition>(activeParts);
+            Collections.sort(parts, new Comparator<DiskPartition>() {
+                @Override
+                public int compare(DiskPartition o1, DiskPartition o2) {
+                    return o1.getMaxDocumentID() - o2.getMaxDocumentID();
+                }
+            });
+
+            //
+            // Take a sublist that will get us to the low water mark.
+            parts = parts.subList(0, parts.size() - openPartitionLowWaterMark);
+
+            if (parts.size() < maxMergeSize) {
+                return true;
+            }
+
+            logger.warning(String.format("Highwater merge: %s %s", parts, Thread.currentThread()));
+
+            Merger m = getMerger(parts, 5, TimeUnit.SECONDS);
+            if (m == null) {
+                logger.log(Level.SEVERE, String.format("Didn't get merger, but we already held the lock?"));
+                return false;
+            }
+            
+            //
+            // OK, actually merge now.
+            m.merge();
+
+            //
+            // Now force a close of the partitions on the toClose list to free
+            // up those file handles.  This may break queries that are in flight,
+            // but we're in trouble here!
+            for (Closeable cl : thingsToClose) {
+                cl.close(Long.MAX_VALUE);
+                cl.createRemoveFile();
+            }
+            thingsToClose.clear();
+        } finally {
             try {
                 mergeLock.releaseLock();
-            } catch(FileLockException ex) {
-                logger.log(Level.SEVERE, "Error releasing lock when too many partitions", ex);
+            } catch (FileLockException ex) {
+                logger.log(Level.SEVERE, String.format("Error unlocking merge lock after highwater merge"), ex);
             }
-            return true;
         }
-        
-        //
-        // Get a list of partitions sorted by increasing size:  smaller partitions
-        // will merge faster.
-        List<DiskPartition> parts = new ArrayList<DiskPartition>(activeParts);
-        Collections.sort(parts, new Comparator<DiskPartition>() {
-            @Override
-            public int compare(DiskPartition o1, DiskPartition o2) {
-                return o1.getMaxDocumentID() - o2.getMaxDocumentID();
-            }
-
-        });
-
-        //
-        // Take a sublist that will get us to the low water mark.
-        parts = parts.subList(0, parts.size() - openPartitionLowWaterMark);
-        
-        if(parts.size() < maxMergeSize) {
-            return true;
-        }
-
-        logger.warning(String.format("Highwater merge: %s %s", parts, Thread.currentThread()));
-
-        Merger m = getMerger(parts, 5, TimeUnit.SECONDS);
-        if(m == null) {
-            logger.log(Level.SEVERE, String.format("Didn't get merger, but we already held the lock?"));
-            try {
-                mergeLock.releaseLock();
-            } catch(FileLockException ex) {
-                logger.log(Level.SEVERE, String.format("Couldn't release merge lock in highwater merge"));
-            }
-            return false;
-        }
-        m.merge();
-
-        //
-        // Now force a close of the partitions on the toClose list to free
-        // up those file handles.  This may break queries that are in flight,
-        // but we're in trouble here!
-        for(Closeable cl : thingsToClose) {
-            cl.close(Long.MAX_VALUE);
-            cl.createRemoveFile();
-        }
-        thingsToClose.clear();
 
         return true;
     }

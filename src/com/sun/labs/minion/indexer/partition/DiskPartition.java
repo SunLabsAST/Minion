@@ -736,11 +736,12 @@ public class DiskPartition extends Partition implements Closeable {
             }
             
             if(logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format("Merging %s into DP: %d (%d docs)",
-                                          partsWithMaps,
-                                          mergeState.partOut.
-                        getPartitionNumber(), 
-                                          mergeState.partOut.getMaxDocID()));
+                logger.fine(String.format("%s Merging %s into DP: %d (%d docs)",
+                        Thread.currentThread(),
+                        partsWithMaps,
+                        mergeState.partOut.
+                        getPartitionNumber(),
+                        mergeState.partOut.getMaxDocID()));
             }
             
 //            logger.info(String.format("starts: %s nUndel: %s maxDocID: %d", 
