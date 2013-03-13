@@ -224,11 +224,13 @@ public class IDFreqPostings extends IDPostings {
                 pi.next();
             } else if(diff > 0) {
                 tid = Util.addExpand(tid, np, ids[p2]);
-                tf = Util.addExpand(tf, np++, freqs[p2++]);
+                tf = Util.addExpand(tf, np++, freqs[p2]);
+                p2++;
             } else {
                 tid = Util.addExpand(tid, np, pid);
-                tf = Util.addExpand(tf, np++, freqs[p2++] + pi.getFreq());
+                tf = Util.addExpand(tf, np++, freqs[p2] + pi.getFreq());
                 p1++;
+                p2++;
                 pi.next();
             }
         }

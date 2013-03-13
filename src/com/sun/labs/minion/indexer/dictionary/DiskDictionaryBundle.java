@@ -953,8 +953,9 @@ public class DiskDictionaryBundle<N extends Comparable> {
             
             if(logger.isLoggable(Level.FINER)) {
                 dw.stop();
-                logger.finer(String.format("Merging %s took %.2fms", type, dw.
-                        getTimeMillis()));
+                logger.finer(String.format("Merging %s of %s took %.2fms", type, 
+                        mergeState.info.getName(),
+                        dw.getTimeMillis()));
                 dw.reset();
             }
 
