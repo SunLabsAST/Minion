@@ -167,6 +167,12 @@ public class FieldInfo implements Cloneable, Configurable {
          * in the index.
          */
         INDEXED,
+        
+        /**
+         * Values in the field, if indexed will have bigram character dictionaries 
+         * stored so that wildcard queries can be used on terms in the dictionary.
+         */
+        WILDCARD,
         /**
          * The values tokenized from this field will be stored in a document
          * vector for this field, which will allow document similarity
@@ -178,6 +184,11 @@ public class FieldInfo implements Cloneable, Configurable {
          * in relational queries or for sorting search results.
          */
         SAVED,
+        /**
+         * Values in the field, if they are saved strings will have bigram character dictionaries 
+         * stored so that wildcard queries can be used on the saved values.
+         */
+        WILDCARD_SAVED,
         /**
          * Word positions for the tokens in this field will be stored in the index
          */
@@ -207,7 +218,6 @@ public class FieldInfo implements Cloneable, Configurable {
          * use.
          */
         CACHE;
-        
     }
     
 

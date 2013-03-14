@@ -827,7 +827,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
             }
 
             if(!foundDict) {
-                mergeHeader.dictionaryOffsets[ord] = -1;
                 logger.finer(String.format("No dicts for %s", type));
                 continue;
             }
@@ -898,7 +897,17 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         bgDicts[i] = (DiskBiGramDictionary) mDicts[i];
                     }
                     try {
+                        if (logger.isLoggable(Level.FINER)) {
+                            dw.start();
+                        }
                         DiskBiGramDictionary.merge(mergeState, bgDicts);
+                        if (logger.isLoggable(Level.FINER)) {
+                            dw.stop();
+                            logger.finer(String.format("Merging %s of %s took %.2fms", type,
+                                    mergeState.info.getName(),
+                                    dw.getTimeMillis()));
+                            dw.reset();
+                        }
                     } catch(RuntimeException ex) {
                         logger.log(Level.SEVERE, String.format(
                                 "Exception merging %s of field %s using bigrams from %s",
@@ -916,7 +925,18 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         bgDicts[i] = (DiskBiGramDictionary) mDicts[i];
                     }
                     try {
+                        if (logger.isLoggable(Level.FINER)) {
+                            dw.start();
+                        }
                         DiskBiGramDictionary.merge(mergeState, bgDicts);
+                        if (logger.isLoggable(Level.FINER)) {
+                            dw.stop();
+                            logger.finer(String.format("Merging %s of %s took %.2fms", type,
+                                    mergeState.info.getName(),
+                                    dw.getTimeMillis()));
+                            dw.reset();
+                        }
+
                     } catch(RuntimeException ex) {
                         logger.log(Level.SEVERE, String.format("Exception merging %s of field %s",
                                 type, mergeState.info.getName()));
@@ -930,9 +950,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                 dw.start();
             }
 
-//            if(mergeState.info.getName().equals("title")) {
-//                Logger.getLogger(DiskDictionary.class.getName()).setLevel(Level.FINER);
-//            }
             try {
                 entryIDMaps[ord] = DiskDictionary.merge(mergeState.manager.getIndexDir(),
                         encoder,
@@ -948,8 +965,6 @@ public class DiskDictionaryBundle<N extends Comparable> {
                         type, mergeState.info.getName()));
                 throw (ex);
             }
-//            Logger.getLogger(DiskDictionary.class.getName()).setLevel(
-//                    Level.INFO);
             
             if(logger.isLoggable(Level.FINER)) {
                 dw.stop();

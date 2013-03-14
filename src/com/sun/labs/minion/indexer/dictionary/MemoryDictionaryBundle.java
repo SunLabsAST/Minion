@@ -347,13 +347,13 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         // are pretty much the same.
         for(DictionaryType type : DictionaryType.values()) {
             int ord = type.ordinal();
+
             if(dicts[ord] == null) {
                 //
                 // If we didn't have a dictionary for this type, and it's not
                 // one of the bigram dictionaries that we might build below, then
                 // just skip it.
                 if(type != DictionaryType.TOKEN_BIGRAMS && type != DictionaryType.SAVED_VALUE_BIGRAMS) {
-                    header.dictionaryOffsets[ord] = -1;
                     continue;
                 }
             } 
@@ -399,7 +399,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         //
                         // There were no entries stored in the dictionary, so
                         // we don't need to save anything.
-                        header.dictionaryOffsets[ord] = -1;
                         continue;
                         
                     }
@@ -429,7 +428,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         //
                         // There were no entries stored in the dictionary, so
                         // we don't need to save anything.
-                        header.dictionaryOffsets[ord] = -1;
                         continue;
 
                     }
@@ -460,8 +458,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     partOut.setPostingsIDMap(entryIDMaps[DictionaryType.STEMMED_TOKENS.ordinal()]);
                     break;
                 case TOKEN_BIGRAMS:
+                    if (!field.getInfo().hasAttribute(FieldInfo.Attribute.WILDCARD)) {
+                        continue;
+                    }
                     MemoryDictionary tdict;
-                    if(dicts[DictionaryType.CASED_TOKENS.ordinal()] != null) {
+                    if (dicts[DictionaryType.CASED_TOKENS.ordinal()] != null) {
                         tdict = dicts[DictionaryType.CASED_TOKENS.ordinal()];
                     } else {
                         tdict = dicts[DictionaryType.UNCASED_TOKENS.ordinal()];
@@ -469,21 +470,20 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
                     //
                     // We'll create this one on the fly.
-                    if(tdict != null) {
-                        if(dicts[ord] == null) {
+                    if (tdict != null) {
+                        if (dicts[ord] == null) {
                             dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
                         }
                         MemoryBiGramDictionary tbg = (MemoryBiGramDictionary) dicts[ord];
-                        for(Object o : tdict) {
+                        for (Object o : tdict) {
                             IndexEntry e = (IndexEntry) o;
                             tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
-                            }
+                        }
                         partOut.setDictionaryEncoder(new StringNameHandler());
                         partOut.setDictionaryRenumber(MemoryDictionary.Renumber.RENUMBER);
                         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                         partOut.setPostingsIDMap(null);
                     } else {
-                        header.dictionaryOffsets[ord] = -1;
                         continue;
                     }
                     break;
@@ -492,13 +492,16 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     //
                     // If this is a string field, and there were some saved values, 
                     // then go ahead and make bigrams out of them.
-                    if(field.getInfo().getType() == FieldInfo.Type.STRING &&
-                            header.dictionaryOffsets[DictionaryType.RAW_SAVED.ordinal()] != -1){
-                        if(dicts[ord] == null) {
+                    if (!field.getInfo().hasAttribute(FieldInfo.Attribute.WILDCARD_SAVED)) {
+                        continue;
+                    }
+                    if (field.getInfo().getType() == FieldInfo.Type.STRING
+                            && header.dictionaryOffsets[DictionaryType.RAW_SAVED.ordinal()] != -1) {
+                        if (dicts[ord] == null) {
                             dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
                         }
                         MemoryBiGramDictionary sbg = (MemoryBiGramDictionary) dicts[ord];
-                        for(Object o : dicts[DictionaryType.RAW_SAVED.ordinal()]) {
+                        for (Object o : dicts[DictionaryType.RAW_SAVED.ordinal()]) {
                             IndexEntry e = (IndexEntry) o;
                             sbg.add(CharUtils.toLowerCase(e.getName().toString()),
                                     e.getID());
@@ -508,7 +511,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                         partOut.setPostingsIDMap(null);
                     } else {
-                        header.dictionaryOffsets[ord] = -1;
                         continue;
                     }
                     break;

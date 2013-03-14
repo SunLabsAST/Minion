@@ -155,7 +155,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * be allowed to be dumped until the number of partitions can be decreased.
      * Generally speaking, this is an exceptional condition and it will cause
      * indexing to slow down substantially.  We need to monitor this because
-     * having too many open partitions can lead to running out of filehandles.
+     * having too many open partitions can lead to running out of file handles.
      */
     @ConfigInteger(defaultValue = 40)
     public static final String PROP_OPEN_PARTITION_HIGH_WATER_MARK =

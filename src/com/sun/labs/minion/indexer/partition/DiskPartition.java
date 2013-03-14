@@ -163,7 +163,7 @@ public class DiskPartition extends Partition implements Closeable {
             throws java.io.IOException {
         this.partNumber = partNumber;
         this.manager = manager;
-
+        
         //
         // Open the dictionary and postings files.
         dictRAF = new RandomAccessFile(manager.makeDictionaryFile(partNumber), "rw");
@@ -771,6 +771,13 @@ public class DiskPartition extends Partition implements Closeable {
             PartitionHeader mPartHeader = mergeState.partOut.getPartitionHeader();
             mPartHeader.setDocDictOffset(fieldDictOut.position());
             mPartHeader.setProvenance(String.format("merged %s", provenance.toString()));
+            
+            NanoWatch ddw = null;
+            if(logger.isLoggable(Level.FINER)) {
+                ddw = new NanoWatch();
+                ddw.start();
+                logger.fine(String.format("Merging document dictionaries"));
+            }
             DiskDictionary.merge(pm.getIndexDir(),
                     new StringNameHandler(),
                            dicts,
@@ -779,6 +786,10 @@ public class DiskPartition extends Partition implements Closeable {
                            docDictIDMaps,
                            fieldDictOut, 
                            mergeState.partOut.getPostingsOutput(), true);
+            if (logger.isLoggable(Level.FINER)) {
+                ddw.stop();
+                logger.fine(String.format("Merging document dictionaries took %.2fms", ddw.getTimeMillis()));
+            }
 
             mergeCustom(mergeState);
 
