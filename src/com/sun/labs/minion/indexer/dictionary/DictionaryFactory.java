@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  */
 public class DictionaryFactory implements Configurable {
 
-    static Logger logger = Logger.getLogger(DictionaryFactory.class.getName());
+    static final Logger logger = Logger.getLogger(DictionaryFactory.class.getName());
 
     public static final String PROP_ENTRY_FACTORY = "entryFactory";
 

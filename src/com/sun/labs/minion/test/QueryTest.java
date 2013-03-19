@@ -2308,6 +2308,28 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add(prefixCommand(prefix, "geoMerge"), "Maintenance", new CommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                    PartitionManager.Merger merger = manager.getMerger();
+                    if(merger == null) {
+                        return "No merge required";
+                    }
+                    List<DiskPartition> parts = merger.getToMerge();
+                    logger.info(String.format("Merging %s", parts));
+                    merger.merge();
+                    logger.info(String.format("FWB writes: %.2fms",
+                            FileWriteableBuffer.ww.
+                            getTimeMillis()));
+                    return "Merged " + parts;
+            }
+
+            @Override
+            public String getHelp() {
+                return "Request a geometric merge";
+            }
+        });
+
         shell.add(prefixCommand(prefix, "reap"), "Maintenance", new CommandInterface() {
 
             @Override

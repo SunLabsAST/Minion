@@ -2603,6 +2603,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             return newDP;
         }
 
+        public List<DiskPartition> getToMerge() {
+            return toMerge;
+        }
+
         /**
          * Does the merge of the partitions.
          */
