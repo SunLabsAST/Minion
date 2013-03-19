@@ -2008,6 +2008,18 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         return m.merge();
     }
 
+    /**
+     * This is a geometric merge heuristic controlled by the mergeRate. It
+     * determines which partitions on the active list can be merged.
+     *
+     * @return The list of partitions that should be merged, or
+     * <code>null</code> if none should be merged.
+     * @see #setMergeRate
+     */
+    public List<DiskPartition> mergeGeometric() {
+        return mergeGeometric(maxMergeSize);
+    }
+    
     // XXX We're still not handling deleted docs > 20% of partition merge
     // trigger XXX Should try to remove the need for delteOld and remap
     /**
@@ -2018,7 +2030,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * <code>null</code> if none should be merged.
      * @see #setMergeRate
      */
-    public List<DiskPartition> mergeGeometric() {
+    public List<DiskPartition> mergeGeometric(int maxPartsToMerge) {
 
         //
         // Get a list of the active partitions sorted by the number of
@@ -2026,12 +2038,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         List<DiskPartition> parts = (List<DiskPartition>) getActivePartitions();
         Collections.sort(parts,
                 new Comparator<DiskPartition>() {
-
             @Override
-                    public int compare(DiskPartition o1, DiskPartition o2) {
-                        return o1.getMaxDocumentID() - o2.getMaxDocumentID();
-                    }
-                });
+            public int compare(DiskPartition o1, DiskPartition o2) {
+                return o1.getMaxDocumentID() - o2.getMaxDocumentID();
+            }
+        });
 
         //
         // Check each partition in turn to see if it overflows the
@@ -2072,7 +2083,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // Merge all partitions up to and including mergePart.  Nb: This
         // will merge all partitions at the mergePart level and below.
         List<DiskPartition> toMerge = new ArrayList<DiskPartition>();
-        for(int p = 0; p <= mergePart && p < maxMergeSize; p++) {
+        for(int p = 0; p <= mergePart && p < maxPartsToMerge; p++) {
             toMerge.add(parts.get(p));
         }
 

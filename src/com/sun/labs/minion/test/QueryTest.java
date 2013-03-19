@@ -2311,7 +2311,14 @@ public class QueryTest extends SEMain {
         shell.add(prefixCommand(prefix, "geoMerge"), "Maintenance", new CommandInterface() {
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
-                List<DiskPartition> parts = manager.mergeGeometric();
+                List<DiskPartition> parts;
+                
+                if(args.length == 1) {
+                    parts = manager.mergeGeometric();
+                } else {
+                    parts = manager.mergeGeometric(Integer.parseInt(args[1]));
+                }
+                
                 if(parts == null) {
                     return "No merge required";
                 }
