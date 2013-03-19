@@ -29,6 +29,7 @@ package com.sun.labs.minion.classification;
  *
  */
 
+import com.sun.labs.minion.Feature;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;

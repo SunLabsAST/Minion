@@ -84,7 +84,10 @@ public class InvFileMemoryPartition extends MemoryPartition {
         for(Map.Entry<String, Object> field : doc.getMap().entrySet()) {
             FieldInfo fi = manager.getFieldInfo(field.getKey());
             if(fi == null) {
-                logger.warning(String.format("Unknown field: %s in %s", field.getKey(), doc.getKey()));
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.fine(String.format("Unknown field: %s in %s", field.
+                            getKey(), doc.getKey()));
+                }
                 continue;
             }
             addField(fi, field.getValue());

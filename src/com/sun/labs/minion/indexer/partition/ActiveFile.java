@@ -25,15 +25,15 @@ public class ActiveFile {
 
     private FileLock activeLock;
 
-    public ActiveFile(File indexDir, File lockDir, String type) {
+    public ActiveFile(File indexDir, File lockDir, String type, boolean verboseLocking) {
         activeFile = new File(indexDir, "AL." + type);
         activeLock = new FileLock(lockDir, activeFile, 300, TimeUnit.SECONDS);
+        activeLock.setName("active");
+        activeLock.setVerbose(verboseLocking);
     }
 
     public void lock() throws IOException, FileLockException {
-        if(!activeLock.hasLock()) {
-            activeLock.acquireLock();
-        }
+        activeLock.acquireLock();
     }
     
     public boolean isLocked() {
@@ -65,17 +65,11 @@ public class ActiveFile {
     public List<Integer> read() throws java.io.IOException,
             FileLockException {
 
-        boolean releaseNeeded = false;
-        List<Integer> ret =
-                new ArrayList<Integer>();
-
-        if(!activeLock.hasLock()) {
-            activeLock.acquireLock();
-            releaseNeeded = true;
-        }
-
+        List<Integer> ret = new ArrayList<Integer>();
         RandomAccessFile active;
         int nParts = 0;
+
+        activeLock.acquireLock();
 
         //
         // Handle the case of a non-existent active file.
@@ -89,9 +83,7 @@ public class ActiveFile {
                 }
                 return ret;
             } finally {
-                if(releaseNeeded) {
-                    activeLock.releaseLock();
-                }
+                activeLock.releaseLock();
             }
         }
 
@@ -106,12 +98,9 @@ public class ActiveFile {
         try {
             nParts = active.readInt();
         } catch(java.io.IOException ioe) {
-            logger.severe("Error reading number of " +
-                    "active partitions.");
+            logger.severe("Error reading number of active partitions.");
             active.close();
-            if(releaseNeeded) {
-                activeLock.releaseLock();
-            }
+            activeLock.releaseLock();
             throw ioe;
         }
 
@@ -124,9 +113,7 @@ public class ActiveFile {
         } catch(java.io.IOException ioe) {
             logger.severe("Error reading partition numbers.");
             active.close();
-            if(releaseNeeded) {
-                activeLock.releaseLock();
-            }
+            activeLock.releaseLock();
             throw ioe;
         }
         active.close();
@@ -138,10 +125,7 @@ public class ActiveFile {
         //
         // If we locked it just for reading, then we can release the lock
         // now.
-        if(releaseNeeded) {
-            activeLock.releaseLock();
-        }
-
+        activeLock.releaseLock();
         return ret;
     }
     
@@ -159,11 +143,7 @@ public class ActiveFile {
             java.io.IOException,
             FileLockException {
 
-        boolean releaseNeeded = false;
-        if(!activeLock.hasLock()) {
-            activeLock.acquireLock();
-            releaseNeeded = true;
-        }
+        activeLock.acquireLock();
 
         if(logger.isLoggable(Level.FINEST)) {
             logger.finer(String.format("Writing AL: %s", parts));
@@ -192,9 +172,7 @@ public class ActiveFile {
             logger.severe("Error writing active file");
             throw ioe;
         } finally {
-            if(releaseNeeded) {
-                activeLock.releaseLock();
-            }
+            activeLock.releaseLock();
         }
     }
 

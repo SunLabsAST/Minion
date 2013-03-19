@@ -23,6 +23,7 @@
  */
 package com.sun.labs.minion.classification;
 
+import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.util.Util;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -364,8 +365,7 @@ public class WeightedFeatureVector {
         }
         //
         // Sort the results and return them.
-        WeightedFeature[] ret = features.toArray(new com.sun.labs.minion.classification.WeightedFeature[features.
-                size()]);
+        WeightedFeature[] ret = features.toArray(new WeightedFeature[features.size()]);
         Util.sort(ret);
         return ret;
     }

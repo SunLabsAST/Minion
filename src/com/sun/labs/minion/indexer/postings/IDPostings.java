@@ -633,12 +633,12 @@ public class IDPostings implements Postings, MergeablePostings {
         if(verbose) {
             PostingsIterator pi = iterator(null);
             boolean first = true;
-            while(pi.next()){
+            b.append(' ');
+            while(pi.next()) {
                 if(!first) {
-                    b.append(' ');
+                    b.append(", ");
                 }
-                first = false;
-                b.append(pi.getID()).append(',');
+                b.append(pi.getID());
             }
         }
         return b.toString();

@@ -47,7 +47,6 @@ import com.sun.labs.minion.SimpleHighlighter;
 import com.sun.labs.minion.Stemmer;
 import com.sun.labs.minion.TermStats;
 import com.sun.labs.minion.TextHighlighter;
-import com.sun.labs.minion.UnionResultsFilter;
 import com.sun.labs.minion.WeightedFeature;
 import com.sun.labs.minion.engine.SearchEngineImpl;
 import com.sun.labs.minion.indexer.DiskField;
@@ -57,10 +56,12 @@ import com.sun.labs.minion.indexer.MetaFile;
 import com.sun.labs.minion.indexer.dictionary.Dictionary;
 import com.sun.labs.minion.indexer.dictionary.DictionaryIterator;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionary;
+import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.dictionary.TermStatsDiskDictionary;
 import com.sun.labs.minion.indexer.entry.Entry;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.entry.TermStatsQueryEntry;
+import com.sun.labs.minion.indexer.partition.DelMap;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
@@ -70,9 +71,6 @@ import com.sun.labs.minion.indexer.postings.PostingsIteratorFeatures;
 import com.sun.labs.minion.indexer.postings.PostingsIteratorWithPositions;
 import com.sun.labs.minion.lexmorph.LiteMorph;
 import com.sun.labs.minion.lexmorph.LiteMorph_en;
-import com.sun.labs.minion.query.And;
-import com.sun.labs.minion.query.Equals;
-import com.sun.labs.minion.query.Or;
 import com.sun.labs.minion.query.ParsedElement;
 import com.sun.labs.minion.retrieval.AbstractDocumentVector;
 import com.sun.labs.minion.retrieval.QueryTermDocStats;
@@ -87,6 +85,7 @@ import com.sun.labs.minion.util.CharUtils;
 import com.sun.labs.minion.util.Getopt;
 import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.FileWriteableBuffer;
+import com.sun.labs.minion.util.buffer.ReadableBuffer;
 import com.sun.labs.util.LabsLogFormatter;
 import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.command.CommandInterface;
@@ -103,8 +102,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -308,7 +307,6 @@ public class QueryTest extends SEMain {
             shell.out.println(" Partitions have:\n" + "  " + manager.getNDocs()
                            + " documents\n" + "  " + manager.getNTokens()
                            + " tokens\n" + "  " + manager.getNTerms() + " terms");
-            
         }
     }
 
@@ -1160,6 +1158,288 @@ public class QueryTest extends SEMain {
         
         shell.addAlias("termByID", "tbid");
         
+        shell.add(prefixCommand(prefix, "termByName"), "Terms", new CompletorCommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                if(args.length < 4) {
+                    return "Must specify a field, a dictionary type and name";
+                }
+
+                String fieldName = args[1];
+                DictionaryType type = DictionaryType.valueOf(args[2].
+                        toUpperCase());
+
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    DiskField df = ((InvFileDiskPartition) p).getDF(
+                            fieldName);
+                    if(df == null) {
+                        continue;
+                    }
+                    DiskDictionary dict = (DiskDictionary) df.
+                            getDictionary(type);
+                    if(dict == null) {
+                        return String.format(
+                                "No dictionary of type %s for %s", type,
+                                fieldName);
+                    }
+                    for(int i = 3; i < args.length; i++) {
+                        QueryEntry qe = dict.get(args[i]);
+                        if(qe != null) {
+                            shell.out.format("%s Entry: %s (%d)\n", p, qe, qe.getID());
+                        }
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field dict id [id]...- Gets a term by name from a particular field's dictionary";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[] {
+                    new FieldCompletor(manager.getMetaFile()),
+                    new EnumCompletor(DictionaryType.class),
+                    new NullCompletor()
+                };
+            }
+        });
+        
+        shell.addAlias("termByName", "tbn");
+        
+        shell.add(prefixCommand(prefix, "postByName"), "Terms",
+                  new CompletorCommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws
+                    Exception {
+                if(args.length < 4) {
+                    return "Must specify a field, a dictionary type and name";
+                }
+
+                String fieldName = args[1];
+                DictionaryType type = DictionaryType.valueOf(args[2].
+                        toUpperCase());
+
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    DiskField df = ((InvFileDiskPartition) p).getDF(
+                            fieldName);
+                    if(df == null) {
+                        continue;
+                    }
+                    DiskDictionary dict = (DiskDictionary) df.
+                            getDictionary(type);
+                    if(dict == null) {
+                        return String.format(
+                                "No dictionary of type %s for %s", type,
+                                fieldName);
+                    }
+                    for(int i = 3; i < args.length; i++) {
+                        QueryEntry qe = dict.get(args[i]);
+                        if(qe != null) {
+                            shell.out.format("%s Entry: %s (%d)\n", p, qe, qe.
+                                    getID());
+                            Postings post = qe.getPostings();
+                            if(post == null) {
+                                shell.out.println("  No postings");
+                            } else {
+                                shell.out.format("  %s\n", post.describe(true));
+                            }
+                        }
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field dict id [id]...- Gets a term by name from a particular field's dictionary";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[]{
+                    new FieldCompletor(manager.getMetaFile()),
+                    new EnumCompletor(DictionaryType.class),
+                    new NullCompletor()
+                };
+            }
+
+        });
+        
+        shell.add(prefixCommand(prefix, "dumpD2VMap"), "Info", new CompletorCommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                if(args.length < 3) {
+                    return "Must specify a field and a partition";
+                }
+                String fieldName = args[1];
+                int partNumber = Integer.parseInt(args[2]);
+                
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    if(p.getPartitionNumber() != partNumber) {
+                        continue;
+                    }
+                    
+                    DiskField df = ((InvFileDiskPartition) p).getDF(fieldName);
+                    Fetcher fetcher = df.getFetcher();
+                    int[] vals = new int[10];
+                    for(int j = 1; j <= p.getMaxDocumentID(); j++) {
+                        vals = fetcher.fetch(j, vals);
+                        shell.out.format("%d%shas %d values: %s\n", 
+                                         j, 
+                                         p.isDeleted(j) ? " (del) " : " ",
+                                         vals[0], Util.toString(vals, 1, vals[0]+1));
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field partition - Dump the documents to values map for a given field in a given partition";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[]{
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
+
+        });
+
+        
+        shell.add(prefixCommand(prefix, "checkD2VMap"), "Info",
+                  new CompletorCommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                if(args.length < 2) {
+                    return "Must specify a field";
+                }
+                String fieldName = args[1];
+                Set<Integer> partNums = new LinkedHashSet<Integer>();
+                for(int i = 2; i < args.length; i++) {
+                    partNums.add(Integer.parseInt(args[i]));
+                }
+
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    if(!partNums.isEmpty() && !partNums.contains(p.getPartitionNumber())) {
+                        continue;
+                    }
+
+                    DiskField df = ((InvFileDiskPartition) p).getDF(fieldName);
+                    Fetcher fetcher = df.getFetcher();
+                    int[] vals = new int[10];
+                    DiskDictionary rs = (DiskDictionary) df.getDictionary(DictionaryType.RAW_SAVED);
+                    int checked = 0;
+                    for(Object o : rs) {
+                        checked++;
+                        QueryEntry qe = (QueryEntry) o;
+                        PostingsIterator pi = qe.iterator(null);
+                        if(pi == null) {
+                            shell.out.format("No postings for %s\n", qe.getName());
+                            continue;
+                        }
+                        while(pi.next()) {
+                            vals = fetcher.fetch(pi.getID(), vals);
+                            boolean found = false;
+                            for(int i = 1; i < vals[0]+1; i++) {
+                                if(vals[i] == qe.getID()) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if(!found) {
+                                shell.out.format("%s saved value %s id: %d has doc: %d which was not found.  Mapped IDs: %s\n",
+                                        p, qe.getName(), qe.getID(), pi.getID(), 
+                                                 Util.toString(vals, 1, vals[0]+1));
+                            }
+                        }
+                    }
+                    
+                    shell.out.format("%s checked %d values\n", p, checked);
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field partition [partition]...- Checks whether the docs to values map for a partition is OK";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[]{
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
+
+        });
+
+        shell.add(prefixCommand(prefix, "getSavedValues"), "Terms", new CompletorCommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                if(args.length < 4) {
+                    return "Must specify a field, a partition number, and some docIDs";
+                }
+
+                String fieldName = args[1];
+                int partition = Integer.parseInt(args[2]);
+                
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    if(p.getPartitionNumber() != partition) {
+                        continue;
+                    }
+                    DiskField df = ((InvFileDiskPartition) p).getDF(
+                            fieldName);
+                    if(df == null) {
+                        return String.format("No saved field %s for %s", fieldName, p);
+                    }
+                    Fetcher f = df.getFetcher();
+                    List l = new ArrayList(10);
+                    int[] vals = new int[10];
+                    for(int i = 3; i < args.length; i++) {
+                        int docID = Integer.parseInt(args[i]);
+                        l.clear();
+                        l = f.fetch(docID, l);
+                        vals = f.fetch(docID, vals);
+                        if(!l.isEmpty()) {
+                            shell.out.format("%d has %d values for %s\n", docID, l.size(), fieldName);
+                        }
+                        for(int j = 0; j < l.size(); j++) {
+                            shell.out.format(" %d %s\n", vals[j], l.get(j));
+                        }
+                    }
+                }
+                return "";
+                
+            }
+
+            @Override
+            public String getHelp() {
+                return "field partition docID [docID]...";
+            }
+            
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[]{
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
+
+        });
+
         shell.add(prefixCommand(prefix, "wild"), "Terms", new CommandInterface() {
 
             @Override
@@ -1174,7 +1454,7 @@ public class QueryTest extends SEMain {
                         for(DiskField df : ((InvFileDiskPartition) p).getDiskFields()) {
 
                             if(!df.getInfo().hasAttribute(
-                                    FieldInfo.Attribute.TOKENIZED)) {
+                                    FieldInfo.Attribute.INDEXED)) {
                                 continue;
                             }
                             shell.out.format("Field: %s\n", df.getInfo().getName());
@@ -1313,7 +1593,7 @@ public class QueryTest extends SEMain {
 
                             DiskField df = ((InvFileDiskPartition) p).getDF(fi);
 
-                            DiskDictionary rvd = (DiskDictionary) df.getDictionary(DictionaryType.RAW_VECTOR);
+                            DiskDictionary rvd = (DiskDictionary) df.getDictionary(DictionaryType.CASED_VECTOR);
                             QueryEntry re;
                             String res = "no raw";
                             if(rvd != null) {
@@ -1325,7 +1605,7 @@ public class QueryTest extends SEMain {
                                 }
                             }
 
-                            DiskDictionary svd = (DiskDictionary) df.getDictionary(DictionaryType.RAW_VECTOR);
+                            DiskDictionary svd = (DiskDictionary) df.getDictionary(DictionaryType.CASED_VECTOR);
                             QueryEntry se;
                             String ses = "no stemmed";
                             if(svd != null) {
@@ -1793,6 +2073,32 @@ public class QueryTest extends SEMain {
                 };
             }
         });
+        
+        shell.add(prefixCommand(prefix, "showDelMap"), "Info", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] args)
+                    throws Exception {
+                Set<Integer> partNums = new LinkedHashSet<Integer>();
+                for(int i = 1; i < args.length; i++) {
+                    partNums.add(Integer.parseInt(args[i]));
+                }
+                for(DiskPartition p : manager.getActivePartitions()) {
+                    if(partNums.contains(p.getPartitionNumber())) {
+                        DelMap dm = p.getDelMap();
+                        if(dm != null) {
+                            shell.out.format("%s %s\n", p, dm);
+                        }
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "partNum [partNum]... - Displays the deletion maps for the given partitions.";
+            }
+        });
 
         shell.add(prefixCommand(prefix, "rts"), "Maintenance", new CommandInterface() {
 
@@ -2002,6 +2308,38 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add(prefixCommand(prefix, "geoMerge"), "Maintenance", new CommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                List<DiskPartition> parts;
+                
+                if(args.length == 1) {
+                    parts = manager.mergeGeometric();
+                } else {
+                    parts = manager.mergeGeometric(Integer.parseInt(args[1]));
+                }
+                
+                if(parts == null) {
+                    return "No merge required";
+                }
+                PartitionManager.Merger merger = manager.getMerger(parts);
+                if (merger == null) {
+                    return "Couldn't get merger for " + parts.size() + " parts!";
+                }
+                logger.info(String.format("Merging %s", parts));
+                merger.merge();
+                logger.info(String.format("FWB writes: %.2fms",
+                        FileWriteableBuffer.ww.
+                        getTimeMillis()));
+                return "Merged " + parts;
+            }
+
+            @Override
+            public String getHelp() {
+                return "Request a geometric merge";
+            }
+        });
+
         shell.add(prefixCommand(prefix, "reap"), "Maintenance", new CommandInterface() {
 
             @Override
@@ -2265,6 +2603,21 @@ public class QueryTest extends SEMain {
                     new FileNameCompletor(),
                     new FieldCompletor(manager.getMetaFile())
                 };
+            }
+        });
+        
+        shell.add(prefixCommand(prefix, "parseQuotes"), "Other", new CommandInterface() {
+
+            @Override
+            public String execute(CommandInterpreter ci, String[] strings)
+                    throws Exception {
+                shell.setParseQuotes(true);
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "Tell the shell to parse quotes correctly";
             }
         });
         

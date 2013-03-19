@@ -34,7 +34,7 @@ public abstract class Partition implements Comparable<Partition> {
     /**
      * The log.
      */
-    private static Logger logger = Logger.getLogger(Partition.class.getName());
+    private static final Logger logger = Logger.getLogger(Partition.class.getName());
     
    /**
      * The manager for this partition.

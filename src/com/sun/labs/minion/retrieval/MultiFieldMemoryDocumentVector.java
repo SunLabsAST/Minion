@@ -63,10 +63,14 @@ public class MultiFieldMemoryDocumentVector extends AbstractDocumentVector
                 termStatsType = Field.TermStatsType.STEMMED;
                 vecDict = (MemoryDictionary<String>) mf.
                         getDictionary(Field.DictionaryType.STEMMED_VECTOR);
-            } else {
-                termStatsType = Field.TermStatsType.RAW;
+            } else if(mf.isUncased()) {
+                termStatsType = Field.TermStatsType.UNCASED;
                 vecDict = (MemoryDictionary<String>) mf.
-                        getDictionary(Field.DictionaryType.RAW_VECTOR);
+                        getDictionary(Field.DictionaryType.UNCASED_VECTOR);
+            } else {
+                termStatsType = Field.TermStatsType.CASED;
+                vecDict = (MemoryDictionary<String>) mf.
+                        getDictionary(Field.DictionaryType.CASED_VECTOR);
             }
 
             //

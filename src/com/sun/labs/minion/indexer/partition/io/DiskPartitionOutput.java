@@ -110,4 +110,11 @@ public class DiskPartitionOutput extends AbstractPartitionOutput {
         delRAF.close();
         delFile.delete();
     }
+
+    @Override
+    public String toString() {
+        return "DPO: " + super.getName() + ' ' + partition + " partition number: " + partitionNumber; 
+    }
+    
+    
 }

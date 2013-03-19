@@ -38,7 +38,7 @@ import com.sun.labs.minion.indexer.HighlightDocumentProcessor;
 import com.sun.labs.minion.indexer.entry.QueryEntry;
 import com.sun.labs.minion.indexer.partition.DiskPartition;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
-import java.util.Arrays;
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -47,7 +47,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 public class ResultImpl implements Result, Comparable<Result>, Cloneable,
-        ResultAccessor {
+        ResultAccessor, Serializable {
     /**
      * The set of results to which this result belongs.
      */
@@ -412,6 +412,17 @@ public class ResultImpl implements Result, Comparable<Result>, Cloneable,
             sortFieldValues = new Object[sortSpec.size];
             sortSpec.getSortFieldValues(sortFieldValues, doc, score, null);
         }
+    }
+    
+    public Object[] getSortValues() {
+        return sortFieldValues;
+    }
+    
+    public SortSpec.Direction[] getSortDirections() {
+        if(sortSpec != null) {
+            return sortSpec.directions;
+        }
+        return null;
     }
 
     @Override

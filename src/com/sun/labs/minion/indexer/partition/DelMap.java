@@ -439,7 +439,7 @@ public class DelMap implements Cloneable {
     public static void main(String[] args) throws Exception {
         for(String arg : args) {
             File m = new File(arg);
-            FileLock l = new FileLock(new File(arg + ".lock"));
+            FileLock l = new FileLock(new File(arg));
             DelMap dl = new DelMap(m, l);
             System.out.println(dl);
         }

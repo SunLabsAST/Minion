@@ -275,7 +275,7 @@ public class ScoredGroup extends ArrayGroup {
     
     @Override
     public ArrayGroup normalize() {
-        return normalize(DocumentVectorType.RAW);
+        return normalize(DocumentVectorType.CASED);
     }
 
     @Override

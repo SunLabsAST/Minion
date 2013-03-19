@@ -35,6 +35,8 @@ public class WeightedField implements Serializable {
     
     private FieldInfo field;
     
+    private String fieldName;
+    
     private float weight;
     
     /**
@@ -44,11 +46,21 @@ public class WeightedField implements Serializable {
      */
     public WeightedField(FieldInfo field, float weight) {
         this.field = field;
+        fieldName = field.getName();
+        this.weight = weight;
+    }
+    
+    public WeightedField(String fieldName, float weight) {
+        this.fieldName = fieldName;
         this.weight = weight;
     }
     
     public FieldInfo getField() {
         return field;
+    }
+
+    public String getFieldName() {
+        return fieldName;
     }
     
     public float getWeight() {

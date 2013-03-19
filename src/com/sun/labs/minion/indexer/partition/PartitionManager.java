@@ -57,6 +57,7 @@ import com.sun.labs.minion.util.Util;
 import com.sun.labs.minion.util.buffer.ArrayBuffer;
 import com.sun.labs.minion.util.buffer.BufferException;
 import com.sun.labs.minion.util.buffer.ReadableBuffer;
+import com.sun.labs.minion.util.buffer.WriteableBuffer;
 import com.sun.labs.util.NanoWatch;
 import com.sun.labs.util.props.ConfigBoolean;
 import com.sun.labs.util.props.ConfigComponent;
@@ -87,6 +88,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -153,7 +155,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * be allowed to be dumped until the number of partitions can be decreased.
      * Generally speaking, this is an exceptional condition and it will cause
      * indexing to slow down substantially.  We need to monitor this because
-     * having too many open partitions can lead to running out of filehandles.
+     * having too many open partitions can lead to running out of file handles.
      */
     @ConfigInteger(defaultValue = 40)
     public static final String PROP_OPEN_PARTITION_HIGH_WATER_MARK =
@@ -221,11 +223,30 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     public static final String PROP_LOCK_DIR = "lock_dir";
 
     private String lockDir;
+    
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_VERBOSE_LOCKING = "verbose_locking";
+    
+    private boolean verboseLocking;
 
+    /**
+     * A configuration property indicating that reap should not remove 
+     * partitions.  Useful for debugging merge problems.
+     */
     @ConfigBoolean(defaultValue = false)
     public static final String PROP_REAP_DOES_NOTHING = "reap_does_nothing";
 
     private boolean reapDoesNothing;
+    
+    /**
+     * A configuration property indicating that we should store the deletion bitmaps
+     * that were used for a merge after the merge is complete.  Useful for 
+     * debugging merge problems.
+     */
+    @ConfigBoolean(defaultValue = false)
+    public static final String PROP_KEEP_PRE_MERGE_DELETION_MAPS = "keep_pre_merge_deletion_maps";
+    
+    private boolean keepPreMergeDeletionMaps;
 
     /**
      * A configuration property that can be used to name an index directory
@@ -261,6 +282,20 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * at any time.
      */
     protected FileLock mergeLock;
+    
+    /**
+     * A latch that might be around when a merge is finished.  If it is, it should
+     * be counted down, because the indexing is paused due to a long merge.
+     */
+    protected CountDownLatch indexingPaused;
+    
+    /*
+     * A count of the number of times that we've unsuccessfully tried to deal with
+     * having too many open partitions because we're already dealing with too many
+     * open partitions.  If this count gets too high, then we'll
+     * pauseIndexing the indexers while we wait for things to be fixed.
+     */
+    protected int highwaterMergeAttempts;
 
     /**
      * The list of partitions that we're managing.
@@ -477,14 +512,15 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // The name of our active file.
-        activeFile = new ActiveFile(indexDirFile, lockDirFile, managerTag);
+        activeFile = new ActiveFile(indexDirFile, lockDirFile, managerTag, verboseLocking);
 
         //
-        // Set up the lock for the merge.  We make this a single try, no
-        // pause lock because we don't want to wait until the lock is
-        // ready, we simply want to see whether we can get it.
-        mergeLock = new FileLock(lockDirFile, new File("merge." + managerTag), 0,
-                TimeUnit.SECONDS);
+        // Set up the lock for the merge.  We give it a very short default 
+        // timeout, since most of the time it won't matter if we get the lock or not.
+        mergeLock = new FileLock(lockDirFile, new File("merge." + managerTag), 100,
+                TimeUnit.MILLISECONDS);
+        mergeLock.setName("merge");
+        mergeLock.setVerbose(verboseLocking);
 
         //
         // Read the active file.
@@ -560,7 +596,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         }
 
         //
-        // Start our housekeeping thread.
+        // Start our housekeeping and term stats generating tasks.
         timer = new Timer("PM-timer");
         timer.scheduleAtFixedRate(new HouseKeeper(),
                 activeCheckInterval,
@@ -592,84 +628,86 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             logger.warning("Error reading meta file in update: " + e);
         }
 
-        boolean releaseNeeded = false;
-        if(!activeFile.isLocked()) {
-            activeFile.lock();
-            releaseNeeded = true;
-        }
-
-        List<Integer> add = activeFile.read();
-        List<Integer> currList = ActiveFile.getPartitionNumbers(activeParts);
-        List<Integer> close = new ArrayList<Integer>(currList);
-
-        //
-        // Get the partitions that we have opened that are not in the
-        // active file, and those that are in the active file, but we don't
-        // have opened.
-        close.removeAll(add);
-        add.removeAll(currList);
-
-        //
-        // We need to close partitions that were merged and not add
-        // them again.
-        List<Integer> mp = getPartNumbers(mergedParts);
-        close.addAll(mp);
-        add.removeAll(mp);
-        mergedParts.clear();
-
-        //
-        // Remove any partitions that we have to close.
-        if(close.size() > 0) {
-            for(Iterator<DiskPartition> i = activeParts.iterator(); i.hasNext();) {
-                DiskPartition dp = i.next();
-                if(close.contains(dp.getPartitionNumber())) {
-                    dp.setCloseTime(System.currentTimeMillis() + partCloseDelay);
-                    dp.setClosed();
-                    thingsToClose.add(dp);
-                    i.remove();
-                }
-            }
-        }
-
-        //
-        // Add any partitions that we haven't opened.
         List<DiskPartition> newlyLoadedParts = new ArrayList<DiskPartition>();
-        for(Integer pn : add) {
-            try {
-                newlyLoadedParts.add(newDiskPartition(pn, this));
-            } catch(java.io.IOException ioe) {
-                logger.log(Level.SEVERE, "Error activating partition: " + pn
-                        + " in updateActivePartitions", ioe);
-            } catch(Exception e) {
-                logger.log(Level.SEVERE, "Exception loading partition: " + pn
-                        + " in updateActivePartitions", e);
-            }
-        }
+        
+        try {
+            activeFile.lock();
 
-        if(addNew && newlyLoadedParts.size() > 0) {
-            activeParts.addAll(newlyLoadedParts);
+            List<Integer> add = activeFile.read();
+            List<Integer> currList = ActiveFile.getPartitionNumbers(activeParts);
+            List<Integer> close = new ArrayList<Integer>(currList);
 
             //
-            // Only update the collection stats when we get new partitions.
-            collectionStats = new CollectionStats(this, activeParts);
-        }
+            // Get the partitions that we have opened that are not in the
+            // active file, and those that are in the active file, but we don't
+            // have opened.
+            close.removeAll(add);
+            add.removeAll(currList);
+
+            //
+            // We need to close partitions that were merged and not add
+            // them again.
+            List<Integer> mp = ActiveFile.getPartitionNumbers(mergedParts);
+            close.addAll(mp);
+            add.removeAll(mp);
+            mergedParts.clear();
+
+            //
+            // Remove any partitions that we have to close.
+            if(close.size() > 0) {
+                for(Iterator<DiskPartition> i = activeParts.iterator(); i.
+                        hasNext();) {
+                    DiskPartition dp = i.next();
+                    if(close.contains(dp.getPartitionNumber())) {
+                        dp.setCloseTime(System.currentTimeMillis()
+                                + partCloseDelay);
+                        dp.setClosed();
+                        thingsToClose.add(dp);
+                        i.remove();
+                    }
+                }
+            }
+
+            //
+            // Add any partitions that we haven't opened.
+            for(Integer pn : add) {
+                try {
+                    newlyLoadedParts.add(newDiskPartition(pn, this));
+                } catch(java.io.IOException ioe) {
+                    logger.log(Level.SEVERE, "Error activating partition: " + pn
+                            + " in updateActivePartitions", ioe);
+                } catch(Exception e) {
+                    logger.log(Level.SEVERE, "Exception loading partition: "
+                            + pn
+                            + " in updateActivePartitions", e);
+                }
+            }
+
+            if(addNew && newlyLoadedParts.size() > 0) {
+                activeParts.addAll(newlyLoadedParts);
+
+                //
+                // Only update the collection stats when we get new partitions.
+                collectionStats = new CollectionStats(this, activeParts);
+            }
 
 
-        //
-        // Update our term statistics dictionary, if necessary.
-        try {
-            updateTermStats();
-        } catch(java.io.IOException ex) {
-            logger.log(Level.SEVERE,
-                    "Error reading term stats dictionary during updateActiveParts");
-            termStatsDict = null;
-        } catch(FileLockException ex) {
-            logger.log(Level.SEVERE,
-                    "Error locking metafile during updateActiveParts");
-            termStatsDict = null;
-        }
-
-        if(releaseNeeded) {
+            //
+            // Update our term statistics dictionary, if necessary.
+            try {
+                updateTermStats();
+            } catch(java.io.IOException ex) {
+                logger.log(Level.SEVERE,
+                           "Error reading term stats dictionary during updateActiveParts");
+                termStatsDict = null;
+            } catch(FileLockException ex) {
+                logger.log(Level.SEVERE,
+                           "Error locking metafile during updateActiveParts");
+                termStatsDict = null;
+            }
+        } catch (Exception ex) {
+            logger.log(Level.SEVERE, String.format("Error updating active partitions"), ex);
+        } finally {
             activeFile.unlock();
         }
 
@@ -714,7 +752,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             return;
         }
 
-        logger.finer(String.format("Started addNewPartition %d", partNumber));
+        if(logger.isLoggable(Level.FINER)) {
+            logger.
+                    finer(String.
+                    format("Started addNewPartition %d", partNumber));
+        }
         try {
             DiskPartition ndp = newDiskPartition(partNumber, this);
             addNewPartition(ndp, keys);
@@ -1235,63 +1277,78 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
     private boolean handleTooManyPartitions() {
 
         //
-        // If we're doing async merges, then we need to acquire the merge lock
-        // before we can do anything else.  Acquiring the lock will mean that there
-        // are no outstanding merges proceeding.  Note that we're not using the
-        // merge lock defined in this class because that's a single try lock.
-        // We need a lock that we can retry on to give the merge time to finish.
         // We're going to use a long timeout, because if we're in here, the indexer
         // is in trouble, and this needs to get taken care of!
-        FileLock ourMergeLock = new FileLock(mergeLock, 5, TimeUnit.SECONDS);
+        // Note that we'll try to re-acquire the lock in getMerger below, but that
+        // will be fine if we already have it from here.
         try {
-            ourMergeLock.acquireLock();
-        } catch(IOException ex) {
+            mergeLock.acquireLock(5, TimeUnit.SECONDS);
+        } catch (IOException ex) {
             logger.log(Level.SEVERE,
                     "Error getting merge lock when too many partitions", ex);
             return false;
-        } catch(FileLockException fle) {
-            logger.log(Level.INFO, "Unable to get merge lock when too many partitions");
+        } catch (FileLockException fle) {
+            highwaterMergeAttempts++;
+            if (highwaterMergeAttempts >= 3) {
+            }
             return false;
         }
-        
-        if(activeParts.size() < openPartitionHighWaterMark) {
-            return true;
+
+        try {
+            if (activeParts.size() < openPartitionHighWaterMark) {
+                //
+                // While we were waiting for the lock, the problem resolved itself.
+                // Hurray for procrastination.
+                return true;
+            }
+
+            //
+            // Get a list of partitions sorted by increasing size:  smaller partitions
+            // will merge faster.
+            List<DiskPartition> parts = new ArrayList<DiskPartition>(activeParts);
+            Collections.sort(parts, new Comparator<DiskPartition>() {
+                @Override
+                public int compare(DiskPartition o1, DiskPartition o2) {
+                    return o1.getMaxDocumentID() - o2.getMaxDocumentID();
+                }
+            });
+
+            //
+            // Take a sublist that will get us to the low water mark.
+            parts = parts.subList(0, parts.size() - openPartitionLowWaterMark);
+
+            if (parts.size() < maxMergeSize) {
+                return true;
+            }
+
+            logger.warning(String.format("Highwater merge: %s %s", parts, Thread.currentThread()));
+
+            Merger m = getMerger(parts, 5, TimeUnit.SECONDS);
+            if (m == null) {
+                logger.log(Level.SEVERE, String.format("Didn't get merger, but we already held the lock?"));
+                return false;
+            }
+            
+            //
+            // OK, actually merge now.
+            m.merge();
+
+            //
+            // Now force a close of the partitions on the toClose list to free
+            // up those file handles.  This may break queries that are in flight,
+            // but we're in trouble here!
+            for (Closeable cl : thingsToClose) {
+                cl.close(Long.MAX_VALUE);
+                cl.createRemoveFile();
+            }
+            thingsToClose.clear();
+        } finally {
+            try {
+                mergeLock.releaseLock();
+            } catch (FileLockException ex) {
+                logger.log(Level.SEVERE, String.format("Error unlocking merge lock after highwater merge"), ex);
+            }
         }
-        
-        //
-        // Get a list of partitions sorted by increasing size:  smaller partitions
-        // will merge faster.
-        List<DiskPartition> parts = new ArrayList<DiskPartition>(activeParts);
-        Collections.sort(parts,
-                new Comparator<DiskPartition>() {
-            @Override
-                    public int compare(DiskPartition o1, DiskPartition o2) {
-                        return o1.getMaxDocumentID() - o2.getMaxDocumentID();
-                    }
-                });
-
-        //
-        // Take a sublist that will get us to the low water mark.
-        parts = parts.subList(0, parts.size() - openPartitionLowWaterMark);
-        
-        if(parts.size() < maxMergeSize) {
-            return true;
-        }
-
-        logger.warning(String.format("Highwater merge: %s", parts));
-
-        Merger m = getMerger(parts, ourMergeLock);
-        m.merge();
-
-        //
-        // Now force a close of the partitions on the toClose list to free
-        // up those file handles.  This may break queries that are in flight,
-        // but we're in trouble here!
-        for(Closeable cl : thingsToClose) {
-            cl.close(Long.MAX_VALUE);
-            cl.createRemoveFile();
-        }
-        thingsToClose.clear();
 
         return true;
     }
@@ -1943,8 +2000,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Do the merge and reap any deleted partitions.  We're willing to wait
         // a while to get the merge lock, if necessary.
-        FileLock ourMergeLock = new FileLock(mergeLock, 200, TimeUnit.SECONDS);
-        Merger m = getMerger((List<DiskPartition>) getActivePartitions(), ourMergeLock);
+        Merger m = getMerger((List<DiskPartition>) getActivePartitions(), 200, TimeUnit.SECONDS);
         if(m == null) {
             logger.warning(String.format("Unable to get merge lock for optimize"));
             return null;
@@ -1952,6 +2008,18 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         return m.merge();
     }
 
+    /**
+     * This is a geometric merge heuristic controlled by the mergeRate. It
+     * determines which partitions on the active list can be merged.
+     *
+     * @return The list of partitions that should be merged, or
+     * <code>null</code> if none should be merged.
+     * @see #setMergeRate
+     */
+    public List<DiskPartition> mergeGeometric() {
+        return mergeGeometric(maxMergeSize);
+    }
+    
     // XXX We're still not handling deleted docs > 20% of partition merge
     // trigger XXX Should try to remove the need for delteOld and remap
     /**
@@ -1962,7 +2030,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * <code>null</code> if none should be merged.
      * @see #setMergeRate
      */
-    public List<DiskPartition> mergeGeometric() {
+    public List<DiskPartition> mergeGeometric(int maxPartsToMerge) {
 
         //
         // Get a list of the active partitions sorted by the number of
@@ -1970,12 +2038,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         List<DiskPartition> parts = (List<DiskPartition>) getActivePartitions();
         Collections.sort(parts,
                 new Comparator<DiskPartition>() {
-
             @Override
-                    public int compare(DiskPartition o1, DiskPartition o2) {
-                        return o1.getMaxDocumentID() - o2.getMaxDocumentID();
-                    }
-                });
+            public int compare(DiskPartition o1, DiskPartition o2) {
+                return o1.getMaxDocumentID() - o2.getMaxDocumentID();
+            }
+        });
 
         //
         // Check each partition in turn to see if it overflows the
@@ -2016,7 +2083,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         // Merge all partitions up to and including mergePart.  Nb: This
         // will merge all partitions at the mergePart level and below.
         List<DiskPartition> toMerge = new ArrayList<DiskPartition>();
-        for(int p = 0; p <= mergePart && p < maxMergeSize; p++) {
+        for(int p = 0; p <= mergePart && p < maxPartsToMerge; p++) {
             toMerge.add(parts.get(p));
         }
 
@@ -2043,8 +2110,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 
         //
         // Take a copy of the list.
-        List<DiskPartition> local =
-                new ArrayList<DiskPartition>(parts);
+        List<DiskPartition> local = new ArrayList<DiskPartition>(parts);
 
         //
         // Sort the copy.
@@ -2164,10 +2230,15 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Run the merge, using the first element.
         DiskPartition ndp = null;
+        boolean mergeException = false;
         try {
             ndp = diskParts.get(0).merge(diskParts, delMaps, mergePartitionOutput, calculateDVL);
-        } catch(Exception e) {
-            logger.log(Level.SEVERE, "Error merging partitions: " + diskParts, e);
+        } catch(Exception ex) {
+            mergeException = true;
+        }
+        
+        if(mergeException || keepPreMergeDeletionMaps) {
+            dumpDeletionMaps(diskParts, delMaps);
         }
 
         //
@@ -2194,6 +2265,48 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         //
         // Return the new partition number.
         return ndp;
+    }
+    
+    /**
+     * Dumps the deletion bitmaps for a set of partitions. Mostly used for 
+     * debugging merge failures.
+     * @param partitions the partititons whose delmaps should be dumped
+     * @param delMaps the delmaps to dump.
+     */
+    protected void dumpDeletionMaps(List<DiskPartition> partitions,
+                                    List<DelMap> delMaps) {
+        logger.info(String.format("Dumping merge delmaps"));
+        for(int i = 0; i < partitions.size(); i++) {
+            //
+            // We might try to dump the delmap multiple times if there is an
+            // error during a merge, so make sure that we write a delmap for 
+            // just this merge!
+            int mnum = 1;
+            while(true) {
+                File f = new File(indexDir, String.format("%d.%d.mdel",
+                                                          partitions.get(i).
+                        getPartitionNumber(), mnum));
+                if(!f.exists()) {
+                    WriteableBuffer delbuff = (WriteableBuffer) delMaps.get(i).delMap;
+                    if(delbuff == null) {
+                        logger.info(String.format("No deletions for %s",
+                                                  partitions.get(i)));
+                    } else {
+                        logger.info(String.format("Writing %s delmap to %s",
+                                                  partitions.get(i), f));
+                        try {
+                            DelMap.write(f, delbuff);
+                        } catch(IOException ex) {
+                            logger.log(Level.SEVERE, String.format(
+                                    "Error writing del map for %s", partitions.
+                                    get(i)), ex);
+                        }
+                    }
+                    break;
+                }
+                mnum++;
+            }
+        }
     }
 
     /**
@@ -2230,24 +2343,6 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             }
             return nextPartitionNumber;
         }
-    }
-
-    /**
-     * Gets a list of the partition numbers for the given partitions.  This can
-     * be used when we want to act on collections of partition numbers, rather
-     * than the partitions themselves.
-     *
-     * @param parts the partitions for which we want the numbers
-     * @return an list of the active partition numbers.
-     */
-    protected List<Integer> getPartNumbers(Collection<DiskPartition> parts) {
-        List<Integer> ret = new ArrayList<Integer>();
-        synchronized(parts) {
-            for(DiskPartition dp : parts) {
-                ret.add(dp.getPartitionNumber());
-            }
-        }
-        return ret;
     }
 
     /**
@@ -2329,7 +2424,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * possible.
      */
     public Merger getMerger() {
-        return getMerger(mergeGeometric(), mergeLock);
+        return getMerger(null, 100, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -2343,7 +2438,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      * possible.
      */
     public Merger getMerger(List<DiskPartition> l) {
-        return getMerger(l, mergeLock);
+        return getMerger(l, 100, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -2352,31 +2447,24 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
      *
      * @param l A list of partitions to merge, such as that returned by
      * <code>mergeGeometric</code>.
-     * @param localMergeLock the lock to use for running the merge.
+     * @param timeout the length of the timeout to use when acquiring the 
+     * lock for the merge.
+     * @param units the units of time to use for the lock acquisition timeout.
      * @return An instance of <code>Merger</code> that can be used to merge
      * these partitions, or <code>null</code> if no merge is currently
      * possible.
      */
-    public Merger getMerger(List<DiskPartition> l, FileLock localMergeLock) {
-
-        //
-        // They may not have checked the results of mergeGeo.
-        if(l == null) {
-            return null;
-        }
-        
-        if(noMoreMerges) {
-            return null;
-        }
+    public Merger getMerger(List<DiskPartition> l, long timeout, TimeUnit units) {
 
         try {
-            localMergeLock.acquireLock();
-            Merger m = new Merger(l, localMergeLock);
-            return m;
-        } catch(Exception e) {
+            return new Merger(l, timeout, units);
+        } catch(FileLockException ex) {
 
             //
-            // We didn't get the merge lock.  Return null.
+            // Most likely, we didn't get the merge lock.
+            return null;
+        } catch(IOException ex) {
+            logger.log(Level.SEVERE, String.format("Error getting lock for merger"), ex);
             return null;
         }
     }
@@ -2466,11 +2554,11 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
          * The new disk partition resulting from the merge.
          */
         protected DiskPartition newDP;
-
+        
         /**
-         * The lock that we'll need to acquire to merge.
+         * The timeout to wait for the merge lock.
          */
-        private FileLock localMergeLock;
+        protected long timeout;
 
         /**
          * Instantiates a merger for the given list of partitions.  The
@@ -2478,17 +2566,31 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
          * given manager.
          *
          * @param l The list of partitions to merge.
-         * @param localMergeLock the lock file to use when releasing the merge
+         * @param timeout How long to wait to get the merge lock.
+         * @param units The time units to use for the timeout value.
          * lock.
          */
-        public Merger(List<DiskPartition> l, FileLock localMergeLock) {
+        public Merger(List<DiskPartition> l, long timeout, TimeUnit units) throws IOException, FileLockException {
 
-            parent = Thread.currentThread();
+            //
+            // We need to acquire the lock to do a merge. We'll throw an exception
+            // if things go badly.
+            mergeLock.acquireLock(timeout, units);
+            
+            //
+            // If we weren't given any partitions, then see if there are any that need merging.
+            if(l == null) {
+                l = mergeGeometric();
+                if(l == null) {
+                    mergeLock.releaseLock();
+                    return;
+                }
+            }
+            
             newPart = -1;
 
             toMerge = new ArrayList<DiskPartition>(l);
             originalMerge = new HashSet<DiskPartition>(l);
-            this.localMergeLock = localMergeLock;
 
             //
             // Sort the list by partition number.
@@ -2512,6 +2614,10 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
             return newDP;
         }
 
+        public List<DiskPartition> getToMerge() {
+            return toMerge;
+        }
+
         /**
          * Does the merge of the partitions.
          */
@@ -2519,19 +2625,26 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         public void run() {
             
             newDP = null;
-
-            try {
-                localMergeLock.tradeLock(parent, Thread.currentThread());
-            } catch(FileLockException fle) {
-                logger.severe("Failed to trade merge lock");
+            
+            if(noMoreMerges || toMerge == null) {
                 return;
             }
 
             //
             // Do the merge.
+           boolean mergeException = false;
             try {
-                newDP = toMerge.get(0).merge(toMerge, preDelMaps, mergePartitionOutput, !engine.isLongIndexingRun());
+                newDP = toMerge.get(0).merge(toMerge, preDelMaps,
+                                             mergePartitionOutput, !engine.
+                        isLongIndexingRun());
             } catch(Exception e) {
+                
+                mergeException = true;
+                
+                //
+                // We're going to build our own string to display rather than
+                // using List.toString because that lets us cut and paste lists
+                // of partition numbers when debugging.
                 StringBuilder sb = new StringBuilder();
                 boolean first = true;
                 for(DiskPartition tm : toMerge) {
@@ -2545,10 +2658,17 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                 logger.log(Level.SEVERE,
                         String.format("Exception merging partitions [%s]", sb.toString()), e);
             }
+            
+            //
+            // If there was an exception, or we're supposed to, dump out the 
+            // deletion bitmaps state before the merge.
+            if(mergeException || keepPreMergeDeletionMaps) {
+                dumpDeletionMaps(toMerge, preDelMaps);
+            }
 
-            if(newDP != null) {
+            try {
+                if(newDP != null) {
 
-                try {
                     activeFile.lock();
 
                     //
@@ -2565,7 +2685,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     for(int i = 0, incr = 0; i < toMerge.size(); i++) {
 
                         DiskPartition curr = toMerge.get(i);
-                        
+
                         //
                         // Synchronize the deletion bitmap for this
                         // partition, and get the result.
@@ -2640,7 +2760,7 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
                     // Put the partitions we merged onto the
                     // list of merged partitions.
                     mergedParts.addAll(toMerge);
-                    
+
                     //
                     // See if there were any partitions that we ignored during
                     // the merge because all of their documents were deleted
@@ -2662,34 +2782,37 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
 //
 //                        }
 //                    }
-                } catch(FileLockException fle) {
-                    logger.log(Level.SEVERE, "Error locking active file after merge: "
-                            + activeFile, fle);
-                    try {
-                        localMergeLock.releaseLock();
-                    } catch(FileLockException fle2) {
-                        logger.log(Level.SEVERE,
-                                "Error releasing merge lock after error after merge.",
-                                fle2);
-                    }
-                } catch(java.io.IOException ioe) {
-                    logger.log(Level.SEVERE, "I/O Error after merge.", ioe);
-                } catch(Exception e) {
-                    logger.log(Level.SEVERE, "Exception after merge", e);
-                } finally {
-                    //
-                    // Release the locks we're holding.
-                    try {
-                        activeFile.unlock();
-                        localMergeLock.releaseLock();
-                    } catch(FileLockException fle) {
-                        logger.log(Level.SEVERE, "Error unlocking after error after merge: "
-                                + activeFile, fle);
-                    }
+                }
+            } catch(FileLockException ex) {
+                logger.log(Level.SEVERE,
+                           "Error locking active file after merge: "
+                        + activeFile, ex);
+            } catch(java.io.IOException ex) {
+                logger.log(Level.SEVERE, "I/O Error after merge.", ex);
+            } catch(Exception ex) {
+                logger.log(Level.SEVERE, "Exception after merge", ex);
+            } finally {
+                //
+                // Release the locks we're holding.
+                try {
+                    activeFile.unlock();
+                    mergeLock.releaseLock();
+                } catch(FileLockException ex) {
+                    logger.log(Level.SEVERE,
+                               "Error unlocking after error after merge: "
+                            + activeFile, ex);
                 }
             }
+            
+            //
+            // If indexing was paused while waiting for a merge to finish, 
+            // go ahead and let it start again.
+            if(indexingPaused != null) {
+                indexingPaused.countDown();
+                highwaterMergeAttempts = 0;
+            }
         }
-
+        
         @Override
         public String toString() {
             return toMerge.toString();
@@ -2910,11 +3033,13 @@ public class PartitionManager implements com.sun.labs.util.props.Configurable {
         partReapDelay = ps.getInt(PROP_PART_REAP_DELAY);
         calculateDVL = ps.getBoolean(PROP_CALCULATE_DVL);
         lockDir = ps.getString(PROP_LOCK_DIR);
+        verboseLocking = ps.getBoolean(PROP_VERBOSE_LOCKING);
         openPartitionHighWaterMark = ps.getInt(
                 PROP_OPEN_PARTITION_HIGH_WATER_MARK);
         openPartitionLowWaterMark =
                 ps.getInt(PROP_OPEN_PARTITION_LOW_WATER_MARK);
         reapDoesNothing = ps.getBoolean(PROP_REAP_DOES_NOTHING);
+        keepPreMergeDeletionMaps = ps.getBoolean(PROP_KEEP_PRE_MERGE_DELETION_MAPS);
         String startingData = ps.getString(PROP_STARTING_DATA);
         if(!startingData.equals("")) {
             startingDataDir = new File(startingData);

@@ -56,15 +56,20 @@ public class MemoryDictionaryBundle<N extends Comparable> {
     private DocOccurrence ddo;
 
     /**
-     * The raw vector for the current document, if we're vectoring.
+     * The cased token vector for the current document, if we're vectoring.
      */
-    private IndexEntry rawVector;
+    private IndexEntry casedVector;
+    
+    /**
+     * The uncased token vector for the current document.
+     */
+    private IndexEntry uncasedVector;
 
     /**
-     * The (possibly) stemmed and down-cased vector for the current document.
+     * The stemmed and down-cased vector for the current document.
      */
     private IndexEntry stemmedVector;
-
+    
     /**
      * An array of the sets of entries saved per document at indexing time.
      */
@@ -90,25 +95,37 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         } else {
             factory = new EntryFactory(Postings.Type.ID_FREQ);
         }
-
-        if(field.isTokenized() && field.isCased()) {
-            dicts[DictionaryType.CASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
-        }
-
-        if(field.isTokenized() && field.isUncased()) {
-            dicts[DictionaryType.UNCASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
-        }
-
-        if(field.isTokenized() && field.isStemmed()) {
-            dicts[DictionaryType.STEMMED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
-        }
-
-        if(field.isVectored()) {
-            dicts[DictionaryType.RAW_VECTOR.ordinal()] = 
-                    new MemoryDictionary<String>(vectorEntryFactory);
+        
+        //
+        // Make the appropriate dictionaries for indexed fields.
+        if(field.isIndexed()) {
+            if(field.isCased()) {
+                dicts[DictionaryType.CASED_TOKENS.ordinal()] = new MemoryDictionary<String>(factory);
+            }
+            if(field.isUncased()) {
+                dicts[DictionaryType.UNCASED_TOKENS.ordinal()] = new MemoryDictionary<String>(
+                        factory);
+            }
             if(field.isStemmed()) {
-                dicts[DictionaryType.STEMMED_VECTOR.ordinal()] = 
-                        new MemoryDictionary<String>(vectorEntryFactory);
+                dicts[DictionaryType.STEMMED_TOKENS.ordinal()] = new MemoryDictionary<String>(
+                        factory);
+            }
+        }
+
+        //
+        // Make the appropriate dictionaries for vectored fields.
+        if(field.isVectored()) {
+            if(field.isCased()) {
+                dicts[DictionaryType.CASED_VECTOR.ordinal()] = new MemoryDictionary<String>(
+                        vectorEntryFactory);
+            }
+            if(field.isUncased()) {
+                dicts[DictionaryType.UNCASED_VECTOR.ordinal()] = new MemoryDictionary<String>(
+                        vectorEntryFactory);
+            }
+            if(field.isStemmed()) {
+                dicts[DictionaryType.STEMMED_VECTOR.ordinal()] = new MemoryDictionary<String>(
+                        vectorEntryFactory);
             }
             ddo = new DocOccurrence();
         }
@@ -149,13 +166,18 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         maxDocID = Math.max(maxDocID, docKey.getID());
         if(field.isVectored()) {
             if(field.isCased()) {
-                rawVector = dicts[DictionaryType.RAW_VECTOR.ordinal()].put(docKey);
+                casedVector = dicts[DictionaryType.CASED_VECTOR.ordinal()].put(docKey);
+            }
+            if(field.isUncased()) {
+                uncasedVector = dicts[DictionaryType.UNCASED_VECTOR.ordinal()].put(
+                        docKey);
             }
             if(field.isStemmed()) {
                 stemmedVector = dicts[DictionaryType.STEMMED_VECTOR.ordinal()].put(docKey);
             }
         } else {
-            rawVector = null;
+            casedVector = null;
+            uncasedVector = null;
             stemmedVector = null;
         }
     }
@@ -176,49 +198,48 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
     public void token(Token t) {
 
-        if(!field.isTokenized()) {
+        if(!field.isIndexed()) {
             throw new UnsupportedOperationException(String.format(
-                    "Field: %s is not tokenized", info.getName()));
+                    "Field: %s is not index", info.getName()));
         }
 
         IndexEntry ce = null;
         IndexEntry uce = null;
         IndexEntry se = null;
+        String lct = null;
         
         if(field.isCased()) {
             ce = dicts[DictionaryType.CASED_TOKENS.ordinal()].put(t.getToken());
             ce.add(t);
         }
         
-        //
-        // If we're storing uncased terms or stemming, then we need to downcase
-        // the term, since stemming will likely break on a mixed case term.
-        //
-        // Note that we prefer to store uncased terms in the raw vector if 
-        // possible.
-        if(field.isUncased() || field.isStemmed()) {
-            String uct = CharUtils.toLowerCase(t.getToken());
+        if(field.isUncased()) {
+            lct = CharUtils.toLowerCase(t.getToken());
+            uce = dicts[DictionaryType.UNCASED_TOKENS.ordinal()].put(lct);
+            uce.add(t);
+        }
 
-            if(field.isUncased()) {
-                uce = dicts[DictionaryType.UNCASED_TOKENS.ordinal()].put(uct);
-                uce.add(t);
+        if(field.isStemmed()) {
+            if(lct == null) {
+                lct = CharUtils.toLowerCase(t.getToken());
             }
-
-            if(field.isStemmed()) {
-                String stok = field.getStemmer().stem(uct);
-                se = dicts[DictionaryType.STEMMED_TOKENS.ordinal()].put(stok);
-                se.add(t);
-            }
+            String stok = field.getStemmer().stem(lct);
+            se = dicts[DictionaryType.STEMMED_TOKENS.ordinal()].put(stok);
+            se.add(t);
         }
 
         if(field.isVectored()) {
-            if(uce != null) {
-                ddo.setEntry(uce);
-            } else {
+            if(field.isCased()) {
                 ddo.setEntry(ce);
+                ddo.setCount(1);
+                casedVector.add(ddo);
+            } 
+            
+            if(field.isUncased()) {
+                ddo.setEntry(uce);
+                ddo.setCount(1);
+                uncasedVector.add(ddo);
             }
-            ddo.setCount(1);
-            rawVector.add(ddo);
 
             if(field.isStemmed()) {
                 ddo.setEntry(se);
@@ -326,13 +347,13 @@ public class MemoryDictionaryBundle<N extends Comparable> {
         // are pretty much the same.
         for(DictionaryType type : DictionaryType.values()) {
             int ord = type.ordinal();
+
             if(dicts[ord] == null) {
                 //
                 // If we didn't have a dictionary for this type, and it's not
                 // one of the bigram dictionaries that we might build below, then
                 // just skip it.
                 if(type != DictionaryType.TOKEN_BIGRAMS && type != DictionaryType.SAVED_VALUE_BIGRAMS) {
-                    header.dictionaryOffsets[ord] = -1;
                     continue;
                 }
             } 
@@ -378,7 +399,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         //
                         // There were no entries stored in the dictionary, so
                         // we don't need to save anything.
-                        header.dictionaryOffsets[ord] = -1;
                         continue;
                         
                     }
@@ -408,12 +428,11 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         //
                         // There were no entries stored in the dictionary, so
                         // we don't need to save anything.
-                        header.dictionaryOffsets[ord] = -1;
                         continue;
 
                     }
                     break;
-                case RAW_VECTOR:
+                case CASED_VECTOR:
                     partOut.setDictionaryEncoder(new StringNameHandler());
                     partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
                     partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
@@ -421,23 +440,29 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     //
                     // We preferred uncased tokens when making the raw vectors, 
                     // so do the same at marshal time.
-                    if(dicts[DictionaryType.UNCASED_TOKENS.ordinal()] != null) {
-                        partOut.setPostingsIDMap(entryIDMaps[DictionaryType.UNCASED_TOKENS.ordinal()]);
-                    } else {
-                        partOut.setPostingsIDMap(entryIDMaps[DictionaryType.CASED_TOKENS.ordinal()]);
-                    }
+                    partOut.setPostingsIDMap(
+                            entryIDMaps[DictionaryType.CASED_TOKENS.ordinal()]);
                     break;
-
+                case UNCASED_VECTOR:
+                    partOut.setDictionaryEncoder(new StringNameHandler());
+                    partOut.
+                            setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
+                    partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
+                    partOut.setPostingsIDMap(
+                            entryIDMaps[DictionaryType.UNCASED_TOKENS.ordinal()]);
+                    break;
                 case STEMMED_VECTOR:
                     partOut.setDictionaryEncoder(new StringNameHandler());
                     partOut.setDictionaryRenumber(MemoryDictionary.Renumber.NONE);
                     partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                     partOut.setPostingsIDMap(entryIDMaps[DictionaryType.STEMMED_TOKENS.ordinal()]);
                     break;
-
                 case TOKEN_BIGRAMS:
+                    if (!field.getInfo().hasAttribute(FieldInfo.Attribute.WILDCARD)) {
+                        continue;
+                    }
                     MemoryDictionary tdict;
-                    if(dicts[DictionaryType.CASED_TOKENS.ordinal()] != null) {
+                    if (dicts[DictionaryType.CASED_TOKENS.ordinal()] != null) {
                         tdict = dicts[DictionaryType.CASED_TOKENS.ordinal()];
                     } else {
                         tdict = dicts[DictionaryType.UNCASED_TOKENS.ordinal()];
@@ -445,12 +470,12 @@ public class MemoryDictionaryBundle<N extends Comparable> {
 
                     //
                     // We'll create this one on the fly.
-                    if(tdict != null) {
-                        if(dicts[ord] == null) {
+                    if (tdict != null) {
+                        if (dicts[ord] == null) {
                             dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
                         }
                         MemoryBiGramDictionary tbg = (MemoryBiGramDictionary) dicts[ord];
-                        for(Object o : tdict) {
+                        for (Object o : tdict) {
                             IndexEntry e = (IndexEntry) o;
                             tbg.add(CharUtils.toLowerCase(e.getName().toString()), e.getID());
                         }
@@ -459,7 +484,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                         partOut.setPostingsIDMap(null);
                     } else {
-                        header.dictionaryOffsets[ord] = -1;
                         continue;
                     }
                     break;
@@ -468,13 +492,16 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                     //
                     // If this is a string field, and there were some saved values, 
                     // then go ahead and make bigrams out of them.
-                    if(field.getInfo().getType() == FieldInfo.Type.STRING &&
-                            header.dictionaryOffsets[DictionaryType.RAW_SAVED.ordinal()] != -1){
-                        if(dicts[ord] == null) {
+                    if (!field.getInfo().hasAttribute(FieldInfo.Attribute.WILDCARD_SAVED)) {
+                        continue;
+                    }
+                    if (field.getInfo().getType() == FieldInfo.Type.STRING
+                            && header.dictionaryOffsets[DictionaryType.RAW_SAVED.ordinal()] != -1) {
+                        if (dicts[ord] == null) {
                             dicts[ord] = new MemoryBiGramDictionary(new EntryFactory(Postings.Type.ID_FREQ));
                         }
                         MemoryBiGramDictionary sbg = (MemoryBiGramDictionary) dicts[ord];
-                        for(Object o : dicts[DictionaryType.RAW_SAVED.ordinal()]) {
+                        for (Object o : dicts[DictionaryType.RAW_SAVED.ordinal()]) {
                             IndexEntry e = (IndexEntry) o;
                             sbg.add(CharUtils.toLowerCase(e.getName().toString()),
                                     e.getID());
@@ -484,7 +511,6 @@ public class MemoryDictionaryBundle<N extends Comparable> {
                         partOut.setDictionaryIDMap(MemoryDictionary.IDMap.NONE);
                         partOut.setPostingsIDMap(null);
                     } else {
-                        header.dictionaryOffsets[ord] = -1;
                         continue;
                     }
                     break;

@@ -151,7 +151,7 @@ import java.util.logging.Logger;
  */
 public class FieldInfo implements Cloneable, Configurable {
 
-    protected static final Logger logger = Logger.getLogger(FieldInfo.class.
+    private static final Logger logger = Logger.getLogger(FieldInfo.class.
             getName());
 
     /**
@@ -161,26 +161,38 @@ public class FieldInfo implements Cloneable, Configurable {
     public enum Attribute {
 
         /**
-         * Values for the field will be broken into tokens. The universal
-         * tokenizer is used by default.
-         */
-        TOKENIZED,
-        /**
          * Values in the field will be placed into the main dictionary, for use
-         * as query terms. This is useful in conjunction with the
-         * <code>TOKENIZED</code> attribute.
+         * as query terms. The pipeline associated with a field is responsible
+         * for tokenizing the field values to get the tokens that will be stored
+         * in the index.
          */
         INDEXED,
+        
         /**
-         * Positions for the tokens in this field will be stored in the index
+         * Values in the field, if indexed will have bigram character dictionaries 
+         * stored so that wildcard queries can be used on terms in the dictionary.
          */
-        POSITIONS,
+        WILDCARD,
         /**
          * The values tokenized from this field will be stored in a document
          * vector for this field, which will allow document similarity
          * computations to be done using the data from this field.
          */
         VECTORED,
+        /**
+         * The values for this field will be stored as-is in the index for use
+         * in relational queries or for sorting search results.
+         */
+        SAVED,
+        /**
+         * Values in the field, if they are saved strings will have bigram character dictionaries 
+         * stored so that wildcard queries can be used on the saved values.
+         */
+        WILDCARD_SAVED,
+        /**
+         * Word positions for the tokens in this field will be stored in the index
+         */
+        POSITIONS,
         /**
          * When things are added to the field, they will be stored with their
          * original case intact.
@@ -197,17 +209,7 @@ public class FieldInfo implements Cloneable, Configurable {
          */
         STEMMED,
         /**
-         * When tokens are indexed into the field, the tokens will be stored
-         * unstemmed. At query time, search terms will be expanded.
-         */
-        UNSTEMMED,
-        /**
-         * The values for this field will be stored as-is in the index for use
-         * in relational queries or for sorting search results.
-         */
-        SAVED,
-        /**
-         * This field, if it is INDEXED will be a default field for searches if
+         * This field, if it is <code>INDEXED</code> will be a default field for searches if
          * no other field information is provided.
          */
         DEFAULT,
@@ -216,8 +218,8 @@ public class FieldInfo implements Cloneable, Configurable {
          * use.
          */
         CACHE;
-
     }
+    
 
     /**
      * The types of fields. The type of the field influences the names that can
@@ -387,27 +389,67 @@ public class FieldInfo implements Cloneable, Configurable {
             this.attributes = getDefaultAttributes();
         }
         this.type = type;
+        
+        String check = checkAttributesAndType();
+        if(check != null) {
+            throw new IllegalStateException(check);
+        }
+        this.pipelineFactoryName = pipelineFactoryName;
+        this.stemmerFactoryName = stemmerFactoryName;
+        checkPipelineAndStemmer();
+    }
+    
+    static EnumSet<Attribute> tokenTreatments = EnumSet.of(Attribute.CASED,
+                                                           Attribute.UNCASED,
+                                                           Attribute.STEMMED);
+
+    /**
+     * Runs a sanity check on the configuration of this field.
+     * @return A string describing a problem with the configuration, or <code>null</code> if there is no problem.
+     */
+    private String checkAttributesAndType() {
+        if(!attributes.contains(Attribute.INDEXED)) {
+            if(attributes.contains(Attribute.CASED) || 
+                    attributes.contains(Attribute.UNCASED) || 
+                    attributes.contains(Attribute.STEMMED) || 
+                    attributes.contains(Attribute.VECTORED)) {
+                return String.format("%s: Need INDEXED attribute: %s", name, attributes.toString());
+            }
+        } else {
+            if(!attributes.contains(Attribute.CASED) && 
+                    !attributes.contains(Attribute.UNCASED) && 
+                    !attributes.contains(Attribute.STEMMED)) {
+                return String.
+                        format("%s: Indexed field must have at least one of %s: %s",
+                               name, tokenTreatments, attributes);
+            }
+        }
+        if(attributes.contains(Attribute.SAVED) && type == Type.NONE) {
+            return String.format("%s: Must specify type for a saved field: %s", name, attributes);
+        }
+        return null;
+    }
+    
+    /**
+     * Checks to make sure that we've got a good pipeline and stemmer.
+     */
+    private void checkPipelineAndStemmer() {
         if(pipelineFactoryName == null && this.attributes.contains(
                 Attribute.INDEXED)) {
             logger.log(Level.WARNING, String.format(
                     "Field %s is indexed but has no pipeline defined, using the default",
-                                                    name));
-            this.pipelineFactoryName = DEFAULT_PIPELINE_FACTORY_NAME;
-        } else {
-            this.pipelineFactoryName = pipelineFactoryName;
+                    name));
+            pipelineFactoryName = DEFAULT_PIPELINE_FACTORY_NAME;
         }
-        if(stemmerFactoryName == null && this.attributes.contains(
-                Attribute.STEMMED)) {
+        if(stemmerFactoryName == null && this.attributes.contains(Attribute.STEMMED)) {
             logger.log(Level.WARNING, String.
                     format(
                     "Field %s is stemmed but has no stemmer defined, using the default",
                     name));
-            this.stemmerFactoryName = DEFAULT_STEMMER_FACTORY_NAME;
-        } else {
-            this.stemmerFactoryName = stemmerFactoryName;
+            stemmerFactoryName = DEFAULT_STEMMER_FACTORY_NAME;
         }
     }
-
+    
     public FieldInfo(RandomAccessFile raf) throws IOException {
         read(raf);
     }
@@ -565,9 +607,6 @@ public class FieldInfo implements Cloneable, Configurable {
      * @param ps a property sheet for this field
      * @throws com.sun.labs.util.props.PropertyException if there is any error
      * processing the properties
-     * @see
-     * com.sun.labs.util.props.Configurable#newProperties(com.sun.labs.util.props.PropertySheet)
-     *
      */
     @Override
     public void newProperties(PropertySheet ps) throws PropertyException {
@@ -575,10 +614,15 @@ public class FieldInfo implements Cloneable, Configurable {
         //
         // The name of the field will be the name of the configured component.
         name = ps.getInstanceName();
-        attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(
-                PROP_ATTRIBUTES);
+        attributes = (EnumSet<FieldInfo.Attribute>) ps.getEnumSet(PROP_ATTRIBUTES);
         type = (Type) ps.getEnum(PROP_TYPE);
+        String check = checkAttributesAndType();
+        if(check != null) {
+            throw new PropertyException(ps.getInstanceName(), PROP_ATTRIBUTES, check);
+        }
         pipelineFactoryName = ps.getString(PROP_PIPELINE_FACTORY_NAME);
+        stemmerFactoryName = ps.getString(PROP_STEMMER_FACTORY_NAME);
+        checkPipelineAndStemmer();
     }
 
     /**
@@ -661,7 +705,6 @@ public class FieldInfo implements Cloneable, Configurable {
      */
     public static EnumSet<Attribute> getIndexedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                          Attribute.TOKENIZED,
                           Attribute.POSITIONS,
                           Attribute.CASED,
                           Attribute.UNCASED,
@@ -678,19 +721,14 @@ public class FieldInfo implements Cloneable, Configurable {
         return EnumSet.of(Attribute.INDEXED,
                           Attribute.CASED,
                           Attribute.UNCASED,
-                          Attribute.TOKENIZED,
                           Attribute.POSITIONS);
     }
 
     /**
      * Gets a set of the typical attributes for an indexed field.
-     *
-     * @return a set of attributes containing the INDEXED, TOKENIZED, and
-     * VECTORED attributes
      */
     public static EnumSet<Attribute> getIndexedAndSavedAttributes() {
         return EnumSet.of(Attribute.INDEXED,
-                          Attribute.TOKENIZED,
                           Attribute.POSITIONS,
                           Attribute.CASED,
                           Attribute.UNCASED,

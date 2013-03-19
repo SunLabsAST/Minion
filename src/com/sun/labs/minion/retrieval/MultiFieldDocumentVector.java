@@ -94,9 +94,15 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
      * @param basisFeatures the features to use for the vector.
      */
     public MultiFieldDocumentVector(SearchEngine e,
-            WeightedFeature[] basisFeatures) {
+            WeightedFeature[] basisFeatures, WeightedField[] fields) {
         this.engine = (SearchEngineImpl) e;
         this.key = null;
+        this.fields = new FieldInfo[fields.length];
+        weights = new float[fields.length];
+        for(int i = 0; i < fields.length; i++) {
+            this.fields[i] = fields[i].getField();
+            weights[i] = fields[i].getWeight();
+        }
         QueryConfig qc = e.getQueryConfig();
         wf = qc.getWeightingFunction();
         wc = qc.getWeightingComponents();
@@ -298,14 +304,18 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
                 termStatsType = Field.TermStatsType.STEMMED;
                 vecDict = (DiskDictionary) df.getDictionary(DictionaryType.STEMMED_VECTOR);
                 termDict = (DiskDictionary) df.getDictionary(DictionaryType.STEMMED_TOKENS);
+            } else if(df.isUncased()) {
+                termStatsType = Field.TermStatsType.UNCASED;
+                vecDict = (DiskDictionary) df.getDictionary(
+                        DictionaryType.UNCASED_VECTOR);
+                termDict = (DiskDictionary) df.getDictionary(
+                        DictionaryType.UNCASED_TOKENS);
             } else {
-                termStatsType = Field.TermStatsType.RAW;
-                vecDict = (DiskDictionary) df.getDictionary(DictionaryType.RAW_VECTOR);
-                if(df.isUncased()) {
-                    termDict = (DiskDictionary) df.getDictionary(DictionaryType.UNCASED_TOKENS);
-                } else {
-                    termDict = (DiskDictionary) df.getDictionary(DictionaryType.CASED_TOKENS);
-                }
+                termStatsType = Field.TermStatsType.CASED;
+                vecDict = (DiskDictionary) df.getDictionary(
+                        DictionaryType.CASED_VECTOR);
+                termDict = (DiskDictionary) df.getDictionary(
+                        DictionaryType.CASED_TOKENS);
             }
 
             QueryEntry<String> vecEntry = vecDict.get(key);
@@ -487,17 +497,7 @@ public class MultiFieldDocumentVector extends AbstractDocumentVector {
                     if(cdf == null) {
                         continue;
                     }
-                    DiskDictionary termDict = null;
-                    switch(termStatsType) {
-                        case STEMMED:
-                            termDict = (DiskDictionary) cdf.
-                                    getDictionary(DictionaryType.STEMMED_TOKENS);
-                            break;
-                        case RAW:
-                            termDict = (DiskDictionary) cdf.getTermDictionary(
-                                    termStatsType);
-                            break;
-                    }
+                    DiskDictionary termDict = (DiskDictionary<String>) cdf.getDictionary(TermStatsType.getDictionaryType(termStatsType));
                     QueryEntry entry = termDict.get(f.getName());
                     if(entry == null) {
                         continue;

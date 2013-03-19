@@ -29,7 +29,6 @@ import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle;
 import com.sun.labs.minion.indexer.dictionary.DiskDictionaryBundle.Fetcher;
 import com.sun.labs.minion.indexer.partition.InvFileDiskPartition;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;

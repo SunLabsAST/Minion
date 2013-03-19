@@ -49,13 +49,13 @@ public class AdvanceSpeed {
             }
         }
         TermStatsDiskDictionary tsds = pm.getTermStatsDict();
-        DiskDictionary tsd = tsds.getDictionary(args[1], Field.TermStatsType.RAW);
+        DiskDictionary tsd = tsds.getDictionary(args[1], Field.TermStatsType.CASED);
         if(tsd == null) {
             logger.info(String.format("No field %s in term stats", args[1]));
         } else {
             NanoWatch nw = new NanoWatch();
             nw.start();
-            DiskDictionary<String> tokens = (DiskDictionary<String>) tp.getDF(args[1]).getTermDictionary(Field.TermStatsType.RAW);
+            DiskDictionary<String> tokens = (DiskDictionary<String>) tp.getDF(args[1]).getTermDictionary(Field.TermStatsType.CASED);
             logger.info(String.format("Term Stats dict for %s has %d entries", args[1], tsd.size()));
             logger.info(String.format("Term dict for %s in %s has %d entries", args[1], tp, tokens.size()));
             LightIterator<String> tsi = tsd.literator();

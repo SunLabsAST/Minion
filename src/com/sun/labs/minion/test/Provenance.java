@@ -1,13 +1,15 @@
 package com.sun.labs.minion.test;
 
 import com.sun.labs.minion.indexer.partition.ActiveFile;
+import com.sun.labs.minion.indexer.partition.DelMap;
 import com.sun.labs.minion.indexer.partition.PartitionHeader;
 import com.sun.labs.minion.indexer.partition.PartitionManager;
-import com.sun.labs.minion.util.FileLockException;
+import com.sun.labs.minion.util.FileLock;
 import com.sun.labs.minion.util.Getopt;
+import com.sun.labs.util.LabsLogFormatter;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,8 +26,17 @@ public class Provenance {
         File partFile = PartitionManager.makeDictionaryFile(indexDir.
                 getAbsolutePath(), partNumber);
         PartitionHeader header = new PartitionHeader(partFile);
-        System.out.format("%s%d %s\n", prefix, partNumber, header.
-                getProvenance());
+        File delFile = PartitionManager.makeDeletedDocsFile(indexDir.toString(), partNumber);
+        int nDeleted = 0;
+        if(delFile.exists()) {
+            DelMap delMap = new DelMap(delFile, new FileLock(new File(indexDir, delFile.toString() + ".lock")));
+            nDeleted = delMap.getNDeleted();
+        }
+        int nDocs = header.getnDocs() - nDeleted;
+        System.out.format("%s%d %d/%d/%d %s\n", 
+                          prefix, partNumber, 
+                          header.getnDocs(), nDeleted, header.getnDocs() - nDeleted,
+                          header.getProvenance());
         if(header.getProvenance().equals("marshaled")) {
         } else if(header.getProvenance().startsWith("merged ")) {
             String[] partNums = header.getProvenance().substring(7).split(" ");
@@ -43,6 +54,11 @@ public class Provenance {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        for(Handler h : Logger.getLogger("").getHandlers()) {
+            h.setFormatter(new LabsLogFormatter());
+            h.setLevel(Level.ALL);
+        }
+
         String flags = "d:";
         Getopt gopt = new Getopt(args, flags);
         int c;
@@ -72,7 +88,7 @@ public class Provenance {
 
         if(gopt.optInd >= args.length) {
             try {
-                ActiveFile af = new ActiveFile(indexDir, indexDir, "PM");
+                ActiveFile af = new ActiveFile(indexDir, indexDir, "PM", false);
                 for(Integer partNumber : af.read()) {
                     checkProvenance(indexDir, partNumber, "");
                 }
@@ -90,7 +106,7 @@ public class Provenance {
                             "Bad partition number: %s", args[i]));
                 } catch(IOException ex) {
                     logger.log(Level.SEVERE, String.format(
-                            "Error reading partition file %d", i));
+                            "Error reading partition file %s", args[i]), ex);
                 }
             }
         }

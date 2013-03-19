@@ -49,9 +49,7 @@ public class SEMain  {
         EnumSet saved = EnumSet.of(FieldInfo.Attribute.SAVED);
         engine.defineField(new FieldInfo("enc", saved, FieldInfo.Type.STRING));
         engine.defineField(new FieldInfo("last-mod", saved, FieldInfo.Type.DATE));
-        EnumSet regular = EnumSet.of(FieldInfo.Attribute.INDEXED,
-                                     FieldInfo.Attribute.TOKENIZED,
-                                     FieldInfo.Attribute.VECTORED);
+        EnumSet regular = FieldInfo.getIndexedAttributes();
         engine.defineField(new FieldInfo("file", regular));
         engine.defineField(new FieldInfo("filename", saved, FieldInfo.Type.STRING));
     }

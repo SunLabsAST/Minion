@@ -32,8 +32,6 @@ import com.sun.labs.minion.retrieval.WeightingComponents;
 /**
  * Selects terms from a given document or set of documents,
  * relative to the collection the terms are part of.
- *
- * @author Jeff Alexander
  */
 
 public interface FeatureSelector {
