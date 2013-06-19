@@ -863,7 +863,7 @@ public class SearchEngineImpl implements SearchEngine, Configurable {
             while(!heap.isEmpty()) {
                 int currID = heap.peek().getID();
                 if(part.isDeleted(currID)) {
-                    while(heap.peek().getID() == currID) {
+                    while(!heap.isEmpty() && heap.peek().getID() == currID) {
                         FreqGroup.FreqGrouperator top = heap.poll();
                         if(top.next()) {
                             heap.offer(top);

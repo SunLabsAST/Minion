@@ -395,13 +395,15 @@ public abstract class AbstractDocumentVector implements DocumentVector, Serializ
         StringBuilder sb = new StringBuilder();
         sb.append(String.format("size: %d length: %.3f ", v.length, length));
         float ss = 0;
+        int tokLen = 0;
         for(int i = 0; i < v.length; i++) {
             ss += v[i].getWeight() * v[i].getWeight();
+            tokLen += v[i].getFreq();
             sb.append("\n  <");
             sb.append(v[i].toString());
             sb.append('>');
         }
-        sb.append(String.format("\nss: %.3f len: %.3f", ss, Math.sqrt(ss)));
+        sb.append(String.format("\nss: %.3f len: %.3f (%d tokens)", ss, Math.sqrt(ss), tokLen));
         return sb.toString();
     }
     

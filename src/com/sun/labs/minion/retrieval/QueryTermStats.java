@@ -78,7 +78,7 @@ public class QueryTermStats implements Iterable<QueryTermDocStats> {
     }
     
     /**
-     * Gets the query term stats associated witht
+     * Gets the query term stats associated with a given document.
      * @param key
      * @return 
      */
@@ -96,5 +96,14 @@ public class QueryTermStats implements Iterable<QueryTermDocStats> {
     @Override
     public Iterator<QueryTermDocStats> iterator() {
         return docStats.iterator();
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        for(QueryTermDocStats qtds : docStats) {
+            sb.append(qtds.toString()).append('\n');
+        }
+        return sb.toString();
     }
 }

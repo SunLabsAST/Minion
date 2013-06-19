@@ -165,7 +165,6 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
         // from which we'll draw terms, then look up the document.
         DiskDictionary<String> vecDict;
         DiskDictionary<String> termDict;
-        Field.TermStatsType termStatsType;
         if(df.isStemmed()) {
             termStatsType = Field.TermStatsType.STEMMED;
             vecDict = (DiskDictionary<String>) df.getDictionary(DictionaryType.STEMMED_VECTOR);
@@ -182,7 +181,7 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             termDict = (DiskDictionary<String>) df.getDictionary(
                     DictionaryType.CASED_TOKENS);
         }
-
+        
         QueryEntry<String> vecEntry = vecDict.getByID(keyEntry.getID());
         if(vecEntry == null) {
             v = new WeightedFeature[0];
@@ -204,7 +203,6 @@ public class SingleFieldDocumentVector extends AbstractDocumentVector implements
             wc.setTerm(tsi).setDocument(pi);
             wf.initTerm(wc);
             WeightedFeature feat = new WeightedFeature(termEntry, pi.getFreq(), wf.termWeight(wc));
-//            logger.info(String.format("%s: %d %.3f ft: %d", feat.getName(), feat.getFreq(), feat.getWeight(), tsi.ft));
             length += feat.getWeight() * feat.getWeight();
             v[p++] = feat;
         }

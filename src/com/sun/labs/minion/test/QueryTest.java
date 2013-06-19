@@ -2527,6 +2527,39 @@ public class QueryTest extends SEMain {
         });
 
         shell.add(prefixCommand(prefix, "dv"), "Terms", new CompletorCommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if(args.length < 3) {
+                    return "Must specify field and document key";
+                }
+
+                String fieldArg = args[1];
+                String dockey = args[2];
+                String[] fields = fieldArg.split(",");
+                DocumentVector dv = engine.getDocumentVector(dockey, fields);
+                if(dv == null) {
+                    shell.out.println("Unknown key: " + args[1]);
+                } else {
+                    shell.out.println(dv);
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                return "field dockey - Show the document vector for a given field in a given document";
+            }
+
+            @Override
+            public Completor[] getCompletors() {
+                return new Completor[]{
+                    new FieldCompletor(manager.getMetaFile()),
+                    new NullCompletor()
+                };
+            }
+        });
+        
+        shell.add(prefixCommand(prefix, "dvbw"), "Terms", new CompletorCommandInterface() {
 
             @Override
             public String execute(CommandInterpreter ci, String[] args) throws Exception {
@@ -2686,12 +2719,14 @@ public class QueryTest extends SEMain {
         SortedSet w = new TreeSet(WeightedFeature.INVERSE_WEIGHT_COMPARATOR);
         w.addAll(((AbstractDocumentVector) dv).getSet());
         float sum = 0;
+        int tokLen = 0;
         for(Iterator it = w.iterator(); it.hasNext();) {
             WeightedFeature wf = (WeightedFeature) it.next();
+            tokLen += wf.getFreq();
             sum += wf.getWeight() * wf.getWeight();
             shell.out.println(wf.toString());
         }
-        shell.out.format("length: %.2f\n", Math.sqrt(sum));
+        shell.out.format("length: %.2f (%d tokens)\n", Math.sqrt(sum), tokLen);
     }
 
     private DocumentVector getDVFromFileOrEngine(String key,

@@ -79,6 +79,16 @@ public class QueryTermDocStats implements Iterable<QueryTermDocStats.TermStat> {
     public List<TermStat> getQueryTerms() {
         return queryTerms;
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(result.getKey());
+        for(TermStat ts : queryTerms) {
+            sb.append(' ').append(ts.toString());
+        }
+        return sb.toString();
+    }
 
     /**
      * An individual term statistic.
