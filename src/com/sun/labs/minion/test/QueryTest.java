@@ -1482,6 +1482,29 @@ public class QueryTest extends SEMain {
             }
         });
         
+        shell.add(prefixCommand(prefix, "lm"), "Terms", new CommandInterface() {
+            @Override
+            public String execute(CommandInterpreter ci, String[] args) throws Exception {
+                if (args.length == 1) {
+                    return "Must specify one or more terms";
+                }
+
+                for (int i = 1; i < args.length; i++) {
+                    shell.out.println("Variants of " + args[i]);
+                    for (String variant : morphEn.variantsOf(args[i])) {
+                        shell.out.println(" " + variant);
+                    }
+                }
+                return "";
+            }
+
+            @Override
+            public String getHelp() {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+        });
+
+        
         shell.add(prefixCommand(prefix, "morph"), "Terms", new CommandInterface() {
 
             @Override
