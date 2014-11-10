@@ -108,7 +108,6 @@
 
     <!-- When building a jar, include the Sun Labs Configuration & Utilities Toolkit -->
     <target name="-pre-jar">
-        <unjar src="${file.reference.slcut.jar}" dest="${build.classes.dir}"/>
     </target>
 
     <!-- Clean out the JavaCC generated files -->
